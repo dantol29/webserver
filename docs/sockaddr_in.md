@@ -2,6 +2,16 @@
 
 The struct sockaddr_in is a structure defined in the <netinet/in.h> header file in POSIX-compliant systems. It is used to specify an endpoint address to which to connect a socket, particularly for IPv4 addresses. This structure is used when setting up connections using the Internet Protocol (IP).
 
+There are other siblings structs defined in different networking header files:
+
+- sockaddr: the generic one
+- sockaddr_in: for IPv4 addresses
+- sockaddr_in6: for IPv6 addresses
+- sockaddr_un: for 'local sockets' aka UNIX domain sockets
+- sockaddr_storage: for protocol agnostic code
+
+For a more detailed exploration of these structures and their applications, please refer to the `sockaddr_family.md` document.
+
 The struct is formed like this:
 
 ```c
@@ -33,14 +43,6 @@ This field contains the IP address for the socket. The struct in_addr is another
 # sin_zero
 
 This is a padding field, used to make the size of struct sockaddr_in equal to that of struct sockaddr, which is a more general structure used for socket API functions like bind(), connect(), and accept(). The sin_zero field should be set to all zeros using a function like memset() before using the structure. This field is not used for any functional purpose; its presence is solely for compatibility with the general socket address structure.
-
-We have also:
-
-- sockaddr: the generic one
-- sockaddr_in: for IPv4 addresses
-- sockaddr_in6: for IPv6 addresses
-- sockaddr_un: for 'local sockets' aka UNIX domain sockets
-- sockaddr_storage: for protocol agnostic code
 
 ## Usage
 
