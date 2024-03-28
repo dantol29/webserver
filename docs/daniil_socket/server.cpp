@@ -27,13 +27,14 @@ int main(){
 
     // accept the connection request
     while (1){
-        int clientSocket = accept(serverSocket, nullptr, nullptr);
+        int clientSocket = accept(serverSocket, NULL, NULL);
         //block until a request arrives unless configured otherwise
 
         char buffer[1024];
         // receiving the data from the client
-        recv(clientSocket, buffer, sizeof(buffer), 0);
+        int bytesReceived = recv(clientSocket, buffer, sizeof(buffer), 0);
         // Data is received from the client socket and stored in the buffer
+        buffer[bytesReceived] = '\0';
         std::cout << "Message from client: " << buffer << std::endl;
 
     }

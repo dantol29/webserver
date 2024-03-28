@@ -5,6 +5,10 @@
 #include <string.h> // strlen
 
 int main(int argc, char **argv){
+    if (argc != 2){
+        std::cout << "No more or less than 2 arguments" << std::endl;
+        return (1);
+    }
      // create socket by using the socket() system call.
     int clientSocket = socket(AF_INET, SOCK_STREAM, 0);
     // AF_INET: It specifies the IPv4 protocol family.
