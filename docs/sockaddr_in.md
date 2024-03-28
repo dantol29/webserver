@@ -102,8 +102,6 @@ recv(int sockfd, void *buf, size_t len, int flags);
 
 Note: The `struct sockaddr_in` is also applicable when using `sendto()` and `recvfrom()` functions for specifying the destination or source address. However, in this project, `sendto()` and `recvfrom()` are not permitted as they are utilized for connectionless communication (UDP), which does not align with the project's requirements.
 
-````
-
 ### 7. **getsockname() and getpeername()**
 
 These functions retrieve the current address to which a socket is bound (`getsockname()`) or the address of the peer connected to a socket (`getpeername()`), using `struct sockaddr_in` to store the addresses.
@@ -111,6 +109,6 @@ These functions retrieve the current address to which a socket is bound (`getsoc
 ```c
 getsockname(int sockfd, struct sockaddr *addr, socklen_t *addrlen);
 getpeername(int sockfd, struct sockaddr *addr, socklen_t *addrlen);
-````
+```
 
 These system calls and functions facilitate various aspects of network communication, such as setting up connections, transmitting data, and querying socket information, with `struct sockaddr_in` playing a crucial role in managing address information for IPv4 networking.
