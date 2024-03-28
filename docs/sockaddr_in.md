@@ -90,17 +90,19 @@ This function is used by servers to accept a connection request from a client. I
 int accept(int sockfd, struct sockaddr *addr, socklen_t *addrlen);
 ```
 
-### 6. **sendto() and recvfrom()**
+### 6. **send() and recv()**
 
-These functions are used for sending and receiving data from a specific address, useful in connectionless protocols like UDP. They use `struct sockaddr_in` to specify the destination or source address.
+These functions are used for sending and receiving data in a connection-oriented manner, primarily with protocols like TCP. Although they can work with `struct sockaddr_in` for specifying addresses when establishing connections, their primary use in this context does not directly involve addressing as it's handled during the connection setup phase.
 
 ```c
-sendto(int sockfd, const void *msg, size_t len, int flags,
-       const struct sockaddr *dest_addr, socklen_t addrlen);
+send(int sockfd, const void *msg, size_t len, int flags);
 
-recvfrom(int sockfd, void *buf, size_t len, int flags,
-         struct sockaddr *src_addr, socklen_t *addrlen);
+recv(int sockfd, void *buf, size_t len, int flags);
 ```
+
+Note: The `struct sockaddr_in` is also applicable when using `sendto()` and `recvfrom()` functions for specifying the destination or source address. However, in this project, `sendto()` and `recvfrom()` are not permitted as they are utilized for connectionless communication (UDP), which does not align with the project's requirements.
+
+````
 
 ### 7. **getsockname() and getpeername()**
 
@@ -109,6 +111,6 @@ These functions retrieve the current address to which a socket is bound (`getsoc
 ```c
 getsockname(int sockfd, struct sockaddr *addr, socklen_t *addrlen);
 getpeername(int sockfd, struct sockaddr *addr, socklen_t *addrlen);
-```
+````
 
 These system calls and functions facilitate various aspects of network communication, such as setting up connections, transmitting data, and querying socket information, with `struct sockaddr_in` playing a crucial role in managing address information for IPv4 networking.
