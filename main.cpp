@@ -5,9 +5,22 @@
 #include <sys/socket.h> // For socket functions
 #include <unistd.h>     // For read, write, and close
 #include <cstdio>       // For popen() and pclose()
+#include <fstream>
+#include <sstream>
 
 const int PORT = 8080;
 const int BUFFER_SIZE = 1024;
+
+std::string readFile(const std::string& filePath) {
+    std::ifstream file(filePath);
+    if (!file.is_open()) {
+        std::cerr << "Could not open file: " << filePath << std::endl;
+        return "";
+    }
+    std::stringstream buffer;
+    buffer << file.rdbuf();
+    return buffer.str();
+}
 
 int main()
 {
@@ -57,11 +70,20 @@ int main()
         }
         std::cout << "Received http request: " << std::endl << buffer << std::endl;
 
-        // Check if the request is for /hello
+        // Check if the request is for the root or /home
+		if (strstr(buffer, "GET / HTTP/1.1") || strstr(buffer, "GET /home HTTP/1.1")) {
+            std::string htmlContent = readFile("./home.html");
+            std::string httpResponse = "HTTP/1.1 200 OK\nContent-Type: text/html\n" +
+                                       std::string("Content-Length: ") + std::to_string(htmlContent.length()) + "\n\n" +
+                                       htmlContent;
+
+            write(new_socket, httpResponse.c_str(), httpResponse.size());
+            printf("------------------Home page sent-------------------\n");
+		}
+		 // Check if the request is for /hello
 		// The request line for http://localhost:8080/hello 
 		// should be a HTTP GET request looks like: GET /hello HTTP/1.1.
-
-        if (strstr(buffer, "GET /hello HTTP/1.1")) {
+        else if (strstr(buffer, "GET /hello HTTP/1.1")) {
             // Execute the CGI script and get its output
             FILE* pipe = popen("./cgi-bin/hello.cgi", "r");
             if (!pipe) {
