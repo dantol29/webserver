@@ -6,7 +6,7 @@
 #include <unistd.h>     // For read, write, and close
 #include <cstdio>       // For popen() and pclose()
 
-const int PORT = 8081;
+const int PORT = 8080;
 const int BUFFER_SIZE = 1024;
 
 int main()
@@ -58,7 +58,7 @@ int main()
         std::cout << "Received http request: " << std::endl << buffer << std::endl;
 
         // Execute the CGI script and get its output
-        FILE* pipe = popen("./chi-bin/hello.cgi", "r");
+        FILE* pipe = popen("./cgi-bin/hello.cgi", "r");
         if (!pipe) {
             perror("popen failed");
             exit(EXIT_FAILURE);
