@@ -57,25 +57,35 @@ int main()
         }
         std::cout << "Received http request: " << std::endl << buffer << std::endl;
 
-        // Execute the CGI script and get its output
-        FILE* pipe = popen("./cgi-bin/hello.cgi", "r");
-        if (!pipe) {
-            perror("popen failed");
-            exit(EXIT_FAILURE);
-        }
+        // Check if the request is for /hello
+		// The request line for http://localhost:8080/hello 
+		// should be a HTTP GET request looks like: GET /hello HTTP/1.1.
 
-        // Read the script's output and send it as the response
-        std::string cgiOutput;
-        char readBuffer[256];
-        while (fgets(readBuffer, sizeof(readBuffer), pipe) != NULL) {
-            cgiOutput += readBuffer;
-        }
-        write(new_socket, cgiOutput.c_str(), cgiOutput.size());
-        pclose(pipe);
+        if (strstr(buffer, "GET /hello HTTP/1.1")) {
+            // Execute the CGI script and get its output
+            FILE* pipe = popen("./cgi-bin/hello.cgi", "r");
+            if (!pipe) {
+                perror("popen failed");
+                exit(EXIT_FAILURE);
+            }
 
-        printf("------------------CGI output sent-------------------\n");
+            // Read the script's output and send it as the response
+            std::string cgiOutput;
+            char readBuffer[256];
+            while (fgets(readBuffer, sizeof(readBuffer), pipe) != NULL) {
+                cgiOutput += readBuffer;
+            }
+            write(new_socket, cgiOutput.c_str(), cgiOutput.size()); // Sending the Output to the Client
+            pclose(pipe);
+
+            printf("------------------CGI output sent-------------------\n");
+        } else {
+            // Handle non-/hello requests or send a simple 404 Not Found response
+            std::string response = "HTTP/1.1 404 Not Found\r\nContent-Length: 0\r\n\r\n";
+            write(new_socket, response.c_str(), response.size());
+        }
 
         close(new_socket);
-    }
+  }
     return 0;
 }
