@@ -31,5 +31,5 @@ int main() {
 }
 
 
-//    $> cpp hello.cpp -o hello.cgi
+//    $> c++ hello.cpp -o hello.cgi
 //    $> chmod +x hello.cgi
