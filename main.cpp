@@ -1,5 +1,4 @@
 #include <cstdlib> // For exit() and EXIT_FAILURE
-#include <cstring> // For memset
 #include <iostream>
 #include <netinet/in.h> // For sockaddr_in
 #include <sys/socket.h> // For socket functions
