@@ -7,6 +7,7 @@
 #include <cstdio>       // For popen() and pclose()
 #include <fstream>
 #include <sstream>
+#include "include/webserv.hpp"
 
 const int PORT = 8080;
 const int BUFFER_SIZE = 1024;
