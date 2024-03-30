@@ -1,0 +1,28 @@
+{
+  "configurations": [
+    {
+      "name": "Mac",
+      "cppStandard": "c++98",
+      "includePath": ["${workspaceFolder}/**"]
+    },
+    {
+      "name": "Linux",
+      "cppStandard": "c++98",
+      "includePath": ["${workspaceFolder}/**"]
+    }
+  ],
+  "version": 4,
+  "workbench.colorCustomizations": {
+    "activityBar.background": "#063516",
+    "titleBar.activeBackground": "#094B1F",
+    "titleBar.activeForeground": "#F3FEF6"
+  },
+  "files.associations": {
+    "*.cpp": "cpp",
+    "*.h": "cpp",
+    "*.md": "markdown",
+    "*.sh": "shellscript"
+  },
+  "C_Cpp.clang_format_style": "file",
+  "C_Cpp.clang_format_fallbackStyle": "Google"
+}
