@@ -110,7 +110,7 @@ int main()
 			exit(EXIT_FAILURE);
 		}
 		std::cout << "Received http request: " << std::endl << buffer << std::endl;
-		printf("%s\n", buffer);
+		std::cout << buffer << std::endl;
 		// Respond to the request with some HTML
 		write(new_socket, returnHTML(), strlen(returnHTML()));
 		std::cout << "------------------HTML message sent-------------------" << std::endl;
