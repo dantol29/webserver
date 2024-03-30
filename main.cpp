@@ -31,6 +31,21 @@ const char *returnHTML()
 		   "</html>";
 }
 
+void *ft_memset(void *ptr, int value, size_t num)
+{
+	// Cast the pointer to a char pointer, as we're dealing with bytes
+	unsigned char *p = static_cast<unsigned char *>(ptr);
+
+	// Fill the specified memory area with the given value
+	for (size_t i = 0; i < num; ++i)
+	{
+		p[i] = static_cast<unsigned char>(value);
+	}
+
+	// Return the original pointer
+	return ptr;
+}
+
 int main()
 {
 	int server_fd, new_socket;
@@ -68,7 +83,7 @@ int main()
 	address.sin_family = AF_INET;
 	address.sin_addr.s_addr = INADDR_ANY;
 	address.sin_port = htons(PORT);
-	memset(address.sin_zero, '\0', sizeof address.sin_zero);
+	ft_memset(address.sin_zero, '\0', sizeof address.sin_zero);
 
 	if (bind(server_fd, (struct sockaddr *)&address, sizeof(address)) < 0)
 	{
