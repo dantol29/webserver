@@ -22,15 +22,65 @@ std::string readFile(const std::string& filePath) {
     buffer << file.rdbuf();
     return buffer.str();
 }
+void handleHomePage(int socket) {
+    std::string htmlContent = readFile("./home.html");
+    std::string httpResponse = "HTTP/1.1 200 OK\nContent-Type: text/html\n" +
+                               std::string("Content-Length: ") + std::to_string(htmlContent.length()) + "\n\n" +
+                               htmlContent;
+    write(socket, httpResponse.c_str(), httpResponse.size());
+    printf("------------------Home page sent-------------------\n");
+}
+
+void handleHelloPage(int socket) {
+    // Execute the CGI script and get its output
+    FILE* pipe = popen("./cgi-bin/hello.cgi", "r");
+    if (!pipe) {
+        perror("popen failed");
+        exit(EXIT_FAILURE);
+    }
+
+    std::string cgiOutput;
+    char readBuffer[256];
+    while (fgets(readBuffer, sizeof(readBuffer), pipe) != NULL) {
+        cgiOutput += readBuffer;
+    }
+    pclose(pipe);
+    write(socket, cgiOutput.c_str(), cgiOutput.size());
+    printf("------------------CGI output sent-------------------\n");
+}
+
+void handleNotFound(int socket) {
+    std::string response = "HTTP/1.1 404 Not Found\r\nContent-Length: 0\r\n\r\n";
+    write(socket, response.c_str(), response.size());
+}
+
+
+void handleConnection(int socket) {
+    char buffer[BUFFER_SIZE] = {0};
+    long valread = read(socket, buffer, BUFFER_SIZE);
+    if (valread < 0) {
+        perror("In read");
+        exit(EXIT_FAILURE);
+    }
+    std::cout << "Received HTTP request: " << std::endl << buffer << std::endl;
+
+    // Determine the type of request and call the appropriate handler
+    if (strstr(buffer, "GET / HTTP/1.1") || strstr(buffer, "GET /home HTTP/1.1")) {
+        handleHomePage(socket);
+    } else if (strstr(buffer, "GET /hello HTTP/1.1")) {
+        handleHelloPage(socket);
+    } else {
+        handleNotFound(socket);
+    }
+
+    close(socket);
+}
 
 int main()
 {
-    int server_fd, new_socket;
-    long valread;
+    int server_fd;
     struct sockaddr_in address;
     int addrlen = sizeof(address);
-
-    char buffer[BUFFER_SIZE] = {0};
 
     // Creating socket file descriptor
     if ((server_fd = socket(AF_INET, SOCK_STREAM, 0)) == 0)
@@ -54,61 +104,14 @@ int main()
         perror("In listen");
         exit(EXIT_FAILURE);
     }
-    while (1)
-    {
+      while (1) {
         printf("\n+++++++ Waiting for new connection ++++++++\n\n");
-        if ((new_socket = accept(server_fd, (struct sockaddr *)&address, (socklen_t *)&addrlen)) < 0)
-        {
+        int new_socket = accept(server_fd, (struct sockaddr *)&address, (socklen_t*)&addrlen);
+        if (new_socket < 0) {
             perror("In accept");
             exit(EXIT_FAILURE);
         }
-
-        valread = read(new_socket, buffer, BUFFER_SIZE);
-        if (valread < 0)
-        {
-            perror("In read");
-            exit(EXIT_FAILURE);
-        }
-        std::cout << "Received http request: " << std::endl << buffer << std::endl;
-
-        // Check if the request is for the root or /home
-		if (strstr(buffer, "GET / HTTP/1.1") || strstr(buffer, "GET /home HTTP/1.1")) {
-            std::string htmlContent = readFile("./home.html");
-            std::string httpResponse = "HTTP/1.1 200 OK\nContent-Type: text/html\n" +
-                                       std::string("Content-Length: ") + std::to_string(htmlContent.length()) + "\n\n" +
-                                       htmlContent;
-
-            write(new_socket, httpResponse.c_str(), httpResponse.size());
-            printf("------------------Home page sent-------------------\n");
-		}
-		 // Check if the request is for /hello
-		// The request line for http://localhost:8080/hello 
-		// should be a HTTP GET request looks like: GET /hello HTTP/1.1.
-        else if (strstr(buffer, "GET /hello HTTP/1.1")) {
-            // Execute the CGI script and get its output
-            FILE* pipe = popen("./cgi-bin/hello.cgi", "r");
-            if (!pipe) {
-                perror("popen failed");
-                exit(EXIT_FAILURE);
-            }
-
-            // Read the script's output and send it as the response
-            std::string cgiOutput;
-            char readBuffer[256];
-            while (fgets(readBuffer, sizeof(readBuffer), pipe) != NULL) {
-                cgiOutput += readBuffer;
-            }
-            write(new_socket, cgiOutput.c_str(), cgiOutput.size()); // Sending the Output to the Client
-            pclose(pipe);
-
-            printf("------------------CGI output sent-------------------\n");
-        } else {
-            // Handle non-/hello requests or send a simple 404 Not Found response
-            std::string response = "HTTP/1.1 404 Not Found\r\nContent-Length: 0\r\n\r\n";
-            write(new_socket, response.c_str(), response.size());
-        }
-
-        close(new_socket);
-  }
+        handleConnection(new_socket);
+    }
     return 0;
 }
