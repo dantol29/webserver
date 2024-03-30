@@ -1,6 +1,6 @@
 # Compiler and Flags
 CXX = c++
-CXXFLAGS = -Wall -Wextra -Werror -std=c++98 -I.
+CXXFLAGS = -Wall -Wextra -Werror -std=c++98 -I. -Iinclude
 DEPFLAGS = -MMD -MP
 
 # Target executable name
@@ -14,8 +14,8 @@ OBJDIR = obj
 
 # Generate object files from source files in the obj directory
 OBJS = $(addprefix $(OBJDIR)/, $(SRCS:.cpp=.o))
-# Build Rules
 
+# Build Rules
 all: $(TARGET)
 
 
