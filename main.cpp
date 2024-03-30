@@ -97,7 +97,7 @@ int main()
 	}
 	while (1)
 	{
-		printf("\n+++++++ Waiting for new connection ++++++++\n\n");
+		std::cout << "\n+++++++ Waiting for new connection ++++++++\n\n";
 		if ((new_socket = accept(server_fd, (struct sockaddr *)&address, (socklen_t *)&addrlen)) < 0)
 		{
 			perror("In accept");
@@ -114,7 +114,7 @@ int main()
 		printf("%s\n", buffer);
 		// Respond to the request with some HTML
 		write(new_socket, returnHTML(), strlen(returnHTML()));
-		printf("------------------HTML message sent-------------------\n");
+		std::cout << "------------------HTML message sent-------------------" << std::endl;
 
 		close(new_socket);
 	}
