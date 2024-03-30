@@ -31,8 +31,8 @@ void handleHomePage(int socket) {
     printf("------------------Home page sent-------------------\n");
 }
 
-void handleHelloPage(int socket) {
     // Execute the CGI script and get its output
+void handleHelloPage(int socket) {
     FILE* pipe = popen("./cgi-bin/hello.cgi", "r");
     if (!pipe) {
         perror("popen failed");
@@ -55,6 +55,7 @@ void handleNotFound(int socket) {
 }
 
 
+    // Determine the type of request and call the appropriate handler
 void handleConnection(int socket) {
     char buffer[BUFFER_SIZE] = {0};
     long valread = read(socket, buffer, BUFFER_SIZE);
@@ -64,7 +65,6 @@ void handleConnection(int socket) {
     }
     std::cout << "Received HTTP request: " << std::endl << buffer << std::endl;
 
-    // Determine the type of request and call the appropriate handler
     if (strstr(buffer, "GET / HTTP/1.1") || strstr(buffer, "GET /home HTTP/1.1")) {
         handleHomePage(socket);
     } else if (strstr(buffer, "GET /hello HTTP/1.1")) {
