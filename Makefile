@@ -16,11 +16,10 @@ CGI_TARGET = cgi-bin/hello.cgi
 CGI_SRC = cgi-bin/hello.cpp
 
 # Ensure the OBJDIR exists before compiling anything
-$(OBJDIR):
-	mkdir -p $(OBJDIR)
+$(shell mkdir -p $(OBJDIR))
 
 # Rule for compiling source files into object files
-$(OBJDIR)/%.o: %.cpp | $(OBJDIR)
+$(OBJDIR)/%.o: %.cpp
 	$(CXX) $(CXXFLAGS) $(DEPFLAGS) -c $< -o $@
 
 # Build Rules
