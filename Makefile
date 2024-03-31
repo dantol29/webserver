@@ -1,44 +1,47 @@
 # Compiler and Flags
-CXX = c++
+CXX = g++
 CXXFLAGS = -Wall -Wextra -Werror -std=c++98 -I. -Iinclude
 DEPFLAGS = -MMD -MP
 
-# Target executable name
-TARGET = webserv
-
 # Source and Object Files
 SRCS = main.cpp
-
-# Create an obj directory if it doesn't exist
 OBJDIR = obj
-
-# Generate object files from source files in the obj directory
 OBJS = $(addprefix $(OBJDIR)/, $(SRCS:.cpp=.o))
 
+# Main Target
+TARGET = webserv
+
+# CGI Target
+CGI_TARGET = cgi-bin/hello.cgi
+CGI_SRC = cgi-bin/hello.cpp
+
+# Ensure the OBJDIR exists before compiling anything
+$(OBJDIR):
+	mkdir -p $(OBJDIR)
+
+# Rule for compiling source files into object files
+$(OBJDIR)/%.o: %.cpp | $(OBJDIR)
+	$(CXX) $(CXXFLAGS) $(DEPFLAGS) -c $< -o $@
+
 # Build Rules
-all: $(TARGET)
+all: $(TARGET) $(CGI_TARGET)
 
-
+# Linking the main target
 $(TARGET): $(OBJS)
 	$(CXX) $(CXXFLAGS) -o $(TARGET) $(OBJS)
 
-$(OBJS): | $(OBJDIR)
+# Compiling the CGI script
+$(CGI_TARGET): $(CGI_SRC)
+	$(CXX) $(CXXFLAGS) -o $@ $<
 
-$(OBJDIR):
-	mkdir -p $(OBJDIR)
-# Compile source files to object files in the obj directory
-$(OBJDIR)/%.o: %.cpp
-	$(CXX) $(CXXFLAGS) $(DEPFLAGS) -c $< -o $@
-
--include $(DEPS)
-
+# Cleaning up the build
 clean:
 	rm -rf $(OBJDIR)
-	rm -f $(OBJS) $(TARGET) 
+	rm -f $(TARGET) $(CGI_TARGET)
 
 fclean: clean
-	rm -f $(TARGET) 
+	rm -f $(TARGET) $(CGI_TARGET)
 
 re: fclean all
 
-.PHONY: all  clean fclean re
+.PHONY: all clean fclean re
