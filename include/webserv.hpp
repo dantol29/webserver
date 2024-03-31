@@ -22,7 +22,6 @@
  */
 std::string readFile(const std::string& filePath);
 
-
 /**
  * Sends the home page content to the client.
  * 
@@ -37,14 +36,18 @@ void handleHomePage(int socket);
 /**
  * Executes a CGI script and sends its output to the client.
  * 
- * This function runs a CGI script located at "./cgi-bin/hello.cgi" and captures its output.
- * The output of the CGI script is directly sent back to the client as the response
- * without additional HTTP headers. This function demonstrates a simple way to integrate
- * CGI scripts into a C++ web server application.
+ * This function runs a CGI script located at "./cgi-bin/hello.cgi"
+ * with `fork()`, `pipe()`, and `execve()` to handle the execution. 
+ * It captures the script's output through a pipe, and send it back to the client.
+ *
+ * NOTE AND FUTURE IMPROVEMENT: The function assumes the existence of the script at the specified location 
+ * and does not add additional HTTP headers to the output. 
+ * It's designed to demonstrate CGI integration rather than a fully-featured HTTP response handling.
  *
  * @param socket The socket descriptor through which the CGI script's output will be sent to the client.
  */
 void handleHelloPage(int socket);
+
 
 /**
  * Sends a 404 Not Found response to the client.
