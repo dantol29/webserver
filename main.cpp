@@ -4,7 +4,6 @@
 #include <netinet/in.h> // For sockaddr_in
 #include <sys/socket.h> // For socket functions
 #include <unistd.h>     // For read, write, and close
-#include <cstdio>       // For popen() and pclose()
 #include <fstream>
 #include <sstream>
 #include "include/webserv.hpp"
@@ -32,23 +31,50 @@ void handleHomePage(int socket) {
     printf("------------------Home page sent-------------------\n");
 }
 
-    // Execute the CGI script and get its output
 void handleHelloPage(int socket) {
-    FILE* pipe = popen("./cgi-bin/hello.cgi", "r");
-    if (!pipe) {
-        perror("popen failed");
+    int pipefd[2];
+    if (pipe(pipefd) == -1) {
+        perror("pipe failed");
         exit(EXIT_FAILURE);
     }
 
-    std::string cgiOutput;
-    char readBuffer[256];
-    while (fgets(readBuffer, sizeof(readBuffer), pipe) != NULL) {
-        cgiOutput += readBuffer;
+    pid_t pid = fork();
+    if (pid == -1) {
+        perror("fork failed");
+        exit(EXIT_FAILURE);
+    } else if (pid == 0) {
+        close(pipefd[0]);
+        dup2(pipefd[1], STDOUT_FILENO);
+        close(pipefd[1]);
+
+        // non-const char arrays to avoid deprecation warnings
+        char scriptPath[] = "./cgi-bin/hello.cgi";
+        char *argv[] = {scriptPath, NULL};
+        char *envp[] = {NULL};
+        if (execve(argv[0], argv, envp) == -1) {
+            perror("execve failed");
+            exit(EXIT_FAILURE);
+        }
+    } else {
+        close(pipefd[1]);
+
+        std::string cgiOutput;
+        char readBuffer[256];
+        ssize_t bytesRead;
+        while ((bytesRead = read(pipefd[0], readBuffer, sizeof(readBuffer) - 1)) > 0) {
+            readBuffer[bytesRead] = '\0';
+            cgiOutput += readBuffer;
+        }
+        close(pipefd[0]);
+
+        int status;
+        waitpid(pid, &status, 0);
+
+        write(socket, cgiOutput.c_str(), cgiOutput.size());
+        printf("------------------CGI output sent-------------------\n");
     }
-    pclose(pipe);
-    write(socket, cgiOutput.c_str(), cgiOutput.size());
-    printf("------------------CGI output sent-------------------\n");
 }
+
 
 void handleNotFound(int socket) {
     std::string response = "HTTP/1.1 404 Not Found\r\nContent-Length: 0\r\n\r\n";
