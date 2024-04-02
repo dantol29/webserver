@@ -24,7 +24,7 @@ std::string readHtml(const std::string& filePath) {
 }
 
 std::string handleHomePage() {
-    std::string htmlContent = readHtml("./home.html");
+    std::string htmlContent = readHtml("./html/home.html");
     std::string httpResponse = "HTTP/1.1 200 OK\nContent-Type: text/html\n" +
                                std::string("Content-Length: ") + std::to_string(htmlContent.length()) + "\n\n" +
                                htmlContent;
