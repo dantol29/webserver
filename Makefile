@@ -4,7 +4,11 @@ CXXFLAGS = -Wall -Wextra -Werror -std=c++98 -I. -Iinclude
 DEPFLAGS = -MMD -MP
 
 # Source and Object Files
-SRCS = main.cpp
+SRCS = main.cpp \
+		Server.cpp \
+		RequestHandler.cpp \
+		CGIHandler.cpp \
+		Utils.cpp
 OBJDIR = obj
 OBJS = $(addprefix $(OBJDIR)/, $(SRCS:.cpp=.o))
 
