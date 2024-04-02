@@ -12,7 +12,7 @@ const int PORT = 8080;
 const int BUFFER_SIZE = 1024;
 
 
-std::string readFile(const std::string& filePath) {
+std::string readHtml(const std::string& filePath) {
     std::ifstream file(filePath);
     if (!file.is_open()) {
         std::cerr << "Could not open file: " << filePath << std::endl;
@@ -23,7 +23,7 @@ std::string readFile(const std::string& filePath) {
     return buffer.str();
 }
 void handleHomePage(int socket) {
-    std::string htmlContent = readFile("./home.html");
+    std::string htmlContent = readHtml("./home.html");
     std::string httpResponse = "HTTP/1.1 200 OK\nContent-Type: text/html\n" +
                                std::string("Content-Length: ") + std::to_string(htmlContent.length()) + "\n\n" +
                                htmlContent;
@@ -31,7 +31,7 @@ void handleHomePage(int socket) {
     printf("------------------Home page sent-------------------\n");
 }
 
-void handleHelloPage(int socket) {
+void handleCGIRequest(int socket) {
     int pipefd[2];
     if (pipe(pipefd) == -1) {
         perror("pipe failed");
@@ -96,7 +96,7 @@ void handleConnection(int socket) {
     if (strstr(buffer, "GET / HTTP/1.1") || strstr(buffer, "GET /home HTTP/1.1")) {
         handleHomePage(socket);
     } else if (strstr(buffer, "GET /hello HTTP/1.1")) {
-        handleHelloPage(socket);
+        handleCGIRequest(socket);
     } else {
         handleNotFound(socket);
     }

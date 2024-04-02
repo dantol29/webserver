@@ -69,6 +69,10 @@
     "compare": "cpp",
     "concepts": "cpp",
     "memory": "cpp",
-    "type_traits": "cpp"
+    "type_traits": "cpp",
+    "deque": "cpp",
+    "fstream": "cpp",
+    "iomanip": "cpp",
+    "stack": "cpp"
   }
 }

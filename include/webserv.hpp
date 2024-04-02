@@ -4,23 +4,14 @@
 #include <string>
 
 /**
- * @brief Reads the entire content of a file into a string.
- *
- * This function opens the file specified by `filePath` 
- * and reads its entire content into a single string. 
- * It's designed to handle text files. 
- * If the file cannot be opened, the function outputs an error message to `std::cerr` 
- * and returns an empty string.
- *
- * @param filePath A constant reference to a `std::string` that contains the path to the file to be read.
- * @return A `std::string` containing the contents of the file. 
- * Returns an empty string if the file cannot be opened or is otherwise unreadable.
- *
- * @note This function uses `std::ifstream` to open and read the file. 
- * It assumes the file's contents are text and can be represented as a string. 
- * Binary files or files with data not compatible with `std::string` may not be handled correctly.
+ * @brief Reads HTML file contents into a string.
+ * 
+ * Opens and reads the contents of a file specified by `filePath`.
+ * If the file can't be opened, prints an error and returns "".
+ * 
+ * @param filePath Path to the HTML file.
+ * @return Contents of the file as a string, or "" if error.
  */
-std::string readFile(const std::string& filePath);
 
 /**
  * Sends the home page content to the client.
@@ -46,7 +37,7 @@ void handleHomePage(int socket);
  *
  * @param socket The socket descriptor through which the CGI script's output will be sent to the client.
  */
-void handleHelloPage(int socket);
+void handleCGIRequest(int socket);
 
 
 /**
@@ -65,7 +56,7 @@ void handleNotFound(int socket);
  * 
  * This function reads the HTTP request from the client and determines the type of request.
  * Depending on the request path, it calls either `handleHomePage` to serve the home page,
- * `handleHelloPage` to execute and return the output of a CGI script, or `handleNotFound`
+ * `handleCGIRequest` to execute and return the output of a CGI script, or `handleNotFound`
  * if the requested path is not recognized. After processing the request, it closes the socket.
  *
  * @param socket The socket descriptor representing the client connection to be handled.
