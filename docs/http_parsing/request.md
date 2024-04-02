@@ -1,6 +1,6 @@
 ## After a `URL` is entered into the browser, an `HTTP request` is sent
 
-_RFC 9112 (https://datatracker.ietf.org/doc/html/rfc9112#name-request-line)_
+:shipit: _RFC 9112 (https://datatracker.ietf.org/doc/html/rfc9112#name-request-line)_
 
 ### Request string has three main components:
 
@@ -8,11 +8,14 @@ _RFC 9112 (https://datatracker.ietf.org/doc/html/rfc9112#name-request-line)_
 - headers (content type, content length and more)
 - body (html, json, plain, octet-stream)
 
+-------------------------------------------------------------------------------------------------------------------
+
 ### REQUEST LINE
 
-| Request line | method token, single space (SP), request-target, SP, protocol version | GET /index.html HTTP/1.1 |
+- Syntax:  `method token, single space (SP), request-target, SP, protocol version`.
+- Example: `GET /index.html HTTP/1.1`.
 
-#### Request line rules
+#### ⚠️ Request line rules
 
 1. Method token is case-sensitive.
 2. There are four distinct formats for the request-target (origin-form, absolute-form, authority-form, asterisk-form).
@@ -47,13 +50,17 @@ _RFC 9112 (https://datatracker.ietf.org/doc/html/rfc9112#name-request-line)_
    - This form of is only used for OPTIONS request
    - When a client wishes to request OPTIONS for the server as a whole, the client MUST send only "\_" as the request-target (`OPTIONS * HTTP/1.1`)
 
+-------------------------------------------------------------------------------------------------------------------
+
 ### HEADERS
 
 ...
 
+-------------------------------------------------------------------------------------------------------------------
+
 ### BODY
 
-#### Body rules
+#### ⚠️ Body rules
 
 1. A sender MUST NOT send a Content-Length header field in any message that contains a Transfer-Encoding header field.
 2. A recipient MUST be able to parse the chunked transfer coding because it plays a crucial role in framing messages when the content size is not known in advance.
@@ -64,7 +71,7 @@ _RFC 9112 (https://datatracker.ietf.org/doc/html/rfc9112#name-request-line)_
 7. A server that receives an HTTP/1.0 message containing a Transfer-Encoding header field MUST treat the message as if the framing is faulty, even if a Content-Length is present.
 8. If a message is received without Transfer-Encoding and with an invalid Content-Length header field, then the message framing is invalid and the recipient MUST treat it as `400` (unrecoverable error).
 
-### Error status codes
+### :bomb: Error status codes
 
 - A server that receives a method longer than any that it implements SHOULD respond with a `501` (Not Implemented) status code.
 - A server that receives a request-target longer than any URI it wishes to parse MUST respond with a `414` (URI Too Long) status code.
@@ -73,7 +80,7 @@ _RFC 9112 (https://datatracker.ietf.org/doc/html/rfc9112#name-request-line)_
 - If the unrecoverable error is in a request message, the server MUST respond with a `400` (Bad Request) status code and then close the connection.
 - A server MAY reject a request that contains a message body but not a Content-Length by responding with `411` (Length Required).
 
-### Notes:
+### :placard: Notes:
 
 - `Finite state machines` (FSMs) can be very helpful in parsing HTTP requests
 - Explore `transfer-encoding` more
