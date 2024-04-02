@@ -8,8 +8,8 @@ CGI scripts are conventionally stored in `/cgi-bin/`, and have a `.cgi` extensio
 
 Documentation for CGI can be found in the RFC 3875 ---(IS THAT THE GOOD RFC ?)--- available at [https://www.ietf.org/rfc/rfc3875.txt](https://www.ietf.org/rfc/rfc3875.txt)
 
-### Server-Side vs. Client-Side Programming
 
+### Server-Side vs. Client-Side Programming
 
 | Feature                                   | Client-side | Server-side |
 |-------------------------------------------|:-----------:|:-----------:|
@@ -31,14 +31,26 @@ To return output to the web server, a CGI script writes HTTP headers and the HTM
 
 For more information on CGI and server-side programming, refer to the tutorial available at [https://www.garshol.priv.no/download/text/http-tut.html](https://www.garshol.priv.no/download/text/http-tut.html).
 
-______________________________________
 
+### Script vs program:
 
+In a nutshell: scripts are interpreted at runtime, programs are compiled
 
+- **Script**:
+  - A script is usually a file containing a set of commands that are executed by an interpreter. 
+  - In the context of CGI, a script is often written in scripting languages like Perl, Python, or PHP. 
+  - Scripts are typically not compiled but are interpreted at runtime
+  - Scripts are often used for automating tasks, processing data, generating web page content dynamically, and handling form data on web servers.
+  
+- **Program**:
+  - A program refers to a compiled executable that is run directly by the operating system. 
+  - In the web server context, a program might serve a similar purpose to a CGI script (e.g., generating dynamic content) but is executed as a standalone application.
+  - Programs are generally faster than scripts because they are pre-compiled into machine code, which the CPU can execute directly without the need for an interpreter.
+  - The compilation step adds an additional layer of complexity to development and deployment but can optimize performance and efficiency for computationally intensive tasks.
 
+The distinction between scripts and programs has become less clear-cut with the evolution of scripting languages. For example, Python and JavaScript can be used to write simple scripts as well as complex, full-fledged applications.
 
-
-______________________________________
+CGI programs can be written in almost any programming language, including compiled languages like C, C++, or Go, as well as interpreted scripting languages like Perl, Python, or Ruby. 
 
 
 ### CGI's Historical Role in Web Development:
