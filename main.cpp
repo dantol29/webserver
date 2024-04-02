@@ -28,7 +28,7 @@ std::string handleHomePage() {
     std::string httpResponse = "HTTP/1.1 200 OK\nContent-Type: text/html\n" +
                                std::string("Content-Length: ") + std::to_string(htmlContent.length()) + "\n\n" +
                                htmlContent;
-    printf("------------------Home page returned from handleHomePage()-------------------\n");
+    std::cout << "------------------Home page returned from handleHomePage()-------------------" << std::endl;
     return httpResponse;
 }
 
@@ -76,7 +76,7 @@ std::string handleCGIRequest() {
                                    std::string("Content-Length: ") + std::to_string(cgiOutput.length()) + "\n\n" +
                                    cgiOutput;
         
-        printf("------------------CGI output prepared-------------------\n");
+        std::cout << "------------------CGI output prepared-------------------" << std::endl;
         return httpResponse;
     }
 
@@ -89,7 +89,8 @@ std::string handleCGIRequest() {
 std::string handleNotFound(void) {
     std::string response = "HTTP/1.1 404 Not Found\r\nContent-Length: 0\r\n\r\n";
     // write(socket, response.c_str(), response.size());
-    printf("------------------404 Not Found sent-------------------\n");
+    std::cout << "------------------404 Not Found sent-------------------" << std::endl;
+
     return response;
 }
 
@@ -146,7 +147,7 @@ int main()
         exit(EXIT_FAILURE);
     }
       while (1) {
-        printf("\n+++++++ Waiting for new connection ++++++++\n\n");
+        std::cout << "++++++++++++++ Waiting for new connection +++++++++++++++" << std::endl;
         int new_socket = accept(server_fd, (struct sockaddr *)&address, (socklen_t*)&addrlen);
         if (new_socket < 0) {
             perror("In accept");
