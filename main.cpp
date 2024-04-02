@@ -22,16 +22,17 @@ std::string readHtml(const std::string& filePath) {
     buffer << file.rdbuf();
     return buffer.str();
 }
-void handleHomePage(int socket) {
+
+std::string handleHomePage() {
     std::string htmlContent = readHtml("./home.html");
     std::string httpResponse = "HTTP/1.1 200 OK\nContent-Type: text/html\n" +
                                std::string("Content-Length: ") + std::to_string(htmlContent.length()) + "\n\n" +
                                htmlContent;
-    write(socket, httpResponse.c_str(), httpResponse.size());
-    printf("------------------Home page sent-------------------\n");
+    printf("------------------Home page returned from handleHomePage()-------------------\n");
+    return httpResponse;
 }
 
-void handleCGIRequest(int socket) {
+std::string handleCGIRequest() {
     int pipefd[2];
     if (pipe(pipefd) == -1) {
         perror("pipe failed");
@@ -47,7 +48,6 @@ void handleCGIRequest(int socket) {
         dup2(pipefd[1], STDOUT_FILENO);
         close(pipefd[1]);
 
-        // non-const char arrays to avoid deprecation warnings
         char scriptPath[] = "./cgi-bin/hello.cgi";
         char *argv[] = {scriptPath, NULL};
         char queryString[] = "QUERY_STRING=demo query string";
@@ -71,15 +71,26 @@ void handleCGIRequest(int socket) {
         int status;
         waitpid(pid, &status, 0);
 
-        write(socket, cgiOutput.c_str(), cgiOutput.size());
-        printf("------------------CGI output sent-------------------\n");
+        // Construct the HTTP response
+        std::string httpResponse = "HTTP/1.1 200 OK\nContent-Type: text/html\n" +
+                                   std::string("Content-Length: ") + std::to_string(cgiOutput.length()) + "\n\n" +
+                                   cgiOutput;
+        
+        printf("------------------CGI output prepared-------------------\n");
+        return httpResponse;
     }
+
+    //line necessary to compile
+    return "HTTP/1.1 500 Internal Server Error\nContent-Length: 0\n\n";
 }
 
 
-void handleNotFound(int socket) {
+
+std::string handleNotFound(void) {
     std::string response = "HTTP/1.1 404 Not Found\r\nContent-Length: 0\r\n\r\n";
-    write(socket, response.c_str(), response.size());
+    // write(socket, response.c_str(), response.size());
+    printf("------------------404 Not Found sent-------------------\n");
+    return response;
 }
 
 
@@ -93,16 +104,18 @@ void handleConnection(int socket) {
     }
     std::cout << "Received HTTP request: " << std::endl << buffer << std::endl;
 
+    std::string response;
     if (strstr(buffer, "GET / HTTP/1.1") || strstr(buffer, "GET /home HTTP/1.1")) {
-        handleHomePage(socket);
+        response = handleHomePage();
     } else if (strstr(buffer, "GET /hello HTTP/1.1")) {
-        handleCGIRequest(socket);
+        response = handleCGIRequest();
     } else {
-        handleNotFound(socket);
+        response = handleNotFound();
     }
 
+    write(socket, response.c_str(), response.size());
     close(socket);
-}
+    }
 
 int main()
 {
