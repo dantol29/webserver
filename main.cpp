@@ -50,7 +50,8 @@ void handleHelloPage(int socket) {
         // non-const char arrays to avoid deprecation warnings
         char scriptPath[] = "./cgi-bin/hello.cgi";
         char *argv[] = {scriptPath, NULL};
-        char *envp[] = {NULL};
+        // char *envp[] = {NULL};
+        char *envp[] = {"QUERY_STRING=name=value&param2=something", NULL};
         if (execve(argv[0], argv, envp) == -1) {
             perror("execve failed");
             exit(EXIT_FAILURE);

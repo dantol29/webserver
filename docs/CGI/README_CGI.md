@@ -1,3 +1,5 @@
+## CGI (Common Gateway Interface)
+
 CGI (Common Gateway Interface) is a protocol or interface that enables web servers to execute external programs, known as CGI scripts, to generate web content dynamically. This mechanism allows the web server to pass data to and from an application, making it possible to generate and deliver dynamic content to web users.
 
 The process works as follows: when the web server receives a request, it forwards the data to the specified program. It sets various environment variables and marshals the parameters via standard input (stdin) and standard output (stdout).
