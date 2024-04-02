@@ -38,7 +38,7 @@ std::string handleHomePage();
  *
  * @param socket The socket descriptor through which the CGI script's output will be sent to the client.
  */
-std::string handleCGIRequest();
+std::string handleCGIRequest(const char* argv[], const char* envp[]);
 
 std::string handleNotFound(void);
 

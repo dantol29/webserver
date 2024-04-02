@@ -32,7 +32,7 @@ std::string handleHomePage() {
     return httpResponse;
 }
 
-std::string handleCGIRequest() {
+std::string handleCGIRequest(const char* argv[], const char* envp[]) {
     int pipefd[2];
     if (pipe(pipefd) == -1) {
         perror("pipe failed");
@@ -48,14 +48,11 @@ std::string handleCGIRequest() {
         dup2(pipefd[1], STDOUT_FILENO);
         close(pipefd[1]);
 
-        char scriptPath[] = "./cgi-bin/hello.cgi";
-        char *argv[] = {scriptPath, NULL};
-        char queryString[] = "QUERY_STRING=demo query string";
-        char *envp[] = {queryString, NULL};
-        if (execve(argv[0], argv, envp) == -1) {
-            perror("execve failed");
-            exit(EXIT_FAILURE);
-        }
+    //annoying casts to make execve happy
+    if (execve(argv[0], const_cast<char* const*>(argv), const_cast<char* const*>(envp)) == -1) {
+        perror("execve failed");
+        exit(EXIT_FAILURE);
+    }
     } else {
         close(pipefd[1]);
 
@@ -105,11 +102,15 @@ void handleConnection(int socket) {
     }
     std::cout << "Received HTTP request: " << std::endl << buffer << std::endl;
 
+
+    const char* argv[] = { "./cgi-bin/hello.cgi", NULL };
+    const char* envp[] = { "QUERY_STRING=Hello from C++ CGI!", NULL };
+
     std::string response;
     if (strstr(buffer, "GET / HTTP/1.1") || strstr(buffer, "GET /home HTTP/1.1")) {
         response = handleHomePage();
     } else if (strstr(buffer, "GET /hello HTTP/1.1")) {
-        response = handleCGIRequest();
+        response = handleCGIRequest(argv, envp);
     } else {
         response = handleNotFound();
     }
