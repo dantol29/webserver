@@ -14,10 +14,6 @@ std::string handleCGIRequest(const char* argv[]) {
     env.setVar("QUERY_STRING", "Hello from C++ CGI!");
 
     std::vector<char*> envp = env.getForExecve();
-    std::vector<char*> envpRawPointers(envp.size());
-    for (size_t i = 0; i < envp.size(); ++i) {
-        envpRawPointers[i] = envp[i];
-    }
 
     int pipefd[2];
     if (pipe(pipefd) == -1) {
