@@ -21,8 +21,8 @@ void handleConnection(int socket) {
     std::cout << "Received HTTP request: " << std::endl << buffer << std::endl;
 
     //test to execute the python script (see: https://www.tutorialspoint.com/python/python_cgi_programming.htm)
-    // const char* argv[] = { "./cgi-bin/hello_py.cgi", NULL };
-    const char* argv[] = { "./cgi-bin/hello.cgi", NULL };
+    const char* argv[] = { "./cgi-bin/hello_py.cgi", NULL };
+    // const char* argv[] = { "./cgi-bin/hello.cgi", NULL };
 
     std::string response;
     if (strstr(buffer, "GET / HTTP/1.1") || strstr(buffer, "GET /home HTTP/1.1")) {
