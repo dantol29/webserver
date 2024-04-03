@@ -4,6 +4,7 @@
 #include <string>
 #include "Environment.hpp"
 
+void *ft_memset(void *ptr, int value, size_t num);
 
 /**
  * Reads the entire content of an HTML file into a string.
