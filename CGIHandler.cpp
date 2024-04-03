@@ -7,11 +7,8 @@
 #include <fstream>
 #include <sstream>
 #include "include/webserv.hpp"
-#include "include/Environment.hpp"
 
-std::string handleCGIRequest(const char* argv[]) {
-    Environment env;
-    env.setVar("QUERY_STRING", "Hello from C++ CGI!");
+std::string handleCGIRequest(const char* argv[], Environment env) {
 
     std::vector<char*> envp = env.getForExecve();
 

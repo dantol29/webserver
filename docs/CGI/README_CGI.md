@@ -6,7 +6,7 @@ The process works as follows: when the web server receives a request, it forward
 
 CGI scripts are conventionally stored in `/cgi-bin/`, and have a `.cgi` extension. 
 
-Documentation for CGI can be found in the RFC 3875 ---(IS THAT THE GOOD RFC ?)--- available at [https://www.ietf.org/rfc/rfc3875.txt](https://www.ietf.org/rfc/rfc3875.txt)
+Documentation for CGI can be found in the RFC 3875 available at [https://www.ietf.org/rfc/rfc3875.txt](https://www.ietf.org/rfc/rfc3875.txt)
 
 
 ### Server-Side vs. Client-Side Programming

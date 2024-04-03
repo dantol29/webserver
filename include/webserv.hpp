@@ -2,6 +2,7 @@
 #define WEBSERV_H
 
 #include <string>
+#include "Environment.hpp"
 
 
 /**
@@ -23,16 +24,20 @@ std::string readHtml(const std::string& filePath);
 std::string handleHomePage();
 
 /**
- * 
  * Handles the execution of a CGI script and captures its output to construct an HTTP response.
- * This function sets up a pipe for capturing the standard output of a CGI script, forks the process,
- * and executes the script in the child process. The parent process reads the script's output from the pipe,
- * waits for the script to finish execution, and then constructs an HTTP response with the script's output.
- * @param argv The arguments to be passed to the CGI script, including the script path as the first argument.
- * @param envp The environment variables to be passed to the CGI script.
- * @return An HTTP response string containing the output of the CGI script execution, or a 500 Internal Server Error if an error occurs.
+ * This function sets up a pipe for capturing the standard output of the CGI script, forks the process,
+ * and executes the script in the child process using the provided environment settings. The parent process
+ * reads the script's output from the pipe, waits for the script to finish execution, and then constructs
+ * an HTTP response with the script's output. If an error occurs during the process, a 500 Internal Server Error
+ * response is generated instead.
+ * 
+ * @param argv An array of char pointers representing the arguments to be passed to the CGI script,
+ *             including the script path as the first argument.
+ * @param env An Environment object containing the environment variables to be passed to the CGI script.
+ * @return A string representing the HTTP response generated from the CGI script's output, or a 500 Internal
+ *         Server Error message if the script execution fails.
  */
-std::string handleCGIRequest(const char* argv[]);
+std::string handleCGIRequest(const char* argv[], Environment env);
 
 /**
  * Generates a standard HTTP 404 Not Found response.

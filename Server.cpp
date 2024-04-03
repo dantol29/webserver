@@ -28,7 +28,10 @@ void handleConnection(int socket) {
     if (strstr(buffer, "GET / HTTP/1.1") || strstr(buffer, "GET /home HTTP/1.1")) {
         response = handleHomePage();
     } else if (strstr(buffer, "GET /hello HTTP/1.1")) {
-        response = handleCGIRequest(argv);
+        //env has to be created before CGI, because it is passed to the CGI
+        Environment env;
+        env.setVar("QUERY_STRING", "Hello from C++ CGI!");
+        response = handleCGIRequest(argv, env);
     } else {
         response = handleNotFound();
     }
