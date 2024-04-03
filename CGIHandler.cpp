@@ -30,9 +30,8 @@ std::string handleCGIRequest(const char* argv[]) {
         dup2(pipefd[1], STDOUT_FILENO);
         close(pipefd[1]);
 
-        // Convert the vector to a suitable format for execve
-        // Ensure the vector exists and is not empty before getting its address
         if (!envp.empty()) {
+        // Convert the vector to a suitable format for execve
             if (execve(argv[0], const_cast<char* const*>(argv), &envp[0]) == -1) {
                 perror("execve failed");
                 exit(EXIT_FAILURE);

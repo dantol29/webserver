@@ -27,20 +27,20 @@ void Environment::setVar(const std::string& key, const std::string& value) {
  *         suitable for passing to execve.
  */
 std::vector<char*> Environment::getForExecve() const {
-    std::vector<char*> result;
-    for (std::map<std::string, std::string>::const_iterator it = envVars.begin(); it != envVars.end(); ++it) {
-        std::string env = it->first + "=" + it->second;
-        char* envCStr = new char[env.size() + 1];
-        std::strcpy(envCStr, env.c_str());
-        result.push_back(envCStr);
-    }
-    result.push_back(NULL);
-    return result;
+	std::vector<char*> result;
+	for (std::map<std::string, std::string>::const_iterator it = envVars.begin(); it != envVars.end(); ++it) {
+		std::string env = it->first + "=" + it->second;
+		char* envCStr = new char[env.size() + 1];
+		std::strcpy(envCStr, env.c_str());
+		result.push_back(envCStr);
+	}
+	result.push_back(NULL);
+	return result;
 }
 
 Environment::~Environment() {
-    std::vector<char*> envp = getForExecve();
-    for (size_t i = 0; i < envp.size(); ++i) {
-        delete[] envp[i];
-    }
+	std::vector<char*> envp = getForExecve();
+	for (size_t i = 0; i < envp.size(); ++i) {
+		delete[] envp[i];
+	}
 }
