@@ -7,8 +7,18 @@
 #include <fstream>
 #include <sstream>
 #include "include/webserv.hpp"
+#include "include/Environment.hpp"
 
-std::string handleCGIRequest(const char* argv[], const char* envp[]) {
+std::string handleCGIRequest(const char* argv[]) {
+    Environment env;
+    env.setVar("QUERY_STRING", "Hello from C++ CGI!");
+
+    std::vector<char*> envp = env.getForExecve();
+    std::vector<char*> envpRawPointers(envp.size());
+    for (size_t i = 0; i < envp.size(); ++i) {
+        envpRawPointers[i] = envp[i];
+    }
+
     int pipefd[2];
     if (pipe(pipefd) == -1) {
         perror("pipe failed");
@@ -24,11 +34,14 @@ std::string handleCGIRequest(const char* argv[], const char* envp[]) {
         dup2(pipefd[1], STDOUT_FILENO);
         close(pipefd[1]);
 
-    //annoying casts to make execve happy
-    if (execve(argv[0], const_cast<char* const*>(argv), const_cast<char* const*>(envp)) == -1) {
-        perror("execve failed");
-        exit(EXIT_FAILURE);
-    }
+        // Convert the vector to a suitable format for execve
+        // Ensure the vector exists and is not empty before getting its address
+        if (!envp.empty()) {
+            if (execve(argv[0], const_cast<char* const*>(argv), &envp[0]) == -1) {
+                perror("execve failed");
+                exit(EXIT_FAILURE);
+            }
+        }
     } else {
         close(pipefd[1]);
 

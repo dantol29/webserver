@@ -8,6 +8,7 @@ SRCS = main.cpp \
 		Server.cpp \
 		RequestHandler.cpp \
 		CGIHandler.cpp \
+		Environment.cpp \
 		Utils.cpp
 OBJDIR = obj
 OBJS = $(addprefix $(OBJDIR)/, $(SRCS:.cpp=.o))

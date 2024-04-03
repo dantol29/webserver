@@ -23,6 +23,7 @@ std::string readHtml(const std::string& filePath);
 std::string handleHomePage();
 
 /**
+ * 
  * Handles the execution of a CGI script and captures its output to construct an HTTP response.
  * This function sets up a pipe for capturing the standard output of a CGI script, forks the process,
  * and executes the script in the child process. The parent process reads the script's output from the pipe,
@@ -31,7 +32,7 @@ std::string handleHomePage();
  * @param envp The environment variables to be passed to the CGI script.
  * @return An HTTP response string containing the output of the CGI script execution, or a 500 Internal Server Error if an error occurs.
  */
-std::string handleCGIRequest(const char* argv[], const char* envp[]);
+std::string handleCGIRequest(const char* argv[]);
 
 /**
  * Generates a standard HTTP 404 Not Found response.

@@ -23,13 +23,12 @@ void handleConnection(int socket) {
     //test to execute the python script (see: https://www.tutorialspoint.com/python/python_cgi_programming.htm)
     // const char* argv[] = { "./cgi-bin/hello_py.cgi", NULL };
     const char* argv[] = { "./cgi-bin/hello.cgi", NULL };
-    const char* envp[] = { "QUERY_STRING=Hello from C++ CGI!", NULL };
 
     std::string response;
     if (strstr(buffer, "GET / HTTP/1.1") || strstr(buffer, "GET /home HTTP/1.1")) {
         response = handleHomePage();
     } else if (strstr(buffer, "GET /hello HTTP/1.1")) {
-        response = handleCGIRequest(argv, envp);
+        response = handleCGIRequest(argv);
     } else {
         response = handleNotFound();
     }
