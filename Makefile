@@ -5,11 +5,11 @@ DEPFLAGS = -MMD -MP
 
 # Source and Object Files
 SRCS = main.cpp \
-		Server.cpp \
-		RequestHandler.cpp \
-		CGIHandler.cpp \
-		Environment.cpp \
-		Utils.cpp
+	Server.cpp \
+	RequestHandler.cpp \
+	CGIHandler.cpp \
+	Environment.cpp \
+	Utils.cpp
 OBJDIR = obj
 OBJS = $(addprefix $(OBJDIR)/, $(SRCS:.cpp=.o))
 
@@ -17,10 +17,11 @@ OBJS = $(addprefix $(OBJDIR)/, $(SRCS:.cpp=.o))
 TARGET = webserv
 
 # Ensure the OBJDIR exists before compiling anything
-$(shell mkdir -p $(OBJDIR))
+$(OBJDIR):
+	mkdir -p $(OBJDIR)
 
 # Rule for compiling source files into object files
-$(OBJDIR)/%.o: %.cpp
+$(OBJDIR)/%.o: %.cpp | $(OBJDIR)
 	$(CXX) $(CXXFLAGS) $(DEPFLAGS) -c $< -o $@
 
 # Build Rules
