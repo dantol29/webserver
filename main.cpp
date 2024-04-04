@@ -1,5 +1,4 @@
 #include <cstdlib> // For exit() and EXIT_FAILURE
-#include <cstring> // For memset
 #include <iostream>
 #include <netinet/in.h> // For sockaddr_in
 #include <sys/socket.h> // For socket functions
@@ -31,6 +30,21 @@ const char *returnHTML()
 		   "</html>";
 }
 
+void *ft_memset(void *ptr, int value, size_t num)
+{
+	// Cast the pointer to a char pointer, as we're dealing with bytes
+	unsigned char *p = static_cast<unsigned char *>(ptr);
+
+	// Fill the specified memory area with the given value
+	for (size_t i = 0; i < num; ++i)
+	{
+		p[i] = static_cast<unsigned char>(value);
+	}
+
+	// Return the original pointer
+	return ptr;
+}
+
 int main()
 {
 	int server_fd, new_socket;
@@ -47,10 +61,28 @@ int main()
 		exit(EXIT_FAILURE);
 	}
 
+	int opt = 1;
+	// Set SO_REUSEADDR to allow re-binding to the same address and port
+
+	if (setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)))
+	{
+		perror("setsockopt");
+		exit(EXIT_FAILURE);
+	}
+
+	// Try to set SO_REUSEPORT
+	if (setsockopt(server_fd, SOL_SOCKET, SO_REUSEPORT, &opt, sizeof(opt)))
+	{
+		perror("setsockopt SO_REUSEPORT: Protocol not available, continuing without SO_REUSEPORT");
+		// Don't exit on failure; it's not critical for basic server functionality
+		// Setting SO_REUSEPORT is not supported on all systems and setting it on the same call was causing the server
+		// to fail
+	}
+
 	address.sin_family = AF_INET;
 	address.sin_addr.s_addr = INADDR_ANY;
 	address.sin_port = htons(PORT);
-	memset(address.sin_zero, '\0', sizeof address.sin_zero);
+	ft_memset(address.sin_zero, '\0', sizeof address.sin_zero);
 
 	if (bind(server_fd, (struct sockaddr *)&address, sizeof(address)) < 0)
 	{
@@ -64,7 +96,7 @@ int main()
 	}
 	while (1)
 	{
-		printf("\n+++++++ Waiting for new connection ++++++++\n\n");
+		std::cout << "\n+++++++ Waiting for new connection ++++++++\n\n";
 		if ((new_socket = accept(server_fd, (struct sockaddr *)&address, (socklen_t *)&addrlen)) < 0)
 		{
 			perror("In accept");
@@ -78,10 +110,10 @@ int main()
 			exit(EXIT_FAILURE);
 		}
 		std::cout << "Received http request: " << std::endl << buffer << std::endl;
-		printf("%s\n", buffer);
+		std::cout << buffer << std::endl;
 		// Respond to the request with some HTML
 		write(new_socket, returnHTML(), strlen(returnHTML()));
-		printf("------------------HTML message sent-------------------\n");
+		std::cout << "------------------HTML message sent-------------------" << std::endl;
 
 		close(new_socket);
 	}
