@@ -90,5 +90,10 @@ int	parseRequestLine(char *request)
 
 int	parseHttpRequest(char *request)
 {
+	// put it in the main after read to test
+	// int	parseHttpRequest(char *request);
+	// int statusCode = parseHttpRequest(buffer);
+	// std::cout << statusCode << std::endl;
+	// put it in the main after read to test
 	return (parseRequestLine(request));
 }
