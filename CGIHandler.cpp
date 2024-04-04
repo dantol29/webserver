@@ -51,8 +51,7 @@ std::string handleCGIRequest(const char* argv[], Environment env) {
 
         // Construct the HTTP response
         std::string httpResponse = "HTTP/1.1 200 OK\nContent-Type: text/html\n" +
-                                   std::string("Content-Length: ") + std::to_string(cgiOutput.length()) + "\n\n" +
-                                   cgiOutput;
+                        std::string("Content-Length: ") + toString(cgiOutput.length()) + "\n\n" + cgiOutput;
         
         std::cout << "------------------CGI output prepared-------------------" << std::endl;
         return httpResponse;

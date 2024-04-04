@@ -3,8 +3,19 @@
 
 #include <string>
 #include "Environment.hpp"
+#include <sstream>
+
+//declared here because it is a template function
+//instead of to_string which is c++11, we use this function
+template <typename T>
+std::string toString(const T& value) {
+    std::ostringstream oss;
+    oss << value;
+    return oss.str();
+}
 
 void *ft_memset(void *ptr, int value, size_t num);
+
 
 /**
  * Reads the entire content of an HTML file into a string.
