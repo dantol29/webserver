@@ -1,11 +1,11 @@
 #include "HTTPRequest.hpp"
 
-HTTPRequest::HTTPRequest() : method(""), requestTarget(""), protocolVersion(""){
+HTTPRequest::HTTPRequest() : _method(""), _requestTarget(""), _protocolVersion(""){
 
 }
 
 HTTPRequest::HTTPRequest(char *request){
-	statusCode = parseRequestLine(request);
+	_statusCode = parseRequestLine(request);
 }
 
 HTTPRequest::~HTTPRequest(){
@@ -13,19 +13,19 @@ HTTPRequest::~HTTPRequest(){
 }
 
 std::string HTTPRequest::getMethod() const{
-	return (method);
+	return (_method);
 }
 
 std::string HTTPRequest::getProtocolVersion() const{
-	return (protocolVersion);
+	return (_protocolVersion);
 }
 
 std::string HTTPRequest::getRequestTarget() const{
-	return (requestTarget);
+	return (_requestTarget);
 }
 
 int	HTTPRequest::getStatusCode() const{
-	return (statusCode);
+	return (_statusCode);
 }
 
 std::string	extractMethod(char *request, int &i)
@@ -87,20 +87,20 @@ int	HTTPRequest::parseRequestLine(char *request)
 	int			i;
 
 	i = 0;
-	method = extractMethod(request, i);
-	if (method.empty()) // A server that receives a method longer than any that it implements
+	_method = extractMethod(request, i);
+	if (_method.empty()) // A server that receives a method longer than any that it implements
 		return (501); // SHOULD respond with a 501 (Not Implemented).
 	if (request[i++] != ' ') // single space
 		return (400);
-	requestTarget = extractRequestTarget(request, i);
-	if (requestTarget.empty()) // A server that receives a request-target longer 
+	_requestTarget = extractRequestTarget(request, i);
+	if (_requestTarget.empty()) // A server that receives a request-target longer 
 		return (414); // than any URI it wishes to parse MUST respond with a 414 (URI Too Long).
 	if (request[i++] != ' ') // single space
 		return (400);
-	if (!checkRequestTarget(requestTarget))
+	if (!checkRequestTarget(_requestTarget))
 		return (400); // An invalid request-line SHOULD respond with a 400 (Bad Request).
-	protocolVersion = extractProtocolVersion(request, i);
-	if (protocolVersion.empty())
+	_protocolVersion = extractProtocolVersion(request, i);
+	if (_protocolVersion.empty())
 		return (400);
 	if (request[i] != '\r' || !request[i + 1] || request[i + 1] != '\n') // CRLF
 		return (400); // The combination of \r\n serves as a standard way to denote the end of a line in HTTP headers.

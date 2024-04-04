@@ -23,8 +23,8 @@ class HTTPRequest{
 		std::string getProtocolVersion() const;
 	private:
 		int			parseRequestLine(char *request);
-		int			statusCode;
-		std::string method;
-		std::string	requestTarget;
-		std::string protocolVersion;
+		int			_statusCode;
+		std::string _method;
+		std::string	_requestTarget;
+		std::string _protocolVersion;
 };
