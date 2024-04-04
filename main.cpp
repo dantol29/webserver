@@ -8,6 +8,8 @@
 const int PORT = 8080;
 const int BUFFER_SIZE = 1024;
 
+int	parseHttpRequest(char *request);
+
 const char *returnHTML()
 {
 	return "HTTP/1.1 200 OK\nContent-Type: text/html\n"
@@ -78,6 +80,7 @@ int main()
 			exit(EXIT_FAILURE);
 		}
 		std::cout << "Received http request: " << std::endl << buffer << std::endl;
+		std::cout << "Status code: " << parseHttpRequest(buffer) << std::endl;
 		printf("%s\n", buffer);
 		// Respond to the request with some HTML
 		write(new_socket, returnHTML(), strlen(returnHTML()));
