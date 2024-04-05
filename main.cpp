@@ -3,7 +3,11 @@
 #include <netinet/in.h> // For sockaddr_in
 #include <sys/socket.h> // For socket functions
 #include <unistd.h>		// For read, write, and close
-
+#include <stdio.h>
+#include <string.h>
+#include <string.h>
+#include <stdio.h>
+#include "HTTPRequest.hpp"
 const int PORT = 8080;
 const int BUFFER_SIZE = 1024;
 
@@ -104,6 +108,15 @@ int main()
 		}
 
 		valread = read(new_socket, buffer, BUFFER_SIZE);
+		HTTPRequest obj(buffer);
+		std::cout << obj.getStatusCode() << std::endl;
+		std::map<std::string, std::string> storage = obj.getStorage();
+		std::map<std::string, std::string>::iterator it =  storage.begin();
+		
+		while (it != storage.end()){
+			std::cout << "key: " << it->first << ", value: " << it->second << std::endl;
+			it++;
+		}
 		if (valread < 0)
 		{
 			perror("In read");
