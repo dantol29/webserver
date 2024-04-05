@@ -37,5 +37,10 @@ class HTTPRequest{
 		std::string _protocolVersion;
 };
 
-bool isOrForm(std::string requestTarget, int &queryStart);
-bool fileExists(std::string requestTarget, bool isOriginForm, int queryStart);
+bool		isOrigForm(std::string requestTarget, int &queryStart);
+bool		fileExists(std::string requestTarget, bool isOriginForm, int queryStart);
+std::string	extractValue(std::string variables, int &i);
+std::string extractKey(std::string variables, int &i, int startPos);
+std::string extractRequestTarget(char *request, int &i);
+std::string extractProtocolVersion(char *request, int &i);
+std::string	extractMethod(char *request, int &i);

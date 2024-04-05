@@ -7,7 +7,7 @@ DEPFLAGS = -MMD -MP
 TARGET = webserv
 
 # Source and Object Files
-SRCS = main.cpp HTTPRequest.cpp utils.cpp
+SRCS = main.cpp HTTPRequest.cpp HTTPRequestUtils.cpp
 
 # Create an obj directory if it doesn't exist
 OBJDIR = obj

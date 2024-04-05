@@ -57,50 +57,6 @@ bool	HTTPRequest::addStorage(std::string key, std::string value){
 	return (true);
 }
 
-std::string	extractMethod(char *request, int &i)
-{
-	std::string	method;
-	std::string	string_request(request);
-
-	while (request[i] && request[i] != ' ')
-		i++;
-	method = string_request.substr(0, i);
-	//std::cout << method << std::endl;
-	if (method == "GET" || method == "POST" || method == "DELETE")
-		return (method);
-	return ("");
-}
-
-std::string extractRequestTarget(char *request, int &i)
-{
-	std::string	requestTarget;
-	std::string	string_request(request);
-	int			start = i;
-
-	while (request[i] && request[i] != ' ')
-		i++;
-	if (i > MAX_URI)
-		return ("");
-	requestTarget = string_request.substr(start, i - start);
-	//std::cout << requestTarget << std::endl;
-	return (requestTarget);
-}
-
-std::string extractProtocolVersion(char *request, int &i)
-{
-	std::string	protocolVersion;
-	std::string	string_request(request);
-	int			start = i;
-
-	while (request[i] && request[i] != '\r')
-		i++;
-	protocolVersion = string_request.substr(start, i - start);
-	//std::cout << protocolVersion << std::endl;
-	if (protocolVersion == "HTTP/1.1")
-		return (protocolVersion);
-	return ("");
-}
-
 bool	saveVariables(std::string variables, HTTPRequest* obj)
 {
 	int	startPos = 0;
@@ -109,25 +65,18 @@ bool	saveVariables(std::string variables, HTTPRequest* obj)
 
 	for (int i = 0; i < (int)variables.length(); i++){
 		if (variables[i] == '='){
-			if (i == 0)
+			key = extractKey(variables, i, startPos);
+			if (key.empty())
 				return (false);
-			if (variables[startPos] == '&')
-				startPos++;
-			key = variables.substr(startPos, i - startPos);
-			startPos = i;
-			while (variables[i] && variables[i] != '&')
-				i++;
-			if (variables[startPos] == '=')
-				startPos++;
-			value = variables.substr(startPos, i - startPos);
+			value = extractValue(variables, i);
+			if (value.empty())
+				return (false);
 			startPos = i;
 			obj->addStorage(key, value);
 		}
 	}
 	return (true);
 }
-// std::cout << "." + requestTarget.substr(0, queryStart) << std::endl;
-// std::cout << requestTarget.substr(queryStart, strlen(requestTarget.c_str()) - queryStart) << std::endl;
 
 bool	checkRequestTarget(std::string requestTarget, HTTPRequest* obj)
 {
@@ -136,7 +85,7 @@ bool	checkRequestTarget(std::string requestTarget, HTTPRequest* obj)
 
 	if (requestTarget == "/")
 		return (true);
-	isOriginForm = isOrForm(requestTarget, queryStart);
+	isOriginForm = isOrigForm(requestTarget, queryStart);
 	if (!fileExists(requestTarget, isOriginForm, queryStart))
 		return (false);
 	if (isOriginForm)
