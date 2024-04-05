@@ -7,6 +7,7 @@
 #include <fstream>
 #include <sstream>
 #include "include/webserv.hpp"
+#include "HTTPRequest.hpp"
 
 const int BUFFER_SIZE = 1024;
 
@@ -14,6 +15,8 @@ const int BUFFER_SIZE = 1024;
 void handleConnection(int socket) {
     char buffer[BUFFER_SIZE] = {0};
     long valread = read(socket, buffer, BUFFER_SIZE);
+	HTTPRequest obj(buffer);
+	std::cout << obj.getStatusCode() << std::endl;
     if (valread < 0) {
         perror("In read");
         exit(EXIT_FAILURE);
