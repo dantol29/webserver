@@ -5,12 +5,31 @@ HTTPRequest::HTTPRequest() : _method(""), _requestTarget(""), _protocolVersion("
 
 }
 
-HTTPRequest::HTTPRequest(char *request){
-	_statusCode = parseRequestLine(request);
+HTTPRequest::HTTPRequest(const HTTPRequest& obj){
+	_method = obj._method;
+	_requestTarget = obj._requestTarget;
+	_protocolVersion = obj._protocolVersion;
+	_statusCode = obj._statusCode;
+	_storage = obj._storage;
+}
+
+HTTPRequest& HTTPRequest::operator=(const HTTPRequest& obj){
+	if (this != &obj){
+		_method = obj._method;
+		_requestTarget = obj._requestTarget;
+		_protocolVersion = obj._protocolVersion;
+		_statusCode = obj._statusCode;
+		_storage = obj._storage;
+	}
+	return (*this);
 }
 
 HTTPRequest::~HTTPRequest(){
 
+}
+
+HTTPRequest::HTTPRequest(char *request){
+	_statusCode = parseRequestLine(request);
 }
 
 std::string HTTPRequest::getMethod() const{
