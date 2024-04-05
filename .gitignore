@@ -8,6 +8,8 @@
 # Except for these file types in any directory
 !**/*.c
 !**/*.cpp
+!**/*.html
+!**/*.cgi
 !**/*.h
 !**/*.hpp
 !**/*.md
@@ -21,6 +23,7 @@
 !Makefile
 !.clang-format
 !.vscode/
+!.cgi-bin/
 !docs/
 !tests/
 

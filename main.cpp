@@ -2,33 +2,12 @@
 #include <iostream>
 #include <netinet/in.h> // For sockaddr_in
 #include <sys/socket.h> // For socket functions
-#include <unistd.h>		// For read, write, and close
+#include <unistd.h>     // For read, write, and close
+#include <fstream>
+#include <sstream>
+#include "include/webserv.hpp"
 
 const int PORT = 8080;
-const int BUFFER_SIZE = 1024;
-
-const char *returnHTML()
-{
-	return "HTTP/1.1 200 OK\nContent-Type: text/html\n"
-		   "Content-Length: 198\n\n"
-		   "<!DOCTYPE html>"
-		   "<html>"
-		   "<head>"
-		   "<style>"
-		   "h1 {"
-		   "  background-color: yellow;"
-		   "  color: lightblue;"
-		   "  border: 2px solid pink;"
-		   "  padding: 10px;"
-		   "  text-align: center;"
-		   "}"
-		   "</style>"
-		   "</head>"
-		   "<body>"
-		   "<h1>Hello, Webserv!</h1>"
-		   "</body>"
-		   "</html>";
-}
 
 void *ft_memset(void *ptr, int value, size_t num)
 {
@@ -47,19 +26,16 @@ void *ft_memset(void *ptr, int value, size_t num)
 
 int main()
 {
-	int server_fd, new_socket;
-	long valread;
-	struct sockaddr_in address;
-	int addrlen = sizeof(address);
+    int server_fd;
+    struct sockaddr_in address;
+    int addrlen = sizeof(address);
 
-	char buffer[BUFFER_SIZE] = {0};
-
-	// Creating socket file descriptor
-	if ((server_fd = socket(AF_INET, SOCK_STREAM, 0)) == 0)
-	{
-		perror("In socket");
-		exit(EXIT_FAILURE);
-	}
+    // Creating socket file descriptor
+    if ((server_fd = socket(AF_INET, SOCK_STREAM, 0)) == 0)
+    {
+        perror("In socket");
+        exit(EXIT_FAILURE);
+    }
 
 	int opt = 1;
 	// Set SO_REUSEADDR to allow re-binding to the same address and port
@@ -83,39 +59,25 @@ int main()
 	address.sin_addr.s_addr = INADDR_ANY;
 	address.sin_port = htons(PORT);
 	ft_memset(address.sin_zero, '\0', sizeof address.sin_zero);
-
-	if (bind(server_fd, (struct sockaddr *)&address, sizeof(address)) < 0)
-	{
-		perror("In bind");
-		exit(EXIT_FAILURE);
-	}
-	if (listen(server_fd, 10) < 0)
-	{
-		perror("In listen");
-		exit(EXIT_FAILURE);
-	}
-	while (1)
-	{
-		std::cout << "\n+++++++ Waiting for new connection ++++++++\n\n";
-		if ((new_socket = accept(server_fd, (struct sockaddr *)&address, (socklen_t *)&addrlen)) < 0)
-		{
-			perror("In accept");
-			exit(EXIT_FAILURE);
-		}
-
-		valread = read(new_socket, buffer, BUFFER_SIZE);
-		if (valread < 0)
-		{
-			perror("In read");
-			exit(EXIT_FAILURE);
-		}
-		std::cout << "Received http request: " << std::endl << buffer << std::endl;
-		std::cout << buffer << std::endl;
-		// Respond to the request with some HTML
-		write(new_socket, returnHTML(), strlen(returnHTML()));
-		std::cout << "------------------HTML message sent-------------------" << std::endl;
-
-		close(new_socket);
-	}
-	return 0;
+    
+    if (bind(server_fd, (struct sockaddr *)&address, sizeof(address)) < 0)
+    {
+        perror("In bind");
+        exit(EXIT_FAILURE);
+    }
+    if (listen(server_fd, 10) < 0)
+    {
+        perror("In listen");
+        exit(EXIT_FAILURE);
+    }
+      while (1) {
+        std::cout << "++++++++++++++ Waiting for new connection +++++++++++++++" << std::endl;
+        int new_socket = accept(server_fd, (struct sockaddr *)&address, (socklen_t*)&addrlen);
+        if (new_socket < 0) {
+            perror("In accept");
+            exit(EXIT_FAILURE);
+        }
+        handleConnection(new_socket);
+    }
+    return 0;
 }
