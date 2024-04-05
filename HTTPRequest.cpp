@@ -29,7 +29,10 @@ HTTPRequest::~HTTPRequest(){
 }
 
 HTTPRequest::HTTPRequest(char *request){
-	_statusCode = parseRequestLine(request);
+	if (strlen(request) < 7)
+		_statusCode = 400;
+	else
+		_statusCode = parseRequestLine(request);
 }
 
 std::string HTTPRequest::getMethod() const{
@@ -89,8 +92,9 @@ bool	checkRequestTarget(std::string requestTarget, HTTPRequest* obj)
 	if (!fileExists(requestTarget, isOriginForm, queryStart))
 		return (false);
 	if (isOriginForm)
-		saveVariables(requestTarget.substr(\
-		queryStart + 1, strlen(requestTarget.c_str()) - queryStart), obj);
+		if (!saveVariables(requestTarget.substr(\
+		queryStart + 1, strlen(requestTarget.c_str()) - queryStart), obj))
+			return (false);
 	return (true);
 }
 

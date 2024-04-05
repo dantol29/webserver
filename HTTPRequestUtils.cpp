@@ -12,6 +12,8 @@ std::string	extractValue(std::string variables, int &i)
 	}
 	if (variables[startPos] == '=')
 		startPos++;
+	if (variables[i] == '&' && !variables[i + 1])
+		return ("");
 	return (variables.substr(startPos, i - startPos));
 }
 
@@ -21,6 +23,9 @@ std::string extractKey(std::string variables, int &i, int startPos)
 		return ("");
 	if (variables[startPos] == '&')
 		startPos++;
+	if (variables.substr(startPos, i - startPos).find('&') != std::string::npos \
+	|| variables.substr(startPos, i - startPos).find('?') != std::string::npos)
+		return ("");
 	return (variables.substr(startPos, i - startPos));
 }
 
