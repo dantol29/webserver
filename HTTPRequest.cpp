@@ -36,7 +36,7 @@ std::string	extractMethod(char *request, int &i)
 	while (request[i] && request[i] != ' ')
 		i++;
 	method = string_request.substr(0, i);
-	std::cout << method << std::endl;
+	//std::cout << method << std::endl;
 	if (method == "GET" || method == "POST" || method == "DELETE")
 		return (method);
 	return ("");
@@ -53,7 +53,7 @@ std::string extractRequestTarget(char *request, int &i)
 	if (i > MAX_URI)
 		return ("");
 	requestTarget = string_request.substr(start, i - start);
-	std::cout << requestTarget << std::endl;
+	//std::cout << requestTarget << std::endl;
 	return (requestTarget);
 }
 
@@ -66,7 +66,7 @@ std::string extractProtocolVersion(char *request, int &i)
 	while (request[i] && request[i] != '\r')
 		i++;
 	protocolVersion = string_request.substr(start, i - start);
-	std::cout << protocolVersion << std::endl;
+	//std::cout << protocolVersion << std::endl;
 	if (protocolVersion == "HTTP/1.1")
 		return (protocolVersion);
 	return ("");
@@ -76,7 +76,7 @@ bool	checkRequestTarget(std::string requestTarget)
 {
 	if (requestTarget == "/")
 		return (true);
-	std::cout << "." + requestTarget << std::endl;
+	//std::cout << "." + requestTarget << std::endl;
 	if (access(("." + requestTarget).c_str(), F_OK) == -1)
 		return (false);
 	return (true);

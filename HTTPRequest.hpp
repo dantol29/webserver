@@ -2,6 +2,8 @@
 #include <iostream>
 #include <unistd.h>
 
+// It is RECOMMENDED that all HTTP 
+// senders and recipients support, at a minimum, request-line lengths of 8000 octets
 # define MAX_URI 200
 
 
