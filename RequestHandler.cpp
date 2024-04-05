@@ -10,8 +10,11 @@
 
 std::string handleHomePage() {
     std::string htmlContent = readHtml("./html/home.html");
+	std::stringstream ss;
+    ss << htmlContent.length();
+    std::string htmlLength = ss.str();
     std::string httpResponse = "HTTP/1.1 200 OK\nContent-Type: text/html\n" +
-                               std::string("Content-Length: ") + std::to_string(htmlContent.length()) + "\n\n" +
+                               std::string("Content-Length: ") + htmlLength + "\n\n" +
                                htmlContent;
     std::cout << "------------------Home page returned from handleHomePage()-------------------" << std::endl;
     return httpResponse;
