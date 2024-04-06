@@ -7,7 +7,7 @@
 #include <sstream>
 #include <poll.h>
 #include <vector>
-#include "include/webserv.hpp"
+#include "webserv.hpp"
 
 const int PORT = 8080;
 
@@ -15,7 +15,7 @@ int main()
 {
 	int serverFD;
 	struct sockaddr_in address;
-	int addrlen = sizeof(address);
+	int addrLen = sizeof(address);
 
 	// Creating socket file descriptor
 	if ((serverFD = socket(AF_INET, SOCK_STREAM, 0)) == 0)
@@ -73,7 +73,6 @@ int main()
 	// Not necessary since we are using poll
 	// int flags = fcntl(server_fd, F_GETFL, 0);
 	// fcntl(server_fd, F_SETFL, flags | O_NONBLOCK);
-
 	while (1)
 	{
 		std::cout << "++++++++++++++ Waiting for new connection +++++++++++++++" << std::endl;
@@ -94,15 +93,15 @@ int main()
 					{
 						std::cout << "New connection detected" << std::endl;
 						// accept is blocking but we know that the server socket is readable
-						int new_socket = accept(serverFD, (struct sockaddr *)&address, (socklen_t *)&addrlen);
+						int new_socket = accept(serverFD, (struct sockaddr *)&address, (socklen_t *)&addrLen);
 						if (new_socket >= 0)
 						{
 							// Add the new socket to the pollfd structure
-							struct pollfd new_socket_poll;
-							new_socket_poll.fd = new_socket;
-							new_socket_poll.events = POLLIN;
-							new_socket_poll.revents = 0;
-							fds.push_back(new_socket_poll);
+							struct pollfd newSocketPoll;
+							newSocketPoll.fd = new_socket;
+							newSocketPoll.events = POLLIN;
+							newSocketPoll.revents = 0;
+							fds.push_back(newSocketPoll);
 						}
 						else
 						{
