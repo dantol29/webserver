@@ -78,6 +78,7 @@
 - camelCase for variable names (except for classes which should be PascalCase)
 - snake_case for files (except files containing classes)
 - PascalCase for files containing classes
+- SCREAMING_CAMEL_CASE for constants and macros
 
 ## Coding Standards
 
