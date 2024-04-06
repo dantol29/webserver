@@ -6,7 +6,7 @@
 #include <unistd.h>     // For read, write, and close
 #include <fstream>
 #include <sstream>
-#include "include/webserv.hpp"
+#include "webserv.hpp"
 #include <sys/wait.h>
 
 std::string handleCGIRequest(const char* argv[], Environment env) {

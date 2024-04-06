@@ -1,31 +1,28 @@
 # Compiler and Flags
 CXX = c++
-CXXFLAGS = -Wall -Wextra -Werror -std=c++98 -I. -Iinclude
+CXXFLAGS = -Wall -Wextra -Werror -std=c++98 -I. -Iinclude -Isrc
 DEPFLAGS = -MMD -MP
 
 # Source and Object Files
-SRCS = main.cpp \
-	server.cpp \
-	request_handler.cpp \
-	CGI_handler.cpp \
-	Environment.cpp \
-	utils.cpp \
-	HTTPRequest.cpp
+SRCS = src/main.cpp \
+	src/server.cpp \
+	src/request_handler.cpp \
+	src/CGI_handler.cpp \
+	src/Environment.cpp \
+	src/utils.cpp \
+	src/HTTPRequest.cpp
 OBJDIR = obj
-OBJS = $(addprefix $(OBJDIR)/, $(SRCS:.cpp=.o))
+OBJS = $(SRCS:%.cpp=$(OBJDIR)/%.o)
 
 # Main Target
 TARGET = webserv
 
 # Build Rules
-all: $(OBJDIR)  $(TARGET)
+all: $(TARGET)
 
-# Ensure the OBJDIR exists before compiling anything
-$(OBJDIR):
-	mkdir -p $(OBJDIR)
-
-# Rule for compiling source files into object files
-$(OBJDIR)/%.o: %.cpp | $(OBJDIR)
+# Ensure the necessary directories exist before compiling anything
+$(OBJDIR)/%.o: %.cpp
+	@mkdir -p $(@D)
 	$(CXX) $(CXXFLAGS) $(DEPFLAGS) -c $< -o $@
 
 # Linking the main target
