@@ -81,7 +81,7 @@ bool	saveVariables(std::string variables, HTTPRequest* obj)
 	return (true);
 }
 
-bool	checkRequestTarget(std::string requestTarget, HTTPRequest* obj)
+bool	checkRequestTarget(std::string& requestTarget, HTTPRequest* obj)
 {
 	bool	isOriginForm;
 	int		queryStart = 0;

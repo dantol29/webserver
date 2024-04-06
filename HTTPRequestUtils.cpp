@@ -1,6 +1,6 @@
 #include "HTTPRequest.hpp"
 
-std::string	extractValue(std::string variables, int &i)
+std::string	extractValue(std::string& variables, int &i)
 {
 	int	startPos;
 
@@ -17,7 +17,7 @@ std::string	extractValue(std::string variables, int &i)
 	return (variables.substr(startPos, i - startPos));
 }
 
-std::string extractKey(std::string variables, int &i, int startPos)
+std::string extractKey(std::string& variables, int &i, int startPos)
 {
 	if (i == 0)
 		return ("");
@@ -73,7 +73,7 @@ std::string	extractMethod(char *request, int &i)
 	return ("");
 }
 
-bool isOrigForm(std::string requestTarget, int &queryStart){
+bool isOrigForm(std::string &requestTarget, int &queryStart){
 	for (int i = 0; i < (int)requestTarget.length(); i++){
 		if (requestTarget[i] == '?'){
 			queryStart = i;
@@ -83,7 +83,7 @@ bool isOrigForm(std::string requestTarget, int &queryStart){
 	return (false);
 }
 
-bool fileExists(std::string requestTarget, bool isOriginForm, int queryStart){
+bool fileExists(std::string &requestTarget, bool isOriginForm, int queryStart){
 	if (isOriginForm && \
 	access(("." + requestTarget.substr(0, queryStart)).c_str(), F_OK) == -1)
 		return (false);
