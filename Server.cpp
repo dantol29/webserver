@@ -14,15 +14,10 @@ const int BUFFER_SIZE = 1024;
     // Determine the type of request and call the appropriate handler
 void handleConnection(int socket) {
     char buffer[BUFFER_SIZE] = {0};
-<<<<<<< HEAD
     long valRead = read(socket, buffer, BUFFER_SIZE);
-    if (valRead < 0) {
-=======
-    long valread = read(socket, buffer, BUFFER_SIZE);
 	HTTPRequest obj(buffer);
 	std::cout << obj.getStatusCode() << std::endl;
-    if (valread < 0) {
->>>>>>> e16bbe8572a876c5069b7c4ed7d1d1a22237b5fe
+    if (valRead < 0) {
         perror("In read");
         exit(EXIT_FAILURE);
     }
