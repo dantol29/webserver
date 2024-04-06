@@ -80,13 +80,30 @@ int main()
 	while (1)
 	{
 		std::cout << "++++++++++++++ Waiting for new connection +++++++++++++++" << std::endl;
-		int new_socket = accept(server_fd, (struct sockaddr *)&address, (socklen_t *)&addrlen);
-		if (new_socket < 0)
+		int ret = poll(fds, 1, -1); // -1 means wait indefinitely
+		if (ret > 0)
 		{
-			perror("In accept");
+			if (fds[0].revents & POLLIN)
+			{
+				std::cout << "New connection detected" << std::endl;
+				int new_socket = accept(server_fd, (struct sockaddr *)&address, (socklen_t *)&addrlen);
+				if (new_socket < 0)
+				{
+					perror("In accept");
+					exit(EXIT_FAILURE);
+				}
+				handleConnection(new_socket);
+			}
+		}
+		else if (ret == 0)
+		{
+			std::cout << "Timeout occurred!" << std::endl; // This should never happen with an infinite timeout
+		}
+		else
+		{
+			perror("poll");
 			exit(EXIT_FAILURE);
 		}
-		handleConnection(new_socket);
 	}
 	return 0;
 }
