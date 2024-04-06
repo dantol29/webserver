@@ -5,6 +5,7 @@
 #include <unistd.h>		// For read, write, and close
 #include <fstream>
 #include <sstream>
+#include <poll.h>
 #include "include/webserv.hpp"
 
 const int PORT = 8080;
@@ -71,6 +72,11 @@ int main()
 		perror("In listen");
 		exit(EXIT_FAILURE);
 	}
+	// Create and initailize the pollfd structure for the server socket
+	struct pollfd fds[1];
+	fds[0].fd = server_fd;
+	// We are listening for incoming connections, i.e. the socket will be readable
+	fds[0].events = POLLIN;
 	while (1)
 	{
 		std::cout << "++++++++++++++ Waiting for new connection +++++++++++++++" << std::endl;
