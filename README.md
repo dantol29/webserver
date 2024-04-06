@@ -73,3 +73,13 @@
 | opendir                                     | Opens a directory stream corresponding to a directory name.                                                                                                                  |
 | readdir                                     | Reads a directory entry from a directory stream.                                                                                                                             |
 | closedir                                    | Closes a directory stream.                                                                                                                                                   |
+## Naming Conventions
+
+- camelCase for variable names (except for classes which should be PascalCase)
+- snake_case for files (except files containing classes)
+- PascalCase for files containing classes
+
+## Coding Standards
+
+- Orthodox Canonical Form
+- Add norm about non separation of header and implementation of classes in our internal style guide
