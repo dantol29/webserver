@@ -13,8 +13,8 @@ std::string handleCGIRequest(const char* argv[], Environment env) {
 
     std::vector<char*> envp = env.getForExecve();
 
-    int pipefd[2];
-    if (pipe(pipefd) == -1) {
+    int pipeFD[2];
+    if (pipe(pipeFD) == -1) {
         perror("pipe failed");
         exit(EXIT_FAILURE);
     }
@@ -24,9 +24,9 @@ std::string handleCGIRequest(const char* argv[], Environment env) {
         perror("fork failed");
         exit(EXIT_FAILURE);
     } else if (pid == 0) {
-        close(pipefd[0]);
-        dup2(pipefd[1], STDOUT_FILENO);
-        close(pipefd[1]);
+        close(pipeFD[0]);
+        dup2(pipeFD[1], STDOUT_FILENO);
+        close(pipeFD[1]);
 
         if (!envp.empty()) {
         // Convert the vector to a suitable format for execve
@@ -36,16 +36,16 @@ std::string handleCGIRequest(const char* argv[], Environment env) {
             }
         }
     } else {
-        close(pipefd[1]);
+        close(pipeFD[1]);
 
         std::string cgiOutput;
         char readBuffer[256];
         ssize_t bytesRead;
-        while ((bytesRead = read(pipefd[0], readBuffer, sizeof(readBuffer) - 1)) > 0) {
+        while ((bytesRead = read(pipeFD[0], readBuffer, sizeof(readBuffer) - 1)) > 0) {
             readBuffer[bytesRead] = '\0';
             cgiOutput += readBuffer;
         }
-        close(pipefd[0]);
+        close(pipeFD[0]);
 
         int status;
         waitpid(pid, &status, 0);
