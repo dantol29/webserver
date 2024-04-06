@@ -5,11 +5,12 @@ DEPFLAGS = -MMD -MP
 
 # Source and Object Files
 SRCS = main.cpp \
-	server.cpp \
-	request_handler.cpp \
-	CGI_handler.cpp \
-	environment.cpp \
-	utils.cpp
+	Server.cpp \
+	RequestHandler.cpp \
+	CGIHandler.cpp \
+	Environment.cpp \
+	Utils.cpp \
+	HTTPRequest.cpp
 OBJDIR = obj
 OBJS = $(addprefix $(OBJDIR)/, $(SRCS:.cpp=.o))
 
