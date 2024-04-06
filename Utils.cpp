@@ -9,7 +9,7 @@
 #include "include/webserv.hpp"
 
 std::string readHtml(const std::string& filePath) {
-    std::ifstream file(filePath);
+    std::ifstream file(filePath.c_str());
     if (!file.is_open()) {
         std::cerr << "Could not open file: " << filePath << std::endl;
         return "";
@@ -32,4 +32,20 @@ void *ft_memset(void *ptr, int value, size_t num)
 
 	// Return the original pointer
 	return ptr;
+}
+
+char *ft_strcpy(char *dest, const char *src)
+{
+	int	i;
+
+	i = 0;
+	if (!dest || !src)
+		return (NULL);
+	while (dest[i] && src[i])
+	{
+		dest[i] = src[i];
+		i++;
+	}
+	dest[i] = '\0';
+	return (dest);
 }
