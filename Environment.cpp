@@ -1,6 +1,5 @@
 #include "include/webserv.hpp"
 #include <string.h>
-
 /**
  * @brief Sets or updates an environment variable.
  * 
@@ -31,7 +30,7 @@ std::vector<char*> Environment::getForExecve() const {
 	for (std::map<std::string, std::string>::const_iterator it = envVars.begin(); it != envVars.end(); ++it) {
 		std::string env = it->first + "=" + it->second;
 		char* envCStr = new char[env.size() + 1];
-		strcpy(envCStr, env.c_str());
+		ft_strcpy(envCStr, env.c_str());
 		result.push_back(envCStr);
 	}
 	result.push_back(NULL);
@@ -44,3 +43,6 @@ Environment::~Environment() {
 		delete[] envp[i];
 	}
 }
+
+//definition and implementation counts for capitalization of file names (PascalCase)
+//git didn't let me push just after changing the case of the name of the file, which is why I comment here
