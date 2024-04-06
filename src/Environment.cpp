@@ -1,4 +1,4 @@
-#include "include/webserv.hpp"
+#include "webserv.hpp"
 #include <string.h>
 /**
  * @brief Sets or updates an environment variable.
@@ -43,3 +43,6 @@ Environment::~Environment() {
 		delete[] envp[i];
 	}
 }
+
+//definition and implementation counts for capitalization of file names (PascalCase)
+//git didn't let me push just after changing the case of the name of the file, which is why I comment here
