@@ -1,5 +1,5 @@
 #include "include/webserv.hpp"
-
+#include <string.h>
 /**
  * @brief Sets or updates an environment variable.
  * 
@@ -30,7 +30,7 @@ std::vector<char*> Environment::getForExecve() const {
 	for (std::map<std::string, std::string>::const_iterator it = envVars.begin(); it != envVars.end(); ++it) {
 		std::string env = it->first + "=" + it->second;
 		char* envCStr = new char[env.size() + 1];
-		std::strcpy(envCStr, env.c_str());
+		ft_strcpy(envCStr, env.c_str());
 		result.push_back(envCStr);
 	}
 	result.push_back(NULL);
