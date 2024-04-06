@@ -13,8 +13,8 @@ const int BUFFER_SIZE = 1024;
     // Determine the type of request and call the appropriate handler
 void handleConnection(int socket) {
     char buffer[BUFFER_SIZE] = {0};
-    long valread = read(socket, buffer, BUFFER_SIZE);
-    if (valread < 0) {
+    long valRead = read(socket, buffer, BUFFER_SIZE);
+    if (valRead < 0) {
         perror("In read");
         exit(EXIT_FAILURE);
     }
