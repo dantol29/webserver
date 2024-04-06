@@ -10,7 +10,8 @@ SRCS = src/main.cpp \
 	src/CGI_handler.cpp \
 	src/Environment.cpp \
 	src/utils.cpp \
-	src/HTTPRequest.cpp
+	src/HTTPRequest.cpp \
+	src/HTTPResponse.cpp \
 OBJDIR = obj
 OBJS = $(SRCS:%.cpp=$(OBJDIR)/%.o)
 
