@@ -1,6 +1,6 @@
 # Compiler and Flags
 CXX = c++
-CXXFLAGS = -Wall -Wextra -Werror -std=c++98 -I. -Iinclude
+CXXFLAGS = -Wall -Wextra -Werror -std=c++98 -I. -Iinclude -Isrc
 DEPFLAGS = -MMD -MP
 
 # Source and Object Files
