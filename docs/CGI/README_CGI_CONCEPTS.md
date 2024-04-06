@@ -58,3 +58,22 @@ CGI programs can be written in almost any programming language, including compil
 - **Historical Context:** CGI was one of the earliest methods used to generate dynamic web content, serving as a bridge between the web server and software applications running on the server.
 
 - **Modern Use:** While CGI set the foundation for dynamic content on the web, modern web development often uses more contemporary approaches such as server-side scripting frameworks (e.g., Node.js for JavaScript, Flask for Python) and application programming interfaces (APIs) that offer more efficiency, scalability, and ease of development. Nonetheless, CGI's conceptual model underpins the idea of server-side processing and dynamic content generation, influencing current technologies and methodologies.
+
+
+### From URI to environment variables AKA meta-variable
+
+- **URI (Uniform Resource Identifier):** Identifies resources either by location, name, or both, encompassing URLs and URNs, on internet or on a local network
+`scheme:[//authority]path[?query][#fragment]`
+
+
+- **URL (Uniform Resource Locator):** A specific type of URI that locates a resource on the internet by specifying its access mechanism.
+`https://example.com:80/path/to/resource?query=123#section`
+
+
+example for the URI `http://localhost:8080/myScript.cgi/view?id=123`
+
+| scheme | SERVER_NAME | SERVER_PORT | SCRIPT_NAME    | PATH_INFO | QUERY_STRING |
+|--------|-------------|-------------|----------------|-----------|--------------|
+| http   | localhost   | 8080        | /myScript.cgi  | /view     | id=123       |
+
+In this constructed Script-URI, /myScript.cgi is the script you're calling, /view represents additional path info that could affect how the script processes the request, and ?id=123 is a query string providing extra parameters to the script. The construction aligns with the format described, ensuring that accessing this URI would execute the script with the specified path info and query string.
