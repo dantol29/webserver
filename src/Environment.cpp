@@ -13,6 +13,17 @@ void Environment::setVar(const std::string& key, const std::string& value) {
 	envVars[key] = value;
 }
 
+//it does not modify any member variables of the Environment class
+// (hence the const at the end of the function signature).
+std::string Environment::getVar(const std::string& key) const {
+    std::map<std::string, std::string>::const_iterator it = envVars.find(key);
+    if (it != envVars.end()) {
+        return it->second;
+    } else {
+        return "";
+    }
+}
+
 /**
  * @brief Generates a vector of C-style strings suitable for execve.
  * 
