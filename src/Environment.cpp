@@ -1,5 +1,17 @@
 #include "include/webserv.hpp"
 #include <string.h>
+
+Environment::Environment(const Environment& other) : envVars(other.envVars) {
+}
+
+
+Environment& Environment::operator=(const Environment& other) {
+    if (this != &other) { // Protect against self-assignment
+        envVars = other.envVars; // Use std::map's assignment operator for a deep copy
+    }
+    return *this;
+}
+
 /**
  * @brief Sets or updates an environment variable.
  * 
