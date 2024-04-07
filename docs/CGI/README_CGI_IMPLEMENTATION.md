@@ -3,6 +3,20 @@
 ### I will use them to implement further, then organize/markdown them in a better way
 
 
+
+ The remainder of the path,
+   if any, is a resource or sub-resource identifier to be interpreted by
+   the script.
+   ============> this is PATH_info
+
+   The server MUST ensure that the script output is sent to the client
+   unmodified.
+
+
+   The server MAY implement a timeout period within which data must be
+   received from the script.
+
+
 4.2.  Request Message-Body
 
    Request data is accessed by the script in a system-defined method;
