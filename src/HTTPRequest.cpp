@@ -1,15 +1,53 @@
 #include "HTTPRequest.hpp"
+#include <string.h>
+
+bool		isOrigForm(std::string& requestTarget, int &queryStart);
+bool		fileExists(std::string& requestTarget, bool isOriginForm, int queryStart);
+void		skipRequestLine(char *request, int& i);
+bool	hasMandatoryHeaders(std::multimap<std::string, std::string> headers, std::string method);
+std::string	extractValue(std::string& variables, int &i);
+std::string extractKey(std::string& variables, int &i, int startPos);
+std::string extractRequestTarget(char *request, int &i);
+std::string extractProtocolVersion(char *request, int &i);
+std::string	extractMethod(char *request, int &i);
+std::string	extractHeaderKey(char *request, int& i);
+std::string	extractHeaderValue(char *request, int& i);
 
 HTTPRequest::HTTPRequest() : _method(""), _requestTarget(""), _protocolVersion(""){
 
 }
 
-HTTPRequest::HTTPRequest(char *request){
-	_statusCode = parseRequestLine(request);
+HTTPRequest::HTTPRequest(const HTTPRequest& obj){
+	_method = obj._method;
+	_requestTarget = obj._requestTarget;
+	_protocolVersion = obj._protocolVersion;
+	_statusCode = obj._statusCode;
+	_storage = obj._storage;
+}
+
+HTTPRequest& HTTPRequest::operator=(const HTTPRequest& obj){
+	if (this != &obj){
+		_method = obj._method;
+		_requestTarget = obj._requestTarget;
+		_protocolVersion = obj._protocolVersion;
+		_statusCode = obj._statusCode;
+		_storage = obj._storage;
+	}
+	return (*this);
 }
 
 HTTPRequest::~HTTPRequest(){
 
+}
+
+HTTPRequest::HTTPRequest(char *request){
+	if (strlen(request) < 7)
+		_statusCode = 400;
+	else{
+		_statusCode = parseRequestLine(request);
+		if (_statusCode == 200)
+			_statusCode = parseHeaders(request);
+	}
 }
 
 std::string HTTPRequest::getMethod() const{
@@ -28,57 +66,59 @@ int	HTTPRequest::getStatusCode() const{
 	return (_statusCode);
 }
 
-std::string	extractMethod(char *request, int &i)
-{
-	std::string	method;
-	std::string	string_request(request);
-
-	while (request[i] && request[i] != ' ')
-		i++;
-	method = string_request.substr(0, i);
-	//std::cout << method << std::endl;
-	if (method == "GET" || method == "POST" || method == "DELETE")
-		return (method);
-	return ("");
+std::multimap<std::string, std::string>	HTTPRequest::getStorage() const{
+	return (_storage);
 }
 
-std::string extractRequestTarget(char *request, int &i)
-{
-	std::string	requestTarget;
-	std::string	string_request(request);
-	int			start = i;
-
-	while (request[i] && request[i] != ' ')
-		i++;
-	if (i > MAX_URI)
-		return ("");
-	requestTarget = string_request.substr(start, i - start);
-	//std::cout << requestTarget << std::endl;
-	return (requestTarget);
+std::multimap<std::string, std::string>	HTTPRequest::getHeaders() const{
+	return (_headers);
 }
 
-std::string extractProtocolVersion(char *request, int &i)
-{
-	std::string	protocolVersion;
-	std::string	string_request(request);
-	int			start = i;
-
-	while (request[i] && request[i] != '\r')
-		i++;
-	protocolVersion = string_request.substr(start, i - start);
-	//std::cout << protocolVersion << std::endl;
-	if (protocolVersion == "HTTP/1.1")
-		return (protocolVersion);
-	return ("");
+bool	HTTPRequest::addStorage(std::string key, std::string value){
+	_storage.insert(std::make_pair(key, value));
+	return (true);
 }
 
-bool	checkRequestTarget(std::string requestTarget)
+bool	HTTPRequest::addHeader(std::string key, std::string value){
+	_headers.insert(std::make_pair(key, value));
+	return (true);
+}
+
+bool	saveVariables(std::string variables, HTTPRequest* obj)
 {
+	int	startPos = 0;
+	std::string	key;
+	std::string	value;
+
+	for (int i = 0; i < (int)variables.length(); i++){
+		if (variables[i] == '='){
+			key = extractKey(variables, i, startPos);
+			if (key.empty())
+				return (false);
+			value = extractValue(variables, i);
+			if (value.empty())
+				return (false);
+			startPos = i;
+			obj->addStorage(key, value);
+		}
+	}
+	return (true);
+}
+
+bool	checkRequestTarget(std::string& requestTarget, HTTPRequest* obj)
+{
+	bool	isOriginForm;
+	int		queryStart = 0;
+
 	if (requestTarget == "/")
 		return (true);
-	//std::cout << "." + requestTarget << std::endl;
-	if (access(("." + requestTarget).c_str(), F_OK) == -1)
+	isOriginForm = isOrigForm(requestTarget, queryStart);
+	if (!fileExists(requestTarget, isOriginForm, queryStart))
 		return (false);
+	if (isOriginForm)
+		if (!saveVariables(requestTarget.substr(\
+		queryStart + 1, strlen(requestTarget.c_str()) - queryStart), obj))
+			return (false);
 	return (true);
 }
 
@@ -97,7 +137,7 @@ int	HTTPRequest::parseRequestLine(char *request)
 		return (414); // than any URI it wishes to parse MUST respond with a 414 (URI Too Long).
 	if (request[i++] != ' ') // single space
 		return (400);
-	if (!checkRequestTarget(_requestTarget))
+	if (!checkRequestTarget(_requestTarget, this))
 		return (400); // An invalid request-line SHOULD respond with a 400 (Bad Request).
 	_protocolVersion = extractProtocolVersion(request, i);
 	if (_protocolVersion.empty())
@@ -107,4 +147,30 @@ int	HTTPRequest::parseRequestLine(char *request)
 	return (200); 
 }
 
+int HTTPRequest::parseHeaders(char *request)
+{
+	int			i;
+	std::string	key;
+	std::string	value;
 
+	i = 0;
+	skipRequestLine(request, i);
+	while (request[i]){
+		key = extractHeaderKey(request, i);
+		if (key.empty())
+			return (400);
+		i += 2; // skip ':' and ' '
+		value = extractHeaderValue(request, i);
+		if (value.empty())
+			return (400);
+		if (request[i] != '\r' || request[i + 1] != '\n')
+			return (400);
+		i += 2; // skip '\r' and '\n'
+		_headers.insert(std::make_pair(key, value));
+		if (request[i] == '\r' || request[i + 1] == '\n') // end of header section
+			return (200);
+	}
+	if (!hasMandatoryHeaders(_headers, _method))
+		return (400);
+	return (200);
+}

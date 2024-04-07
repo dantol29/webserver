@@ -15,8 +15,22 @@ const int BUFFER_SIZE = 1024;
 void handleConnection(int socket) {
     char buffer[BUFFER_SIZE] = {0};
     long valRead = read(socket, buffer, BUFFER_SIZE);
+
 	HTTPRequest obj(buffer);
 	std::cout << obj.getStatusCode() << std::endl;
+	std::multimap<std::string, std::string> a = obj.getHeaders();
+	std::multimap<std::string, std::string> b = obj.getStorage();
+
+	std::multimap<std::string, std::string>::iterator it;
+	std::cout << "Variables: =>" << std::endl;
+	for (it = b.begin(); it != b.end(); it++){
+		std::cout << "Key: " << it->first << ", Value: " << it->second << std::endl;
+	}
+	std::cout << "Headers: =>" << std::endl;
+	for (it = a.begin(); it != a.end(); it++){
+		std::cout << "Key: " << it->first << ", Value: " << it->second << std::endl;
+	}
+
     if (valRead < 0) {
         perror("In read");
         exit(EXIT_FAILURE);
