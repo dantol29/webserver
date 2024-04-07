@@ -4,17 +4,18 @@
 bool		isOrigForm(std::string& requestTarget, int &queryStart);
 bool		fileExists(std::string& requestTarget, bool isOriginForm, int queryStart);
 void		skipRequestLine(char *request, int& i);
+void		skipHeader(char *request, unsigned int& i);
 bool		hasMandatoryHeaders(HTTPRequest& obj);
-std::string	extractValue(std::string& variables, int &i);
-std::string extractKey(std::string& variables, int &i, int startPos);
-std::string extractRequestTarget(char *request, int &i);
-std::string extractProtocolVersion(char *request, int &i);
-std::string	extractMethod(char *request, int &i);
-std::string	extractHeaderKey(char *request, int& i);
-std::string	extractHeaderValue(char *request, int& i);
+std::string		extractValue(std::string& variables, int &i);
+std::string 	extractKey(std::string& variables, int &i, int startPos);
+std::string 	extractRequestTarget(char *request, int &i);
+std::string 	extractProtocolVersion(char *request, int &i);
+std::string		extractMethod(char *request, int &i);
+std::string		extractHeaderKey(char *request, int& i);
+std::string		extractHeaderValue(char *request, int& i);
+unsigned int	extractLineLength(char *request, unsigned int& i);
 int 		parseHeaders(char *request, HTTPRequest& obj);
 int			parseBody();
-int			parseChunkedBody();
 
 HTTPRequest::HTTPRequest() : _statusCode(200), _isChunked(false), _method(""), \
 _requestTarget(""), _protocolVersion(""), _body(""){
@@ -57,10 +58,10 @@ HTTPRequest::HTTPRequest(char *request){
 		_statusCode = parseRequestLine(request);
 		if (_statusCode == 200)
 			_statusCode = parseHeaders(request, *this);
-		if (_statusCode == 200 && _isChunked)
-			parseChunkedBody(request);// parse chunked body
-		else if (_statusCode == 200 && !_isChunked)
-			parseBody();// parse regular body
+		//if (_statusCode == 200 && _isChunked)
+		//parseChunkedBody(request);// parse chunked body
+		// else if (_statusCode == 200 && !_isChunked)
+		// 	parseBody();// parse regular body
 	}
 }
 
@@ -177,10 +178,33 @@ int	HTTPRequest::parseRequestLine(char *request)
 	return (200); 
 }
 
+// this function is memory unsafe
 bool	HTTPRequest::parseChunkedBody(char *request)
 {
 	// parse the whole body
-	(void)request;
+	unsigned int	i = 0;
+	unsigned int	size = 0;
+
+	skipHeader(request, i);
+	i += 4; // skip "\r\n\r\n"
+	std::string string_request(request);
+	std::cout << "After skipped: "<< string_request.substr(i, string_request.length() - i) << std::endl;
+	while (request[i]){
+		size = extractLineLength(request, i);
+		if (size == 0){
+			if (request[i] == '\r' && request[i + 1] == '\n'){
+				i += 2;
+				break ;
+			}
+		}
+		std::cout << "Len: " << size << std::endl;
+		i += 2; // skip '\r' and '\n'
+		std::cout << "Word:" << string_request.substr(i, size) << std::endl;
+		i += size; // skip line
+		i += 2; // skip '\r' and '\n'
+	}
+	if (request[i] != '\r' || request[i + 1] != '\n')
+		return (false);
 	return (true);
 }
 

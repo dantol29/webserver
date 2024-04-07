@@ -1,4 +1,5 @@
 #include "HTTPRequest.hpp"
+int hexToInt(std::string hex);
 
 bool	isOrigForm(std::string &requestTarget, int &queryStart){
 	for (int i = 0; i < (int)requestTarget.length(); i++){
@@ -33,6 +34,16 @@ void	skipRequestLine(char *request, int& i)
 			i += 2;
 			return ;	
 		}
+		i++;
+	}
+}
+
+void	skipHeader(char *request, unsigned int& i)
+{
+	while (request[i] && request[i + 1] && request[i + 2] && request[i + 3]){
+		if (request[i] == '\r' && request[i + 1] == '\n' \
+		&& request[i + 2] == '\r' && request[i + 3] == '\n')
+			return ;
 		i++;
 	}
 }
@@ -223,6 +234,16 @@ int	parseBody(){
 	return (0);
 }
 
-int	parseChunkedBody(){
-	return (0);
+
+unsigned int	extractLineLength(char *request, unsigned int& i)
+{
+	std::string string_request(request);
+	unsigned int start = i;
+
+	while (request[i] != '\r')
+		i++;
+	if (request[i] != '\r' || request[i + 1] != '\n')
+		return (0);
+	//std::cout << string_request.substr(start, i - start) << std::endl;
+	return (hexToInt(string_request.substr(start, i - start)));
 }

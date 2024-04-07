@@ -7,6 +7,9 @@
 // senders and recipients support, at a minimum, request-line lengths of 8000 octets
 # define MAX_URI 200
 
+//./client $'POST /search?price=low HTTP/1.1\r\nHost: www.example.com\r\nContent-type: text/plain\r\nContent-length: 42\r\n\r\n7\r\nChunk 1\r\n6\r\nChunk 2\r\n0\r\n\r\n'
+// test line
+
 class HTTPRequest{
 	public:
 		HTTPRequest();
