@@ -16,24 +16,31 @@ int 		parseHeaders(char *request, HTTPRequest& obj);
 int			parseBody();
 int			parseChunkedBody();
 
-HTTPRequest::HTTPRequest() : _method(""), _requestTarget(""), _protocolVersion(""){
+HTTPRequest::HTTPRequest() : _statusCode(200), _isChunked(false), _method(""), \
+_requestTarget(""), _protocolVersion(""), _body(""){
 
 }
 
 HTTPRequest::HTTPRequest(const HTTPRequest& obj){
+	_statusCode = obj._statusCode;
+	_isChunked = obj._isChunked;
 	_method = obj._method;
 	_requestTarget = obj._requestTarget;
 	_protocolVersion = obj._protocolVersion;
-	_statusCode = obj._statusCode;
+	_body = obj._body;
+	_headers  = obj._headers;
 	_storage = obj._storage;
 }
 
 HTTPRequest& HTTPRequest::operator=(const HTTPRequest& obj){
 	if (this != &obj){
+		_statusCode = obj._statusCode;
+		_isChunked = obj._isChunked;
 		_method = obj._method;
 		_requestTarget = obj._requestTarget;
 		_protocolVersion = obj._protocolVersion;
-		_statusCode = obj._statusCode;
+		_body = obj._body;
+		_headers  = obj._headers;
 		_storage = obj._storage;
 	}
 	return (*this);
@@ -51,7 +58,7 @@ HTTPRequest::HTTPRequest(char *request){
 		if (_statusCode == 200)
 			_statusCode = parseHeaders(request, *this);
 		if (_statusCode == 200 && _isChunked)
-			parseChunkedBody();// parse chunked body
+			parseChunkedBody(request);// parse chunked body
 		else if (_statusCode == 200 && !_isChunked)
 			parseBody();// parse regular body
 	}
@@ -168,4 +175,21 @@ int	HTTPRequest::parseRequestLine(char *request)
 	if (request[i] != '\r' || !request[i + 1] || request[i + 1] != '\n') // CRLF
 		return (400); // The combination of \r\n serves as a standard way to denote the end of a line in HTTP headers.
 	return (200); 
+}
+
+bool	HTTPRequest::parseChunkedBody(char *request)
+{
+	// parse the whole body
+	(void)request;
+	return (true);
+}
+
+void	HTTPRequest::addToBody(char *request)
+{
+	(void)request;
+	// add more text to the body
+}
+
+std::string HTTPRequest::getBody() const{
+	return (_body);
 }

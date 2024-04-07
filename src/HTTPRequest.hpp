@@ -18,6 +18,7 @@ class HTTPRequest{
 		int			getStatusCode() const;
 		std::string getRequestTarget() const;
 		std::string getProtocolVersion() const;
+		std::string	getBody() const;
 		bool		getIsChunked() const;
 		std::multimap<std::string, std::string>	getStorage() const;
 		std::multimap<std::string, std::string>	getHeaders() const;
@@ -25,6 +26,8 @@ class HTTPRequest{
 		void		addStorage(std::string key, std::string value);
 		void		addHeader(std::string key, std::string value);
 		void		setIsChunked(bool a);
+		bool		parseChunkedBody(char *request);
+		void		addToBody(char *request);
 	private:
 		int			parseRequestLine(char *request);
 		int			_statusCode;
@@ -32,6 +35,7 @@ class HTTPRequest{
 		std::string _method;
 		std::string	_requestTarget;
 		std::string _protocolVersion;
+		std::string	_body;
 		std::multimap<std::string, std::string> _storage;
 		std::multimap<std::string, std::string> _headers;	
 };
