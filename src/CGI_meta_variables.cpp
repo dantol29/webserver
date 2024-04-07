@@ -11,26 +11,28 @@ void RequestTargetToMetaVars(HTTPRequest request, Environment& env) {
     if (requestTarget.empty()) {
         std::cout << "Request target is empty" << std::endl;
         return;
-    } else (requestTarget[0] == '/') {
+    } else if (requestTarget[0] == '/') {
         std::cout << "Identified Origin-Form request target" << std::endl;
-	    env["SCRIPT_NAME"] = "--------⚠️---WAITING FOR DANIIL's IMPLEMENTATION--⚠️---------   request.getScriptName()";
-	    env["QUERY_STRING"] = "--------⚠️--WAITING FOR DANIIL's IMPLEMENTATION--⚠️---------   request.getQueryString() ";
-        std::cout << "QUERY_STRING set to : " << env["QUERY_STRING"] << std::endl;
-		std::cout << "SCRIPT_NAME set to : " << env["SCRIPT_NAME"] << std::endl;
+        env.setVar("SCRIPT_NAME", "--------⚠️---WAITING FOR DANIIL's IMPLEMENTATION--⚠️---------");
+        env.setVar("QUERY_STRING", "--------⚠️--WAITING FOR DANIIL's IMPLEMENTATION--⚠️---------");
+        std::cout << "QUERY_STRING set to : " << env.getVar("QUERY_STRING") << std::endl; // Assuming getVar method exists
+        std::cout << "SCRIPT_NAME set to : " << env.getVar("SCRIPT_NAME") << std::endl; // Assuming getVar method exists
     } else if (startsWith(requestTarget, "http")) {
         std::cout << "Identified Absolute-Form request target" << std::endl;
-        std::cout << "No direct action for CGI variables" << std::endl;
-    } else if (--------⚠️--HOW TO CHECK ?--⚠️---------) {
+        // No direct action for CGI variables
+    } else if (requestTarget.find("/") == std::string::npos && requestTarget != "*" && !startsWith(requestTarget, "http")) {
         std::cout << "Identified Authority-Form request target" << std::endl;
-        std::cout << "No direct action for CGI variables" << std::endl;
+        // No direct action for CGI variables
     } else if (requestTarget == "*") {
         std::cout << "Identified Asterisk-Form request target: " << requestTarget << std::endl;
-        env["REQUEST_METHOD"] = "OPTIONS";
+        env.setVar("REQUEST_METHOD", "OPTIONS");
         std::cout << "REQUEST_METHOD set to OPTIONS" << std::endl;
-
-	} else {
+    } else {
         std::cout << "Unrecognized Request Target Form: " << requestTarget << std::endl;
     }
+
+    // SHOULD I ALWAYS set GATEWAY_INTERFACE ?
+    env.setVar("GATEWAY_INTERFACE", "CGI/1.1");
 }
 
 
