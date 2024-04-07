@@ -5,6 +5,26 @@
 #include <string>
 #include <map>
 
+bool isAuthorityForm(const HTTPRequest& request) {
+    std::string method = request.getMethod();
+    std::string requestTarget = request.getRequestTarget();
+
+    // Check if the method is CONNECT, which is used with Authority-Form
+    if (method != "CONNECT") {
+        return false;
+    }
+
+    // Authority-Form should not start with a scheme or path indicator
+    if (requestTarget.find("://") != std::string::npos || requestTarget[0] == '/') {
+        return false;
+    }
+
+    // Assuming the absence of a scheme or leading slash ('/') in requestTarget implies Authority-Form.
+    // No further validation (e.g., checking for the presence of a valid hostname) is done here,
+    // but could be added for a more thorough verification.
+    return true;
+}
+
 void RequestTargetToMetaVars(HTTPRequest request, Environment& env) {
     std::string requestTarget = request.getRequestTarget();
 
@@ -20,13 +40,13 @@ void RequestTargetToMetaVars(HTTPRequest request, Environment& env) {
     } else if (startsWith(requestTarget, "http")) {
         std::cout << "Identified Absolute-Form request target" << std::endl;
         // No direct action for CGI variables
-    } else if (requestTarget.find("/") == std::string::npos && requestTarget != "*" && !startsWith(requestTarget, "http")) {
-        std::cout << "Identified Authority-Form request target" << std::endl;
-        // No direct action for CGI variables
     } else if (requestTarget == "*") {
         std::cout << "Identified Asterisk-Form request target: " << requestTarget << std::endl;
         env.setVar("REQUEST_METHOD", "OPTIONS");
         std::cout << "REQUEST_METHOD set to OPTIONS" << std::endl;
+    } else if (isAuthorityForm(request)) {
+        std::cout << "Identified Authority-Form request target" << std::endl;
+        // No direct action for CGI variables
     } else {
         std::cout << "Unrecognized Request Target Form: " << requestTarget << std::endl;
     }
