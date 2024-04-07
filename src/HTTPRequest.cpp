@@ -41,7 +41,7 @@ HTTPRequest::~HTTPRequest(){
 }
 
 HTTPRequest::HTTPRequest(char *request){
-	if (strlen(request) < 7)
+	if (strlen(request) < 10)
 		_statusCode = 400;
 	else{
 		_statusCode = parseRequestLine(request);
@@ -72,6 +72,16 @@ std::multimap<std::string, std::string>	HTTPRequest::getStorage() const{
 
 std::multimap<std::string, std::string>	HTTPRequest::getHeaders() const{
 	return (_headers);
+}
+
+std::pair<std::string, std::string> HTTPRequest::getHeaders(std::string key) const{
+	std::multimap<std::string, std::string>::const_iterator it;
+
+	for (it = _headers.begin(); it != _headers.end(); ++it){
+		if (it->first == key)
+			return (std::make_pair(it->first, it->second));
+	}
+	return (std::make_pair("", ""));
 }
 
 bool	HTTPRequest::addStorage(std::string key, std::string value){
@@ -159,17 +169,21 @@ int HTTPRequest::parseHeaders(char *request)
 		key = extractHeaderKey(request, i);
 		if (key.empty())
 			return (400);
-		i += 2; // skip ':' and ' '
+		i++; // skip ':'
+		if (request[i++] != ' ')
+			return (400);
 		value = extractHeaderValue(request, i);
 		if (value.empty())
 			return (400);
 		if (request[i] != '\r' || request[i + 1] != '\n')
 			return (400);
-		i += 2; // skip '\r' and '\n'
 		_headers.insert(std::make_pair(key, value));
-		if (request[i] == '\r' || request[i + 1] == '\n') // end of header section
-			return (200);
+		i += 2; // skip '\r' and '\n'
+		if (request[i] == '\r' && request[i + 1] == '\n') // end of header section
+			break ;
 	}
+	if (request[i] != '\r' || request[i + 1] != '\n') // end of header section
+		return (400);
 	if (!hasMandatoryHeaders(_headers, _method))
 		return (400);
 	return (200);

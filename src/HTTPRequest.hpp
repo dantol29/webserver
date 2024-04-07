@@ -20,6 +20,7 @@ class HTTPRequest{
 		std::string getProtocolVersion() const;
 		std::multimap<std::string, std::string>	getStorage() const;
 		std::multimap<std::string, std::string>	getHeaders() const;
+		std::pair<std::string, std::string>		getHeaders(std::string key) const;
 		bool		addStorage(std::string key, std::string value);
 		bool		addHeader(std::string key, std::string value);
 	private:
