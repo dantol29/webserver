@@ -37,22 +37,33 @@ void	skipRequestLine(char *request, int& i)
 	}
 }
 
+bool	isValidHost(std::string host)
+{
+	return (true);
+}
+
 bool	hasMandatoryHeaders(std::multimap<std::string, std::string> headers, std::string method)
 {
-	int	isHost = false;
-	int	isContentLength = false;
+	int	isHost = 0;
+	int	isContentLength = 0;
+	int	isContentType = 0;
 	std::multimap<std::string, std::string>::iterator it;
 
 	for (it = headers.begin(); it != headers.end(); it++){
-		if (it->first == "Host")
-			isHost = true;
-		else if (it->first == "Content-Length")
-			isContentLength = true;
+		if (it->first == "Host"){
+			if (!isValidHost(it->second))
+				return (false);
+			isHost++;
+		}
+		else if (it->first == "Content-length")
+			isContentLength++;
+		else if (it->first == "Content-type")
+			isContentType++;
 	}
 	if (method == "POST" || method == "PUT")
-		return (isHost && isContentLength);
+		return (isHost == 1 && isContentLength == 1 && isContentType == 1);
 	else
-		return (isHost);
+		return (isHost == 1);
 }
 
 std::string	extractValue(std::string& variables, int &i)

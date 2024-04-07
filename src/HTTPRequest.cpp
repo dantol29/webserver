@@ -186,5 +186,7 @@ int HTTPRequest::parseHeaders(char *request)
 		return (400);
 	if (!hasMandatoryHeaders(_headers, _method))
 		return (400);
+	if (_method == "GET" && request[i + 2]) //has something after headers
+		return (400);
 	return (200);
 }
