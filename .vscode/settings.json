@@ -76,6 +76,7 @@
     "stack": "cpp",
     "__tree": "cpp",
     "map": "cpp",
-    "cgi_meta_variables": "c"
+    "cgi_meta_variables": "c",
+    "filesystem": "c"
   }
 }
