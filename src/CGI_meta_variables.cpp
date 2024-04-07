@@ -1,4 +1,4 @@
-#include "include/webserv.hpp"
+#include "webserv.hpp"
 #include "HTTPRequest.hpp"
 #include <iostream>
 #include <sys/wait.h>
@@ -8,13 +8,16 @@
 void RequestTargetToMetaVars(HTTPRequest request, Environment& env) {
     std::string requestTarget = request.getRequestTarget();
 
-    if (requestTarget starts with "/") {
+    if (requestTarget.empty()) {
+        std::cout << "Request target is empty" << std::endl;
+        return;
+    } else (requestTarget[0] == '/') {
         std::cout << "Identified Origin-Form request target" << std::endl;
 	    env["SCRIPT_NAME"] = "--------⚠️---WAITING FOR DANIIL's IMPLEMENTATION--⚠️---------   request.getScriptName()";
 	    env["QUERY_STRING"] = "--------⚠️--WAITING FOR DANIIL's IMPLEMENTATION--⚠️---------   request.getQueryString() ";
         std::cout << "QUERY_STRING set to : " << env["QUERY_STRING"] << std::endl;
 		std::cout << "SCRIPT_NAME set to : " << env["SCRIPT_NAME"] << std::endl;
-    } else if (requestTarget.starts_with("http")) { // Absolute-Form
+    } else if (startsWith(requestTarget, "http")) {
         std::cout << "Identified Absolute-Form request target" << std::endl;
         std::cout << "No direct action for CGI variables" << std::endl;
     } else if (--------⚠️--HOW TO CHECK ?--⚠️---------) {
