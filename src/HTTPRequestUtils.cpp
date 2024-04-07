@@ -37,16 +37,25 @@ void	skipRequestLine(char *request, int& i)
 	}
 }
 
+bool	isValidContentType(std::string type)
+{
+	if (type == "text/plain" || type == "text/html")
+		return (true);
+	return (false);
+}
+
 bool	isValidHost(std::string host)
 {
+	(void)host;
 	return (true);
 }
 
-bool	hasMandatoryHeaders(std::multimap<std::string, std::string> headers, std::string method)
+bool	hasMandatoryHeaders(HTTPRequest& obj)
 {
 	int	isHost = 0;
 	int	isContentLength = 0;
 	int	isContentType = 0;
+	std::multimap<std::string, std::string> headers = obj.getHeaders();
 	std::multimap<std::string, std::string>::iterator it;
 
 	for (it = headers.begin(); it != headers.end(); it++){
@@ -57,10 +66,19 @@ bool	hasMandatoryHeaders(std::multimap<std::string, std::string> headers, std::s
 		}
 		else if (it->first == "Content-length")
 			isContentLength++;
-		else if (it->first == "Content-type")
+		else if (it->first == "Content-type"){
+			if (!isValidContentType(it->second))
+				return (false);
 			isContentType++;
+		}
+		else if (it->first == "Transfer-encoding"){
+			if (it->second == "chunked")
+				obj.setIsChunked(true);
+			else
+				return (false);
+		}
 	}
-	if (method == "POST" || method == "PUT")
+	if (obj.getMethod() == "POST" || obj.getMethod() == "PUT")
 		return (isHost == 1 && isContentLength == 1 && isContentType == 1);
 	else
 		return (isHost == 1);
@@ -165,4 +183,46 @@ std::string	extractHeaderValue(char *request, int& i)
 	}
 	//std::cout << "Value: "<< string_request.substr(start, i - start) << std::endl;
 	return (string_request.substr(start, i - start));
+}
+
+int parseHeaders(char *request, HTTPRequest& obj)
+{
+	int			i;
+	std::string	key;
+	std::string	value;
+
+	i = 0;
+	skipRequestLine(request, i);
+	while (request[i]){
+		key = extractHeaderKey(request, i);
+		if (key.empty())
+			return (400);
+		i++; // skip ':'
+		if (request[i++] != ' ')
+			return (400);
+		value = extractHeaderValue(request, i);
+		if (value.empty())
+			return (400);
+		if (request[i] != '\r' || request[i + 1] != '\n')
+			return (400);
+		obj.addHeader(key, value);
+		i += 2; // skip '\r' and '\n'
+		if (request[i] == '\r' && request[i + 1] == '\n') // end of header section
+			break ;
+	}
+	if (request[i] != '\r' || request[i + 1] != '\n') // end of header section
+		return (400);
+	if (!hasMandatoryHeaders(obj))
+		return (400);
+	if (obj.getMethod() == "GET" && request[i + 2]) //has something after headers
+		return (400);
+	return (200);
+}
+
+int	parseBody(){
+	return (0);
+}
+
+int	parseChunkedBody(){
+	return (0);
 }

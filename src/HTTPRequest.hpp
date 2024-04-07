@@ -18,18 +18,20 @@ class HTTPRequest{
 		int			getStatusCode() const;
 		std::string getRequestTarget() const;
 		std::string getProtocolVersion() const;
+		bool		getIsChunked() const;
 		std::multimap<std::string, std::string>	getStorage() const;
 		std::multimap<std::string, std::string>	getHeaders() const;
 		std::pair<std::string, std::string>		getHeaders(std::string key) const;
-		bool		addStorage(std::string key, std::string value);
-		bool		addHeader(std::string key, std::string value);
+		void		addStorage(std::string key, std::string value);
+		void		addHeader(std::string key, std::string value);
+		void		setIsChunked(bool a);
 	private:
 		int			parseRequestLine(char *request);
-		int			parseHeaders(char *request);
 		int			_statusCode;
-		std::multimap<std::string, std::string> _storage;
-		std::multimap<std::string, std::string> _headers;	
+		bool		_isChunked;
 		std::string _method;
 		std::string	_requestTarget;
 		std::string _protocolVersion;
+		std::multimap<std::string, std::string> _storage;
+		std::multimap<std::string, std::string> _headers;	
 };
