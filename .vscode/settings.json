@@ -75,6 +75,7 @@
     "iomanip": "cpp",
     "stack": "cpp",
     "__tree": "cpp",
-    "map": "cpp"
+    "map": "cpp",
+    "cgi_meta_variables": "c"
   }
 }
