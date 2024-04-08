@@ -22,7 +22,5 @@ class Router
 	bool isDynamicRequest(const HTTPRequest &request);
 	std::string getFileExtension(const std::string &fileName);
 };
-}
-d
 
 #endif // ROUTER_HPP
