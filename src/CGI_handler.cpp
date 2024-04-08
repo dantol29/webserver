@@ -1,14 +1,5 @@
-#include <cstdlib> // For exit() and EXIT_FAILURE
-#include <cstring> // For memset
-#include <iostream>
-#include <netinet/in.h> // For sockaddr_in
-#include <sys/socket.h> // For socket functions
-#include <unistd.h>     // For read, write, and close
-#include <fstream>
-#include <sstream>
 #include "webserv.hpp"
 #include "HTTPRequest.hpp"
-#include <sys/wait.h>
 
 std::string handleCGIRequest(const char* argv[], Environment env) {
 
