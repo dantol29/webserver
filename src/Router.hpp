@@ -6,12 +6,20 @@
 #include "StaticContentHandler.hpp"
 #include "CGIHandlder.hpp"
 
+struct resourcePath
+{
+	std::vector<std::string> directories;
+	std::string resource;
+}
+
 class Router
 {
   public:
 	Router();
 	~Router();
 	HTTPResponse routeRequest(const HTTPRequest &request);
+
+	void splitTarget(const std::string &target);
 
   private:
 	Router(const Router &other);
@@ -20,7 +28,9 @@ class Router
 	CGIHandler _cgiHandler;
 
 	bool isDynamicRequest(const HTTPRequest &request);
+	bool pathExists(HTTPResponse &response, const std::string &path);
 	std::string getFileExtension(const std::string &fileName);
+	resourcePath _path;
 };
 
-#endif // ROUTER_HPP
+#endif

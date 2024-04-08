@@ -9,6 +9,7 @@
 #include "webserv.hpp"
 #include "HTTPRequest.hpp"
 #include "HTTPResponse.hpp"
+#include "Router.hpp"
 
 const int BUFFER_SIZE = 1024;
 const size_t MAX_HEADER_SIZE = 8192; // 8KB - This is the limit of the header size also in NGINX
@@ -239,21 +240,48 @@ void handleConnection(int socket)
 	// const char* argv[] = { "./cgi-bin/thirty_py.cgi", NULL };
 	// const char* argv[] = { "./cgi-bin/hello.cgi", NULL };
 
-	std::string response;
-	if (strstr(buffer, "GET / HTTP/1.1") || strstr(buffer, "GET /home HTTP/1.1"))
+	// std::string response;
+	HTTPResponse response;
+	Router router;
+	if (!router.pathExists(response, obj.getRequestTarget()))
 	{
-		response = handleHomePage();
+		StaticContentHandler staticContentHandler;
+		// This shoud be a method of the requestHandler obect
+		// response = router.handleNotFound();
+		response = staticContentHandler.handleNotFound();
 	}
+	else if (router.isDynamicRequest(obj))
+	{
+		if (obj.getMethod() == "GET" && obj.getRequestTarget() == "/hello")
+		{
+			// env has to be created before CGI, because it is passed to the CGI
+
+			Environment env;
+			env.setVar("QUERY_STRING", "Hello from C++ CGI!");
+			response = router.handleCGIRequest(argv, env);
+		}
+		else
+		{
+			response = router.handleDynamicRequest(obj);
+		}
+	}
+	else
+	{
+		// This if condition only for legacy reasons! TODO: remove
+		if (obj.getMethod() == "GET" && (obj.getRequestTarget() == "/" || obj.getRequestTarget() == "/home")
+			response = router.handleHomePage();
+		else
+		{
+			response = router.handleStaticRequest(obj.getRequestTarget());
+		}
+	}
+
 	else if (strstr(buffer, "GET /hello HTTP/1.1"))
 	{
 		// env has to be created before CGI, because it is passed to the CGI
 		Environment env;
 		env.setVar("QUERY_STRING", "Hello from C++ CGI!");
 		response = handleCGIRequest(argv, env);
-	}
-	else
-	{
-		response = handleNotFound();
 	}
 
 	write(socket, response.c_str(), response.size());

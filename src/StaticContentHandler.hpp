@@ -20,8 +20,10 @@ class StaticContentHandler : public ARequestHandler
 	~StaticContentHandler();
 	HTTPResponse handleRequest(const HTTPRequest &request);
 
-	std::string handleHomePage();
-	std::string handleNotFound();
+	// std::string handleHomePage();
+	HTTPResponse handleHomePage();
+	// std::string handleNotFound();
+	HTTPResponse handleNotFound();
 
   private:
 	StaticContentHandler();

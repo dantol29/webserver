@@ -65,23 +65,45 @@ HTTPResponse StaticContentHandler::handleRequest(const HTTPRequest &request)
 	return response;
 }
 
-std::string handleHomePage()
+// This should return a HTTPResponse object
+// std::string handleHomePage()
+// {
+// 	std::string htmlContent = readHtml("./html/home.html");
+// 	std::stringstream ss;
+// 	ss << htmlContent.length();
+// 	std::string htmlLength = ss.str();
+// 	std::string httpResponse = "HTTP/1.1 200 OK\nContent-Type: text/html\n" + std::string("Content-Length: ") +
+// 							   htmlLength + "\n\n" + htmlContent;
+// 	std::cout << "------------------Home page returned from handleHomePage()-------------------" << std::endl;
+// 	return httpResponse;
+// }
+HTTPResponse handleHomePage()
 {
 	std::string htmlContent = readHtml("./html/home.html");
-	std::stringstream ss;
-	ss << htmlContent.length();
-	std::string htmlLength = ss.str();
-	std::string httpResponse = "HTTP/1.1 200 OK\nContent-Type: text/html\n" + std::string("Content-Length: ") +
-							   htmlLength + "\n\n" + htmlContent;
+	HTTPResponse response;
+	response.setStatusCode(200, "OK");
+	response.setBody(htmlContent);
+	response.setHeader("Content-Type", "text/html");
 	std::cout << "------------------Home page returned from handleHomePage()-------------------" << std::endl;
-	return httpResponse;
+	return response;
 }
 
-std::string handleNotFound(void)
-{
-	std::string response = "HTTP/1.1 404 Not Found\r\nContent-Length: 0\r\n\r\n";
-	// write(socket, response.c_str(), response.size());
-	std::cout << "------------------404 Not Found sent-------------------" << std::endl;
+// This should return a HTTPResponse object
+// std::string handleNotFound(void)
+// {
+// 	std::string response = "HTTP/1.1 404 Not Found\r\nContent-Length: 0\r\n\r\n";
+// 	// write(socket, response.c_str(), response.size());
+// 	std::cout << "------------------404 Not Found sent-------------------" << std::endl;
 
+// 	return response;
+// }
+
+HTTPResponse handleNotFound(void)
+{
+	HTTPResponse response;
+	response.setStatusCode(404, "Not Found");
+	response.setBody("Not Found");
+	response.setHeader("Content-Type", "text/plain");
+	std::cout << "------------------404 Not Found sent-------------------" << std::endl;
 	return response;
 }

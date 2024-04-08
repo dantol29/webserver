@@ -18,7 +18,7 @@ class HTTPRequest
 {
   public:
 	HTTPRequest();
-	HTTPRequest(char *request);
+	HTTPRequest(const char *request);
 	~HTTPRequest();
 	std::string getMethod() const;
 	int getStatusCode() const;
