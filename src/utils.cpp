@@ -49,3 +49,15 @@ char *ft_strcpy(char *dest, const char *src)
 	dest[i] = '\0';
 	return (dest);
 }
+
+int hexToInt(std::string hex)
+{
+	int	n;
+
+	std::stringstream ss;
+	ss << std::hex << hex;
+	ss >> n;
+	if (ss.fail())
+		return (-1);
+	return (n);
+}
