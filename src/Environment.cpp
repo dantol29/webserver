@@ -25,7 +25,7 @@ Environment& Environment::operator=(const Environment& other) {
  * @param value The value to be assigned to the environment variable.
  */
 void Environment::setVar(const std::string& key, const std::string& value) {
-	envVars[key] = value;
+    envVars[key] = value;
 }
 
 //it does not modify any member variables of the Environment class
@@ -52,15 +52,15 @@ std::string Environment::getVar(const std::string& key) const {
  *         suitable for passing to execve.
  */
 std::vector<char*> Environment::getForExecve() const {
-	std::vector<char*> result;
-	for (std::map<std::string, std::string>::const_iterator it = envVars.begin(); it != envVars.end(); ++it) {
-		std::string env = it->first + "=" + it->second;
-		char* envCStr = new char[env.size() + 1];
-		ft_strcpy(envCStr, env.c_str());
-		result.push_back(envCStr);
-	}
-	result.push_back(NULL);
-	return result;
+    std::vector<char*> result;
+    for (std::map<std::string, std::string>::const_iterator it = envVars.begin(); it != envVars.end(); ++it) {
+        std::string env = it->first + "=" + it->second;
+        char* envCStr = new char[env.size() + 1];
+        ft_strcpy(envCStr, env.c_str());
+        result.push_back(envCStr);
+    }
+    result.push_back(NULL);
+    return result;
 }
 
 // because at the moment we implement only GET, POST and DELETE methods
@@ -79,24 +79,52 @@ bool Environment::isAuthorityForm(const HTTPRequest& request) {
     return true;
 }
 
-/**
- * Separates the request target into the script path and path info.
- *
- * @param requestTarget The full request target URL from the client.
- * @return A pair where the first element is the script virtual path and the
- *         second element is the additional path info.
- */
-std::pair<std::string, std::string> separatePathAndInfo(const std::string& requestTarget) {
-    std::string::size_type scriptEndPos = requestTarget.find('/', 1); 
-    if (scriptEndPos == std::string::npos) {
-        // script path only, no PATH_INFO
-        return std::pair<std::string, std::string>(requestTarget, "");
-    } else {
-        std::string scriptPath = requestTarget.substr(0, scriptEndPos);
-        std::string pathInfo = requestTarget.substr(scriptEndPos);
-
-        return std::make_pair(scriptPath, pathInfo);
+    /**
+     * @brief Divide request target into  SCRIPT_NAME  PATH_INFO.
+     * 
+     * note: SCRIPT_NAME = URI path to identify CGI script, not just the name of the script
+     * 
+     * Searches the request target for known script extensions 
+     * (.cgi, .pl, .py, .php) 
+     * Identifies the script extension
+     * splits the request target : before is the script path, after is path info.
+     * 
+     * @param requestTarget The full request target URL from the client.
+     * @return std::pair<std::string, std::string> A pair where the first element 
+     *         is the script path (up to and including the script extension) and 
+     *         the second element is the additional path info (anything after the script path).
+     */
+    std::pair<std::string, std::string> Environment::separatePathAndInfo(const std::string& requestTarget) const {
+    const char* extensions[] = {".cgi", ".pl", ".py", ".php"};
+    const size_t extCount = sizeof(extensions) / sizeof(extensions[0]);
+    
+    std::string scriptPath;
+    std::string pathInfo;
+    
+    size_t pos = std::string::npos;// largest possible value for size_t =  initialization to "not found"
+    for (size_t i = 0; i < extCount; ++i) {
+        pos = requestTarget.find(extensions[i]);
+        if (pos != std::string::npos) {
+            pos += strlen(extensions[i]);// Adjust position with extension length
+            break;
+        }
     }
+    
+    if (pos != std::string::npos) {
+        // Debugging print line
+        std::cout << "Script extension found. Script Path: '" << scriptPath << "', Path Info: '" << pathInfo << "'" << std::endl;
+        // Everything before the position is considered the script path
+        scriptPath = requestTarget.substr(0, pos);
+        // Everything after the script is considered path info
+        if (pos < requestTarget.length()) pathInfo = requestTarget.substr(pos);
+    } else {
+        // No extension is found,return entire target as script path
+        scriptPath = requestTarget;
+    }
+    // Debugging print before return
+    std::cout << "Returning - Script Path: '" << scriptPath << "', Path Info: '" << pathInfo << "'" << std::endl;
+
+    return std::make_pair(scriptPath, pathInfo);
 }
 
 
@@ -159,7 +187,7 @@ void  Environment::HTTPRequestToMetaVars(char* rawRequest, Environment& env) {
     //_______Request-related variables
     std::pair<std::string, std::string> pathComponents = separatePathAndInfo(request.getRequestTarget());
 
-    std::string scriptVirtualPath = pathComponents.first; // path to the script
+    std::string scriptName = pathComponents.first; // path to the script
     std::string pathInfo = pathComponents.second; // path after the script
     env.setVar("PATH_INFO", pathInfo);
     // most likely append the PATH_INFO to the root directory of the script OR MAYBE use a specific mapping logic
@@ -167,13 +195,13 @@ void  Environment::HTTPRequestToMetaVars(char* rawRequest, Environment& env) {
     // env.setVar("PATH_TRANSLATED", pathTranslated);
 
     // The virtual path to the script being executed
-    env.setVar("SCRIPT_NAME", "");
+    env.setVar("SCRIPT_NAME", "scriptName");
     // The query string from the URL sent by the client
     env.setVar("QUERY_STRING", "request.getQueryString()");
 
 
     //The REMOTE_HOST variable contains the fully qualified domain name of
-   //the client sending the request to the server
+//the client sending the request to the server
     env.setVar("REMOTE_HOST", ""); // Might require reverse DNS lookup
     // network address (IP) of the client sending the request to the server.
     env.setVar("REMOTE_ADDR", ""); // Needs to be obtained from the request/connection
@@ -214,8 +242,8 @@ void  Environment::HTTPRequestToMetaVars(char* rawRequest, Environment& env) {
 
 
 Environment::~Environment() {
-	std::vector<char*> envp = getForExecve();
-	for (size_t i = 0; i < envp.size(); ++i) {
-		delete[] envp[i];
-	}
+    std::vector<char*> envp = getForExecve();
+    for (size_t i = 0; i < envp.size(); ++i) {
+        delete[] envp[i];
+    }
 }

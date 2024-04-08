@@ -21,6 +21,7 @@ public:
 
 	// transform request to meta vars (Environment object)
 	bool isAuthorityForm(const HTTPRequest& request);
+    std::pair<std::string, std::string> separatePathAndInfo(const std::string& requestTarget) const;
 	void RequestTargetToMetaVars(HTTPRequest request, Environment& env);
 	void HTTPRequestToMetaVars(char* rawRequest, Environment& env);
 
