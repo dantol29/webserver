@@ -1,5 +1,6 @@
 #include "include/webserv.hpp"
 #include <string.h>
+#include <utility>
 
 Environment::Environment() {
 }
@@ -78,6 +79,27 @@ bool Environment::isAuthorityForm(const HTTPRequest& request) {
     return true;
 }
 
+/**
+ * Separates the request target into the script path and path info.
+ *
+ * @param requestTarget The full request target URL from the client.
+ * @return A pair where the first element is the script virtual path and the
+ *         second element is the additional path info.
+ */
+std::pair<std::string, std::string> separatePathAndInfo(const std::string& requestTarget) {
+    std::string::size_type scriptEndPos = requestTarget.find('/', 1); 
+    if (scriptEndPos == std::string::npos) {
+        // script path only, no PATH_INFO
+        return std::pair<std::string, std::string>(requestTarget, "");
+    } else {
+        std::string scriptPath = requestTarget.substr(0, scriptEndPos);
+        std::string pathInfo = requestTarget.substr(scriptEndPos);
+
+        return std::make_pair(scriptPath, pathInfo);
+    }
+}
+
+
 void  Environment::RequestTargetToMetaVars(HTTPRequest request, Environment& env) {
     std::string requestTarget = request.getRequestTarget();
 
@@ -113,6 +135,8 @@ void  Environment::RequestTargetToMetaVars(HTTPRequest request, Environment& env
 void  Environment::HTTPRequestToMetaVars(char* rawRequest, Environment& env) {
     HTTPRequest request(rawRequest);
 
+
+    //________General variables
     // Set the method used for the request (e.g., GET, POST)
     env.setVar("REQUEST_METHOD", request.getMethod());
     // Set the protocol version used in the request (e.g., HTTP/1.1)
@@ -120,7 +144,7 @@ void  Environment::HTTPRequestToMetaVars(char* rawRequest, Environment& env) {
     env.setVar("SERVER_PORT", "8080"); //     ---> how to set it programmatically ? from the macro ?
 
 
-    // Server-related variables
+    //_______Server-related variables
     // The name and version of the HTTP server (Format: name/version)
     env.setVar("SERVER_SOFTWARE", "Server_of_people_identifying_as_objects/1.0");
     // The host name, DNS alias, or IP address of the server
@@ -128,15 +152,25 @@ void  Environment::HTTPRequestToMetaVars(char* rawRequest, Environment& env) {
     // The CGI specification revision the server is using (Format: CGI/version)
     env.setVar("GATEWAY_INTERFACE", "CGI/1.1");
 
-    // Request-specific variables
-    // Additional path information from the client's request URL
-    env.setVar("PATH_INFO", ""); 
-    // The translated physical path the request refers to (after virtual to physical conversion by the server)
-    env.setVar("PATH_TRANSLATED", ""); // Needs specific server-side logic to determine
+
+
+
+
+    //_______Request-related variables
+    std::pair<std::string, std::string> pathComponents = separatePathAndInfo(request.getRequestTarget());
+
+    std::string scriptVirtualPath = pathComponents.first; // path to the script
+    std::string pathInfo = pathComponents.second; // path after the script
+    env.setVar("PATH_INFO", pathInfo);
+    // most likely append the PATH_INFO to the root directory of the script OR MAYBE use a specific mapping logic
+    // std::string pathTranslated = translatePathToPhysical(scriptVirtualPath, pathInfo); // Implement this function 
+    // env.setVar("PATH_TRANSLATED", pathTranslated);
+
     // The virtual path to the script being executed
     env.setVar("SCRIPT_NAME", "");
     // The query string from the URL sent by the client
     env.setVar("QUERY_STRING", "request.getQueryString()");
+
 
     //The REMOTE_HOST variable contains the fully qualified domain name of
    //the client sending the request to the server
@@ -144,7 +178,8 @@ void  Environment::HTTPRequestToMetaVars(char* rawRequest, Environment& env) {
     // network address (IP) of the client sending the request to the server.
     env.setVar("REMOTE_ADDR", ""); // Needs to be obtained from the request/connection
 
-    //AUTHENTICATION :
+
+    //_______AUTHENTICATION :
     // The authentication method used to protect the script
     env.setVar("AUTH_TYPE", ""); // Depends on server configuration
     // The client's username, if the script is protected and the server supports authentication
@@ -152,12 +187,15 @@ void  Environment::HTTPRequestToMetaVars(char* rawRequest, Environment& env) {
     // The remote (client's) username from RFC 931 identification; for log purposes only
     env.setVar("REMOTE_IDENT", ""); // Requires specific server support
 
+
+    //_______
     //ONLY FOR POST REQUESTS ?    OR NOT ?
     // The content type attached to the request, if any
     env.setVar("CONTENT_TYPE", ""); // Needs to be parsed from the request headers
 
 
-//set the metadata from the headers of the request
+
+    //_______set the metadata from the headers of the request
     std::pair<std::string, std::string> contentTypeHeader = request.getHeaders("Content-Type");
     if (!contentTypeHeader.first.empty()) {
         env.setVar("CONTENT_TYPE", contentTypeHeader.second);
@@ -181,6 +219,3 @@ Environment::~Environment() {
 		delete[] envp[i];
 	}
 }
-
-//definition and implementation counts for capitalization of file names (PascalCase)
-//git didn't let me push just after changing the case of the name of the file, which is why I comment here

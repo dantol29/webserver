@@ -2,7 +2,8 @@
 #include "HTTPRequest.hpp"
 #include <iostream>
 #include <sys/wait.h>
-#include <string>
+#include <string.h>
+#include <utility>
 #include <map>
 #include <vector>
 
