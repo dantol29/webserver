@@ -255,14 +255,17 @@ void handleConnection(int socket)
 		if (obj.getMethod() == "GET" && obj.getRequestTarget() == "/hello")
 		{
 			// env has to be created before CGI, because it is passed to the CGI
-
+			CGIHandler cgiHandler;
 			Environment env;
 			env.setVar("QUERY_STRING", "Hello from C++ CGI!");
-			response = router.handleCGIRequest(argv, env);
+			response = cgiHandler.handleCGIRequest(argv, env);
 		}
 		else
 		{
-			response = router.handleDynamicRequest(obj);
+			CGIHandler cgiHandler;
+			Environment env;
+			env.setVar(obj.getQueryString(), obj.getBody());
+			response = cgiHandler.handleCGIRequest(argv, obj);
 		}
 	}
 	else
