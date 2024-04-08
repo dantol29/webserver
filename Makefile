@@ -1,6 +1,6 @@
 # Compiler and Flags
 CXX = c++
-CXXFLAGS = -Wall -Wextra -Werror -std=c++98 -I. -Iinclude
+CXXFLAGS = -Wall -Wextra -Werror -std=c++98 -I. -Iinclude -Isrc
 DEPFLAGS = -MMD -MP
 
 # Source and Object Files
@@ -10,7 +10,8 @@ SRCS = src/main.cpp \
 	src/CGI_handler.cpp \
 	src/Environment.cpp \
 	src/utils.cpp \
-	src/HTTPRequest.cpp
+	src/HTTPRequest.cpp \
+	src/HTTPRequestUtils.cpp
 OBJDIR = obj
 OBJS = $(SRCS:%.cpp=$(OBJDIR)/%.o)
 
