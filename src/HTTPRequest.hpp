@@ -1,6 +1,7 @@
 #include <string>
 #include <iostream>
 #include <unistd.h>
+#include <map>
 
 // It is RECOMMENDED that all HTTP
 // senders and recipients support, at a minimum, request-line lengths of 8000 octets
@@ -17,7 +18,7 @@ class HTTPRequest
 {
   public:
 	HTTPRequest();
-	HTTPRequest(const char *request);
+	HTTPRequest(char *request);
 	~HTTPRequest();
 	std::string getMethod() const;
 	int getStatusCode() const;
@@ -31,3 +32,11 @@ class HTTPRequest
 	std::string _requestTarget;
 	std::string _protocolVersion;
 };
+
+bool isOrigForm(std::string &requestTarget, int &queryStart);
+bool fileExists(std::string &requestTarget, bool isOriginForm, int queryStart);
+std::string extractValue(std::string &variables, int &i);
+std::string extractKey(std::string &variables, int &i, int startPos);
+std::string extractRequestTarget(char *request, int &i);
+std::string extractProtocolVersion(char *request, int &i);
+std::string extractMethod(char *request, int &i);

@@ -11,7 +11,8 @@ SRCS = src/main.cpp \
 	src/Environment.cpp \
 	src/utils.cpp \
 	src/HTTPRequest.cpp \
-	src/HTTPResponse.cpp \
+	src/HTTPResponse.cpp \ \
+	src/HTTPRequestUtils.cpp
 OBJDIR = obj
 OBJS = $(SRCS:%.cpp=$(OBJDIR)/%.o)
 
