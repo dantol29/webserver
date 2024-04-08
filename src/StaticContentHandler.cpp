@@ -1,7 +1,5 @@
 #include "StaticContentHandler.hpp"
 #include "Server.hpp"
-#include <string>
-#include <fstream>
 
 // Constructor
 StaticContentHandler::StaticContentHandler(const std::string &webRoot) : _webRoot(webRoot) {};
@@ -53,16 +51,37 @@ HTTPResponse StaticContentHandler::handleRequest(const HTTPRequest &request)
 	{
 		// TODO: consider streaming the file instead of loading it all in memory for large files
 		std::string body((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
-		response.setStatusCode(200);
+		response.setStatusCode(200, "OK");
 		response.setBody(body);
 		response.setHeader("Content-Type", getMimeType(path));
 	}
 	else
 	{
 		// TODO: consider serving a 404.html page
-		response.setStatusCode(404);
+		response.setStatusCode(404, "Not Found");
 		response.setBody("Not Found");
 		response.setHeader("Content-Type", "text/plain");
 	}
+	return response;
+}
+
+std::string handleHomePage()
+{
+	std::string htmlContent = readHtml("./html/home.html");
+	std::stringstream ss;
+	ss << htmlContent.length();
+	std::string htmlLength = ss.str();
+	std::string httpResponse = "HTTP/1.1 200 OK\nContent-Type: text/html\n" + std::string("Content-Length: ") +
+							   htmlLength + "\n\n" + htmlContent;
+	std::cout << "------------------Home page returned from handleHomePage()-------------------" << std::endl;
+	return httpResponse;
+}
+
+std::string handleNotFound(void)
+{
+	std::string response = "HTTP/1.1 404 Not Found\r\nContent-Length: 0\r\n\r\n";
+	// write(socket, response.c_str(), response.size());
+	std::cout << "------------------404 Not Found sent-------------------" << std::endl;
+
 	return response;
 }
