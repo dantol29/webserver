@@ -57,5 +57,7 @@ int hexToInt(std::string hex)
 	std::stringstream ss;
 	ss << std::hex << hex;
 	ss >> n;
+	if (ss.fail())
+		return (-1);
 	return (n);
 }

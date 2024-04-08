@@ -27,7 +27,7 @@ bool	isInvalidChar(char c)
 	return (false);
 }
 
-void	skipRequestLine(char *request, int& i)
+void	skipRequestLine(const char *request, unsigned int& i)
 {
 	while (request[i] && request[i + 1]){
 		if (request[i] == '\r' && request[i + 1] == '\n'){
@@ -38,12 +38,14 @@ void	skipRequestLine(char *request, int& i)
 	}
 }
 
-void	skipHeader(char *request, unsigned int& i)
+void	skipHeader(const char *request, unsigned int& i)
 {
 	while (request[i] && request[i + 1] && request[i + 2] && request[i + 3]){
 		if (request[i] == '\r' && request[i + 1] == '\n' \
-		&& request[i + 2] == '\r' && request[i + 3] == '\n')
+		&& request[i + 2] == '\r' && request[i + 3] == '\n'){
+			i += 4; // skip "\r\n\r\n"
 			return ;
+		}
 		i++;
 	}
 }
@@ -59,6 +61,28 @@ bool	isValidHost(std::string host)
 {
 	(void)host;
 	return (true);
+}
+
+/*
+The combination of \\r\\n
+is as a standard way to denote the end of a line in HTTP headers.
+*/
+bool	hasCRLF(const char* request, unsigned int& i, int mode)
+{
+	if (mode == 0){
+		if (request[i] && request[i + 1] \
+		&& request[i] == '\r' && request[i + 1] == '\n')
+			return (true);
+		return (false);
+	}
+	if (mode == 1){
+		if (request[i] && request[i + 1] && request[i + 2] && request[i + 3] \
+		&& request[i] == '\r' && request[i + 1] == '\n' \
+		&& request[i + 2] == '\r' && request[i + 3] == '\n')
+			return (true);
+		return (false);
+	}
+	return (false);
 }
 
 bool	hasMandatoryHeaders(HTTPRequest& obj)
@@ -124,11 +148,11 @@ std::string extractKey(std::string& variables, int &i, int startPos)
 	return (variables.substr(startPos, i - startPos));
 }
 
-std::string extractRequestTarget(char *request, int &i)
+std::string extractRequestTarget(const char *request, unsigned int& i)
 {
-	std::string	requestTarget;
-	std::string	string_request(request);
-	int			start = i;
+	std::string		requestTarget;
+	std::string		string_request(request);
+	unsigned int	start = i;
 
 	while (request[i] && request[i] != ' ')
 		i++;
@@ -139,11 +163,11 @@ std::string extractRequestTarget(char *request, int &i)
 	return (requestTarget);
 }
 
-std::string extractProtocolVersion(char *request, int &i)
+std::string extractProtocolVersion(const char *request, unsigned int& i)
 {
-	std::string	protocolVersion;
-	std::string	string_request(request);
-	int			start = i;
+	std::string		protocolVersion;
+	std::string		string_request(request);
+	unsigned int	start = i;
 
 	while (request[i] && request[i] != '\r')
 		i++;
@@ -154,7 +178,7 @@ std::string extractProtocolVersion(char *request, int &i)
 	return ("");
 }
 
-std::string	extractMethod(char *request, int &i)
+std::string	extractMethod(const char *request, unsigned int& i)
 {
 	std::string	method;
 	std::string	string_request(request);
@@ -168,10 +192,10 @@ std::string	extractMethod(char *request, int &i)
 	return ("");
 }
 
-std::string	extractHeaderKey(char *request, int& i)
+std::string	extractHeaderKey(const char *request, unsigned int& i)
 {
 	std::string	string_request(request);
-	int			start = i;
+	unsigned int	start = i;
 
 	while (request[i] && request[i] != ':'){
 		if (isInvalidChar(request[i]) || request[i] == ' ')
@@ -182,10 +206,10 @@ std::string	extractHeaderKey(char *request, int& i)
 	return (string_request.substr(start, i - start));
 }
 
-std::string	extractHeaderValue(char *request, int& i)
+std::string	extractHeaderValue(const char *request, unsigned int& i)
 {
-	std::string string_request(request);
-	int			start = i;
+	std::string		string_request(request);
+	unsigned int	start = i;
 
 	while (request[i] && request[i] != '\r'){
 		if (isInvalidChar(request[i]))
@@ -196,11 +220,41 @@ std::string	extractHeaderValue(char *request, int& i)
 	return (string_request.substr(start, i - start));
 }
 
-int parseHeaders(char *request, HTTPRequest& obj)
+int	extractLineLength(const char *request, unsigned int& i)
 {
-	int			i;
-	std::string	key;
-	std::string	value;
+	std::string string_request(request);
+	unsigned int start = i;
+	int size = 0;
+
+	while (request[i] && request[i] != '\r')
+		i++;
+	if (request[i] != '\r' || request[i + 1] != '\n')
+		return (-1);
+	size = hexToInt(string_request.substr(start, i - start));
+	if (size <= 0)
+		return (size);
+	std::cout << "Len: " << size << std::endl;
+	i += 2; // skip '\r' and '\n'
+	return (size);
+}
+
+std::string		extractLine(const char *request, unsigned int& i, const unsigned int& size)
+{
+	std::string string_request(request);
+	std::string line = string_request.substr(i, size);
+	i += size; // skip line
+	if (request[i] != '\r' || request[i + 1] != '\n')
+		return ("");
+	i += 2; // skip '\r' and '\n'
+	std::cout << "Word: " << line << std::endl;
+	return (line);
+}
+
+int parseHeaders(const char *request, HTTPRequest& obj)
+{
+	unsigned int	i;
+	std::string		key;
+	std::string		value;
 
 	i = 0;
 	skipRequestLine(request, i);
@@ -232,18 +286,4 @@ int parseHeaders(char *request, HTTPRequest& obj)
 
 int	parseBody(){
 	return (0);
-}
-
-
-unsigned int	extractLineLength(char *request, unsigned int& i)
-{
-	std::string string_request(request);
-	unsigned int start = i;
-
-	while (request[i] != '\r')
-		i++;
-	if (request[i] != '\r' || request[i + 1] != '\n')
-		return (0);
-	//std::cout << string_request.substr(start, i - start) << std::endl;
-	return (hexToInt(string_request.substr(start, i - start)));
 }

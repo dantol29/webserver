@@ -11,15 +11,12 @@
 
 const int BUFFER_SIZE = 1024;
 
-    // Determine the type of request and call the appropriate handler
-void handleConnection(int socket) {
-    char buffer[BUFFER_SIZE] = {0};
-    long valRead = read(socket, buffer, BUFFER_SIZE);
 
-	HTTPRequest obj(buffer);
-	std::cout << obj.getStatusCode() << std::endl;
+void printVariablesAndHeaders(const HTTPRequest& obj)
+{
 	std::multimap<std::string, std::string> a = obj.getHeaders();
 	std::multimap<std::string, std::string> b = obj.getStorage();
+	std::vector<std::string>				c = obj.getBody();
 
 	std::multimap<std::string, std::string>::iterator it;
 	std::cout << "Variables: =>" << std::endl;
@@ -30,6 +27,19 @@ void handleConnection(int socket) {
 	for (it = a.begin(); it != a.end(); it++){
 		std::cout << "Key: " << it->first << ", Value: " << it->second << std::endl;
 	}
+	std::cout << "Body: =>" << std::endl;
+	for (size_t i = 0; i < c.size(); ++i)
+		std::cout << c[i] << std::endl;
+}
+
+// Determine the type of request and call the appropriate handler
+void handleConnection(int socket) {
+    char buffer[BUFFER_SIZE] = {0};
+    long valRead = read(socket, buffer, BUFFER_SIZE);
+
+	HTTPRequest obj(buffer);
+	std::cout << obj.getStatusCode() << std::endl;
+	printVariablesAndHeaders(obj);
 
     if (valRead < 0) {
         perror("In read");

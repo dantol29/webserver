@@ -2,6 +2,7 @@
 #include <iostream>
 #include <unistd.h>
 #include <map>
+#include <vector>
 
 // It is RECOMMENDED that all HTTP 
 // senders and recipients support, at a minimum, request-line lengths of 8000 octets
@@ -12,7 +13,6 @@
 
 class HTTPRequest{
 	public:
-		HTTPRequest();
 		HTTPRequest(const HTTPRequest& obj);
 		HTTPRequest& operator=(const HTTPRequest& obj);
 		~HTTPRequest();
@@ -21,24 +21,25 @@ class HTTPRequest{
 		int			getStatusCode() const;
 		std::string getRequestTarget() const;
 		std::string getProtocolVersion() const;
-		std::string	getBody() const;
 		bool		getIsChunked() const;
 		std::multimap<std::string, std::string>	getStorage() const;
 		std::multimap<std::string, std::string>	getHeaders() const;
 		std::pair<std::string, std::string>		getHeaders(std::string key) const;
+		std::vector<std::string>				getBody() const;
 		void		addStorage(std::string key, std::string value);
 		void		addHeader(std::string key, std::string value);
-		void		setIsChunked(bool a);
-		bool		parseChunkedBody(char *request);
 		void		addToBody(char *request);
+		void		setIsChunked(bool a);
+		int			parseChunkedBody(char *request);
 	private:
+		HTTPRequest();
 		int			parseRequestLine(char *request);
 		int			_statusCode;
 		bool		_isChunked;
 		std::string _method;
 		std::string	_requestTarget;
 		std::string _protocolVersion;
-		std::string	_body;
+		std::vector<std::string>				_body;
 		std::multimap<std::string, std::string> _storage;
 		std::multimap<std::string, std::string> _headers;	
 };
