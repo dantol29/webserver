@@ -17,7 +17,6 @@ std::string		extractHeaderKey(const char *request, unsigned int& i);
 std::string		extractHeaderValue(const char *request, unsigned int& i);
 unsigned int	extractLineLength(const char *request, unsigned int& i);
 std::string		extractLine(const char *request, unsigned int& i, const unsigned int& size);
-int			parseBody();
 
 HTTPRequest::HTTPRequest() : _statusCode(200), _isChunked(false), _method(""), \
 _requestTarget(""), _protocolVersion(""){
@@ -54,14 +53,15 @@ HTTPRequest::~HTTPRequest(){
 }
 
 HTTPRequest::HTTPRequest(char *request){
+	//_isChunked = false;
 	if (strlen(request) < 10)
 		_statusCode = 400;
 	else{
 		_statusCode = parseRequestLine(request);
 		if (_statusCode == 200)
 			_statusCode = parseHeaders(request);
-		else if (_statusCode == 200 && !_isChunked)
-			parseBody();// parse regular body
+		if (_statusCode == 200 && !_isChunked)
+			_statusCode = parseBody(request);
 	}
 }
 
@@ -223,5 +223,29 @@ int HTTPRequest::parseHeaders(const char *request)
 		return (400);
 	if (_method == "GET" && request[i + 2]) //has something after headers
 		return (400);
+	return (200);
+}
+
+int	HTTPRequest::parseBody(const char *request){
+	unsigned int	i = 0;
+	unsigned int	start = 0;
+	std::string		string_request(request);
+
+	skipHeader(request, i);
+	start = i;
+	while (request[i]){
+		if (hasCRLF(request, i, 1)){
+			if (!request[i + 4])
+				return (200);
+			return (400);
+		}
+		if (hasCRLF(request, i, 0)){
+			i++;
+			//std::cout << "Line: " << string_request.substr(start, i - start) << std::endl;
+			_body.push_back(string_request.substr(start, i - start));
+			start = ++i;
+		}
+		i++;
+	}
 	return (200);
 }

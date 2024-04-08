@@ -33,6 +33,7 @@ class HTTPRequest{
 		HTTPRequest();
 		int			parseRequestLine(const char *request);
 		int			parseHeaders(const char *request);
+		int			parseBody(const char *request);
 		bool		saveVariables(std::string& variables);
 		int			_statusCode;
 		bool		_isChunked;
@@ -41,6 +42,6 @@ class HTTPRequest{
 		std::string	_requestTarget;
 		std::string _protocolVersion;
 		std::multimap<std::string, std::string> _queryString;
-		std::multimap<std::string, std::string> _headers;	
+		std::multimap<std::string, std::string> _headers;
 		std::vector<std::string>				_body;
 };
