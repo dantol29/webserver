@@ -270,23 +270,18 @@ void handleConnection(int socket)
 	}
 	else
 	{
+		StatcContentHandler staticContentHandler;
 		// This if condition only for legacy reasons! TODO: remove
 		if (obj.getMethod() == "GET" && (obj.getRequestTarget() == "/" || obj.getRequestTarget() == "/home")
-			response = router.handleHomePage();
+			response = staticContentHandler.handleHomePage();
 		else
 		{
-			response = router.handleStaticRequest(obj.getRequestTarget());
+			response = staticContentHandler.handleRequest(obj);
 		}
 	}
 
-	else if (strstr(buffer, "GET /hello HTTP/1.1"))
-	{
-		// env has to be created before CGI, because it is passed to the CGI
-		Environment env;
-		env.setVar("QUERY_STRING", "Hello from C++ CGI!");
-		response = handleCGIRequest(argv, env);
-	}
+	std::string responseString = response.toString();
 
-	write(socket, response.c_str(), response.size());
+	write(socket, responseString.c_str(), responseString.size());
 	close(socket);
 }
