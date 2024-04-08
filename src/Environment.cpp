@@ -62,7 +62,8 @@ std::vector<char*> Environment::getForExecve() const {
 	return result;
 }
 
-
+// because at the moment we implement only GET, POST and DELETE methods
+// we don't need that, but we can add it later
 bool Environment::isAuthorityForm(const HTTPRequest& request) {
     std::string method = request.getMethod();
     std::string requestTarget = request.getRequestTarget();
@@ -71,7 +72,6 @@ bool Environment::isAuthorityForm(const HTTPRequest& request) {
         return false;
     }
 
-    // Authority-Form should not start with a scheme or path indicator
     if (requestTarget.find("://") != std::string::npos || requestTarget[0] == '/') {
         return false;
     }
@@ -117,6 +117,8 @@ void  Environment::HTTPRequestToMetaVars(char* rawRequest, Environment& env) {
     env.setVar("REQUEST_METHOD", request.getMethod());
     // Set the protocol version used in the request (e.g., HTTP/1.1)
     env.setVar("PROTOCOL_VERSION", request.getProtocolVersion());
+    env.setVar("SERVER_PORT", "8080"); //     ---> how to set it programmatically ? from the macro ?
+
 
     // Server-related variables
     // The name and version of the HTTP server (Format: name/version)
@@ -127,10 +129,6 @@ void  Environment::HTTPRequestToMetaVars(char* rawRequest, Environment& env) {
     env.setVar("GATEWAY_INTERFACE", "CGI/1.1");
 
     // Request-specific variables
-    // The name and revision of the protocol the request was made in (Format: protocol/revision)
-    env.setVar("SERVER_PROTOCOL", request.getProtocolVersion());
-    // The port number on which the request was received
-    env.setVar("SERVER_PORT", "8080"); //     ---> how to set it programmatically ? from the macro ?
     // Additional path information from the client's request URL
     env.setVar("PATH_INFO", ""); 
     // The translated physical path the request refers to (after virtual to physical conversion by the server)
@@ -157,8 +155,23 @@ void  Environment::HTTPRequestToMetaVars(char* rawRequest, Environment& env) {
     //ONLY FOR POST REQUESTS ?    OR NOT ?
     // The content type attached to the request, if any
     env.setVar("CONTENT_TYPE", ""); // Needs to be parsed from the request headers
-    // The length of the content sent by the client
-    env.setVar("CONTENT_LENGTH", ""); // Needs to be parsed from the request headers
+
+
+//set the metadata from the headers of the request
+    std::pair<std::string, std::string> contentTypeHeader = request.getHeaders("Content-Type");
+    if (!contentTypeHeader.first.empty()) {
+        env.setVar("CONTENT_TYPE", contentTypeHeader.second);
+    } else {
+        // set CONTENT_TYPE to an empty string or a default value.
+        env.setVar("CONTENT_TYPE", "");
+    }
+    std::pair<std::string, std::string> contentLengthHeader = request.getHeaders("Content-Length");
+    if (!contentLengthHeader.first.empty()) {
+        env.setVar("CONTENT_LENGTH", contentLengthHeader.second);
+    } else {
+        // set CONTENT_TYPE to 0 if not present
+        env.setVar("CONTENT_LENGTH", "0");
+    }
 }
 
 
