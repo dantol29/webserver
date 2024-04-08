@@ -15,7 +15,7 @@ const int BUFFER_SIZE = 1024;
 void printVariablesHeadersBody(const HTTPRequest& obj)
 {
 	std::multimap<std::string, std::string> a = obj.getHeaders();
-	std::multimap<std::string, std::string> b = obj.getStorage();
+	std::multimap<std::string, std::string> b = obj.getQueryString();
 	std::vector<std::string>				c = obj.getBody();
 
 	std::multimap<std::string, std::string>::iterator it;

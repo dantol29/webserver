@@ -23,7 +23,7 @@ class HTTPRequest{
 		std::string getProtocolVersion() const;
 		bool		getIsChunked() const;
 		bool		getIsChunkFinish() const;
-		std::multimap<std::string, std::string>	getStorage() const;
+		std::multimap<std::string, std::string>	getQueryString() const;
 		std::multimap<std::string, std::string>	getHeaders() const;
 		std::pair<std::string, std::string>		getHeaders(std::string key) const;
 		std::vector<std::string>				getBody() const;
@@ -40,7 +40,7 @@ class HTTPRequest{
 		std::string _method;
 		std::string	_requestTarget;
 		std::string _protocolVersion;
-		std::vector<std::string>				_body;
-		std::multimap<std::string, std::string> _storage;
+		std::multimap<std::string, std::string> _queryString;
 		std::multimap<std::string, std::string> _headers;	
+		std::vector<std::string>				_body;
 };

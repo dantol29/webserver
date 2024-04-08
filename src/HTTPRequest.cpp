@@ -32,7 +32,7 @@ HTTPRequest::HTTPRequest(const HTTPRequest& obj){
 	_protocolVersion = obj._protocolVersion;
 	_body = obj._body;
 	_headers  = obj._headers;
-	_storage = obj._storage;
+	_queryString = obj._queryString;
 }
 
 HTTPRequest& HTTPRequest::operator=(const HTTPRequest& obj){
@@ -44,7 +44,7 @@ HTTPRequest& HTTPRequest::operator=(const HTTPRequest& obj){
 		_protocolVersion = obj._protocolVersion;
 		_body = obj._body;
 		_headers  = obj._headers;
-		_storage = obj._storage;
+		_queryString = obj._queryString;
 	}
 	return (*this);
 }
@@ -60,10 +60,8 @@ HTTPRequest::HTTPRequest(char *request){
 		_statusCode = parseRequestLine(request);
 		if (_statusCode == 200)
 			_statusCode = parseHeaders(request);
-		// if (_statusCode == 200 && _isChunked)
-		// 	_statusCode = parseChunkedBody(request);// parse chunked body
-		// else if (_statusCode == 200 && !_isChunked)
-		// 	parseBody();// parse regular body
+		else if (_statusCode == 200 && !_isChunked)
+			parseBody();// parse regular body
 	}
 }
 
@@ -87,8 +85,8 @@ bool	HTTPRequest::getIsChunked() const{
 	return (_isChunked);
 }
 
-std::multimap<std::string, std::string>	HTTPRequest::getStorage() const{
-	return (_storage);
+std::multimap<std::string, std::string>	HTTPRequest::getQueryString() const{
+	return (_queryString);
 }
 
 std::multimap<std::string, std::string>	HTTPRequest::getHeaders() const{
@@ -132,7 +130,7 @@ bool	HTTPRequest::saveVariables(std::string& variables)
 			if (value.empty())
 				return (false);
 			startPos = i;
-			_storage.insert(std::make_pair(key, value));
+			_queryString.insert(std::make_pair(key, value));
 		}
 	}
 	return (true);

@@ -100,21 +100,23 @@ bool	hasMandatoryHeaders(HTTPRequest& obj)
 				return (false);
 			isHost++;
 		}
-		else if (it->first == "Content-length")
+		else if (it->first == "Content-length"){
+			if (obj.getMethod() != "POST")
+				return (false);
 			isContentLength++;
+		}
 		else if (it->first == "Content-type"){
-			if (!isValidContentType(it->second))
+			if (!isValidContentType(it->second) || obj.getMethod() != "POST")
 				return (false);
 			isContentType++;
 		}
 		else if (it->first == "Transfer-encoding"){
-			if (it->second == "chunked")
-				obj.setIsChunked(true);
-			else
+			if (it->second != "chunked" || obj.getMethod() != "POST")
 				return (false);
+			obj.setIsChunked(true);
 		}
 	}
-	if (obj.getMethod() == "POST" || obj.getMethod() == "PUT")
+	if (obj.getMethod() == "POST")
 		return (isHost == 1 && isContentLength == 1 && isContentType == 1);
 	else
 		return (isHost == 1);
