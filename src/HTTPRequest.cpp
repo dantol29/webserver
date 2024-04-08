@@ -1,15 +1,38 @@
 #include "HTTPRequest.hpp"
+#include <string.h>
 
 HTTPRequest::HTTPRequest() : _method(""), _requestTarget(""), _protocolVersion(""){
 
 }
 
-HTTPRequest::HTTPRequest(char *request){
-	_statusCode = parseRequestLine(request);
+HTTPRequest::HTTPRequest(const HTTPRequest& obj){
+	_method = obj._method;
+	_requestTarget = obj._requestTarget;
+	_protocolVersion = obj._protocolVersion;
+	_statusCode = obj._statusCode;
+	_storage = obj._storage;
+}
+
+HTTPRequest& HTTPRequest::operator=(const HTTPRequest& obj){
+	if (this != &obj){
+		_method = obj._method;
+		_requestTarget = obj._requestTarget;
+		_protocolVersion = obj._protocolVersion;
+		_statusCode = obj._statusCode;
+		_storage = obj._storage;
+	}
+	return (*this);
 }
 
 HTTPRequest::~HTTPRequest(){
 
+}
+
+HTTPRequest::HTTPRequest(char *request){
+	if (strlen(request) < 7)
+		_statusCode = 400;
+	else
+		_statusCode = parseRequestLine(request);
 }
 
 std::string HTTPRequest::getMethod() const{
@@ -28,57 +51,50 @@ int	HTTPRequest::getStatusCode() const{
 	return (_statusCode);
 }
 
-std::string	extractMethod(char *request, int &i)
-{
-	std::string	method;
-	std::string	string_request(request);
-
-	while (request[i] && request[i] != ' ')
-		i++;
-	method = string_request.substr(0, i);
-	//std::cout << method << std::endl;
-	if (method == "GET" || method == "POST" || method == "DELETE")
-		return (method);
-	return ("");
+std::map<std::string, std::string>	HTTPRequest::getStorage() const{
+	return (_storage);
 }
 
-std::string extractRequestTarget(char *request, int &i)
-{
-	std::string	requestTarget;
-	std::string	string_request(request);
-	int			start = i;
-
-	while (request[i] && request[i] != ' ')
-		i++;
-	if (i > MAX_URI)
-		return ("");
-	requestTarget = string_request.substr(start, i - start);
-	//std::cout << requestTarget << std::endl;
-	return (requestTarget);
+bool	HTTPRequest::addStorage(std::string key, std::string value){
+	_storage[key] = value;
+	return (true);
 }
 
-std::string extractProtocolVersion(char *request, int &i)
+bool	saveVariables(std::string variables, HTTPRequest* obj)
 {
-	std::string	protocolVersion;
-	std::string	string_request(request);
-	int			start = i;
+	int	startPos = 0;
+	std::string	key;
+	std::string	value;
 
-	while (request[i] && request[i] != '\r')
-		i++;
-	protocolVersion = string_request.substr(start, i - start);
-	//std::cout << protocolVersion << std::endl;
-	if (protocolVersion == "HTTP/1.1")
-		return (protocolVersion);
-	return ("");
+	for (int i = 0; i < (int)variables.length(); i++){
+		if (variables[i] == '='){
+			key = extractKey(variables, i, startPos);
+			if (key.empty())
+				return (false);
+			value = extractValue(variables, i);
+			if (value.empty())
+				return (false);
+			startPos = i;
+			obj->addStorage(key, value);
+		}
+	}
+	return (true);
 }
 
-bool	checkRequestTarget(std::string requestTarget)
+bool	checkRequestTarget(std::string& requestTarget, HTTPRequest* obj)
 {
+	bool	isOriginForm;
+	int		queryStart = 0;
+
 	if (requestTarget == "/")
 		return (true);
-	//std::cout << "." + requestTarget << std::endl;
-	if (access(("." + requestTarget).c_str(), F_OK) == -1)
+	isOriginForm = isOrigForm(requestTarget, queryStart);
+	if (!fileExists(requestTarget, isOriginForm, queryStart))
 		return (false);
+	if (isOriginForm)
+		if (!saveVariables(requestTarget.substr(\
+		queryStart + 1, strlen(requestTarget.c_str()) - queryStart), obj))
+			return (false);
 	return (true);
 }
 
@@ -97,7 +113,7 @@ int	HTTPRequest::parseRequestLine(char *request)
 		return (414); // than any URI it wishes to parse MUST respond with a 414 (URI Too Long).
 	if (request[i++] != ' ') // single space
 		return (400);
-	if (!checkRequestTarget(_requestTarget))
+	if (!checkRequestTarget(_requestTarget, this))
 		return (400); // An invalid request-line SHOULD respond with a 400 (Bad Request).
 	_protocolVersion = extractProtocolVersion(request, i);
 	if (_protocolVersion.empty())
@@ -106,5 +122,3 @@ int	HTTPRequest::parseRequestLine(char *request)
 		return (400); // The combination of \r\n serves as a standard way to denote the end of a line in HTTP headers.
 	return (200); 
 }
-
-
