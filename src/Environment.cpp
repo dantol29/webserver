@@ -158,6 +158,31 @@ void  Environment::RequestTargetToMetaVars(HTTPRequest request, Environment& env
     env.setVar("GATEWAY_INTERFACE", "CGI/1.1");
 }
 
+/**
+ * @brief Constructs a query string from query parameters as multimap.
+ *
+ * Takes a multimap of query parameters 
+ * concatenates them into a single string. 
+ * - Each key-value pair is joined by '=', 
+ * - pairs are separated by '&'.
+ * The resulting string is formatted for use in a URL query string.
+ *
+ * @param queryParams The multimap containing query parameters.
+ * a reference to a constant std::multimap (that maps std::string keys to std::string values.)
+ * @return A string representing the formatted query string.
+ */
+std::string Environment::formatQueryString(const std::multimap<std::string, std::string>& queryParams) const {
+    std::string queryString;
+    for (std::multimap<std::string, std::string>::const_iterator it = queryParams.begin(); it != queryParams.end(); ) {
+        queryString += it->first + "=" + it->second;
+        ++it;
+        if (it != queryParams.end()) {
+            queryString += "&";
+        }
+    }
+    return queryString;
+}
+
 
 //refer to RFC 3875 for more information on CGI environment variables
 void  Environment::HTTPRequestToMetaVars(char* rawRequest, Environment& env) {
@@ -171,7 +196,6 @@ void  Environment::HTTPRequestToMetaVars(char* rawRequest, Environment& env) {
     env.setVar("PROTOCOL_VERSION", request.getProtocolVersion());
     env.setVar("SERVER_PORT", "8080"); //     ---> how to set it programmatically ? from the macro ?
 
-
     //_______Server-related variables
     // The name and version of the HTTP server (Format: name/version)
     env.setVar("SERVER_SOFTWARE", "Server_of_people_identifying_as_objects/1.0");
@@ -179,10 +203,6 @@ void  Environment::HTTPRequestToMetaVars(char* rawRequest, Environment& env) {
     env.setVar("SERVER_NAME", "The_objects.com");
     // The CGI specification revision the server is using (Format: CGI/version)
     env.setVar("GATEWAY_INTERFACE", "CGI/1.1");
-
-
-
-
 
     //_______Request-related variables
     std::pair<std::string, std::string> pathComponents = separatePathAndInfo(request.getRequestTarget());
@@ -197,15 +217,14 @@ void  Environment::HTTPRequestToMetaVars(char* rawRequest, Environment& env) {
     // The virtual path to the script being executed
     env.setVar("SCRIPT_NAME", "scriptName");
     // The query string from the URL sent by the client
-    env.setVar("QUERY_STRING", "request.getQueryString()");
-
+    std::string queryString = formatQueryString(request.getQueryString());
+    env.setVar("QUERY_STRING", queryString);
 
     //The REMOTE_HOST variable contains the fully qualified domain name of
 //the client sending the request to the server
     env.setVar("REMOTE_HOST", ""); // Might require reverse DNS lookup
     // network address (IP) of the client sending the request to the server.
     env.setVar("REMOTE_ADDR", ""); // Needs to be obtained from the request/connection
-
 
     //_______AUTHENTICATION :
     // The authentication method used to protect the script
@@ -215,13 +234,10 @@ void  Environment::HTTPRequestToMetaVars(char* rawRequest, Environment& env) {
     // The remote (client's) username from RFC 931 identification; for log purposes only
     env.setVar("REMOTE_IDENT", ""); // Requires specific server support
 
-
     //_______
     //ONLY FOR POST REQUESTS ?    OR NOT ?
     // The content type attached to the request, if any
     env.setVar("CONTENT_TYPE", ""); // Needs to be parsed from the request headers
-
-
 
     //_______set the metadata from the headers of the request
     std::pair<std::string, std::string> contentTypeHeader = request.getHeaders("Content-Type");
