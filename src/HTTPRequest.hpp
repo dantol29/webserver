@@ -22,20 +22,21 @@ class HTTPRequest{
 		std::string getRequestTarget() const;
 		std::string getProtocolVersion() const;
 		bool		getIsChunked() const;
+		bool		getIsChunkFinish() const;
 		std::multimap<std::string, std::string>	getStorage() const;
 		std::multimap<std::string, std::string>	getHeaders() const;
 		std::pair<std::string, std::string>		getHeaders(std::string key) const;
 		std::vector<std::string>				getBody() const;
-		void		addStorage(std::string key, std::string value);
-		void		addHeader(std::string key, std::string value);
-		void		addToBody(char *request);
 		void		setIsChunked(bool a);
-		int			parseChunkedBody(char *request);
+		int			parseChunkedBody(const char *request);
 	private:
 		HTTPRequest();
-		int			parseRequestLine(char *request);
+		int			parseRequestLine(const char *request);
+		int			parseHeaders(const char *request);
+		bool		saveVariables(std::string& variables);
 		int			_statusCode;
 		bool		_isChunked;
+		bool		_isChunkFinish;
 		std::string _method;
 		std::string	_requestTarget;
 		std::string _protocolVersion;

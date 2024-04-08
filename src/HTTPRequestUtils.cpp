@@ -1,4 +1,5 @@
 #include "HTTPRequest.hpp"
+#include <string.h>
 int hexToInt(std::string hex);
 
 bool	isOrigForm(std::string &requestTarget, int &queryStart){
@@ -163,6 +164,20 @@ std::string extractRequestTarget(const char *request, unsigned int& i)
 	return (requestTarget);
 }
 
+std::string	extractVariables(std::string& requestTarget, bool& isOriginForm)
+{
+	int		queryStart = 0;
+
+	if (requestTarget == "/")
+		return ("/");
+	isOriginForm = isOrigForm(requestTarget, queryStart);
+	// if (!fileExists(requestTarget, isOriginForm, queryStart))
+	// 	return ("");
+	if (isOriginForm)
+		return (requestTarget.substr(queryStart + 1, strlen(requestTarget.c_str()) - queryStart));
+	return (requestTarget);
+}
+
 std::string extractProtocolVersion(const char *request, unsigned int& i)
 {
 	std::string		protocolVersion;
@@ -248,40 +263,6 @@ std::string		extractLine(const char *request, unsigned int& i, const unsigned in
 	i += 2; // skip '\r' and '\n'
 	std::cout << "Word: " << line << std::endl;
 	return (line);
-}
-
-int parseHeaders(const char *request, HTTPRequest& obj)
-{
-	unsigned int	i;
-	std::string		key;
-	std::string		value;
-
-	i = 0;
-	skipRequestLine(request, i);
-	while (request[i]){
-		key = extractHeaderKey(request, i);
-		if (key.empty())
-			return (400);
-		i++; // skip ':'
-		if (request[i++] != ' ')
-			return (400);
-		value = extractHeaderValue(request, i);
-		if (value.empty())
-			return (400);
-		if (request[i] != '\r' || request[i + 1] != '\n')
-			return (400);
-		obj.addHeader(key, value);
-		i += 2; // skip '\r' and '\n'
-		if (request[i] == '\r' && request[i + 1] == '\n') // end of header section
-			break ;
-	}
-	if (request[i] != '\r' || request[i + 1] != '\n') // end of header section
-		return (400);
-	if (!hasMandatoryHeaders(obj))
-		return (400);
-	if (obj.getMethod() == "GET" && request[i + 2]) //has something after headers
-		return (400);
-	return (200);
 }
 
 int	parseBody(){

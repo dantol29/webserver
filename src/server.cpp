@@ -12,7 +12,7 @@
 const int BUFFER_SIZE = 1024;
 
 
-void printVariablesAndHeaders(const HTTPRequest& obj)
+void printVariablesHeadersBody(const HTTPRequest& obj)
 {
 	std::multimap<std::string, std::string> a = obj.getHeaders();
 	std::multimap<std::string, std::string> b = obj.getStorage();
@@ -38,8 +38,10 @@ void handleConnection(int socket) {
     long valRead = read(socket, buffer, BUFFER_SIZE);
 
 	HTTPRequest obj(buffer);
+	if (obj.getIsChunked() == true)
+		obj.parseChunkedBody(buffer);
 	std::cout << obj.getStatusCode() << std::endl;
-	printVariablesAndHeaders(obj);
+	printVariablesHeadersBody(obj);
 
     if (valRead < 0) {
         perror("In read");
