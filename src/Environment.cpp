@@ -17,12 +17,6 @@ Environment& Environment::operator=(const Environment& other) {
 
 /**
  * @brief Sets or updates an environment variable.
- * 
- * This method allows setting a new environment variable or updating the value
- * of an existing one in the internal environment variable storage.
- * 
- * @param key The name of the environment variable.
- * @param value The value to be assigned to the environment variable.
  */
 void Environment::setVar(const std::string& key, const std::string& value) {
     envVars[key] = value;
@@ -63,24 +57,8 @@ std::vector<char*> Environment::getForExecve() const {
     return result;
 }
 
-// because at the moment we implement only GET, POST and DELETE methods
-// we don't need that, but we can add it later
-bool Environment::isAuthorityForm(const HTTPRequest& request) {
-    std::string method = request.getMethod();
-    std::string requestTarget = request.getRequestTarget();
-
-    if (method != "CONNECT") {
-        return false;
-    }
-
-    if (requestTarget.find("://") != std::string::npos || requestTarget[0] == '/') {
-        return false;
-    }
-    return true;
-}
-
     /**
-     * @brief Divide request target into  SCRIPT_NAME  PATH_INFO.
+     * @brief Divide request target into SCRIPT_NAME and PATH_INFO.
      * 
      * note: SCRIPT_NAME = URI path to identify CGI script, not just the name of the script
      * 
@@ -105,7 +83,7 @@ bool Environment::isAuthorityForm(const HTTPRequest& request) {
     for (size_t i = 0; i < extCount; ++i) {
         pos = requestTarget.find(extensions[i]);
         if (pos != std::string::npos) {
-            pos += strlen(extensions[i]);// Adjust position with extension length
+            pos += strlen(extensions[i]);// add extension length
             break;
         }
     }
@@ -117,7 +95,7 @@ bool Environment::isAuthorityForm(const HTTPRequest& request) {
         scriptPath = requestTarget.substr(0, pos);
         // Everything after the script is considered path info
         if (pos < requestTarget.length()) pathInfo = requestTarget.substr(pos);
-    } else {
+    } else { 
         // No extension is found,return entire target as script path
         scriptPath = requestTarget;
     }
@@ -127,7 +105,25 @@ bool Environment::isAuthorityForm(const HTTPRequest& request) {
     return std::make_pair(scriptPath, pathInfo);
 }
 
+// because at the moment we implement only GET, POST and DELETE methods
+// we don't need that, but we can add it later
+bool Environment::isAuthorityForm(const HTTPRequest& request) {
+    std::string method = request.getMethod();
+    std::string requestTarget = request.getRequestTarget();
 
+    if (method != "CONNECT") {
+        return false;
+    }
+
+    if (requestTarget.find("://") != std::string::npos || requestTarget[0] == '/') {
+        return false;
+    }
+    return true;
+}
+
+//This function is used to set the CGI environment variables based on the request target.
+// atm this is more of a debug function, especially as we implement only GET, POST and DELETE
+//or a draft for a future more advanced implementation
 void  Environment::RequestTargetToMetaVars(HTTPRequest request, Environment& env) {
     std::string requestTarget = request.getRequestTarget();
 
@@ -136,10 +132,7 @@ void  Environment::RequestTargetToMetaVars(HTTPRequest request, Environment& env
         return;
     } else if (requestTarget[0] == '/') {
         std::cout << "Identified Origin-Form request target" << std::endl;
-        env.setVar("SCRIPT_NAME", "--------⚠️---WAITING FOR DANIIL's IMPLEMENTATION--⚠️---------");
-        env.setVar("QUERY_STRING", "--------⚠️--WAITING FOR DANIIL's IMPLEMENTATION--⚠️---------");
-        std::cout << "QUERY_STRING set to : " << env.getVar("QUERY_STRING") << std::endl; // Assuming getVar method exists
-        std::cout << "SCRIPT_NAME set to : " << env.getVar("SCRIPT_NAME") << std::endl; // Assuming getVar method exists
+    //
     } else if (startsWith(requestTarget, "http")) {
         std::cout << "Identified Absolute-Form request target" << std::endl;
         // No direct action for CGI variables
@@ -184,7 +177,7 @@ std::string Environment::formatQueryString(const std::multimap<std::string, std:
 }
 
 
-//refer to RFC 3875 for more information on CGI environment variables
+// RFC 3875 for more information on CGI environment variables, or README_CGI_ENV.md
 void  Environment::HTTPRequestToMetaVars(char* rawRequest, Environment& env) {
     HTTPRequest request(rawRequest);
 
@@ -204,47 +197,40 @@ void  Environment::HTTPRequestToMetaVars(char* rawRequest, Environment& env) {
     // The CGI specification revision the server is using (Format: CGI/version)
     env.setVar("GATEWAY_INTERFACE", "CGI/1.1");
 
-    //_______Request-related variables
+    //_______Path-related variables
     std::pair<std::string, std::string> pathComponents = separatePathAndInfo(request.getRequestTarget());
-
     std::string scriptName = pathComponents.first; // path to the script
     std::string pathInfo = pathComponents.second; // path after the script
     env.setVar("PATH_INFO", pathInfo);
     // most likely append the PATH_INFO to the root directory of the script OR MAYBE use a specific mapping logic
     // std::string pathTranslated = translatePathToPhysical(scriptVirtualPath, pathInfo); // Implement this function 
     // env.setVar("PATH_TRANSLATED", pathTranslated);
-
-    // The virtual path to the script being executed
-    env.setVar("SCRIPT_NAME", "scriptName");
+    // SCRIPT_NAME = URI path to identify CGI script, not just the name of the script
+    env.setVar("SCRIPT_NAME", scriptName);
     // The query string from the URL sent by the client
     std::string queryString = formatQueryString(request.getQueryString());
     env.setVar("QUERY_STRING", queryString);
 
     //The REMOTE_HOST variable contains the fully qualified domain name of
-//the client sending the request to the server
-    env.setVar("REMOTE_HOST", ""); // Might require reverse DNS lookup
-    // network address (IP) of the client sending the request to the server.
-    env.setVar("REMOTE_ADDR", ""); // Needs to be obtained from the request/connection
+    //the client sending the request to the server
+    // env.setVar("REMOTE_HOST", ""); // Might require reverse DNS lookup
+    // // network address (IP) of the client sending the request to the server.
+    // env.setVar("REMOTE_ADDR", ""); // Needs to be obtained from the request/connection
 
     //_______AUTHENTICATION :
-    // The authentication method used to protect the script
-    env.setVar("AUTH_TYPE", ""); // Depends on server configuration
-    // The client's username, if the script is protected and the server supports authentication
-    env.setVar("REMOTE_USER", ""); // Depends on server and authentication method
-    // The remote (client's) username from RFC 931 identification; for log purposes only
-    env.setVar("REMOTE_IDENT", ""); // Requires specific server support
-
-    //_______
-    //ONLY FOR POST REQUESTS ?    OR NOT ?
-    // The content type attached to the request, if any
-    env.setVar("CONTENT_TYPE", ""); // Needs to be parsed from the request headers
+    // // The authentication method used to protect the script
+    // env.setVar("AUTH_TYPE", ""); // Depends on server configuration
+    // // The client's username, if the script is protected and the server supports authentication
+    // env.setVar("REMOTE_USER", ""); // Depends on server and authentication method
+    // // The remote (client's) username from RFC 931 identification; for log purposes only
+    // env.setVar("REMOTE_IDENT", ""); // Requires specific server support
 
     //_______set the metadata from the headers of the request
     std::pair<std::string, std::string> contentTypeHeader = request.getHeaders("Content-Type");
     if (!contentTypeHeader.first.empty()) {
         env.setVar("CONTENT_TYPE", contentTypeHeader.second);
     } else {
-        // set CONTENT_TYPE to an empty string or a default value.
+        // set CONTENT_TYPE to an empty string            --> or a default value ?
         env.setVar("CONTENT_TYPE", "");
     }
     std::pair<std::string, std::string> contentLengthHeader = request.getHeaders("Content-Length");
