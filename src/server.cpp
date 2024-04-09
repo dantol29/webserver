@@ -331,11 +331,6 @@ void Server::handleConnection(int clientFD)
 	close(clientFD);
 }
 
-// Server Server::getServer()
-// {
-// 	return *this;
-// }
-
 void Server::loadDefaultConfig()
 {
 	_webRoot = "var/www";
@@ -359,14 +354,4 @@ std::string Server::getConfigFilePath() const
 void Server::loadConfig()
 {
 	// Add logic to load config from file
-}
-
-void Server::start()
-{
-	// Add logic to start the server
-}
-
-void Server::stop()
-{
-	// Add logic to stop the server
 }

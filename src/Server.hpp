@@ -30,10 +30,6 @@ class Server
 	void setWebRoot(const std::string &webRoot);
 	std::string getConfigFilePath() const;
 
-	// Server getServer();
-	void start();
-	void stop();
-
   private:
 	/* Private Attributes*/
 	int _port;
