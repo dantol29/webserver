@@ -214,7 +214,7 @@ int HTTPRequest::parseHeaders(const char *request)
 			return (400);
 		_headers.insert(std::make_pair(key, value));
 		i += 2; // skip '\r' and '\n'
-		if (request[i] == '\r' && request[i + 1] == '\n') // end of header section
+		if (hasCRLF(request, i, 0)) // end of header section
 			break ;
 	}
 	if (request[i] != '\r' || request[i + 1] != '\n') // end of header section
@@ -227,25 +227,27 @@ int HTTPRequest::parseHeaders(const char *request)
 }
 
 int	HTTPRequest::parseBody(const char *request){
+	unsigned int	end = 400;
 	unsigned int	i = 0;
 	unsigned int	start = 0;
 	std::string		string_request(request);
 
 	skipHeader(request, i);
 	start = i;
-	while (request[i]){
-		if (hasCRLF(request, i, 1)){
-			if (!request[i + 4])
-				return (200);
-			return (400);
-		}
+	while (request[i] && end != 200){
 		if (hasCRLF(request, i, 0)){
-			i++;
-			//std::cout << "Line: " << string_request.substr(start, i - start) << std::endl;
+			if (hasCRLF(request, i, 1))
+				end = 200;
 			_body.push_back(string_request.substr(start, i - start));
-			start = ++i;
+			i += 2;
+			start = i;
+			continue;
 		}
+		else if (!hasCRLF(request, i, 0) && request[i] == '\r')
+			return (400);
 		i++;
 	}
-	return (200);
+	if (end == 200 && hasCRLF(request, i, 0) && request[i + 2])
+		return (400);
+	return (end);
 }

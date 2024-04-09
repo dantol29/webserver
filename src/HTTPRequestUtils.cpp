@@ -1,6 +1,7 @@
 #include "HTTPRequest.hpp"
 #include <string.h>
 int 	hexToInt(std::string hex);
+bool	isNumber(std::string line);
 bool	hasCRLF(const char* request, unsigned int& i, int mode);
 
 bool	isOrigForm(std::string &requestTarget, int &queryStart){
@@ -100,17 +101,17 @@ bool	hasMandatoryHeaders(HTTPRequest& obj)
 				return (false);
 			isHost++;
 		}
-		else if (it->first == "Content-length"){
-			if (obj.getMethod() != "POST")
+		else if (it->first == "Content-Length"){
+			if (!isNumber(it->second) || obj.getMethod() != "POST" )
 				return (false);
 			isContentLength++;
 		}
-		else if (it->first == "Content-type"){
+		else if (it->first == "Content-Type"){
 			if (!isValidContentType(it->second) || obj.getMethod() != "POST")
 				return (false);
 			isContentType++;
 		}
-		else if (it->first == "Transfer-encoding"){
+		else if (it->first == "Transfer-Encoding"){
 			if (it->second != "chunked" || obj.getMethod() != "POST")
 				return (false);
 			obj.setIsChunked(true);
