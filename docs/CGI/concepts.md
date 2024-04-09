@@ -15,7 +15,7 @@ The server acts as an application gateway.  It receives the request
    from the client, selects a CGI script to handle the request, converts
    the client request to a CGI request, executes the script and converts
    the CGI response into a response for the client.
-`
+```
 
 
 ### Server-Side vs. Client-Side Programming
