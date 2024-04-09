@@ -12,7 +12,7 @@
 
 ### REQUEST LINE
 
-- Syntax:  `method token, single space (SP), request-target, SP, protocol version`.
+- Syntax:  `method token, single space (SP), request-target, SP, protocol version\r\n`.
 - Example: `GET /index.html HTTP/1.1`.
 
 #### ⚠️ Request line rules
@@ -20,9 +20,6 @@
 1. Method token is **case-sensitive**.
 2. There are **four distinct formats** for the request-target (origin-form, absolute-form, authority-form, asterisk-form).
 3. **No whitespace** is allowed in the request-target.
-4. A client **MUST** send a Host header field.
-5. If the target URI includes an authority component, then a client **MUST** send a field value for Host that is identical to that authority component, excluding any userinfo subcomponent and its "@" delimiter.
-6. If the authority component is missing or undefined for the target URI, then a client **MUST** send a Host header field with an empty field value.
 
 | Method  | Description |
 | ------------- | ------------- |
@@ -65,7 +62,17 @@
 
 ### HEADERS
 
-...
+- Syntax:  `header-field-name: SP header-field-value\r\n`.
+- Example: `Connection: keep-alive\r\n`.
+
+#### ⚠️ Header rules
+1. Each header is a single line terminated by a pair `\r\n`.
+2. Values may contain **any valid ASCII characters**, including spaces
+3. Multiple headers with the same field name can be included in the request.
+4. A client **MUST** send a `Host` header field.
+5. A client **MUST** send a `Content-length` header for requests with a body (POST, PUT).
+5. A client **MUST** send a `Content-type` header for requests with a body (POST, PUT).
+7. Headers are terminated by a blank line `\r\n\r\n`.
 
 -------------------------------------------------------------------------------------------------------------------
 

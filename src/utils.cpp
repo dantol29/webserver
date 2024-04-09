@@ -52,9 +52,14 @@ char *ft_strcpy(char *dest, const char *src)
 	return (dest);
 }
 
-std::string getExecutablePath()
+int hexToInt(std::string hex)
 {
-	char result[PATH_MAX];
-	ssize_t count = readlink("/proc/self/exe", result, PATH_MAX);
-	return std::string(result, (count > 0) ? count : 0);
+	int n;
+
+	std::stringstream ss;
+	ss << std::hex << hex;
+	ss >> n;
+	if (ss.fail())
+		return (-1);
+	return (n);
 }
