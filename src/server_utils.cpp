@@ -1,18 +1,4 @@
-#include <cstdlib> // For exit() and EXIT_FAILURE
-#include <cstring> // For memset
-#include <iostream>
-#include <netinet/in.h> // For sockaddr_in
-#include <sys/socket.h> // For socket functions
-#include <unistd.h>		// For read, write, and close
-#include <fstream>
-#include <sstream>
-#include "webserv.hpp"
-#include "HTTPRequest.hpp"
-#include "HTTPResponse.hpp"
-#include "Router.hpp"
-
-const int BUFFER_SIZE = 1024;
-const size_t MAX_HEADER_SIZE = 8192; // 8KB - This is the limit of the header size also in NGINX
+#include "server_utils.hpp"
 
 bool isChunked(const std::string &headers)
 {
@@ -172,7 +158,6 @@ void handleConnection(int socket)
 	if (isChunked(headers))
 	{
 		// TODO: check if this is blocking, I mean the recv in readChunk
-		std::string body;
 		bool bodyComplete = false;
 		while (!bodyComplete)
 		{

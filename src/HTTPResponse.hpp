@@ -25,7 +25,9 @@ class HTTPResponse
   private:
 	int _statusCode;
 	std::string _statusMessage;
-	std::vector<std::pair<std::string, std::string>> _headers;
+	// clang-format off
+	std::vector<std::pair<std::string, std::string> > _headers;
+	// clang-format on
 	std::string _body;
 
 	std::string getStatusMessage(int statusCode) const;

@@ -1,3 +1,6 @@
+#ifndef HTTPREQUEST_HPP
+#define HTTPREQUEST_HPP
+
 #include <string>
 #include <iostream>
 #include <unistd.h>
@@ -40,3 +43,5 @@ std::string extractKey(std::string &variables, int &i, int startPos);
 std::string extractRequestTarget(char *request, int &i);
 std::string extractProtocolVersion(char *request, int &i);
 std::string extractMethod(char *request, int &i);
+
+#endif

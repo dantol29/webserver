@@ -5,14 +5,17 @@ DEPFLAGS = -MMD -MP
 
 # Source and Object Files
 SRCS = src/main.cpp \
-	src/server.cpp \
-	src/request_handler.cpp \
 	src/CGI_handler.cpp \
+	src/CGIHandler.cpp \
 	src/Environment.cpp \
 	src/utils.cpp \
 	src/HTTPRequest.cpp \
 	src/HTTPResponse.cpp \ \
-	src/HTTPRequestUtils.cpp
+	src/HTTPRequestUtils.cpp \
+	src/Router.cpp \
+	src/server_utils.cpp \
+	src/Server.cpp \
+	src/StaticContentHandler.cpp
 OBJDIR = obj
 OBJS = $(SRCS:%.cpp=$(OBJDIR)/%.o)
 

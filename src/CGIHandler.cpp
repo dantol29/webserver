@@ -14,5 +14,8 @@ CGIHandler::~CGIHandler()
 
 HTTPResponse CGIHandler::handleRequest(const HTTPRequest &request)
 {
+	(void)request;
+	HTTPResponse response;
 	// Determine CGI script path and set up environment
+	return response;
 }
