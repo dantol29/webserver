@@ -39,32 +39,8 @@ void Server::startPollEventLoop()
 			{
 				if (_FDs[i].revents & POLLIN)
 				{
-					// Check if the server socket is readable: fds[0] is the server socket
 					if (i == 0)
-					{
-						struct sockaddr_in address;
-						socklen_t addrLen = sizeof(address);
-						std::cout << "New connection detected" << std::endl;
-						// accept is blocking but we know that the server socket is readable
-						int new_socket = accept(_serverFD, (struct sockaddr *)&address, (socklen_t *)&addrLen);
-						if (new_socket >= 0)
-						{
-							struct pollfd newSocketPoll;
-							newSocketPoll.fd = new_socket;
-							newSocketPoll.events = POLLIN;
-							newSocketPoll.revents = 0;
-							_FDs.push_back(newSocketPoll);
-							// We can log the address of the newly connected client
-							// char clientIP[INET_ADDRSTRLEN];
-							// inet_ntop(AF_INET, &address.sin_addr, clientIP, INET_ADDRSTRLEN);
-							// std::cout << "New connection from " << clientIP << std::endl;
-						}
-						else
-						{
-							perror("In accept");
-							// TODO: consider what to do here. Not sure we want to exit the program.
-						}
-					}
+						acceptNewConnection();
 					else
 					{
 						handleConnection(_FDs[i].fd);
@@ -339,6 +315,30 @@ void Server::addServerSocketPollFdToFDs()
 	serverPollFd.events = POLLIN;
 	serverPollFd.revents = 0;
 	_FDs.push_back(serverPollFd);
+}
+
+void Server::acceptNewConnection()
+{
+	struct sockaddr_in clientAddress;
+	socklen_t ClientAddrLen = sizeof(clientAddress);
+	std::cout << "New connection detected" << std::endl;
+	int newSocket = accept(_serverFD, (struct sockaddr *)&clientAddress, (socklen_t *)&ClientAddrLen);
+	if (newSocket >= 0)
+	{
+		struct pollfd newSocketPoll;
+		newSocketPoll.fd = newSocket;
+		newSocketPoll.events = POLLIN;
+		newSocketPoll.revents = 0;
+		_FDs.push_back(newSocketPoll);
+		char clientIP[INET_ADDRSTRLEN];
+		inet_ntop(AF_INET, &clientAddress.sin_addr, clientIP, INET_ADDRSTRLEN);
+		std::cout << "New connection from " << clientIP << std::endl;
+	}
+	else
+	{
+		// TODO: consider what to do here. Not sure we want to exit the program.
+		perror("In accept");
+	}
 }
 
 /* Others */

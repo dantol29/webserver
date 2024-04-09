@@ -29,3 +29,7 @@ Notes about the Server class (and the server) to unclutter the Server.cpp file.
 - `-1` means wait indefinitely
 
 - for the server socket POLLLIN means that a new connection is available
+
+**acceptNewConnection**
+
+- accept() is blocking but we call it when the server socket is readable, i.e. when a new connection is available.

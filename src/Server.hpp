@@ -5,6 +5,7 @@
 #include <cstring>
 #include <iostream>
 #include <sys/socket.h>
+#include <arpa/inet.h>
 #include <netinet/in.h>
 #include <vector>
 #include <poll.h>
@@ -52,6 +53,7 @@ class Server
 	void listen();
 	/* startPollEventLoop */
 	void addServerSocketPollFdToFDs();
+	void acceptNewConnection();
 	void handleConnection(int clientFD);
 
 	/* Not avaiabel constructors */
