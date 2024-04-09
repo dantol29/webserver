@@ -25,9 +25,10 @@ HTTPResponse::~HTTPResponse()
 {
 }
 
-void HTTPResponse::setStatusCode(int statusCode)
+void HTTPResponse::setStatusCode(int statusCode, const std::string &statusMessage)
 {
 	_statusCode = statusCode;
+	_statusMessage = statusMessage;
 }
 
 void HTTPResponse::setHeader(const std::string &name, const std::string &value)

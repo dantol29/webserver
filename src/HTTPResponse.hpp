@@ -17,14 +17,17 @@ class HTTPResponse
 	// Destructor
 	~HTTPResponse();
 
-	void setStatusCode(int statusCode);
+	void setStatusCode(int statusCode, const std::string &statusMessage);
 	void setHeader(const std::string &name, const std::string &value);
 	void setBody(const std::string &body);
 	std::string toString() const;
 
   private:
 	int _statusCode;
-	std::vector<std::pair<std::string, std::string>> _headers;
+	std::string _statusMessage;
+	// clang-format off
+	std::vector<std::pair<std::string, std::string> > _headers;
+	// clang-format on
 	std::string _body;
 
 	std::string getStatusMessage(int statusCode) const;
