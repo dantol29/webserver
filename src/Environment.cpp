@@ -50,7 +50,11 @@ std::vector<char*> Environment::getForExecve() const {
     for (std::map<std::string, std::string>::const_iterator it = envVars.begin(); it != envVars.end(); ++it) {
         std::string env = it->first + "=" + it->second;
         char* envCStr = new char[env.size() + 1];
-        ft_strcpy(envCStr, env.c_str());
+        size_t i;
+        for (i = 0; i < env.size(); ++i) {
+            envCStr[i] = env[i];
+        }
+        envCStr[i] = '\0'; // Null-terminate the string
         result.push_back(envCStr);
     }
     result.push_back(NULL);
