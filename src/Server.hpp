@@ -21,7 +21,7 @@ class Server
 	Server(const std::string configFilePath);
 	~Server();
 
-	void startListen();
+	void startListening();
 	void startPollEventLoop();
 
 	int getPort() const;
@@ -45,8 +45,10 @@ class Server
 
 	void loadConfig();
 	void loadDefaultConfig();
+	void createServerSocket();
 	void setReuseAddrAndPort();
 	void bindToPort(int port);
+	void listen();
 	void handleConnection(int clientFD);
 
 	/* Not avaiabel constructors */

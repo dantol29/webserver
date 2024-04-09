@@ -17,16 +17,13 @@ Server::~Server()
 }
 
 // Start listening
-void Server::startListen()
+void Server::startListening()
 {
 
-	if ((_serverFD = socket(AF_INET, SOCK_STREAM, 0)) == 0)
-		perrorAndExit("Failed to create server socket");
-
+	createServerSocket();
 	setReuseAddrAndPort();
 	bindToPort(_port);
-	if (listen(_serverFD, _maxClients) < 0)
-		perrorAndExit("In listen");
+	listen();
 }
 
 void Server::startPollEventLoop()
@@ -307,6 +304,12 @@ void Server::loadDefaultConfig()
 	_maxClients = 10;
 }
 
+void Server::createServerSocket()
+{
+	if ((_serverFD = socket(AF_INET, SOCK_STREAM, 0)) == 0)
+		perrorAndExit("Failed to create server socket");
+}
+
 void Server::setReuseAddrAndPort()
 {
 	int opt = 1;
@@ -325,6 +328,12 @@ void Server::bindToPort(int port)
 
 	if (bind(_serverFD, (struct sockaddr *)&_serverAddr, sizeof(_serverAddr)) < 0)
 		perrorAndExit("In bind");
+}
+
+void Server::listen()
+{
+	if (::listen(_serverFD, _maxClients) < 0)
+		perrorAndExit("In listen");
 }
 
 std::string Server::getWebRoot() const
