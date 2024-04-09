@@ -19,7 +19,8 @@ const size_t MAX_HEADER_SIZE = 8192; // 8KB - This is the limit of the header si
 
 bool isChunked(const std::string &headers);
 size_t getContentLength(const std::string &headers);
-// bool MyReadLine(int socket, std::string &line);
+bool ReadLine(int socket, std::string &line);
 std::string readChunk(int socket, size_t chunkSize);
+void printVariablesHeadersBody(const HTTPRequest &obj);
 
 #endif // SERVER_UTILS_HPP

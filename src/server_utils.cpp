@@ -1,6 +1,6 @@
 #include "server_utils.hpp"
 
-bool MyReadLine(int socket, std::string &line);
+bool ReadLine(int socket, std::string &line);
 
 bool isChunked(const std::string &headers)
 {
@@ -48,35 +48,35 @@ size_t getContentLength(const std::string &headers)
 	return 0;
 }
 
-// bool MyReadLine(int socket, std::string &line)
-// {
-// 	line.clear();
-// 	while (true)
-// 	{
-// 		char buffer;
-// 		ssize_t bytesRead = recv(socket, &buffer, 1, 0);
-// 		if (bytesRead > 0)
-// 		{
-// 			line.push_back(buffer);
-// 			if (line.size() >= 2 && line.substr(line.size() - 2) == "\r\n")
-// 			{
-// 				line.resize(line.size() - 2); // remove the CRLF
-// 				return true;
-// 			}
-// 		}
-// 		else if (bytesRead < 0)
-// 		{
-// 			perror("recv failed");
-// 			return false;
-// 		}
-// 		else
-// 		{
-// 			std::cout << "Connection closed" << std::endl;
-// 			return false;
-// 		}
-// 	}
-// 	return true;
-// }
+bool ReadLine(int socket, std::string &line)
+{
+	line.clear();
+	while (true)
+	{
+		char buffer;
+		ssize_t bytesRead = recv(socket, &buffer, 1, 0);
+		if (bytesRead > 0)
+		{
+			line.push_back(buffer);
+			if (line.size() >= 2 && line.substr(line.size() - 2) == "\r\n")
+			{
+				line.resize(line.size() - 2); // remove the CRLF
+				return true;
+			}
+		}
+		else if (bytesRead < 0)
+		{
+			perror("recv failed");
+			return false;
+		}
+		else
+		{
+			std::cout << "Connection closed" << std::endl;
+			return false;
+		}
+	}
+	return true;
+}
 
 std::string readChunk(int socket, size_t chunkSize)
 {
@@ -167,7 +167,7 @@ void handleConnection(int socket)
 			// chunkSizeLine will contain the size of the next chunk in hexadecimal
 			std::string chunkSizeLine;
 			// Read the line containing the size of the next chunk
-			MyReadLine(socket, chunkSizeLine);
+			ReadLine(socket, chunkSizeLine);
 			// We transform the size from hexadecimal to an integer
 			size_t chunkSize = std::stoul(chunkSizeLine, 0, 16);
 
@@ -278,4 +278,26 @@ void handleConnection(int socket)
 
 	write(socket, responseString.c_str(), responseString.size());
 	close(socket);
+}
+
+void printVariablesHeadersBody(const HTTPRequest &obj)
+{
+	std::multimap<std::string, std::string> a = obj.getHeaders();
+	std::multimap<std::string, std::string> b = obj.getQueryString();
+	std::vector<std::string> c = obj.getBody();
+
+	std::multimap<std::string, std::string>::iterator it;
+	std::cout << "Variables: =>" << std::endl;
+	for (it = b.begin(); it != b.end(); it++)
+	{
+		std::cout << "Key: " << it->first << ", Value: " << it->second << std::endl;
+	}
+	std::cout << "Headers: =>" << std::endl;
+	for (it = a.begin(); it != a.end(); it++)
+	{
+		std::cout << "Key: " << it->first << ", Value: " << it->second << std::endl;
+	}
+	std::cout << "Body: =>" << std::endl;
+	for (size_t i = 0; i < c.size(); ++i)
+		std::cout << c[i] << std::endl;
 }
