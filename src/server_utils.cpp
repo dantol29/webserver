@@ -1,6 +1,10 @@
 #include "server_utils.hpp"
 
-bool ReadLine(int socket, std::string &line);
+void perrorAndExit(const char *msg)
+{
+	perror(msg);
+	exit(EXIT_FAILURE);
+}
 
 bool isChunked(const std::string &headers)
 {

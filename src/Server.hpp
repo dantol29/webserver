@@ -43,6 +43,7 @@ class Server
 
 	void loadConfig();
 	void loadDefaultConfig();
+	void setReuseAddrAndPort();
 	void handleConnection(int clientFD);
 
 	/* Not avaiabel constructors */

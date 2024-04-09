@@ -22,5 +22,6 @@ size_t getContentLength(const std::string &headers);
 bool ReadLine(int socket, std::string &line);
 std::string readChunk(int socket, size_t chunkSize);
 void printVariablesHeadersBody(const HTTPRequest &obj);
+void perrorAndExit(const char *msg);
 
 #endif // SERVER_UTILS_HPP

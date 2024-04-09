@@ -20,29 +20,11 @@ Server::~Server()
 void Server::startListen()
 {
 
-	// Server socket is blocking by default, which should not matter since we are using poll
 	if ((_serverFD = socket(AF_INET, SOCK_STREAM, 0)) == 0)
-	{
-		perror("In socket");
-		// TODO: consider what to do here. Not sure we want to exit the program.
-		exit(EXIT_FAILURE);
-	}
+		perrorAndExit("Failed to create server socket");
 
-	int opt = 1;
-	// Set SO_REUSEADDR to allow re-binding to the same address and port
-	if (setsockopt(_serverFD, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)))
-	{
-		perror("setsockopt");
-		// TODO: consider what to do here. Not sure we want to exit the program.
-		exit(EXIT_FAILURE);
-	}
-	if (setsockopt(_serverFD, SOL_SOCKET, SO_REUSEPORT, &opt, sizeof(opt)))
-	{
-		perror("setsockopt SO_REUSEPORT: Protocol not available, continuing without SO_REUSEPORT");
-		// Don't exit on failure; it's not critical for basic server functionality
-		// Setting SO_REUSEPORT is not supported on all systems and setting it on the same call was causing the server
-		// to fail
-	}
+	setReuseAddrAndPort();
+
 	// We bind the server to the address and port
 	_serverAddr.sin_family = AF_INET;
 	_serverAddr.sin_addr.s_addr = INADDR_ANY;
@@ -50,18 +32,10 @@ void Server::startListen()
 	ft_memset(_serverAddr.sin_zero, '\0', sizeof _serverAddr.sin_zero);
 
 	if (bind(_serverFD, (struct sockaddr *)&_serverAddr, sizeof(_serverAddr)) < 0)
-	{
-		perror("In bind");
-		// TODO: consider what to do here. Not sure we want to exit the program.
-		exit(EXIT_FAILURE);
-	}
+		perrorAndExit("In bind");
 	// 10 is the maximum size of the queue of pending connections: check this value.
 	if (listen(_serverFD, 10) < 0)
-	{
-		perror("In listen");
-		// TODO: consider what to do here. Not sure we want to exit the program.
-		exit(EXIT_FAILURE);
-	}
+		perrorAndExit("In listen");
 }
 
 void Server::startPollEventLoop()
@@ -331,9 +305,23 @@ void Server::handleConnection(int clientFD)
 	close(clientFD);
 }
 
+void Server::loadConfig()
+{
+	// Add logic to load config from file
+}
+
 void Server::loadDefaultConfig()
 {
 	_webRoot = "var/www";
+}
+
+void Server::setReuseAddrAndPort()
+{
+	int opt = 1;
+	if (setsockopt(_serverFD, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)))
+		perror("setsockopt SO_REUSEADDR: Protocol not available, continuing without SO_REUSEADDR");
+	if (setsockopt(_serverFD, SOL_SOCKET, SO_REUSEPORT, &opt, sizeof(opt)))
+		perror("setsockopt SO_REUSEPORT: Protocol not available, continuing without SO_REUSEPORT");
 }
 
 std::string Server::getWebRoot() const
@@ -349,9 +337,4 @@ void Server::setWebRoot(const std::string &webRoot)
 std::string Server::getConfigFilePath() const
 {
 	return _configFilePath;
-}
-
-void Server::loadConfig()
-{
-	// Add logic to load config from file
 }
