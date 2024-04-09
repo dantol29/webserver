@@ -29,7 +29,7 @@ void Server::startListen()
 	_serverAddr.sin_family = AF_INET;
 	_serverAddr.sin_addr.s_addr = INADDR_ANY;
 	_serverAddr.sin_port = htons(_port);
-	ft_memset(_serverAddr.sin_zero, '\0', sizeof _serverAddr.sin_zero);
+	std::memset(_serverAddr.sin_zero, '\0', sizeof _serverAddr.sin_zero);
 
 	if (bind(_serverFD, (struct sockaddr *)&_serverAddr, sizeof(_serverAddr)) < 0)
 		perrorAndExit("In bind");

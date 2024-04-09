@@ -15,7 +15,6 @@ std::string toString(const T &value)
 	return oss.str();
 }
 
-void *ft_memset(void *ptr, int value, size_t num);
 char *ft_strcpy(char *dest, const char *src);
 
 /**
