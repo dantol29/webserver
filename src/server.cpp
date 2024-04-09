@@ -28,18 +28,11 @@ void Server::startListening()
 
 void Server::startPollEventLoop()
 {
-	// Set up the pollfd structure for the server socket
-	struct pollfd serverFdPoll;
-	serverFdPoll.fd = _serverFD;
-	serverFdPoll.events = POLLIN;
-	serverFdPoll.revents = 0;
-	_FDs.push_back(serverFdPoll);
+	addServerSocketPollFdToFDs();
 	while (1)
 	{
 		std::cout << "++++++++++++++ Waiting for new connection +++++++++++++++" << std::endl;
-		int ret = poll(_FDs.data(), _FDs.size(), -1); // -1 means wait indefinitely
-		// _FDs.data() returns a pointer to the underlying array of pollfd structures
-		// if the server socket is readable, then a new connection is available
+		int ret = poll(_FDs.data(), _FDs.size(), -1);
 		if (ret > 0)
 		{
 			for (size_t i = 0; i < _FDs.size(); i++)
@@ -304,6 +297,8 @@ void Server::loadDefaultConfig()
 	_maxClients = 10;
 }
 
+/* startListening */
+
 void Server::createServerSocket()
 {
 	if ((_serverFD = socket(AF_INET, SOCK_STREAM, 0)) == 0)
@@ -335,6 +330,18 @@ void Server::listen()
 	if (::listen(_serverFD, _maxClients) < 0)
 		perrorAndExit("In listen");
 }
+
+/* startPollEventsLoop */
+void Server::addServerSocketPollFdToFDs()
+{
+	struct pollfd serverPollFd;
+	serverPollFd.fd = _serverFD;
+	serverPollFd.events = POLLIN;
+	serverPollFd.revents = 0;
+	_FDs.push_back(serverPollFd);
+}
+
+/* Others */
 
 std::string Server::getWebRoot() const
 {

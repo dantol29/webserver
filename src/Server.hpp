@@ -41,14 +41,17 @@ class Server
 	struct sockaddr_in _serverAddr;
 	std::vector<struct pollfd> _FDs;
 
-	/* Private Methods */
-
+	/*** Private Methods ***/
+	/*Constructors*/
 	void loadConfig();
 	void loadDefaultConfig();
+	/* startListening */
 	void createServerSocket();
 	void setReuseAddrAndPort();
 	void bindToPort(int port);
 	void listen();
+	/* startPollEventLoop */
+	void addServerSocketPollFdToFDs();
 	void handleConnection(int clientFD);
 
 	/* Not avaiabel constructors */

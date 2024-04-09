@@ -21,3 +21,11 @@ Notes about the Server class (and the server) to unclutter the Server.cpp file.
 **Listening**
 
 -     Here is reasonable to exit the program. We could retry the listen, and we should consider if the Server is listening to multiple ports.
+
+**poll**
+
+- Since poll is taking a normal array as first arguemtn with `_FDs.data()` we pass the underlying array of pollfd structs contained in the \_FDs vector.
+
+- `-1` means wait indefinitely
+
+- for the server socket POLLLIN means that a new connection is available
