@@ -2,8 +2,16 @@
 #define SERVER_HPP
 
 #include <string>
+#include <iostream>
 #include <sys/socket.h>
 #include <netinet/in.h>
+#include <vector>
+#include <poll.h>
+#include <fstream>
+#include <sstream>
+#include "HTTPRequest.hpp"
+#include "server_utils.hpp"
+#include "webserv.hpp"
 
 class Server
 {
@@ -22,7 +30,7 @@ class Server
 	void setWebRoot(const std::string &webRoot);
 	std::string getConfigFilePath() const;
 
-	Server getServer();
+	// Server getServer();
 	void start();
 	void stop();
 
