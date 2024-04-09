@@ -24,17 +24,8 @@ void Server::startListen()
 		perrorAndExit("Failed to create server socket");
 
 	setReuseAddrAndPort();
-
-	// We bind the server to the address and port
-	_serverAddr.sin_family = AF_INET;
-	_serverAddr.sin_addr.s_addr = INADDR_ANY;
-	_serverAddr.sin_port = htons(_port);
-	std::memset(_serverAddr.sin_zero, '\0', sizeof _serverAddr.sin_zero);
-
-	if (bind(_serverFD, (struct sockaddr *)&_serverAddr, sizeof(_serverAddr)) < 0)
-		perrorAndExit("In bind");
-	// 10 is the maximum size of the queue of pending connections: check this value.
-	if (listen(_serverFD, 10) < 0)
+	bindToPort(_port);
+	if (listen(_serverFD, _maxClients) < 0)
 		perrorAndExit("In listen");
 }
 
@@ -313,6 +304,7 @@ void Server::loadConfig()
 void Server::loadDefaultConfig()
 {
 	_webRoot = "var/www";
+	_maxClients = 10;
 }
 
 void Server::setReuseAddrAndPort()
@@ -322,6 +314,17 @@ void Server::setReuseAddrAndPort()
 		perror("setsockopt SO_REUSEADDR: Protocol not available, continuing without SO_REUSEADDR");
 	if (setsockopt(_serverFD, SOL_SOCKET, SO_REUSEPORT, &opt, sizeof(opt)))
 		perror("setsockopt SO_REUSEPORT: Protocol not available, continuing without SO_REUSEPORT");
+}
+
+void Server::bindToPort(int port)
+{
+	_serverAddr.sin_family = AF_INET;
+	_serverAddr.sin_addr.s_addr = INADDR_ANY;
+	_serverAddr.sin_port = htons(port);
+	std::memset(_serverAddr.sin_zero, '\0', sizeof _serverAddr.sin_zero);
+
+	if (bind(_serverFD, (struct sockaddr *)&_serverAddr, sizeof(_serverAddr)) < 0)
+		perrorAndExit("In bind");
 }
 
 std::string Server::getWebRoot() const
