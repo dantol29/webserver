@@ -3,7 +3,7 @@
 int main()
 {
 	Server webserv;
-	webserv.startListen();
+	webserv.startListening();
 	webserv.startPollEventLoop();
 
 	return 0;
