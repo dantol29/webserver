@@ -1,5 +1,7 @@
 #include "server_utils.hpp"
 
+bool MyReadLine(int socket, std::string &line);
+
 bool isChunked(const std::string &headers)
 {
 	// Look for "Transfer-Encoding: chunked" in the headers
@@ -46,35 +48,35 @@ size_t getContentLength(const std::string &headers)
 	return 0;
 }
 
-bool readLine(int socket, std::string &line)
-{
-	line.clear();
-	while (true)
-	{
-		char buffer;
-		ssize_t bytesRead = recv(socket, &buffer, 1, 0);
-		if (bytesRead > 0)
-		{
-			line.push_back(buffer);
-			if (line.size() >= 2 && line.substr(line.size() - 2) == "\r\n")
-			{
-				line.resize(line.size() - 2); // remove the CRLF
-				return true;
-			}
-		}
-		else if (bytesRead < 0)
-		{
-			perror("recv failed");
-			return false;
-		}
-		else
-		{
-			std::cout << "Connection closed" << std::endl;
-			return false;
-		}
-	}
-	return true;
-}
+// bool MyReadLine(int socket, std::string &line)
+// {
+// 	line.clear();
+// 	while (true)
+// 	{
+// 		char buffer;
+// 		ssize_t bytesRead = recv(socket, &buffer, 1, 0);
+// 		if (bytesRead > 0)
+// 		{
+// 			line.push_back(buffer);
+// 			if (line.size() >= 2 && line.substr(line.size() - 2) == "\r\n")
+// 			{
+// 				line.resize(line.size() - 2); // remove the CRLF
+// 				return true;
+// 			}
+// 		}
+// 		else if (bytesRead < 0)
+// 		{
+// 			perror("recv failed");
+// 			return false;
+// 		}
+// 		else
+// 		{
+// 			std::cout << "Connection closed" << std::endl;
+// 			return false;
+// 		}
+// 	}
+// 	return true;
+// }
 
 std::string readChunk(int socket, size_t chunkSize)
 {
@@ -165,7 +167,7 @@ void handleConnection(int socket)
 			// chunkSizeLine will contain the size of the next chunk in hexadecimal
 			std::string chunkSizeLine;
 			// Read the line containing the size of the next chunk
-			readLine(socket, chunkSizeLine);
+			MyReadLine(socket, chunkSizeLine);
 			// We transform the size from hexadecimal to an integer
 			size_t chunkSize = std::stoul(chunkSizeLine, 0, 16);
 
@@ -243,22 +245,29 @@ void handleConnection(int socket)
 			CGIHandler cgiHandler;
 			Environment env;
 			env.setVar("QUERY_STRING", "Hello from C++ CGI!");
-			response = cgiHandler.handleCGIRequest(argv, env);
+			// cgiHandler.executeCGI(argv, env);
+			handleCGIRequest(argv, env);
+			// response = cgiHandler.handleRequest(argv, env);
 		}
 		else
 		{
 			CGIHandler cgiHandler;
 			Environment env;
-			env.setVar(obj.getQueryString(), obj.getBody());
-			response = cgiHandler.handleCGIRequest(argv, obj);
+			env.setVar("obj.getQueryString()", "obj.getBody()");
+			// env.setVar(obj.getQueryString(), obj.getBody());
+			// cgiHandler.executeCGI(argv, env);
+			handleCGIRequest(argv, env);
+			// response = cgiHandler.handleRequest(argv, obj);
 		}
 	}
 	else
 	{
-		StatcContentHandler staticContentHandler;
+		StaticContentHandler staticContentHandler;
 		// This if condition only for legacy reasons! TODO: remove
-		if (obj.getMethod() == "GET" && (obj.getRequestTarget() == "/" || obj.getRequestTarget() == "/home")
+		if (obj.getMethod() == "GET" && (obj.getRequestTarget() == "/" || obj.getRequestTarget() == "/home"))
+		{
 			response = staticContentHandler.handleHomePage();
+		}
 		else
 		{
 			response = staticContentHandler.handleRequest(obj);

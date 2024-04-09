@@ -1,6 +1,9 @@
 #include "StaticContentHandler.hpp"
 #include "Server.hpp"
-
+// Default constructor
+StaticContentHandler::StaticContentHandler()
+{
+}
 // Constructor
 StaticContentHandler::StaticContentHandler(const std::string &webRoot) : _webRoot(webRoot) {};
 
@@ -77,7 +80,7 @@ HTTPResponse StaticContentHandler::handleRequest(const HTTPRequest &request)
 // 	std::cout << "------------------Home page returned from handleHomePage()-------------------" << std::endl;
 // 	return httpResponse;
 // }
-HTTPResponse handleHomePage()
+HTTPResponse StaticContentHandler::handleHomePage()
 {
 	std::string htmlContent = readHtml("./html/home.html");
 	HTTPResponse response;
@@ -98,7 +101,7 @@ HTTPResponse handleHomePage()
 // 	return response;
 // }
 
-HTTPResponse handleNotFound(void)
+HTTPResponse StaticContentHandler::handleNotFound(void)
 {
 	HTTPResponse response;
 	response.setStatusCode(404, "Not Found");

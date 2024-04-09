@@ -16,6 +16,7 @@
 class StaticContentHandler : public ARequestHandler
 {
   public:
+	StaticContentHandler();
 	StaticContentHandler(const std::string &webRoot);
 	~StaticContentHandler();
 	HTTPResponse handleRequest(const HTTPRequest &request);
@@ -26,7 +27,6 @@ class StaticContentHandler : public ARequestHandler
 	HTTPResponse handleNotFound();
 
   private:
-	StaticContentHandler();
 	StaticContentHandler(const StaticContentHandler &other);
 	StaticContentHandler &operator=(const StaticContentHandler &other);
 

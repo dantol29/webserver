@@ -1,7 +1,7 @@
 #include "Router.hpp"
 #include <string>
 
-Router::Router() : _staticContentHandler(), _cgiHandler()
+Router::Router()
 {
 }
 
@@ -75,8 +75,9 @@ void Router::splitTarget(const std::string &target)
 	}
 }
 
-bool Router::pathExists(HTTPResponse &response, const std::string &path)
+bool Router::pathExists(HTTPResponse &response, const std::string &originalPath)
 {
+	std::string path = originalPath;
 	struct stat buffer;
 	if (stat(path.c_str(), &buffer) != 0)
 	{
@@ -88,7 +89,7 @@ bool Router::pathExists(HTTPResponse &response, const std::string &path)
 	{
 		if (path.back() != '/')
 		{
-			path += '/';
+			path += "/";
 		}
 		path += "index.html";
 		// Check if index.html exists
