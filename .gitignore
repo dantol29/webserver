@@ -26,6 +26,7 @@
 !.cgi-bin/
 !docs/
 !tests/
+!config
 
 # Exclude specific files or directories
 /secretus/
