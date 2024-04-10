@@ -9,6 +9,8 @@
 
 const int PORT = 8080;
 
+#define EXIT_FAILURE 1
+
 int main()
 {
     int serverFD;

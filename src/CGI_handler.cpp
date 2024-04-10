@@ -1,6 +1,8 @@
 #include "webserv.hpp"
 #include "HTTPRequest.hpp"
 
+#define EXIT_FAILURE 1
+
 std::string handleCGIRequest(const char* argv[], Environment env) {
 
     std::vector<char*> envp = env.getForExecve();
@@ -8,13 +10,13 @@ std::string handleCGIRequest(const char* argv[], Environment env) {
     int pipeFD[2];
     if (pipe(pipeFD) == -1) {
         perror("pipe failed");
-        exit(EXIT_FAILURE);
+        _exit(EXIT_FAILURE);
     }
 
     pid_t pid = fork();
     if (pid == -1) {
         perror("fork failed");
-        exit(EXIT_FAILURE);
+        _exit(EXIT_FAILURE);
     } else if (pid == 0) {
         close(pipeFD[0]);
         dup2(pipeFD[1], STDOUT_FILENO);
@@ -24,7 +26,7 @@ std::string handleCGIRequest(const char* argv[], Environment env) {
         // Convert the vector to a suitable format for execve
             if (execve(argv[0], const_cast<char* const*>(argv), &envp[0]) == -1) {
                 perror("execve failed");
-                exit(EXIT_FAILURE);
+                _exit(EXIT_FAILURE);
             }
         }
     } else {
