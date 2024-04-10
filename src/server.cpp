@@ -51,23 +51,9 @@ void Server::startPollEventLoop()
 				else if (_FDs[i].revents & (POLLERR | POLLHUP | POLLNVAL))
 				{
 					if (i == 0)
-					{
-						// Handle the server socket error
-						// Log the error if necessary
-						// Attempt recovery or initiate a graceful shutdown
-						// Possibly alert administrators
-						perror("poll server socket error");
-						// exit(EXIT_FAILURE);
-					}
+						handleServerSocketError();
 					else
-					{
-						// Handle the client socket error
-						close(_FDs[i].fd);
-						_FDs.erase(_FDs.begin() + i);
-						perror("poll client socket error");
-						--i; // Adjust the index to account for the removed element
-							 // exit(EXIT_FAILURE);
-					}
+						handleClientSocketError(_FDs[i].fd, i);
 				}
 			}
 		}
@@ -337,6 +323,19 @@ void Server::acceptNewConnection()
 		// TODO: consider what to do here. Not sure we want to exit the program.
 		perror("In accept");
 	}
+}
+
+void Server::handleServerSocketError()
+{
+	perror("poll server socket error");
+}
+
+void Server::handleClientSocketError(int clientFD, size_t &i)
+{
+	close(clientFD);
+	_FDs.erase(_FDs.begin() + i);
+	perror("poll client socket error");
+	--i;
 }
 
 /* Others */

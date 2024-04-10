@@ -55,6 +55,8 @@ class Server
 	void addServerSocketPollFdToFDs();
 	void acceptNewConnection();
 	void handleConnection(int clientFD);
+	void handleServerSocketError();
+	void handleClientSocketError(int clientFD, size_t &i);
 
 	/* Not avaiabel constructors */
 
