@@ -1,5 +1,6 @@
 #include "webserv.hpp"
 #include "HTTPRequest.hpp"
+#include <cstdlib>
 
 std::string handleCGIRequest(const char* argv[], Environment env) {
 

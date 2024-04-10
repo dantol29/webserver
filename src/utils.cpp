@@ -6,6 +6,7 @@
 #include <unistd.h>     // For read, write, and close
 #include <fstream>
 #include <sstream>
+#include <fcntl.h>
 #include "webserv.hpp"
 
 std::string readHtml(const std::string& filePath) {
@@ -60,4 +61,18 @@ int hexToInt(std::string hex)
 	if (ss.fail())
 		return (-1);
 	return (n);
+}
+
+int	checkFile(const char *path)
+{
+	char	buffer[2];
+
+	int	fd = open(path, O_RDONLY);
+	if (fd == -1)
+		return (-1);
+	if (read(fd, buffer, 1) < 1){
+		close(fd);
+		return (-1);
+	}
+	return (fd);
 }

@@ -6,11 +6,19 @@
 #include <fstream>
 #include <sstream>
 #include "webserv.hpp"
+#include "ConfigFile.hpp"
 
 const int PORT = 8080;
 
-int main()
+int main(int argc, char **argv)
 {
+	if (argc > 2)
+		return (1);
+	ConfigFile a(argv[1]);
+	if (!a.getErrorMessage().empty()){
+		std::cout << a.getErrorMessage() << std::endl;
+		return (1);
+	}
     int serverFD;
     struct sockaddr_in address;
     int addrLen = sizeof(address);

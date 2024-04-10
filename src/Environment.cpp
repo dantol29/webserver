@@ -137,10 +137,12 @@ void  Environment::RequestTargetToMetaVars(HTTPRequest request, Environment& env
     } else if (requestTarget[0] == '/') {
         std::cout << "Identified Origin-Form request target" << std::endl;
     //
-    } else if (startsWith(requestTarget, "http")) {
-        std::cout << "Identified Absolute-Form request target" << std::endl;
-        // No direct action for CGI variables
-    } else if (requestTarget == "*") {
+    } 
+	// else if (startsWith(requestTarget, "http")) {
+    //     std::cout << "Identified Absolute-Form request target" << std::endl;
+    //     // No direct action for CGI variables
+    // } 
+	else if (requestTarget == "*") {
         std::cout << "Identified Asterisk-Form request target: " << requestTarget << std::endl;
         env.setVar("REQUEST_METHOD", "OPTIONS");
         std::cout << "REQUEST_METHOD set to OPTIONS" << std::endl;
