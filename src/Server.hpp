@@ -64,6 +64,7 @@ class Server
 	bool readHeaders(int clientFD, std::string &headers, HTTPResponse &response);
 	void closeClientConnection(int clientFD, HTTPResponse &response);
 	bool readChunkedBody(int clientFD, std::string &body, HTTPResponse &response);
+	bool Server::readBody(int clientFD, std::string &body, std::string &headers, HTTPResponse &response);
 
 	/* Not avaiable constructors */
 

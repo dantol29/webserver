@@ -85,31 +85,10 @@ void Server::handleConnection(int clientFD)
 	}
 	else
 	{
-		size_t contentLength = getContentLength(headers);
-		char buffer[BUFFER_SIZE];
-		size_t bytesRead = 0;
-		while (bytesRead < contentLength)
+		if (!readBody(clientFD, body, headers, response))
 		{
-			// TODO: check if this is blocking
-			ssize_t read = recv(clientFD, buffer, BUFFER_SIZE, 0);
-			if (read > 0)
-			{
-				body.append(buffer, read);
-				bytesRead += read;
-			}
-			else if (read < 0)
-			{
-				perror("recv failed");
-				// Consiger if we should close the clientFD or retry the recv
-				close(clientFD);
-				return;
-			}
-			else
-			{
-				std::cout << "Connection closed" << std::endl;
-				close(clientFD);
-				return;
-			}
+			closeClientConnection(clientFD, response);
+			return;
 		}
 	}
 	// It should be double "\r\n" to separate the headers from the body
@@ -391,6 +370,35 @@ bool Server::readChunkedBody(int clientFd, std::string &body, HTTPResponse &resp
 		}
 	}
 	return false;
+}
+
+bool Server::readBody(int clientFD, std::string &body, std::string &headers, HTTPResponse &response)
+{
+	size_t contentLength = getContentLength(headers);
+	char buffer[BUFFER_SIZE];
+	size_t bytesRead = 0;
+	while (bytesRead < contentLength)
+	{
+		// TODO: check if this is blocking
+		ssize_t read = recv(clientFD, buffer, BUFFER_SIZE, 0);
+		if (read > 0)
+		{
+			body.append(buffer, read);
+			bytesRead += read;
+		}
+		else if (read < 0)
+		{
+			perror("recv failed");
+			response.setStatusCode(500); // Internal Server Error
+			return false;
+		}
+		else
+		{
+			std::cout << "Connection closed" << std::endl;
+			response.setStatusCode(400); // Bad Request
+			return false;
+		}
+	}
 }
 
 /* Others */
