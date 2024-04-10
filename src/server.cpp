@@ -95,7 +95,6 @@ void Server::handleConnection(int clientFD)
 	std::string httpRequestString = headers + "\r\n\r\n" + body;
 
 	HTTPRequest request(httpRequestString.c_str());
-	// HTTPRequest request(buffer);
 	std::cout << request.getStatusCode() << std::endl;
 	std::cout << "Received HTTP request: " << std::endl << httpRequestString << std::endl;
 
@@ -108,44 +107,46 @@ void Server::handleConnection(int clientFD)
 	Router router;
 	if (!router.pathExists(response, request.getRequestTarget()))
 	{
-		StaticContentHandler staticContentHandler;
-		// This shoud be a method of the requestHandler obect
-		// response = router.handleNotFound();
-		response = staticContentHandler.handleNotFound();
-	}
-	else if (router.isDynamicRequest(request))
-	{
-		if (request.getMethod() == "GET" && request.getRequestTarget() == "/hello")
-		{
-			// env has to be created before CGI, because it is passed to the CGI
-			CGIHandler cgiHandler;
-			Environment env;
-			env.setVar("QUERY_STRING", "Hello from C++ CGI!");
-			// cgiHandler.executeCGI(argv, env);
-			handleCGIRequest(argv, env);
-		}
-		else
-		{
-			CGIHandler cgiHandler;
-			Environment env;
-			env.setVar("request.getQueryString()", "request.getBody()");
-			// response = cgiHandler.handleCGIRequest(argv, request);
-			// cgiHandler.executeCGI(argv, env);
-			handleCGIRequest(argv, env);
-		}
+		StaticContentHandler staticHandler;
+		response = staticHandler.handleNotFound();
 	}
 	else
 	{
-		StaticContentHandler staticContentHandler;
-		// This if condition only for legacy reasons! TODO: remove
-		if (request.getMethod() == "GET" &&
-			(request.getRequestTarget() == "/" || request.getRequestTarget() == "/home"))
+
+		if (router.isDynamicRequest(request))
 		{
-			response = staticContentHandler.handleHomePage();
+			if (request.getMethod() == "GET" && request.getRequestTarget() == "/hello")
+			{
+				// env has to be created before CGI, because it is passed to the CGI
+				CGIHandler cgiHandler;
+				Environment env;
+				env.setVar("QUERY_STRING", "Hello from C++ CGI!");
+				// cgiHandler.executeCGI(argv, env);
+				handleCGIRequest(argv, env);
+			}
+			else
+			{
+				CGIHandler cgiHandler;
+				Environment env;
+				env.setVar("request.getQueryString()", "request.getBody()");
+				// response = cgiHandler.handleCGIRequest(argv, request);
+				// cgiHandler.executeCGI(argv, env);
+				handleCGIRequest(argv, env);
+			}
 		}
 		else
 		{
-			response = staticContentHandler.handleRequest(request);
+			StaticContentHandler staticContentHandler;
+			// This if condition only for legacy reasons! TODO: remove
+			if (request.getMethod() == "GET" &&
+				(request.getRequestTarget() == "/" || request.getRequestTarget() == "/home"))
+			{
+				response = staticContentHandler.handleHomePage();
+			}
+			else
+			{
+				response = staticContentHandler.handleRequest(request);
+			}
 		}
 	}
 	std::string responseString = response.toString();
@@ -165,6 +166,7 @@ void Server::loadDefaultConfig()
 {
 	_webRoot = "var/www";
 	_maxClients = 10;
+	_port = 8080;
 }
 
 /* startListening */
