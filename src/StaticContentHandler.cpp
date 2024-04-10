@@ -54,14 +54,14 @@ HTTPResponse StaticContentHandler::handleRequest(const HTTPRequest &request)
 	{
 		// TODO: consider streaming the file instead of loading it all in memory for large files
 		std::string body((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
-		response.setStatusCode(200, "OK");
+		response.setStatusCode(200);
 		response.setBody(body);
 		response.setHeader("Content-Type", getMimeType(path));
 	}
 	else
 	{
 		// TODO: consider serving a 404.html page
-		response.setStatusCode(404, "Not Found");
+		response.setStatusCode(404);
 		response.setBody("Not Found");
 		response.setHeader("Content-Type", "text/plain");
 	}
@@ -84,7 +84,7 @@ HTTPResponse StaticContentHandler::handleHomePage()
 {
 	std::string htmlContent = readHtml("./html/home.html");
 	HTTPResponse response;
-	response.setStatusCode(200, "OK");
+	response.setStatusCode(200);
 	response.setBody(htmlContent);
 	response.setHeader("Content-Type", "text/html");
 	std::cout << "------------------Home page returned from handleHomePage()-------------------" << std::endl;
@@ -104,7 +104,7 @@ HTTPResponse StaticContentHandler::handleHomePage()
 HTTPResponse StaticContentHandler::handleNotFound(void)
 {
 	HTTPResponse response;
-	response.setStatusCode(404, "Not Found");
+	response.setStatusCode(404);
 	response.setBody("Not Found");
 	response.setHeader("Content-Type", "text/plain");
 	std::cout << "------------------404 Not Found sent-------------------" << std::endl;

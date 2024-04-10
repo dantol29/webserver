@@ -11,9 +11,9 @@
 #include <poll.h>
 #include <fstream>
 #include <sstream>
+#include "Environment.hpp"
 #include "HTTPRequest.hpp"
 #include "server_utils.hpp"
-#include "webserv.hpp"
 
 class Server
 {
@@ -33,7 +33,7 @@ class Server
 	std::string getConfigFilePath() const;
 
   private:
-	/* Private Attributes*/
+	/* Private Attributes */
 	int _port;
 	int _serverFD;
 	int _maxClients; // i.e. max number of pending connections
@@ -43,15 +43,15 @@ class Server
 	std::vector<struct pollfd> _FDs;
 
 	/*** Private Methods ***/
-	/*Constructors*/
+	/* for Constructors */
 	void loadConfig();
 	void loadDefaultConfig();
-	/* startListening */
+	/* for startListening */
 	void createServerSocket();
 	void setReuseAddrAndPort();
 	void bindToPort(int port);
 	void listen();
-	/* startPollEventLoop */
+	/* for startPollEventLoop */
 	void addServerSocketPollFdToFDs();
 	void acceptNewConnection();
 	void handleConnection(int clientFD);
@@ -60,8 +60,11 @@ class Server
 	void handleSocketTimeoutIfAny();
 	void handlePollFailure();
 	void AlertAdminAndTryToRecover();
+	/* for handleConnection */
+	bool checkHeaders(int clientFD, std::string &headers, HTTPResponse &response);
+	void closeClientConnection(int clientFD, HTTPResponse &response);
 
-	/* Not avaiabel constructors */
+	/* Not avaiable constructors */
 
 	// Copy constructor
 	Server(const Server &other);

@@ -2,7 +2,7 @@
 #define WEBSERV_H
 
 #include <string>
-#include "../src/Environment.hpp"
+#include "Environment.hpp"
 #include <sstream>
 
 // declared here because it is a template function
@@ -50,7 +50,7 @@ std::string readHtml(const std::string &filePath);
  * @return A string representing the HTTP response generated from the CGI script's output, or a 500 Internal
  *         Server Error message if the script execution fails.
  */
-std::string handleCGIRequest(const char *argv[], Environment env);
+// std::string handleCGIRequest(const char *argv[], Environment env);
 
 /**
  * Generates a standard HTTP 404 Not Found response.

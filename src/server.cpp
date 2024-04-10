@@ -68,43 +68,16 @@ void Server::startPollEventLoop()
 void Server::handleConnection(int clientFD)
 {
 	std::string headers;
-	size_t totalRead = 0;
-	bool headersComplete = false;
-	while (!headersComplete)
+	HTTPResponse response;
+	if (!checkHeaders(clientFD, headers, response))
 	{
-		// We reinitialize it at each iteration to have a clean buffer
-		char buffer[BUFFER_SIZE] = {0};
-		// we could do recv non blocking with MSG_DONTWAIT but we will keep it simple for now
-		ssize_t bytesRead = recv(clientFD, buffer, BUFFER_SIZE, 0);
-		if (bytesRead > 0)
-			headers.append(buffer, bytesRead);
-		totalRead += bytesRead;
-		if (totalRead > MAX_HEADER_SIZE)
+		if (response.getStatusCode() != 0)
 		{
-			std::cout << "Header too large" << std::endl;
-			// This would be a 413 Payload Too Large in a real server
-			close(clientFD);
-			return;
+			std::string responseString = response.toString();
+			send(clientFD, responseString.c_str(), responseString.size(), 0);
 		}
-		if (headers.find("\r\n\r\n") != std::string::npos)
-			headersComplete = true;
-		else if (bytesRead < 0)
-		{
-			perror("recv failed");
-			close(clientFD);
-			return;
-			// We could eventually also brake the loop and retry the recv
-			// break;
-			// We could eventually retry the recv, but for now we will just close the connection
-			// Handle error
-		}
-		else
-		{
-			// This means biyeRead == 0
-			std::cout << "Connection closed" << std::endl;
-			close(clientFD);
-			return;
-		}
+		close(clientFD);
+		return;
 	}
 	std::string body;
 	if (isChunked(headers))
@@ -179,7 +152,6 @@ void Server::handleConnection(int clientFD)
 	// const char* argv[] = { "./cgi-bin/hello.cgi", NULL };
 
 	// std::string response;
-	HTTPResponse response;
 	Router router;
 	if (!router.pathExists(response, obj.getRequestTarget()))
 	{
@@ -228,6 +200,8 @@ void Server::handleConnection(int clientFD)
 	close(clientFD);
 }
 
+/*** Private Methods ***/
+
 void Server::loadConfig()
 {
 	// Add logic to load config from file
@@ -274,6 +248,7 @@ void Server::listen()
 }
 
 /* startPollEventsLoop */
+
 void Server::addServerSocketPollFdToFDs()
 {
 	struct pollfd serverPollFd;
@@ -359,6 +334,58 @@ void Server::AlertAdminAndTryToRecover()
 {
 	std::cerr << "Calling Leo and Daniil to fix the server" << std::endl;
 	std::cerr << "Super dope function that recovers the server" << std::endl;
+}
+
+/* for handleConnection */
+
+void Server::closeClientConnection(int clientFD, HTTPResponse &response)
+{
+	if (response.getStatusCode() != 0)
+	{
+		std::string responseString = response.toString();
+		send(clientFD, responseString.c_str(), responseString.size(), 0);
+	}
+	close(clientFD);
+}
+
+bool Server::checkHeaders(int clientFD, std::string &headers, HTTPResponse &response)
+{
+	size_t totalRead = 0;
+	bool headersComplete = false;
+	while (!headersComplete)
+	{
+		// We reinitialize it at each iteration to have a clean buffer
+		char buffer[BUFFER_SIZE] = {0};
+		// we could do recv non blocking with MSG_DONTWAIT but we will keep it simple for now
+		ssize_t bytesRead = recv(clientFD, buffer, BUFFER_SIZE, 0);
+		if (bytesRead > 0)
+		{
+
+			headers.append(buffer, bytesRead);
+			totalRead += bytesRead;
+			if (totalRead > MAX_HEADER_SIZE)
+			{
+				std::cerr << "Header too large" << std::endl;
+				response.setStatusCode(413);
+				return false;
+			}
+			if (headers.find("\r\n\r\n") != std::string::npos)
+				headersComplete = true;
+		}
+		else if (bytesRead < 0)
+		{
+			perror("recv failed");
+			return false;
+		}
+		else
+		{
+			// This means biyeRead == 0
+			std::cout << "Connection closed before headers being completely sent" << std::endl;
+			// In this case we don't want to send an error response, because the client closed the connection
+			return false;
+		}
+	}
+	return true;
 }
 
 /* Others */

@@ -17,7 +17,10 @@ class HTTPResponse
 	// Destructor
 	~HTTPResponse();
 
-	void setStatusCode(int statusCode, const std::string &statusMessage);
+	int getStatusCode() const;
+	const std::string &getStatusMessage() const;
+	void setStatusCode(int statusCode);
+
 	void setHeader(const std::string &name, const std::string &value);
 	void setBody(const std::string &body);
 	std::string toString() const;
@@ -29,7 +32,7 @@ class HTTPResponse
 	std::vector<std::pair<std::string, std::string> > _headers;
 	// clang-format on
 	std::string _body;
-
+	// private cause it's used only to set the status message based on the status code
 	std::string getStatusMessage(int statusCode) const;
 };
 

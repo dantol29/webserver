@@ -81,7 +81,7 @@ bool Router::pathExists(HTTPResponse &response, const std::string &originalPath)
 	struct stat buffer;
 	if (stat(path.c_str(), &buffer) != 0)
 	{
-		response.setStatusCode(404, "Not Found");
+		response.setStatusCode(404);
 		response.setBody("Not Found");
 		return false;
 	}
@@ -95,7 +95,7 @@ bool Router::pathExists(HTTPResponse &response, const std::string &originalPath)
 		// Check if index.html exists
 		if (stat(path.c_str(), &buffer) != 0)
 		{
-			response.setStatusCode(404, "Not Found");
+			response.setStatusCode(404);
 			response.setBody("Not Found");
 			return false;
 		}
