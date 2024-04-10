@@ -16,6 +16,7 @@ std::string toString(const T &value)
 }
 
 char *ft_strcpy(char *dest, const char *src);
+bool startsWith(const std::string &fullString, const std::string &starting);
 
 /**
  * Reads the entire content of an HTML file into a string.
