@@ -9,6 +9,15 @@ CGI scripts are conventionally stored in `/cgi-bin/`, and have a `.cgi` extensio
 Documentation for CGI can be found in the RFC 3875 available at [https://www.ietf.org/rfc/rfc3875.txt](https://www.ietf.org/rfc/rfc3875.txt)
 
 
+[RFC 3875](https://datatracker.ietf.org/doc/html/rfc3875)
+```plaintext
+The server acts as an application gateway.  It receives the request
+   from the client, selects a CGI script to handle the request, converts
+   the client request to a CGI request, executes the script and converts
+   the CGI response into a response for the client.
+```
+
+
 ### Server-Side vs. Client-Side Programming
 
 | Feature                                   | Client-side | Server-side |
@@ -58,3 +67,4 @@ CGI programs can be written in almost any programming language, including compil
 - **Historical Context:** CGI was one of the earliest methods used to generate dynamic web content, serving as a bridge between the web server and software applications running on the server.
 
 - **Modern Use:** While CGI set the foundation for dynamic content on the web, modern web development often uses more contemporary approaches such as server-side scripting frameworks (e.g., Node.js for JavaScript, Flask for Python) and application programming interfaces (APIs) that offer more efficiency, scalability, and ease of development. Nonetheless, CGI's conceptual model underpins the idea of server-side processing and dynamic content generation, influencing current technologies and methodologies.
+
