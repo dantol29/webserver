@@ -2,7 +2,6 @@
 #include <string.h>
 
 bool		isOrigForm(std::string& requestTarget, int &queryStart);
-bool		fileExists(std::string& requestTarget, bool isOriginForm, int queryStart);
 void		skipRequestLine(const char *request, unsigned int& i);
 void		skipHeader(const char *request, unsigned int& i);
 bool		hasMandatoryHeaders(HTTPRequest& obj);
@@ -53,15 +52,15 @@ HTTPRequest::~HTTPRequest(){
 }
 
 HTTPRequest::HTTPRequest(char *request){
-	//_isChunked = false;
+	_statusCode = 200;
 	if (strlen(request) < 10)
-		_statusCode = 400;
+		ft_error(400, "Invalid request-line");
 	else{
-		_statusCode = parseRequestLine(request);
+		parseRequestLine(request);
 		if (_statusCode == 200)
-			_statusCode = parseHeaders(request);
+			parseHeaders(request);
 		if (_statusCode == 200 && !_isChunked && _method != "GET")
-			_statusCode = parseBody(request);
+			parseBody(request);
 	}
 }
 
@@ -138,6 +137,7 @@ bool	HTTPRequest::saveVariables(std::string& variables)
 
 int	HTTPRequest::ft_error(int statusCode, std::string message){
 	_errorMessage = message;
+	_statusCode = statusCode;
 	return (statusCode);
 }
 

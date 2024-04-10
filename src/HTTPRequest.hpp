@@ -1,3 +1,6 @@
+#ifndef HTTPREQUEST_HPP
+# define HTTPREQUEST_HPP
+
 #include <string>
 #include <iostream>
 #include <unistd.h>
@@ -48,3 +51,5 @@ class HTTPRequest{
 		std::multimap<std::string, std::string> _headers;
 		std::vector<std::string>				_body;
 };
+
+#endif

@@ -4,6 +4,7 @@
 #include <string>
 #include "../src/Environment.hpp"
 #include <sstream>
+#include <cstdlib>
 
 //declared here because it is a template function
 //instead of to_string which is c++11, we use this function
