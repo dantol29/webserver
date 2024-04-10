@@ -94,9 +94,9 @@ void Server::handleConnection(int clientFD)
 	// It should be double "\r\n" to separate the headers from the body
 	std::string httpRequestString = headers + "\r\n\r\n" + body;
 
-	HTTPRequest obj(httpRequestString.c_str());
-	// HTTPRequest obj(buffer);
-	std::cout << obj.getStatusCode() << std::endl;
+	HTTPRequest request(httpRequestString.c_str());
+	// HTTPRequest request(buffer);
+	std::cout << request.getStatusCode() << std::endl;
 	std::cout << "Received HTTP request: " << std::endl << httpRequestString << std::endl;
 
 	// test to execute the python script (see: https://www.tutorialspoint.com/python/python_cgi_programming.htm)
@@ -106,16 +106,16 @@ void Server::handleConnection(int clientFD)
 
 	// std::string response;
 	Router router;
-	if (!router.pathExists(response, obj.getRequestTarget()))
+	if (!router.pathExists(response, request.getRequestTarget()))
 	{
 		StaticContentHandler staticContentHandler;
 		// This shoud be a method of the requestHandler obect
 		// response = router.handleNotFound();
 		response = staticContentHandler.handleNotFound();
 	}
-	else if (router.isDynamicRequest(obj))
+	else if (router.isDynamicRequest(request))
 	{
-		if (obj.getMethod() == "GET" && obj.getRequestTarget() == "/hello")
+		if (request.getMethod() == "GET" && request.getRequestTarget() == "/hello")
 		{
 			// env has to be created before CGI, because it is passed to the CGI
 			CGIHandler cgiHandler;
@@ -128,8 +128,8 @@ void Server::handleConnection(int clientFD)
 		{
 			CGIHandler cgiHandler;
 			Environment env;
-			env.setVar("obj.getQueryString()", "obj.getBody()");
-			// response = cgiHandler.handleCGIRequest(argv, obj);
+			env.setVar("request.getQueryString()", "request.getBody()");
+			// response = cgiHandler.handleCGIRequest(argv, request);
 			// cgiHandler.executeCGI(argv, env);
 			handleCGIRequest(argv, env);
 		}
@@ -138,13 +138,14 @@ void Server::handleConnection(int clientFD)
 	{
 		StaticContentHandler staticContentHandler;
 		// This if condition only for legacy reasons! TODO: remove
-		if (obj.getMethod() == "GET" && (obj.getRequestTarget() == "/" || obj.getRequestTarget() == "/home"))
+		if (request.getMethod() == "GET" &&
+			(request.getRequestTarget() == "/" || request.getRequestTarget() == "/home"))
 		{
 			response = staticContentHandler.handleHomePage();
 		}
 		else
 		{
-			response = staticContentHandler.handleRequest(obj);
+			response = staticContentHandler.handleRequest(request);
 		}
 	}
 	std::string responseString = response.toString();
