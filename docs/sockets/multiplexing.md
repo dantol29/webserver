@@ -1,3 +1,17 @@
+# Multiplexing
+
+Multiplexing is a stratedy to let the same medium to carry different messages together, like having different letters in the same envelope, or on the same sheet of paper.
+
+> In telecommunications and computer networking, multiplexing (sometimes contracted to muxing) is a method by which multiple analog or digital signals are combined into one signal over a shared medium. The aim is to share a scarce resource – a physical transmission medium.[citation needed] For example, in telecommunications, several telephone calls may be carried using one wire. Multiplexing originated in telegraphy in the 1870s, and is now widely applied in communications. In telephony, George Owen Squier is credited with the development of telephone carrier multiplexing in 1910.
+
+But in computing it has a similar but analogous meaning:
+
+> In computing, I/O multiplexing can also be used to refer to the concept of processing multiple input/output events from a single event loop, with system calls like poll and select (Unix).
+
+In this scenario we are leveraging an event loop to process multiple and different input/output with a single-threaded process.
+
+Types
+
 When a socket is marked as "readable" during a `poll` (or `select`, `epoll`, etc.) operation, it signifies that there is data available to be read without blocking, or that a certain network event has occurred. The meaning can vary depending on the context—whether it's a server listening for incoming connections or a socket that's connected to a peer. Let's clarify what "readable" means in these contexts:
 
 ### For a Server Socket
@@ -18,3 +32,7 @@ The data that makes a connected socket readable is written by the application on
 In the case of an incoming connection making a listening socket readable, the "data" is the result of the TCP/IP protocol's internal mechanisms, specifically the three-way handshake that establishes a new connection. This isn't application-level data but rather signaling at the protocol level, managed by the OS.
 
 Understanding the context in which a socket becomes readable is crucial for correctly interpreting the event and responding appropriately, whether by accepting a new connection or reading incoming data.
+
+## Resources
+
+- (Multiplexing, Wikipedia)[https://en.wikipedia.org/wiki/Multiplexing]
