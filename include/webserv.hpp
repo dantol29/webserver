@@ -16,7 +16,7 @@ std::string toString(const T& value) {
 
 void *ft_memset(void *ptr, int value, size_t num);
 char *ft_strcpy(char *dest, const char *src);
-
+bool startsWith(const std::string& fullString, const std::string& starting);
 
 
 /**
