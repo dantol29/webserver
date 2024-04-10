@@ -9,6 +9,10 @@ std::string	ConfigFile::getErrorMessage() const{
 	return (_errorMessage);
 }
 
+std::map<std::string, std::string> ConfigFile::getVariables() const{
+	return (_variables);
+}
+
 bool	ConfigFile::error(std::string message, char *line){
 	if (line != NULL)
 		delete line;
@@ -17,16 +21,22 @@ bool	ConfigFile::error(std::string message, char *line){
 }
 
 
-// [TAB][KEY][SP][VALUE][;]
-bool	ConfigFile::parseLine(char *line, std::pair<std::string, std::string>& var, std::string key){
+// mode 0: [TAB][KEY][SP][VALUE][;]
+// mode 1: [TAB][TAB][KEY][SP][VALUE][;]
+bool	ConfigFile::parseLine(char *line, int mode){
 	std::string stringLine(line);
 	std::string	key;
 	std::string value;
 	int i = 0;
 	int	start;
 
-	if (line[i++] != '\t') // [TAB]
-		return (false);
+	if (mode == 1){
+		if (line[i++] != '\t' || line[i++] != '\t') // [TAB][TAB]
+			return (false);
+	} else {
+		if (line[i++] != '\t')
+			return (false);
+	}
 	start = i;
 	while (line[i] && line[i] != ' ')
 		i++;
@@ -39,9 +49,47 @@ bool	ConfigFile::parseLine(char *line, std::pair<std::string, std::string>& var,
 	value = stringLine.substr(start, i - start); // [VALUE]
 	if (line[i] != ';') // [;]
 		return (false);
-	var = std::make_pair(key, value);
-	delete line;
+	_variables.insert(std::make_pair(key, value));
+	if (line != NULL)
+		delete line;
 	line = NULL;
+	return (true);
+}
+
+// [TAB][LOCATION][SP][/PATH][SP][{]
+bool	ConfigFile::isLocation(char *line){
+	std::string stringLine(line);
+	std::string	path;
+	int i = 0;
+	int start;
+	if (line[i++] != '\t') // [TAB]
+		return (false);
+	start = i;
+	while (line[i] && line[i] != ' ')
+		i++;
+	if (stringLine.substr(start, i) != "location ") // [LOCATION]
+		return (false);
+	if (line[i++] != ' ') // [SP]
+		return (false);
+	start = i;
+	while (line[i] && line[i] != ' ')
+		i++;
+	path = stringLine.substr(start, i - 1); // [PATH]
+	if (line[i++] != ' ') // [SP]
+		return (false);
+	if (line[i] != '{') // [{]
+		return (false);
+	_locations.push_back(path);
+	return (true);
+}
+
+bool	ConfigFile::parseLocation(char *line, int fd){
+	while (1){
+		std::cout << "aaaaa" << std::endl;
+		line = get_next_line(fd);
+		if (!parseLine(line, 1))
+			return (error("Config file: Syntax error", line));	
+	}
 	return (true);
 }
 
@@ -56,31 +104,19 @@ bool	ConfigFile::parseFile(char *file){
 		return (error("Config file: Syntax error", line));
 	delete line;
 
-	line = get_next_line(fd);
-	if (!parseLine(line, _listen, "listen"))
-		return (error("Config file: Syntax error", line));
-	line = get_next_line(fd);
-	if (!parseLine(line, _host, "host"))
-		return (error("Config file: Syntax error", line));
-	line = get_next_line(fd);
-	if (!parseLine(line, _serverName, "server_name"))
-		return (error("Config file: Syntax error", line));
-	line = get_next_line(fd);
-	if (!parseLine(line, _errorPage, "error_page"))
-		return (error("Config file: Syntax error", line));
-	line = get_next_line(fd);
-	if (!parseLine(line, _clientMaxBodySize, "client_max_body_size"))
-		return (error("Config file: Syntax error", line));
-	line = get_next_line(fd);
-	if (!parseLine(line, _root, "root"))
-		return (error("Config file: Syntax error", line));
-	line = get_next_line(fd);
-	if (!parseLine(line, _index, "index"))
-		return (error("Config file: Syntax error", line));
+	while (1){
+		line = get_next_line(fd);
+		if (line == NULL)
+			return (false);
+		if (isLocation(line))
+			parseLocation(line, fd);
+		else if (!parseLine(line, 0))
+			return (error("Config file: Syntax error", line));
+	}
 	return (true);
 }
-	// std::cout << _listeningPort.first << ", " << _listeningPort.second << std::endl;
 
 ConfigFile::ConfigFile(char *file) : _errorMessage(""){
 	parseFile(file);
+	//checkVariables
 }

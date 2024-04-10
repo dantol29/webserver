@@ -19,6 +19,11 @@ int main(int argc, char **argv)
 		std::cout << a.getErrorMessage() << std::endl;
 		return (1);
 	}
+	std::map<std::string, std::string> var = a.getVariables();
+	std::map<std::string, std::string>::iterator it;
+
+	for (std::map<std::string, std::string>::iterator it = var.begin(); it != var.end(); ++it)
+		std::cout << "Key: " << it->first << ", Value: " << it->second << std::endl;
     int serverFD;
     struct sockaddr_in address;
     int addrLen = sizeof(address);
