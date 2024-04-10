@@ -13,9 +13,9 @@ bool isOrigForm(std::string &requestTarget, int &queryStart)
 	return (false);
 }
 
-bool isInvalidChar(const char &c)
+bool isInvalidChar(const unsigned char &c)
 {
-	if ((c >= 0 && c <= 31) || c == 127)
+	if ((c <= 31) || c == 127)
 		return (true);
 	return (false);
 }
