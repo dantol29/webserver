@@ -5,7 +5,6 @@
 #include <iostream>
 #include <unistd.h>
 #include <map>
-#include <map>
 #include <vector>
 
 // It is RECOMMENDED that all HTTP 
@@ -27,6 +26,7 @@ class HTTPRequest{
 		std::string getProtocolVersion() const;
 		bool		getIsChunked() const;
 		bool		getIsChunkFinish() const;
+		std::string	getErrorMessage() const;
 		std::multimap<std::string, std::string>	getQueryString() const;
 		std::multimap<std::string, std::string>	getHeaders() const;
 		std::pair<std::string, std::string>		getHeaders(std::string key) const;

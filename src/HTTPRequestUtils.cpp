@@ -1,8 +1,4 @@
-#include "HTTPRequest.hpp"
-#include <string.h>
-int 	hexToInt(std::string hex);
-bool	isNumber(std::string line);
-bool	hasCRLF(const char* request, unsigned int& i, int mode);
+#include "webserv.hpp"
 
 bool	isOrigForm(std::string &requestTarget, int &queryStart){
 	for (int i = 0; i < (int)requestTarget.length(); i++){
@@ -224,7 +220,7 @@ std::string	extractHeaderValue(const char *request, unsigned int& i)
 	return (string_request.substr(start, i - start));
 }
 
-int	extractLineLength(const char *request, unsigned int& i)
+unsigned int	extractLineLength(const char *request, unsigned int& i)
 {
 	std::string string_request(request);
 	unsigned int start = i;
