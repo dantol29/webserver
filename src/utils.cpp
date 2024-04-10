@@ -61,3 +61,12 @@ int hexToInt(std::string hex)
 		return (-1);
 	return (n);
 }
+
+bool	isNumber(std::string line)
+{
+	for (unsigned int i = 0; i < line.length(); ++i){
+		if (!(line[i] >= '0' && line[i] <= '9'))
+			return (false);
+	}
+	return (true);
+}

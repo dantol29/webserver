@@ -5,7 +5,6 @@
 #include <iostream>
 #include <unistd.h>
 #include <map>
-#include <map>
 #include <vector>
 
 // It is RECOMMENDED that all HTTP
@@ -13,7 +12,7 @@
 #define MAX_URI 200
 
 //./client $'POST /search?price=low HTTP/1.1\r\nHost: www.example.com\r\nContent-type: text/plain\r\nContent-length:
-//42\r\n\r\n7\r\nChunk 1\r\n6\r\nChunk 2\r\n0\r\n\r\n'
+// 42\r\n\r\n7\r\nChunk 1\r\n6\r\nChunk 2\r\n0\r\n\r\n'
 // test line
 
 class HTTPRequest
@@ -29,6 +28,7 @@ class HTTPRequest
 	std::string getProtocolVersion() const;
 	bool getIsChunked() const;
 	bool getIsChunkFinish() const;
+	std::string getErrorMessage() const;
 	std::multimap<std::string, std::string> getQueryString() const;
 	std::multimap<std::string, std::string> getHeaders() const;
 	std::pair<std::string, std::string> getHeaders(std::string key) const;
@@ -40,6 +40,8 @@ class HTTPRequest
 	HTTPRequest();
 	int parseRequestLine(const char *request);
 	int parseHeaders(const char *request);
+	int parseBody(const char *request);
+	int ft_error(int statusCode, std::string message);
 	bool saveVariables(std::string &variables);
 	int _statusCode;
 	bool _isChunked;
@@ -47,8 +49,10 @@ class HTTPRequest
 	std::string _method;
 	std::string _requestTarget;
 	std::string _protocolVersion;
+	std::string _errorMessage;
 	std::multimap<std::string, std::string> _queryString;
 	std::multimap<std::string, std::string> _headers;
 	std::vector<std::string> _body;
 };
+
 #endif
