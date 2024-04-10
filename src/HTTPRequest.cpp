@@ -37,7 +37,7 @@ HTTPRequest::~HTTPRequest()
 {
 }
 
-HTTPRequest::HTTPRequest(char *request)
+HTTPRequest::HTTPRequest(const char *request)
 {
 	_statusCode = 200;
 	if (strlen(request) < 10)
