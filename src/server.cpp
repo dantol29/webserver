@@ -399,6 +399,7 @@ bool Server::readBody(int clientFD, std::string &body, std::string &headers, HTT
 			return false;
 		}
 	}
+	return true;
 }
 
 /* Others */
