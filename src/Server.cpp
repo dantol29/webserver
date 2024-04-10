@@ -353,12 +353,18 @@ bool Server::readChunkedBody(int clientFd, std::string &body, HTTPResponse &resp
 		std::string chunkSizeLine;
 		if (!readChunkSize(clientFd, chunkSizeLine))
 			return false;
-		size_t chunkSize = std::stoul(chunkSizeLine, 0, 16);
-		if (chunkSize == 0)
-		{
-			bodyComplete = true;
-			return true;
-		}
+        std::istringstream iss(chunkSizeLine);
+        size_t chunkSize;
+        if (!(iss >> std::hex >> chunkSize))
+        {
+            return false; // as an error
+        }
+
+        if (chunkSize == 0)
+        {
+            bodyComplete = true;
+            return true;
+        }
 		else
 		{
 			std::string chunkData;

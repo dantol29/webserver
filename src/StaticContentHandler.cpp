@@ -49,7 +49,7 @@ HTTPResponse StaticContentHandler::handleRequest(const HTTPRequest &request)
 	std::string requestTarget = request.getRequestTarget();
 	std::string path = _webRoot + requestTarget;
 	// Eventually sanitze path, remove ".." and other dangerous characters
-	std::ifstream file(path);
+	std::ifstream file(path.c_str());
 	if (file.is_open())
 	{
 		// TODO: consider streaming the file instead of loading it all in memory for large files

@@ -1,4 +1,6 @@
 #include "server_utils.hpp"
+#include <sstream>  // std::istringstream
+#include <iostream> // std::cerr
 
 void perrorAndExit(const char *msg)
 {
@@ -6,50 +8,57 @@ void perrorAndExit(const char *msg)
 	exit(EXIT_FAILURE);
 }
 
-bool isChunked(const std::string &headers)
-{
+char customToLower(char c) {
+	// Check if c is uppercase (A-Z)
+	if (c >= 'A' && c <= 'Z') {
+		// Convert to lowercase
+		return c + 32;
+	}
+	// Return the character unchanged if not uppercase
+	return c;
+}
+
+bool isChunked(const std::string &headers) {
 	// Look for "Transfer-Encoding: chunked" in the headers
 	// This would not work cause headers are case insensitive
 	// std::string search = "Transfer-Encoding: chunked";
 	// return headers.find(search) != std::string::npos;
 	std::string lowerHeaders;
-	std::transform(headers.begin(), headers.end(), std::back_inserter(lowerHeaders), ::tolower);
+	for (std::string::const_iterator it = headers.begin(); it != headers.end(); ++it) {
+		lowerHeaders += customToLower(*it);
+	}
+
 	std::string search = "transfer-encoding: chunked";
 	std::string::size_type pos = lowerHeaders.find(search);
-	if (pos != std::string::npos)
-	{
+	if (pos != std::string::npos) {
 		return true;
 	}
 	return false;
 }
 
-size_t getContentLength(const std::string &headers)
-{
-	std::string lowerHeaders;
-	std::transform(headers.begin(), headers.end(), std::back_inserter(lowerHeaders), ::tolower);
-	std::string search = "content-length: ";
-	std::string::size_type pos = lowerHeaders.find(search);
-	if (pos != std::string::npos)
-	{
-		std::string contentLengthLine = headers.substr(pos + search.size());
-		std::string::size_type endPos = contentLengthLine.find("\r\n");
-		std::string contentLengthStr = contentLengthLine.substr(0, endPos);
-		try
-		{
-			return std::stoul(contentLengthStr);
-		}
-		catch (const std::invalid_argument &e)
-		{
-			std::cerr << "Invalid argument: " << e.what() << '\n';
-			return 0; // Or use another way to indicate an error
-		}
-		catch (const std::out_of_range &e)
-		{
-			std::cerr << "Out of range: " << e.what() << '\n';
-			return 0; // Or use another way to indicate an error
-		}
-	}
-	return 0;
+size_t getContentLength(const std::string &headers) {
+    std::string lowerHeaders;
+    for (std::string::const_iterator it = headers.begin(); it != headers.end(); ++it) {
+        lowerHeaders += customToLower(*it);
+    }
+
+    std::string search = "content-length: ";
+    std::string::size_type pos = lowerHeaders.find(search);
+    if (pos != std::string::npos) {
+        std::string contentLengthLine = headers.substr(pos + search.size());
+        std::string::size_type endPos = contentLengthLine.find("\r\n");
+        std::string contentLengthStr = contentLengthLine.substr(0, endPos);
+
+        // Convert content length string to size_t
+        std::istringstream iss(contentLengthStr);
+        size_t contentLength;
+        if (!(iss >> contentLength)) {
+            std::cerr << "Failed to convert content length to size_t\n";
+            return 0; // Or use another way to indicate an error
+        }
+        return contentLength;
+    }
+    return 0;
 }
 
 bool readChunkSize(int socket, std::string &line)

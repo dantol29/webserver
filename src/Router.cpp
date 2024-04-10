@@ -77,28 +77,28 @@ void Router::splitTarget(const std::string &target)
 
 bool Router::pathExists(HTTPResponse &response, const std::string &originalPath)
 {
-	std::string path = originalPath;
-	struct stat buffer;
-	if (stat(path.c_str(), &buffer) != 0)
-	{
-		response.setStatusCode(404);
-		response.setBody("Not Found");
-		return false;
-	}
-	if (S_ISDIR(buffer.st_mode))
-	{
-		if (path.back() != '/')
-		{
-			path += "/";
-		}
-		path += "index.html";
-		// Check if index.html exists
-		if (stat(path.c_str(), &buffer) != 0)
-		{
-			response.setStatusCode(404);
-			response.setBody("Not Found");
-			return false;
-		}
-	}
-	return true;
+    std::string path = originalPath;
+    struct stat buffer;
+    if (stat(path.c_str(), &buffer) != 0)
+    {
+        response.setStatusCode(404);
+        response.setBody("Not Found");
+        return false;
+    }
+    if (S_ISDIR(buffer.st_mode))
+    {
+        if (!path.empty() && path[path.length() - 1] != '/')
+        {
+            path += "/";
+        }
+        path += "index.html";
+        // Check if index.html exists
+        if (stat(path.c_str(), &buffer) != 0)
+        {
+            response.setStatusCode(404);
+            response.setBody("Not Found");
+            return false;
+        }
+    }
+    return true;
 }
