@@ -57,6 +57,7 @@ class Server
 	void handleConnection(int clientFD);
 	void handleServerSocketError();
 	void handleClientSocketError(int clientFD, size_t &i);
+	void handleSocketTimeoutIfAny();
 
 	/* Not avaiabel constructors */
 

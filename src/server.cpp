@@ -43,6 +43,7 @@ void Server::startPollEventLoop()
 						acceptNewConnection();
 					else
 					{
+						// TODO: only the index is actually needed
 						handleConnection(_FDs[i].fd);
 						_FDs.erase(_FDs.begin() + i);
 						--i;
@@ -58,9 +59,7 @@ void Server::startPollEventLoop()
 			}
 		}
 		else if (ret == 0)
-		{
-			std::cout << "Timeout occurred!" << std::endl; // This should never happen with an infinite timeout
-		}
+			handleSocketTimeoutIfAny();
 		else
 		{
 			// handle the errors on poll on the server socket
@@ -336,6 +335,13 @@ void Server::handleClientSocketError(int clientFD, size_t &i)
 	_FDs.erase(_FDs.begin() + i);
 	perror("poll client socket error");
 	--i;
+}
+
+void Server::handleSocketTimeoutIfAny()
+{
+	// Is not the socket timeout, but the poll timeout
+	std::cout << "Timeout occurred!" << std::endl;
+	// This should never happen with an infinite timeout
 }
 
 /* Others */
