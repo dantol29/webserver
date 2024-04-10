@@ -69,44 +69,18 @@ void Server::handleConnection(int clientFD)
 {
 	std::string headers;
 	HTTPResponse response;
-	if (!checkHeaders(clientFD, headers, response))
+	if (!readHeaders(clientFD, headers, response))
 	{
-		if (response.getStatusCode() != 0)
-		{
-			std::string responseString = response.toString();
-			send(clientFD, responseString.c_str(), responseString.size(), 0);
-		}
-		close(clientFD);
+		closeClientConnection(clientFD, response);
 		return;
 	}
 	std::string body;
 	if (isChunked(headers))
-
 	{
-		// TODO: check if this is blocking; I mean the recv in readChunk
-		bool bodyComplete = false;
-		while (!bodyComplete)
+		if (!readChunkedBody(clientFD, body, response))
 		{
-			// Chunk Structure: size in hex, CRLF, chunk data, CRLF
-			// chunkSizeLine will contain the size of the next chunk in hexadecimal
-			std::string chunkSizeLine;
-			// Read the line containing the size of the next chunk
-			ReadLine(clientFD, chunkSizeLine);
-			// We transform the size from hexadecimal to an integer
-			size_t chunkSize = std::stoul(chunkSizeLine, 0, 16);
-
-			if (chunkSize == 0)
-			{
-				bodyComplete = true;
-			}
-			else
-			{
-				// Read the chunk of data
-				std::string chunkData = readChunk(clientFD, chunkSize); // Implement this function
-				body.append(chunkData);
-				// Consume the CRLF at the end of the chunk
-			}
-			// Now, body contains the full body of the request
+			closeClientConnection(clientFD, response);
+			return;
 		}
 	}
 	else
@@ -348,7 +322,7 @@ void Server::closeClientConnection(int clientFD, HTTPResponse &response)
 	close(clientFD);
 }
 
-bool Server::checkHeaders(int clientFD, std::string &headers, HTTPResponse &response)
+bool Server::readHeaders(int clientFD, std::string &headers, HTTPResponse &response)
 {
 	size_t totalRead = 0;
 	bool headersComplete = false;
@@ -386,6 +360,37 @@ bool Server::checkHeaders(int clientFD, std::string &headers, HTTPResponse &resp
 		}
 	}
 	return true;
+}
+
+bool Server::readChunkedBody(int clientFd, std::string &body, HTTPResponse &response)
+{
+	// TODO: check if this is blocking; I mean the two recvs in readChunkSize and readChunk
+	bool bodyComplete = false;
+	while (!bodyComplete)
+	{
+		std::string chunkSizeLine;
+		if (!readChunkSize(clientFd, chunkSizeLine))
+			return false;
+		size_t chunkSize = std::stoul(chunkSizeLine, 0, 16);
+		if (chunkSize == 0)
+		{
+			bodyComplete = true;
+			return true;
+		}
+		else
+		{
+			std::string chunkData;
+			// readChunk(clientFd, chunkSize, chunkData, response);
+			if (!readChunk(clientFd, chunkSize, chunkData, response))
+			{
+				closeClientConnection(clientFd, response);
+				return false;
+			}
+			body.append(chunkData);
+			// Consume the CRLF at the end of the chunk
+		}
+	}
+	return false;
 }
 
 /* Others */

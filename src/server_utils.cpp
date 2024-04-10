@@ -52,7 +52,7 @@ size_t getContentLength(const std::string &headers)
 	return 0;
 }
 
-bool ReadLine(int socket, std::string &line)
+bool readChunkSize(int socket, std::string &line)
 {
 	line.clear();
 	while (true)
@@ -82,11 +82,10 @@ bool ReadLine(int socket, std::string &line)
 	return true;
 }
 
-std::string readChunk(int socket, size_t chunkSize)
+bool readChunk(int socket, size_t chunkSize, std::string &chunkData, HTTPResponse &response)
 {
-	std::string chunkData;
 	// Reserve space in the string to avoid reallocations
-	chunkData.reserve(chunkSize);
+	chunkData.reserve(chunkSize + chunkData.size());
 	while (chunkSize > 0)
 	{
 		char buffer[BUFFER_SIZE];
@@ -100,12 +99,16 @@ std::string readChunk(int socket, size_t chunkSize)
 		else if (bytesRead < 0)
 		{
 			perror("recv failed in readChunk");
-			throw std::runtime_error("recv failed in readChunk");
+			// Internal Server Error
+			response.setStatusCode(500);
+			return false;
 		}
 		else
 		{
+			// bytes read == 0, connection closed prematurely
 			std::cout << "Connection closed while reading chunk" << std::endl;
-			throw std::runtime_error("Connection closed while reading chunk");
+			response.setStatusCode(400); // Bad Request
+			return false;
 		}
 	}
 	char crlf[2];
@@ -113,10 +116,47 @@ std::string readChunk(int socket, size_t chunkSize)
 	if (crlfRead < 2)
 	{
 		std::cout << "Connection closed while reading CRLF" << std::endl;
-		throw std::runtime_error("Connection closed while reading CRLF");
+		response.setStatusCode(400); // Bad Request
+		return false;
 	}
-	return chunkData;
+	return true;
 }
+
+// std::string readChunk(int socket, size_t chunkSize)
+// {
+// 	std::string chunkData;
+// 	// Reserve space in the string to avoid reallocations
+// 	chunkData.reserve(chunkSize);
+// 	while (chunkSize > 0)
+// 	{
+// 		char buffer[BUFFER_SIZE];
+// 		size_t bytesToRead = std::min(chunkSize, (size_t)BUFFER_SIZE);
+// 		ssize_t bytesRead = recv(socket, buffer, bytesToRead, 0);
+// 		if (bytesRead > 0)
+// 		{
+// 			chunkData.append(buffer, bytesRead);
+// 			chunkSize -= bytesRead;
+// 		}
+// 		else if (bytesRead < 0)
+// 		{
+// 			perror("recv failed in readChunk");
+// 			throw std::runtime_error("recv failed in readChunk");
+// 		}
+// 		else
+// 		{
+// 			std::cout << "Connection closed while reading chunk" << std::endl;
+// 			throw std::runtime_error("Connection closed while reading chunk");
+// 		}
+// 	}
+// 	char crlf[2];
+// 	ssize_t crlfRead = recv(socket, crlf, 2, 0);
+// 	if (crlfRead < 2)
+// 	{
+// 		std::cout << "Connection closed while reading CRLF" << std::endl;
+// 		throw std::runtime_error("Connection closed while reading CRLF");
+// 	}
+// 	return chunkData;
+// }
 
 // Determine the type of request and call the appropriate handler
 void handleConnection(int socket)
@@ -171,7 +211,7 @@ void handleConnection(int socket)
 			// chunkSizeLine will contain the size of the next chunk in hexadecimal
 			std::string chunkSizeLine;
 			// Read the line containing the size of the next chunk
-			ReadLine(socket, chunkSizeLine);
+			readChunkSize(socket, chunkSizeLine);
 			// We transform the size from hexadecimal to an integer
 			size_t chunkSize = std::stoul(chunkSizeLine, 0, 16);
 

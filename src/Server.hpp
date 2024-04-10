@@ -61,8 +61,9 @@ class Server
 	void handlePollFailure();
 	void AlertAdminAndTryToRecover();
 	/* for handleConnection */
-	bool checkHeaders(int clientFD, std::string &headers, HTTPResponse &response);
+	bool readHeaders(int clientFD, std::string &headers, HTTPResponse &response);
 	void closeClientConnection(int clientFD, HTTPResponse &response);
+	bool readChunkedBody(int clientFD, std::string &body, HTTPResponse &response);
 
 	/* Not avaiable constructors */
 

@@ -22,7 +22,7 @@ std::string handleCGIRequest(const char *argv[], Environment env);
 
 bool isChunked(const std::string &headers);
 size_t getContentLength(const std::string &headers);
-bool ReadLine(int socket, std::string &line);
+bool readChunkSize(int socket, std::string &line);
 std::string readChunk(int socket, size_t chunkSize);
 void printVariablesHeadersBody(const HTTPRequest &obj);
 void perrorAndExit(const char *msg);

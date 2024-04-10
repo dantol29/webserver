@@ -2,6 +2,8 @@
 
 Notes about the Server class (and the server) to unclutter the Server.cpp file.
 
+## StartListening()
+
 **Socket creation**
 
 - The server socket is blocking (by default) which should not be a problem cause we use poll.
@@ -33,3 +35,5 @@ Notes about the Server class (and the server) to unclutter the Server.cpp file.
 **acceptNewConnection**
 
 - accept() is blocking but we call it when the server socket is readable, i.e. when a new connection is available.
+
+## handleConnection()
