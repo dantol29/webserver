@@ -61,24 +61,7 @@ void Server::startPollEventLoop()
 		else if (ret == 0)
 			handleSocketTimeoutIfAny();
 		else
-		{
-			// handle the errors on poll on the server socket
-			if (errno == EINTR)
-			{
-				// poll was interrupted by a signal
-				// Log the interruption if necessary
-				continue; // Retry the poll operation
-			}
-			else
-			{
-				// poll failes: EBADF, EFAULT, EINVAL, ENOMEM
-				// Log critical error details
-				// Attempt recovery or initiate a graceful shutdown
-				// Possibly alert administrators
-				perror("poll");
-				// exit(EXIT_FAILURE);
-			}
-		}
+			handlePollFailure();
 	}
 }
 
@@ -342,6 +325,40 @@ void Server::handleSocketTimeoutIfAny()
 	// Is not the socket timeout, but the poll timeout
 	std::cout << "Timeout occurred!" << std::endl;
 	// This should never happen with an infinite timeout
+}
+
+void Server::handlePollFailure()
+{
+	// linear issue: https://linear.app/web-serv/issue/WEB-91/implement-adequate-response-on-poll-failure
+	if (errno == EINTR)
+	{
+		// The call was interrupted by a signal. Log and possibly retry.
+		std::cerr << "poll() interrupted by signal. Retrying." << std::endl;
+		// Basically we are not doing anything here.
+	}
+	else
+	{
+		// Log the error with as much detail as available.
+		perror("Critical poll error from handlePollFailure()");
+
+		// EBADF, EFAULT, EINVAL, ENOMEM indicate more severe issues.
+		// Depending on the nature of your server, you might try to clean up and restart polling,
+		// or log the failure and exit for manual recovery.
+		// For a server, exiting might not be the best choice without trying to recover,
+		// but ensure admins are alerted for investigation.
+
+		// Example: Send alert to admin or trigger automatic recovery process
+		AlertAdminAndTryToRecover();
+
+		// In critical cases, consider a graceful shutdown.
+		// exit(EXIT_FAILURE); or better yet, GracefulShutdown();
+	}
+}
+
+void Server::AlertAdminAndTryToRecover()
+{
+	std::cerr << "Calling Leo and Daniil to fix the server" << std::endl;
+	std::cerr << "Super dope function that recovers the server" << std::endl;
 }
 
 /* Others */

@@ -58,6 +58,8 @@ class Server
 	void handleServerSocketError();
 	void handleClientSocketError(int clientFD, size_t &i);
 	void handleSocketTimeoutIfAny();
+	void handlePollFailure();
+	void AlertAdminAndTryToRecover();
 
 	/* Not avaiabel constructors */
 
