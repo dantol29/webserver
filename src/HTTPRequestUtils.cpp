@@ -1,6 +1,4 @@
-#include "HTTPRequest.hpp"
-#include <string.h>
-int hexToInt(std::string hex);
+#include "webserv.hpp"
 
 bool	isOrigForm(std::string &requestTarget, int &queryStart){
 	for (int i = 0; i < (int)requestTarget.length(); i++){
@@ -12,16 +10,7 @@ bool	isOrigForm(std::string &requestTarget, int &queryStart){
 	return (false);
 }
 
-bool	fileExists(std::string &requestTarget, bool isOriginForm, int queryStart){
-	if (isOriginForm && \
-	access(("." + requestTarget.substr(0, queryStart)).c_str(), F_OK) == -1)
-		return (false);
-	if (!isOriginForm && access(("." + requestTarget).c_str(), F_OK) == -1)
-		return (false);
-	return (true);
-}
-
-bool	isInvalidChar(char c)
+bool	isInvalidChar(const char& c)
 {
 	if ((c >= 0 && c <= 31) || c == 127)
 		return (true);
@@ -30,8 +19,8 @@ bool	isInvalidChar(char c)
 
 void	skipRequestLine(const char *request, unsigned int& i)
 {
-	while (request[i] && request[i + 1]){
-		if (request[i] == '\r' && request[i + 1] == '\n'){
+	while (request[i]){
+		if (hasCRLF(request, i, 0)){
 			i += 2;
 			return ;	
 		}
@@ -41,9 +30,8 @@ void	skipRequestLine(const char *request, unsigned int& i)
 
 void	skipHeader(const char *request, unsigned int& i)
 {
-	while (request[i] && request[i + 1] && request[i + 2] && request[i + 3]){
-		if (request[i] == '\r' && request[i + 1] == '\n' \
-		&& request[i + 2] == '\r' && request[i + 3] == '\n'){
+	while (request[i]){
+		if (hasCRLF(request, i, 1)){
 			i += 4; // skip "\r\n\r\n"
 			return ;
 		}
@@ -100,23 +88,25 @@ bool	hasMandatoryHeaders(HTTPRequest& obj)
 				return (false);
 			isHost++;
 		}
-		else if (it->first == "Content-length"){
-			if (obj.getMethod() != "POST")
+		else if (it->first == "Content-Length"){
+			if (!isNumber(it->second) || obj.getMethod() != "POST" )
 				return (false);
 			isContentLength++;
 		}
-		else if (it->first == "Content-type"){
+		else if (it->first == "Content-Type"){
 			if (!isValidContentType(it->second) || obj.getMethod() != "POST")
 				return (false);
 			isContentType++;
 		}
-		else if (it->first == "Transfer-encoding"){
+		else if (it->first == "Transfer-Encoding"){
 			if (it->second != "chunked" || obj.getMethod() != "POST")
 				return (false);
 			obj.setIsChunked(true);
 		}
 	}
-	if (obj.getMethod() == "POST")
+	if (obj.getIsChunked() && isContentLength > 0)
+		return (false);
+	if (obj.getMethod() == "POST" || obj.getMethod() == "DELETE")
 		return (isHost == 1 && isContentLength == 1 && isContentType == 1);
 	else
 		return (isHost == 1);
@@ -157,12 +147,11 @@ std::string extractRequestTarget(const char *request, unsigned int& i)
 	std::string		string_request(request);
 	unsigned int	start = i;
 
-	while (request[i] && request[i] != ' ')
+	while (request[i] && request[i] != ' ' && !isInvalidChar(request[i]))
 		i++;
 	if (i > MAX_URI)
 		return ("");
 	requestTarget = string_request.substr(start, i - start);
-	//std::cout << requestTarget << std::endl;
 	return (requestTarget);
 }
 
@@ -173,8 +162,6 @@ std::string	extractVariables(std::string& requestTarget, bool& isOriginForm)
 	if (requestTarget == "/")
 		return ("/");
 	isOriginForm = isOrigForm(requestTarget, queryStart);
-	// if (!fileExists(requestTarget, isOriginForm, queryStart))
-	// 	return ("");
 	if (isOriginForm)
 		return (requestTarget.substr(queryStart + 1, strlen(requestTarget.c_str()) - queryStart));
 	return (requestTarget);
@@ -186,10 +173,9 @@ std::string extractProtocolVersion(const char *request, unsigned int& i)
 	std::string		string_request(request);
 	unsigned int	start = i;
 
-	while (request[i] && request[i] != '\r')
+	while (request[i] && request[i] != '\r' && !isInvalidChar(request[i]))
 		i++;
 	protocolVersion = string_request.substr(start, i - start);
-	//std::cout << protocolVersion << std::endl;
 	if (protocolVersion == "HTTP/1.1")
 		return (protocolVersion);
 	return ("");
@@ -200,10 +186,9 @@ std::string	extractMethod(const char *request, unsigned int& i)
 	std::string	method;
 	std::string	string_request(request);
 
-	while (request[i] && request[i] != ' ')
+	while (request[i] && request[i] != ' ' && !isInvalidChar(request[i]))
 		i++;
 	method = string_request.substr(0, i);
-	//std::cout << method << std::endl;
 	if (method == "GET" || method == "POST" || method == "DELETE")
 		return (method);
 	return ("");
@@ -219,7 +204,6 @@ std::string	extractHeaderKey(const char *request, unsigned int& i)
 			return ("");
 		i++;
 	}
-	//std::cout << "Key: "<< string_request.substr(start, i - start) << std::endl;
 	return (string_request.substr(start, i - start));
 }
 
@@ -233,11 +217,10 @@ std::string	extractHeaderValue(const char *request, unsigned int& i)
 			return ("");
 		i++;
 	}
-	//std::cout << "Value: "<< string_request.substr(start, i - start) << std::endl;
 	return (string_request.substr(start, i - start));
 }
 
-int	extractLineLength(const char *request, unsigned int& i)
+unsigned int	extractLineLength(const char *request, unsigned int& i)
 {
 	std::string string_request(request);
 	unsigned int start = i;
@@ -250,7 +233,6 @@ int	extractLineLength(const char *request, unsigned int& i)
 	size = hexToInt(string_request.substr(start, i - start));
 	if (size <= 0)
 		return (size);
-	std::cout << "Len: " << size << std::endl;
 	i += 2; // skip '\r' and '\n'
 	return (size);
 }
@@ -263,10 +245,16 @@ std::string		extractLine(const char *request, unsigned int& i, const unsigned in
 	if (request[i] != '\r' || request[i + 1] != '\n')
 		return ("");
 	i += 2; // skip '\r' and '\n'
-	std::cout << "Word: " << line << std::endl;
 	return (line);
 }
 
-int	parseBody(){
-	return (0);
-}
+
+
+// bool	fileExists(std::string &requestTarget, bool isOriginForm, int queryStart){
+// 	if (isOriginForm && \
+// 	access(("." + requestTarget.substr(0, queryStart)).c_str(), F_OK) == -1)
+// 		return (false);
+// 	if (!isOriginForm && access(("." + requestTarget).c_str(), F_OK) == -1)
+// 		return (false);
+// 	return (true);
+// }
