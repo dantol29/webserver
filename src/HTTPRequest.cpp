@@ -114,11 +114,6 @@ std::string HTTPRequest::getErrorMessage() const
 	return (_errorMessage);
 }
 
-std::string HTTPRequest::getErrorMessage() const
-{
-	return (_errorMessage);
-}
-
 void HTTPRequest::setIsChunked(bool n)
 {
 	_isChunked = n;
@@ -145,13 +140,6 @@ bool HTTPRequest::saveVariables(std::string &variables)
 		}
 	}
 	return (true);
-}
-
-int HTTPRequest::ft_error(int statusCode, std::string message)
-{
-	_errorMessage = message;
-	_statusCode = statusCode;
-	return (statusCode);
 }
 
 int HTTPRequest::ft_error(int statusCode, std::string message)
