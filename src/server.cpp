@@ -44,10 +44,8 @@ void Server::startPollEventLoop()
 					else
 					{
 						handleConnection(_FDs[i].fd);
-						// Remove the client socket from the pollfd structure
 						_FDs.erase(_FDs.begin() + i);
-						// Handle incoming data
-						// Add logic to handle incoming data
+						--i;
 					}
 				}
 				else if (_FDs[i].revents & (POLLERR | POLLHUP | POLLNVAL))
