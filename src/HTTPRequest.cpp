@@ -60,7 +60,7 @@ HTTPRequest::HTTPRequest(char *request){
 		_statusCode = parseRequestLine(request);
 		if (_statusCode == 200)
 			_statusCode = parseHeaders(request);
-		if (_statusCode == 200 && !_isChunked)
+		if (_statusCode == 200 && !_isChunked && _method != "GET")
 			_statusCode = parseBody(request);
 	}
 }
@@ -136,6 +136,11 @@ bool	HTTPRequest::saveVariables(std::string& variables)
 	return (true);
 }
 
+int	HTTPRequest::ft_error(int statusCode, std::string message){
+	_errorMessage = message;
+	return (statusCode);
+}
+
 int	HTTPRequest::parseRequestLine(const char *request)
 {
 	unsigned int	i = 0;
@@ -143,26 +148,26 @@ int	HTTPRequest::parseRequestLine(const char *request)
 	std::string		variables;
 
 	_method = extractMethod(request, i);
-	if (_method.empty()) // A server that receives a method longer than any that it implements
-		return (501); // SHOULD respond with a 501 (Not Implemented).
-	if (request[i++] != ' ') // single space
-		return (400);
+	if (_method.empty())
+		return (ft_error(501, "Invalid method"));
+	if (request[i++] != ' ')
+		return (ft_error(400, "Invalid request-line syntax"));
 	_requestTarget = extractRequestTarget(request, i);
-	if (_requestTarget.empty()) // A server that receives a request-target longer 
-		return (414); // than any URI it wishes to parse MUST respond with a 414 (URI Too Long).
-	if (request[i++] != ' ') // single space
-		return (400);
+	if (_requestTarget.empty())
+		return (ft_error(414, "Request-target is too long"));
+	if (request[i++] != ' ')
+		return (ft_error(400, "Invalid request-line syntax"));
 	variables = extractVariables(_requestTarget, isOriginForm);
 	if (variables.empty())
-		return (400);
+		return (ft_error(400, "Invalid query"));
 	if (isOriginForm)
 		if (!saveVariables(variables))
-			return (false);
+			return (ft_error(400, "Invalid query"));
 	_protocolVersion = extractProtocolVersion(request, i);
 	if (_protocolVersion.empty())
-		return (400);
+		return (ft_error(400, "Invalid protocol"));
 	if (!hasCRLF(request, i, 0))
-		return (400);
+		return (ft_error(400, "Invalid CRLF for request-line"));
 	return (200); 
 }
 
@@ -177,16 +182,16 @@ int	HTTPRequest::parseChunkedBody(const char *request)
 		size = extractLineLength(request, i);
 		if (size <= 0){
 			if (size == -1)
-				return (400);
+				return (ft_error(400, "Invalid body"));
 			break ;
 		}
 		line = extractLine(request, i, size);
 		if (line.empty())
-			return (400);
+			return (ft_error(400, "Invalid body"));
 		_body.push_back(line);
 	}
 	if (!hasCRLF(request, i, 0))
-		return (400);
+		return (ft_error(400, "Invalid body"));
 	if (hasCRLF(request, i, 1))
 		_isChunkFinish = true;
 	return (200);
@@ -203,26 +208,26 @@ int HTTPRequest::parseHeaders(const char *request)
 	while (request[i]){
 		key = extractHeaderKey(request, i);
 		if (key.empty())
-			return (400);
+			return (ft_error(400, "Invalid header key"));
 		i++; // skip ':'
 		if (request[i++] != ' ')
-			return (400);
+			return (ft_error(400, "Invalid header syntax"));
 		value = extractHeaderValue(request, i);
 		if (value.empty())
-			return (400);
+			return (ft_error(400, "Invalid header value"));
 		if (request[i] != '\r' || request[i + 1] != '\n')
-			return (400);
+			return (ft_error(400, "No CRLF after header"));
 		_headers.insert(std::make_pair(key, value));
 		i += 2; // skip '\r' and '\n'
 		if (hasCRLF(request, i, 0)) // end of header section
 			break ;
 	}
-	if (request[i] != '\r' || request[i + 1] != '\n') // end of header section
-		return (400);
+	if (request[i] != '\r' || request[i + 1] != '\n')
+		return (ft_error(400, "No CRLF after header"));
 	if (!hasMandatoryHeaders(*this))
-		return (400);
+		return (ft_error(400, "Invalid headers"));
 	if (_method == "GET" && request[i + 2]) //has something after headers
-		return (400);
+		return (ft_error(400, "Invalid headers"));
 	return (200);
 }
 
@@ -244,10 +249,10 @@ int	HTTPRequest::parseBody(const char *request){
 			continue;
 		}
 		else if (!hasCRLF(request, i, 0) && request[i] == '\r')
-			return (400);
+			return (ft_error(400, "Invalid body"));
 		i++;
 	}
 	if (end == 200 && hasCRLF(request, i, 0) && request[i + 2])
-		return (400);
+		return (ft_error(400, "Invalid body"));
 	return (end);
 }
