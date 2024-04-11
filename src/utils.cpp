@@ -34,21 +34,21 @@ void *ft_memset(void *ptr, int value, size_t num)
 	return ptr;
 }
 
-char *ft_strcpy(char *dest, const char *src)
-{
-	int	i;
+char *ft_strcpy(char *dest, const char *src) {
+    if (!dest || !src) {
+        return (NULL);
+    }
 
-	i = 0;
-	if (!dest || !src)
-		return (NULL);
-	while (dest[i] && src[i])
-	{
-		dest[i] = src[i];
-		i++;
-	}
-	dest[i] = '\0';
-	return (dest);
+    int i = 0;
+    while (src[i] != '\0') {
+        dest[i] = src[i];
+        i++;
+    }
+    dest[i] = '\0';
+
+    return dest;
 }
+
 
 int hexToInt(std::string hex)
 {
