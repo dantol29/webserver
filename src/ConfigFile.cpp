@@ -65,7 +65,9 @@ bool	ConfigFile::parseLine(char *line){
 	while (line[i] && line[i] != ';')
 		i++;
 	value = stringLine.substr(start, i - start); // [VALUE]
-	if (line[i] != ';') // [;]
+	if (line[i++] != ';') // [;]
+		return (false);
+	if (line[i] != '\n' || line[i + 1] != '\0')
 		return (false);
 	_variables.insert(std::make_pair(key, value));
 	if (line != NULL)
@@ -93,6 +95,8 @@ bool	ConfigFile::isLocation(char *line){
 	while (line[i] && line[i] != ' ')
 		i++;
 	_tmpPath = stringLine.substr(start, i - start); // [PATH]
+	if (_tmpPath.empty())
+		return (false);
 	if (line[i++] != ' ') // [SP]
 		return (false);
 	if (line[i] != '{') // [{]
@@ -119,7 +123,9 @@ bool	ConfigFile::parseLocationLine(char *line, std::string& key, std::string& va
 	while (line[i] && line[i] != ';')
 		i++;
 	value = stringLine.substr(start, i - start); // [VALUE]
-	if (line[i] != ';') // [;]
+	if (line[i++] != ';') // [;]
+		return (false);
+	if (line[i] != '\n' || line[i + 1] != '\0')
 		return (false);
 	if (line != NULL)
 		delete line;
@@ -135,7 +141,6 @@ bool	ConfigFile::parseLocation(char *line, int fd){
 	var.insert(std::make_pair("path", _tmpPath));
 	while (1){
 		line = get_next_line(fd);
-		std::cout << line << std::endl;
 		if (line == NULL || std::strcmp(line, "\t}\n") == 0)
 			break ;
 		if (!parseLocationLine(line, key, value))
@@ -149,27 +154,21 @@ bool	ConfigFile::parseLocation(char *line, int fd){
 bool	ConfigFile::parseFile(char *file){
 	char	*line;
 	int fd = checkFile(file);
-	if (fd == -1)
-		return (error("Config file: Invalid file", NULL));
+	if (fd == -1) { return (error("Config file: Invalid file", NULL)); }
 
 	line = get_next_line(fd);
-	if (std::strcmp(line, "server {\n") != 0)
-		return (error("Config file: Syntax error", line));
+	if (std::strcmp(line, "server {\n") != 0) { return (error("Config file: Syntax error", line)); }
 	delete line;
 
 	while (1){
 		line = get_next_line(fd);
-		if (line == NULL || std::strcmp(line, "}") == 0)
-			break ;
-		std::cout << line << std::endl;
-		if (isLocation(line))
-			parseLocation(line, fd);
-		else if (!parseLine(line))
-			return (error("Config file: Syntax error", line));
+		if (line == NULL) { break ; }
+		else if (std::strcmp(line, "}") == 0 && !get_next_line(fd)) { delete line; return (true); }
+		else if (std::strcmp(line, "\n") == 0) { delete line; }
+		else if (isLocation(line)) { parseLocation(line, fd); }
+		else if (!parseLine(line)) { return (error("Config file: Syntax error", line)); }
 	}
-	if (line != NULL)
-		delete line;
-	return (true);
+	return (error("Config file: Syntax error", line));
 }
 
 ConfigFile::ConfigFile(char *file) : _errorMessage(""), _tmpPath(""){
