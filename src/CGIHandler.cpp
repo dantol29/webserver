@@ -30,7 +30,7 @@ std::string CGIHandler::handleRequest(const HTTPRequest &request) {
     return cgiOutput;
 }
 
-//key1=value1&key2=value2&key3=value3 might not be directly passed as command-line arguments (i.e., in argv)
+//NOTE FOR SELF: key1=value1&key2=value2&key3=value3 might not be directly passed as command-line arguments (i.e., in argv)
 //it migth  be passed to the script as part of the environment variables
 //=> what is passed as command-line arguments ? path to the script + the path to the file to process ?
 char* const* CGIHandler::createArgvForExecve(const Environment& env) {
@@ -52,10 +52,11 @@ char* const* CGIHandler::createArgvForExecve(const Environment& env) {
     //     argvArray[i] = new char[len + 1];
     //     ft_strcpy(argvArray[i], argv[i]);
     // }
+
+    // UPDATE: for now, we will just hardcode the path to the script
     (void)env;
     char** argv = new char*[2];
 
-    // Hardcode the command to /usr/bin/pwd. Allocate and copy the string.
     std::string command = "cgi-bin/hello_py.cgi";
     argv[0] = new char[command.size() + 1];
     ft_strcpy(argv[0], command.c_str());
@@ -67,10 +68,6 @@ char* const* CGIHandler::createArgvForExecve(const Environment& env) {
 }
 
 std::string CGIHandler::executeCGI(const Environment &env) {
-    
-    // std::string cgiScriptPath = env.getVar("SCRIPT_NAME");
-    // const char** argv = NULL;
-    // const char* argv[0] = {cgiScriptPath.c_str()};
 
     char* const* argv = createArgvForExecve(env);
     std::cout << "argv[0]: " << argv[0] << std::endl;
@@ -79,24 +76,20 @@ std::string CGIHandler::executeCGI(const Environment &env) {
     int pipeFD[2];
     if (pipe(pipeFD) == -1) {
         perror("pipe failed");
-std::cout << "-xxxxxxxxxxxxxxxx-pipe failed-------------------" << std::endl;
         _exit(EXIT_FAILURE);
     }
 
     pid_t pid = fork();
     if (pid == -1) {
-std::cout << "-xxxxxxxxxxxxxxxx-fork failed-------------------" << std::endl;
         perror("fork failed");
         _exit(EXIT_FAILURE);
     } else if (pid == 0) {
-std::cout << "------------------inside child process-------------------" << std::endl;
         close(pipeFD[0]);
         dup2(pipeFD[1], STDOUT_FILENO);
         close(pipeFD[1]);
 
     std::vector<char *> envp = env.getForExecve();
     if (execve(argv[0], argv, envp.data()) == -1) {
-std::cout << "-xxxxxxxxxxxxxxxx-execve failed-------------------" << std::endl;
         perror("execve");
         exit(EXIT_FAILURE);
     }
