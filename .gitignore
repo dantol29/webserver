@@ -27,6 +27,8 @@
 !docs/
 !tests/
 !config
+!tests/
+!*.test
 
 # Exclude specific files or directories
 /secretus/
