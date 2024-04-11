@@ -2,6 +2,21 @@
 
 #define EXIT_FAILURE 1
 
+CGIHandler::CGIHandler() {
+}
+
+CGIHandler::~CGIHandler() {
+}
+
+CGIHandler::CGIHandler(const CGIHandler &other) {
+    (void)other;
+}
+
+CGIHandler &CGIHandler::operator=(const CGIHandler &other) {
+    (void)other;
+    return *this;
+}
+
 std::string CGIHandler::handleRequest(const HTTPRequest &request) {
     Environment env;
 
