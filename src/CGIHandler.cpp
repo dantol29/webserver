@@ -33,31 +33,26 @@ std::string CGIHandler::handleRequest(const HTTPRequest &request) {
 //key1=value1&key2=value2&key3=value3 might not be directly passed as command-line arguments (i.e., in argv)
 //it migth  be passed to the script as part of the environment variables
 //=> what is passed as command-line arguments ? path to the script + the path to the file to process ?
-// const char** CGIHandler::createArgvForExecve(const Environment& env) {
-//     std::vector<const char*> argv;
-
-//     std::string scriptName = env.getVar("SCRIPT_NAME");
-//     std::string pathTranslated = env.getVar("PATH_TRANSLATED");
-//     std::string pathToFile = pathTranslated + scriptName;
-//     // std::string queryString = env.getVar("QUERY_STRING");
-
-//     argv.push_back(scriptName.c_str());
-//     argv.push_back(pathTranslated.c_str());
-//     // argv.push_back(queryString.c_str());
-//     argv.push_back(NULL);
-
-//     char** argvArray = new char*[argv.size()];
-//     for (size_t i = 0; i < argv.size(); ++i) {
-//         size_t len = strlen(argv[i]);
-//         argvArray[i] = new char[len + 1];
-//         strcpy(argvArray[i], argv[i]);
-//     }
-//     return argvArray;
-// }
-
 char* const* CGIHandler::createArgvForExecve(const Environment& env) {
-    // Allocate memory for argv array with 2 elements: the command and the NULL terminator
-   (void)env;
+    // std::vector<const char*> argv;
+
+    // std::string scriptName = env.getVar("SCRIPT_NAME");
+    // std::string pathTranslated = env.getVar("PATH_TRANSLATED");
+    // std::string pathToFile = pathTranslated + scriptName;
+    // // std::string queryString = env.getVar("QUERY_STRING");
+
+    // argv.push_back(scriptName.c_str());
+    // argv.push_back(pathTranslated.c_str());
+    // // argv.push_back(queryString.c_str());
+    // argv.push_back(NULL);
+
+    // char* const* argvArray = new char*[argv.size()];
+    // for (size_t i = 0; i < argv.size(); ++i) {
+    //     size_t len = strlen(argv[i]);
+    //     argvArray[i] = new char[len + 1];
+    //     strcpy(argvArray[i], argv[i]);
+    // }
+    (void)env;
     char** argv = new char*[2];
 
     // Hardcode the command to /usr/bin/pwd. Allocate and copy the string.
@@ -72,7 +67,6 @@ char* const* CGIHandler::createArgvForExecve(const Environment& env) {
 }
 
 std::string CGIHandler::executeCGI(const Environment &env) {
-    std::cout<<"------------------inside CGIHandler::executeCGI-------------------" << std::endl;
     
     // std::string cgiScriptPath = env.getVar("SCRIPT_NAME");
     // const char** argv = NULL;
@@ -85,13 +79,13 @@ std::string CGIHandler::executeCGI(const Environment &env) {
     int pipeFD[2];
     if (pipe(pipeFD) == -1) {
         perror("pipe failed");
-std::cout << "------------------pipe failed-------------------" << std::endl;
+std::cout << "-xxxxxxxxxxxxxxxx-pipe failed-------------------" << std::endl;
         _exit(EXIT_FAILURE);
     }
 
     pid_t pid = fork();
     if (pid == -1) {
-std::cout << "------------------fork failed-------------------" << std::endl;
+std::cout << "-xxxxxxxxxxxxxxxx-fork failed-------------------" << std::endl;
         perror("fork failed");
         _exit(EXIT_FAILURE);
     } else if (pid == 0) {
@@ -102,7 +96,7 @@ std::cout << "------------------inside child process-------------------" << std:
 
     std::vector<char *> envp = env.getForExecve();
     if (execve(argv[0], argv, envp.data()) == -1) {
-std::cout << "------------------execve failed-------------------" << std::endl;
+std::cout << "-xxxxxxxxxxxxxxxx-execve failed-------------------" << std::endl;
         perror("execve");
         exit(EXIT_FAILURE);
     }
