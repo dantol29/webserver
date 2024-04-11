@@ -138,6 +138,7 @@ void  Environment::RequestTargetToMetaVars(HTTPRequest request, Environment& env
         std::cout << "Identified Origin-Form request target" << std::endl;
     //
     } 
+	// I cannot find startsWith function
 	// else if (startsWith(requestTarget, "http")) {
     //     std::cout << "Identified Absolute-Form request target" << std::endl;
     //     // No direct action for CGI variables

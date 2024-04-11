@@ -19,17 +19,20 @@ void printVariablesHeadersBody(const HTTPRequest& obj)
 	std::vector<std::string>				c = obj.getBody();
 
 	std::multimap<std::string, std::string>::iterator it;
-	std::cout << "Variables: =>" << std::endl;
+	std::cout << "---------------------Variables--------------------" << std::endl;
 	for (it = b.begin(); it != b.end(); it++){
 		std::cout << "Key: " << it->first << ", Value: " << it->second << std::endl;
 	}
-	std::cout << "Headers: =>" << std::endl;
+	std::cout << "---------------------End--------------------------" << std::endl;
+	std::cout << "---------------------Headers----------------------" << std::endl;
 	for (it = a.begin(); it != a.end(); it++){
 		std::cout << "Key: " << it->first << ", Value: " << it->second << std::endl;
 	}
-	std::cout << "Body: =>" << std::endl;
+	std::cout << "---------------------End--------------------------" << std::endl;
+	std::cout << "---------------------Body-------------------------" << std::endl;
 	for (size_t i = 0; i < c.size(); ++i)
 		std::cout << c[i] << std::endl;
+	std::cout << "---------------------End--------------------------" << std::endl;
 }
 
 // Determine the type of request and call the appropriate handler

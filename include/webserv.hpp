@@ -4,6 +4,9 @@
 #include <string>
 #include "../src/Environment.hpp"
 #include <sstream>
+#include <cstdlib>
+#include <string.h>
+#include "HTTPRequest.hpp"
 
 //declared here because it is a template function
 //instead of to_string which is c++11, we use this function
@@ -70,6 +73,27 @@ std::string handleNotFound(void);
  * @param socket The socket descriptor representing the connection from a client.
  */
 void handleConnection(int socket);
+
+// utils.cpp
+int		hexToInt(std::string hex);
+bool	isNumber(std::string line);;
+
+// HTTPRequestUtils.cpp
+bool		isOrigForm(std::string& requestTarget, int &queryStart);
+void		skipRequestLine(const char *request, unsigned int& i);
+void		skipHeader(const char *request, unsigned int& i);
+bool		hasMandatoryHeaders(HTTPRequest& obj);
+bool		hasCRLF(const char* request, unsigned int& i, int mode);
+std::string		extractValue(std::string& variables, int &i);
+std::string 	extractKey(std::string& variables, int &i, int startPos);
+std::string 	extractRequestTarget(const char *request, unsigned int& i);
+std::string		extractVariables(std::string& requestTarget, bool& isOriginForm);
+std::string 	extractProtocolVersion(const char *request, unsigned int& i);
+std::string		extractMethod(const char *request, unsigned int& i);
+std::string		extractHeaderKey(const char *request, unsigned int& i);
+std::string		extractHeaderValue(const char *request, unsigned int& i);
+unsigned int	extractLineLength(const char *request, unsigned int& i);
+std::string		extractLine(const char *request, unsigned int& i, const unsigned int& size);
 
 
 #endif
