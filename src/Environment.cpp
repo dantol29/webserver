@@ -1,13 +1,12 @@
 #include "webserv.hpp"
 #include <string.h>
 #include <utility>
-#include <string>
 
 Environment::Environment()
 {
 }
 
-Environment::Environment(const Environment &other) : envVars(other.envVars)
+Environment::Environment(const Environment &other) : metaVars(other.metaVars)
 {
 }
 
@@ -15,7 +14,7 @@ Environment &Environment::operator=(const Environment &other)
 {
 	if (this != &other)
 	{							 // Protect against self-assignment
-		envVars = other.envVars; // Use std::map's assignment operator for a deep copy
+		metaVars = other.metaVars; // Use std::map's assignment operator for a deep copy
 	}
 	return *this;
 }
@@ -25,15 +24,15 @@ Environment &Environment::operator=(const Environment &other)
  */
 void Environment::setVar(const std::string &key, const std::string &value)
 {
-	envVars[key] = value;
+	metaVars[key] = value;
 }
 
 // it does not modify any member variables of the Environment class
 //  (hence the const at the end of the function signature).
 std::string Environment::getVar(const std::string &key) const
 {
-	std::map<std::string, std::string>::const_iterator it = envVars.find(key);
-	if (it != envVars.end())
+	std::map<std::string, std::string>::const_iterator it = metaVars.find(key);
+	if (it != metaVars.end())
 	{
 		return it->second;
 	}
@@ -42,6 +41,13 @@ std::string Environment::getVar(const std::string &key) const
 		return "";
 	}
 }
+
+void Environment::printMetaVars() const {
+    for (std::map<std::string, std::string>::const_iterator it = metaVars.begin(); it != metaVars.end(); ++it) {
+        std::cout << it->first << " = " << it->second << std::endl;
+    }
+}
+
 
 /**
  * @brief Generates a vector of C-style strings suitable for execve.
@@ -58,7 +64,7 @@ std::string Environment::getVar(const std::string &key) const
 std::vector<char *> Environment::getForExecve() const
 {
 	std::vector<char *> result;
-	for (std::map<std::string, std::string>::const_iterator it = envVars.begin(); it != envVars.end(); ++it)
+	for (std::map<std::string, std::string>::const_iterator it = metaVars.begin(); it != metaVars.end(); ++it)
 	{
 		std::string env = it->first + "=" + it->second;
 		char *envCStr = new char[env.size() + 1];
@@ -130,25 +136,6 @@ std::pair<std::string, std::string> Environment::separatePathAndInfo(const std::
 	return std::make_pair(scriptPath, pathInfo);
 }
 
-// because at the moment we implement only GET, POST and DELETE methods
-// we don't need that, but we can add it later
-bool Environment::isAuthorityForm(const HTTPRequest &request)
-{
-	std::string method = request.getMethod();
-	std::string requestTarget = request.getRequestTarget();
-
-	if (method != "CONNECT")
-	{
-		return false;
-	}
-
-	if (requestTarget.find("://") != std::string::npos || requestTarget[0] == '/')
-	{
-		return false;
-	}
-	return true;
-}
-
 // Utility function to check if 'str' starts with the given 'prefix'
 // Conforms to C++98 standard
 bool startsWith(const std::string &str, const std::string &prefix)
@@ -166,6 +153,25 @@ bool startsWith(const std::string &str, const std::string &prefix)
 		}
 	}
 	return true; // All characters matched
+}
+
+// because at the moment we implement only GET, POST and DELETE methods
+// we don't need that, but we can add it later
+bool Environment::isAuthorityForm(const HTTPRequest &request)
+{
+	std::string method = request.getMethod();
+	std::string requestTarget = request.getRequestTarget();
+
+	if (method != "CONNECT")
+	{
+		return false;
+	}
+
+	if (requestTarget.find("://") != std::string::npos || requestTarget[0] == '/')
+	{
+		return false;
+	}
+	return true;
 }
 
 // This function is used to set the CGI environment variables based on the request target.
@@ -237,12 +243,22 @@ std::string Environment::formatQueryString(const std::multimap<std::string, std:
 	}
 	return queryString;
 }
+void Environment::subtractQueryFromPathInfo(std::string& pathInfo, const std::string& queryString) {
+	if (queryString.empty()) {
+		return;
+	}
+
+	if (pathInfo.length() >= queryString.length() &&
+		pathInfo.compare(pathInfo.length() - queryString.length(), queryString.length(), queryString) == 0) {
+		pathInfo.erase(pathInfo.length() - queryString.length());
+	}
+
+}
+
 
 // RFC 3875 for more information on CGI environment variables, or README_CGI_ENV.md
-void Environment::HTTPRequestToMetaVars(char *rawRequest, Environment &env)
+void Environment::HTTPRequestToMetaVars(HTTPRequest request, Environment &env)
 {
-	HTTPRequest request(rawRequest);
-
 	//________General variables
 	// Set the method used for the request (e.g., GET, POST)
 	env.setVar("REQUEST_METHOD", request.getMethod());
@@ -259,18 +275,21 @@ void Environment::HTTPRequestToMetaVars(char *rawRequest, Environment &env)
 	env.setVar("GATEWAY_INTERFACE", "CGI/1.1");
 
 	//_______Path-related variables
+	std::string queryString = formatQueryString(request.getQueryString());
+	env.setVar("QUERY_STRING", queryString);
 	std::pair<std::string, std::string> pathComponents = separatePathAndInfo(request.getRequestTarget());
 	std::string scriptName = pathComponents.first; // path to the script
 	std::string pathInfo = pathComponents.second;  // path after the script
+
+	subtractQueryFromPathInfo(pathInfo, queryString);
+
 	env.setVar("PATH_INFO", pathInfo);
 	// most likely append the PATH_INFO to the root directory of the script OR MAYBE use a specific mapping logic
 	// std::string pathTranslated = translatePathToPhysical(scriptVirtualPath, pathInfo); // Implement this function
-	// env.setVar("PATH_TRANSLATED", pathTranslated);
+	env.setVar("PATH_TRANSLATED", scriptName);//TEMPORARY
 	// SCRIPT_NAME = URI path to identify CGI script, not just the name of the script
 	env.setVar("SCRIPT_NAME", scriptName);
 	// The query string from the URL sent by the client
-	std::string queryString = formatQueryString(request.getQueryString());
-	env.setVar("QUERY_STRING", queryString);
 
 	// The REMOTE_HOST variable contains the fully qualified domain name of
 	// the client sending the request to the server
