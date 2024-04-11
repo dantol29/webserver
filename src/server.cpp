@@ -12,11 +12,11 @@
 const int BUFFER_SIZE = 1024;
 
 
-void printVariablesHeadersBody(const HTTPRequest& obj)
+void printVariablesHeadersBody(const HTTPRequest& requestInstance)
 {
-	std::multimap<std::string, std::string> a = obj.getHeaders();
-	std::multimap<std::string, std::string> b = obj.getQueryString();
-	std::vector<std::string>				c = obj.getBody();
+	std::multimap<std::string, std::string> a = requestInstance.getHeaders();
+	std::multimap<std::string, std::string> b = requestInstance.getQueryString();
+	std::vector<std::string>				c = requestInstance.getBody();
 
 	std::multimap<std::string, std::string>::iterator it;
 	std::cout << "---------------------Variables--------------------" << std::endl;
@@ -40,11 +40,11 @@ void handleConnection(int socket) {
     char buffer[BUFFER_SIZE] = {0};
     long valRead = read(socket, buffer, BUFFER_SIZE);
 
-	HTTPRequest obj(buffer);
-	if (obj.getIsChunked() == true)
-		obj.parseChunkedBody(buffer);
-	std::cout << obj.getStatusCode() << std::endl;
-	printVariablesHeadersBody(obj);
+	HTTPRequest requestInstance(buffer);
+	if (requestInstance.getIsChunked() == true)
+		requestInstance.parseChunkedBody(buffer);
+	std::cout << requestInstance.getStatusCode() << std::endl;
+	printVariablesHeadersBody(requestInstance);
 
     if (valRead < 0) {
         perror("In read");
@@ -53,7 +53,7 @@ void handleConnection(int socket) {
     std::cout << "Received HTTP request: " << std::endl << buffer << std::endl;
 
     //test to execute the python script (see: https://www.tutorialspoint.com/python/python_cgi_programming.htm)
-    const char* argv[] = { "./cgi-bin/hello_py.cgi", NULL };
+    // const char* argv[] = { "./cgi-bin/hello_py.cgi", NULL };
     // const char* argv[] = { "./cgi-bin/thirty_py.cgi", NULL };
     // const char* argv[] = { "./cgi-bin/hello.cgi", NULL };
 
@@ -64,7 +64,9 @@ void handleConnection(int socket) {
         //env has to be created before CGI, because it is passed to the CGI
         Environment env;
         env.setVar("QUERY_STRING", "Hello from C++ CGI!");
-        response = handleCGIRequest(argv, env);
+        // response = handleCGIRequest(argv, env);
+        CGIHandler cgiInstance;
+        response = cgiInstance.handleRequest(requestInstance);
     } else {
         response = handleNotFound();
     }
