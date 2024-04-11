@@ -4,6 +4,9 @@
 using namespace std;
 
 int main() {
+    //header
+    cout << "HTTP/1.1 200 OK\n";
+    cout << "Content-type: text/html\n\n";    
     // Start of the HTML content
     cout << "<html>\n";
     cout << "<head>\n";

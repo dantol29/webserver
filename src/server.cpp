@@ -64,6 +64,8 @@ void handleConnection(int socket) {
         // response = handleCGIRequest(argv, env);
         CGIHandler cgiInstance;
         response = cgiInstance.handleRequest(requestInstance);
+        std::cout << "------------------CGI output received-------------------" << std::endl;
+        std::cout << response << std::endl;
     } else {
         response = handleNotFound();
     }
