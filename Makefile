@@ -7,7 +7,7 @@ DEPFLAGS = -MMD -MP
 SRCS = src/main.cpp \
 	src/server.cpp \
 	src/request_handler.cpp \
-	src/CGI_handler.cpp \
+	src/CGIHandler.cpp \
 	src/Environment.cpp \
 	src/utils.cpp \
 	src/HTTPRequest.cpp \
