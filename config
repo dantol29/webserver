@@ -10,4 +10,5 @@ server {
 		ok no;
 		da ne;
 		pri vet;
-	} // somehow find this?
+	}
+}

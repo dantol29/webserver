@@ -5,6 +5,7 @@
 #include <unistd.h>     // For read, write, and close
 #include <fstream>
 #include <sstream>
+#include <vector>
 #include "webserv.hpp"
 #include "ConfigFile.hpp"
 
@@ -20,11 +21,15 @@ int main(int argc, char **argv)
 		return (1);
 	}
 	std::map<std::string, std::string> var = a.getVariables();
-	std::map<std::string, std::string>::iterator it;
+	std::vector<std::map<std::string, std::string> > loc = a.getLocations();
 
 	for (std::map<std::string, std::string>::iterator it = var.begin(); it != var.end(); ++it)
 		std::cout << "Key: " << it->first << ", Value: " << it->second << std::endl;
-    int serverFD;
+    for (unsigned int i = 0; i < loc.size(); ++i){
+		for (std::map<std::string, std::string>::iterator it = loc[i].begin(); it != loc[i].end(); it++)
+			std::cout << "LKey: " << it->first << ":" << ", LValue: " << it->second << ":"<< std::endl;
+	}
+	int serverFD;
     struct sockaddr_in address;
     int addrLen = sizeof(address);
 
