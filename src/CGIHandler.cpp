@@ -61,7 +61,7 @@ char* const* CGIHandler::createArgvForExecve(const Environment& env) {
     char** argv = new char*[2];
 
     // Hardcode the command to /usr/bin/pwd. Allocate and copy the string.
-    std::string command = "cgi-bin/hello.cgi";
+    std::string command = "cgi-bin/hello_py.cgi";
     argv[0] = new char[command.size() + 1];
     strcpy(argv[0], command.c_str());
 

@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-print()
+print('HTTP/1.1 200 OK')
+print('Content-type: text/html\n\n')
 print ('<html>')
 print ('<head>')
 print ('<title>Hello Word - First CGI Program</title>')
