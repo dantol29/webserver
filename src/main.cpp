@@ -27,7 +27,7 @@ int main(int argc, char **argv)
 		std::cout << "Key: " << it->first << ", Value: " << it->second << std::endl;
     for (unsigned int i = 0; i < loc.size(); ++i){
 		for (std::map<std::string, std::string>::iterator it = loc[i].begin(); it != loc[i].end(); it++)
-			std::cout << "LKey: " << it->first << ":" << ", LValue: " << it->second << ":"<< std::endl;
+			std::cout << i << "LKey: " << it->first << ":" << ", LValue: " << it->second << ":"<< std::endl;
 	}
 	int serverFD;
     struct sockaddr_in address;

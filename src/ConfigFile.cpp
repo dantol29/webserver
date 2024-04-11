@@ -5,12 +5,32 @@
 int	checkFile(const char *path);
 char	*get_next_line(int fd);
 
+ConfigFile::ConfigFile(const ConfigFile& obj){
+	*this = obj;
+}
+
+ConfigFile& ConfigFile::operator=(const ConfigFile& obj){
+	if (this != &obj)
+		*this = obj;
+	return (*this);
+}
+
 std::string	ConfigFile::getErrorMessage() const{
 	return (_errorMessage);
 }
 
 std::map<std::string, std::string> ConfigFile::getVariables() const{
 	return (_variables);
+}
+
+std::pair<std::string, std::string> ConfigFile::getVariables(std::string key) const{
+	std::multimap<std::string, std::string>::const_iterator it;
+
+	for (it = _variables.begin(); it != _variables.end(); ++it){
+		if (it->first == key)
+			return (std::make_pair(it->first, it->second));
+	}
+	return (std::make_pair("", ""));
 }
 
 std::vector<std::map<std::string, std::string> > ConfigFile::getLocations() const{

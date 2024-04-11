@@ -12,9 +12,10 @@ class ConfigFile
 		~ConfigFile(){};
 		std::string	getErrorMessage() const;
 		std::map<std::string, std::string> getVariables() const;
+		std::pair<std::string, std::string> getVariables(std::string key) const;
 		std::vector<std::map<std::string, std::string> > getLocations() const;
 	private:
-		ConfigFile();
+		ConfigFile(){};
 		ConfigFile(const ConfigFile& obj);
 		ConfigFile& operator=(const ConfigFile& obj);
 		bool		error(std::string message, char *line);
