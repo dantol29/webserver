@@ -65,17 +65,20 @@ void Server::startPollEventLoop()
 	}
 }
 
-void Server::handleConnection(int clientFD)
+void Server::handleConnection(Connection conn)
 {
-	std::string headers;
-	HTTPResponse response;
-	if (!readHeaders(clientFD, headers, response))
+	// std::string headers;
+	// HTTPResponse response;
+	if (!conn.readHeaders())
 	{
-		closeClientConnection(clientFD, response);
+		// closeClientConnection(clientFD, response);
+		// think if this should be also a method of the Connection class
+		closeClientConnection(conn.getPollFd().fd, conn.getResponse());
 		return;
 	}
 	std::string body;
-	if (isChunked(headers))
+	// isChunked is a 'free' function but it could be a method of the Connection class
+	if (conn.isChunked())
 	{
 		if (!readChunkedBody(clientFD, body, response))
 		{
@@ -218,6 +221,8 @@ void Server::addServerSocketPollFdToFDs()
 
 void Server::acceptNewConnection()
 {
+	// TODO: think about naming.
+	// We have 4 different names for kind of the same thing: clientAddress, newSocket, newSocketPoll, newConnection
 	struct sockaddr_in clientAddress;
 	socklen_t ClientAddrLen = sizeof(clientAddress);
 	std::cout << "New connection detected" << std::endl;
@@ -228,7 +233,11 @@ void Server::acceptNewConnection()
 		newSocketPoll.fd = newSocket;
 		newSocketPoll.events = POLLIN;
 		newSocketPoll.revents = 0;
+		Connection newConnection(newSocketPoll);
+		/* start together */
 		_FDs.push_back(newSocketPoll);
+		_connections.push_back(newConnection);
+		/* end together */
 		char clientIP[INET_ADDRSTRLEN];
 		inet_ntop(AF_INET, &clientAddress.sin_addr, clientIP, INET_ADDRSTRLEN);
 		std::cout << "New connection from " << clientIP << std::endl;
@@ -248,9 +257,12 @@ void Server::handleServerSocketError()
 void Server::handleClientSocketError(int clientFD, size_t &i)
 {
 	close(clientFD);
+	/* start together */
 	_FDs.erase(_FDs.begin() + i);
-	perror("poll client socket error");
+	_connections.erase(_connections.begin() + i);
+	/* end together */
 	--i;
+	perror("poll client socket error");
 }
 
 void Server::handleSocketTimeoutIfAny()
@@ -303,23 +315,34 @@ void Server::closeClientConnection(int clientFD, HTTPResponse &response)
 		std::string responseString = response.toString();
 		send(clientFD, responseString.c_str(), responseString.size(), 0);
 	}
+	// TODO: should we close it with the Destructor of the Connection class?
 	close(clientFD);
 }
 
-bool Server::readHeaders(int clientFD, std::string &headers, HTTPResponse &response)
+/* We will move readHeader to the Connection class */
+
+// bool Server::readHeaders(int clientFD, std::string &headers, HTTPResponse &response)
+/*
+bool Server::readHeaders(Connection conn)
 {
-	size_t totalRead = 0;
-	bool headersComplete = false;
-	while (!headersComplete)
+	// Both are in the Connection object now
+	// size_t totalRead = 0;
+	// bool headersComplete = false;
+	// while (!headersComplete)
+	if (!client.getHeadersComplete())
 	{
 		// We reinitialize it at each iteration to have a clean buffer
 		char buffer[BUFFER_SIZE] = {0};
 		// we could do recv non blocking with MSG_DONTWAIT but we will keep it simple for now
-		ssize_t bytesRead = recv(clientFD, buffer, BUFFER_SIZE, 0);
+		ssize_t bytesRead = recv(client.getPollFd().fd, buffer, BUFFER_SIZE, 0);
 		if (bytesRead > 0)
 		{
-
+			// TODO: shorten these three lines. Do we really need all these getters and setters? Maybe readHeaders
+			// should be a method of the Connection class!
+			std::string headers;
 			headers.append(buffer, bytesRead);
+			client.setHeaders(headers);
+			//  TILL HERE MAKE A METHOD OF CLIENT CLASS!
 			totalRead += bytesRead;
 			if (totalRead > _clientMaxHeadersSize)
 			{
@@ -345,6 +368,7 @@ bool Server::readHeaders(int clientFD, std::string &headers, HTTPResponse &respo
 	}
 	return true;
 }
+*/
 
 bool Server::readChunkedBody(int clientFd, std::string &body, HTTPResponse &response)
 {
@@ -422,6 +446,11 @@ bool Server::readBody(int clientFD, std::string &body, std::string &headers, HTT
 }
 
 /* Others */
+
+size_t Server::getClientMaxHeadersSize() const
+{
+	return _clientMaxHeadersSize;
+}
 
 std::string Server::getWebRoot() const
 {

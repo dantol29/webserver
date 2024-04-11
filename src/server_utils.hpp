@@ -21,11 +21,12 @@ const size_t CLIENT_MAX_BODY_SIZE = 1048576; // 1MB - This is the limit of the b
 
 std::string handleCGIRequest(const char *argv[], Environment env);
 
-bool isChunked(const std::string &headers);
+// bool isChunked(const std::string &headers);
 size_t getContentLength(const std::string &headers);
 bool readChunkSize(int socket, std::string &line);
 bool readChunk(int socket, size_t chunkSize, std::string &chunkedData, HTTPResponse &response);
 void printVariablesHeadersBody(const HTTPRequest &obj);
 void perrorAndExit(const char *msg);
+char customToLower(char c);
 
 #endif // SERVER_UTILS_HPP
