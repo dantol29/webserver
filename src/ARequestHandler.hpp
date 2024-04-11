@@ -2,7 +2,6 @@
 #define AREQUESTHANDLER_HPP
 
 #include "HTTPRequest.hpp"
-#include "HTTPResponse.hpp"
 
 class ARequestHandler
 {

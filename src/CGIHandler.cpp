@@ -45,8 +45,9 @@ std::string CGIHandler::executeCGI(const Environment &env) {
   	
     std::string cgiScriptPath = env.getVar("SCRIPT_NAME");
     // const char** argv = NULL;
-	const char* argv[0] = {cgiScriptPath.c_str()};
-	
+	// const char* argv[0] = {cgiScriptPath.c_str()};
+    
+    char** argv = createArgvForExecve(env);
 
 	
 	int pipeFD[2];

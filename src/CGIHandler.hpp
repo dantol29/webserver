@@ -3,7 +3,6 @@
 
 #include "ARequestHandler.hpp"
 #include "HTTPRequest.hpp"
-#include "HTTPResponse.hpp"
 #include "Environment.hpp"
 #include <unistd.h>
 #include <sys/wait.h>
@@ -16,7 +15,7 @@ public:
 	CGIHandler();
 	virtual ~CGIHandler();
 	std::string handleRequest(const HTTPRequest &request);
-	char** CGIHandler::createArgvForExecve(const Environment& env);
+	char** createArgvForExecve(const Environment& env);
 	std::string executeCGI(const Environment &env);
 
 private:

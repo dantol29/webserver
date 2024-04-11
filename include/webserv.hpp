@@ -6,7 +6,9 @@
 #include <sstream>
 #include <cstdlib>
 #include <string.h>
+#include "Environment.hpp"
 #include "HTTPRequest.hpp"
+#include "CGIHandler.hpp"
 
 //declared here because it is a template function
 //instead of to_string which is c++11, we use this function
@@ -39,22 +41,6 @@ std::string readHtml(const std::string& filePath);
  * @return An HTTP response string including headers and the HTML content of the home page.
  */
 std::string handleHomePage();
-
-/**
- * Handles the execution of a CGI script and captures its output to construct an HTTP response.
- * This function sets up a pipe for capturing the standard output of the CGI script, forks the process,
- * and executes the script in the child process using the provided environment settings. The parent process
- * reads the script's output from the pipe, waits for the script to finish execution, and then constructs
- * an HTTP response with the script's output. If an error occurs during the process, a 500 Internal Server Error
- * response is generated instead.
- * 
- * @param argv An array of char pointers representing the arguments to be passed to the CGI script,
- *             including the script path as the first argument.
- * @param env An Environment object containing the environment variables to be passed to the CGI script.
- * @return A string representing the HTTP response generated from the CGI script's output, or a 500 Internal
- *         Server Error message if the script execution fails.
- */
-std::string handleCGIRequest(const char* argv[], Environment env);
 
 /**
  * Generates a standard HTTP 404 Not Found response.
