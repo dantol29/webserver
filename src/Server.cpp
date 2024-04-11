@@ -166,6 +166,8 @@ void Server::loadDefaultConfig()
 {
 	_webRoot = "var/www";
 	_maxClients = 10;
+	_clientMaxHeadersSize = CLIENT_MAX_HEADERS_SIZE;
+	_clientMaxBodySize = CLIENT_MAX_BODY_SIZE;
 	_port = 8080;
 }
 
@@ -353,18 +355,18 @@ bool Server::readChunkedBody(int clientFd, std::string &body, HTTPResponse &resp
 		std::string chunkSizeLine;
 		if (!readChunkSize(clientFd, chunkSizeLine))
 			return false;
-        std::istringstream iss(chunkSizeLine);
-        size_t chunkSize;
-        if (!(iss >> std::hex >> chunkSize))
-        {
-            return false; // as an error
-        }
+		std::istringstream iss(chunkSizeLine);
+		size_t chunkSize;
+		if (!(iss >> std::hex >> chunkSize))
+		{
+			return false; // as an error
+		}
 
-        if (chunkSize == 0)
-        {
-            bodyComplete = true;
-            return true;
-        }
+		if (chunkSize == 0)
+		{
+			bodyComplete = true;
+			return true;
+		}
 		else
 		{
 			std::string chunkData;

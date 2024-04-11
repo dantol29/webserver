@@ -36,6 +36,8 @@ class Server
 	/* Private Attributes */
 	int _port;
 	int _serverFD;
+	int _clientMaxHeadersSize;
+	int _clientMaxBodySize;
 	int _maxClients; // i.e. max number of pending connections
 	std::string _configFilePath;
 	std::string _webRoot;
