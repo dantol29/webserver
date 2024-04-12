@@ -185,6 +185,25 @@ int	HTTPRequest::parseChunkedBody(const char *request)
 	return (200);
 }
 
+void	HTTPRequest::makeHeadersLowCase()
+{
+	std::multimap<std::string, std::string>::iterator it;
+	std::multimap<std::string, std::string> newHeaders;
+	std::string	tmp;
+
+	for (it = _headers.begin(); it != _headers.end(); ++it)
+	{
+		tmp = it->first;
+		for (unsigned int i = 0; i < tmp.size(); ++i)
+		{
+			if (tmp[i] >= 65 && tmp[i] <= 90)
+				tmp[i] = tmp[i] + 32;
+		}
+		newHeaders.insert(std::make_pair(tmp, it->second));
+	}
+	_headers.swap(newHeaders);
+}
+
 int HTTPRequest::parseHeaders(const char *request)
 {
 	unsigned int	i;
@@ -212,6 +231,7 @@ int HTTPRequest::parseHeaders(const char *request)
 	}
 	if (request[i] != '\r' || request[i + 1] != '\n')
 		return (ft_error(400, "No CRLF after header"));
+	makeHeadersLowCase();
 	if (!hasMandatoryHeaders(*this))
 		return (ft_error(400, "Invalid headers"));
 	if (_method == "GET" && request[i + 2]) //has something after headers

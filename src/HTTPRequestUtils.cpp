@@ -83,22 +83,22 @@ bool	hasMandatoryHeaders(HTTPRequest& obj)
 	std::multimap<std::string, std::string>::iterator it;
 
 	for (it = headers.begin(); it != headers.end(); it++){
-		if (it->first == "Host"){
+		if (it->first == "host"){
 			if (!isValidHost(it->second))
 				return (false);
 			isHost++;
 		}
-		else if (it->first == "Content-Length"){
+		else if (it->first == "content-length"){
 			if (!isNumber(it->second) || obj.getMethod() != "POST" )
 				return (false);
 			isContentLength++;
 		}
-		else if (it->first == "Content-Type"){
+		else if (it->first == "content-type"){
 			if (!isValidContentType(it->second) || obj.getMethod() != "POST")
 				return (false);
 			isContentType++;
 		}
-		else if (it->first == "Transfer-Encoding"){
+		else if (it->first == "transfer-encoding"){
 			if (it->second != "chunked" || obj.getMethod() != "POST")
 				return (false);
 			obj.setIsChunked(true);

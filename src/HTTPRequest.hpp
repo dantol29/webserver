@@ -43,6 +43,7 @@ class HTTPRequest
 	int parseBody(const char *request);
 	int ft_error(int statusCode, std::string message);
 	bool saveVariables(std::string &variables);
+	void makeHeadersLowCase();
 	int _statusCode;
 	bool _isChunked;
 	bool _isChunkFinish;
