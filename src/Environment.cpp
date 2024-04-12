@@ -1,6 +1,7 @@
 #include "webserv.hpp"
 #include <string.h>
 #include <utility>
+#include <string>
 
 Environment::Environment()
 {
@@ -165,6 +166,25 @@ bool Environment::isAuthorityForm(const HTTPRequest &request)
 		return false;
 	}
 	return true;
+}
+
+// Utility function to check if 'str' starts with the given 'prefix'
+// Conforms to C++98 standard
+bool startsWith(const std::string &str, const std::string &prefix)
+{
+	if (str.length() < prefix.length())
+	{
+		return false; // str is shorter than prefix, so it cannot start with prefix
+	}
+	// Check each character up to the length of 'prefix' to ensure they match
+	for (std::string::size_type i = 0; i < prefix.length(); ++i)
+	{
+		if (str[i] != prefix[i])
+		{
+			return false; // Found a mismatch
+		}
+	}
+	return true; // All characters matched
 }
 
 // This function is used to set the CGI environment variables based on the request target.
