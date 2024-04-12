@@ -8,6 +8,8 @@
 #include <sstream>
 #include <fcntl.h>
 #include "webserv.hpp"
+#include <list>
+#include <algorithm>
 
 std::string readHtml(const std::string& filePath) {
     std::ifstream file(filePath.c_str());
@@ -70,6 +72,25 @@ bool	isNumber(std::string line)
 			return (false);
 	}
 	return (true);
+}
+
+bool	isValidErrorCode(std::string errorCode)
+{
+	std::string error_codes[] = {
+        // 4xx Client Error
+        "400", "401", "402", "403", "404", "405", "406", "407",
+        "408", "409", "410", "411", "412", "413", "414", "415",
+        "416", "417", "418", "421", "422", "423", "424", "426",
+        "428", "429", "431", "451",
+
+        // 5xx Server Error
+        "500", "501", "502", "503", "504", "505", "506", "507",
+        "508", "510", "511"
+    };
+	std::list<std::string> validCodes(error_codes, error_codes + sizeof(error_codes) / sizeof(error_codes[0]));
+	if (std::find(validCodes.begin(), validCodes.end(), errorCode) != validCodes.end())
+		return (true);
+	return (false);
 }
 
 int	checkFile(const char *path)

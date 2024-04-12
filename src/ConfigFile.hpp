@@ -25,7 +25,7 @@ class ConfigFile
 		bool		saveLocationVariable(char *line, std::string& key, std::string& value);
 		bool		isLocation(char *line);
 		bool		checkVariablesKey();
-		bool		checkVariablesValue();
+		bool		checkVariablesValue(std::map<std::string, std::string> var);
 		std::map<std::string, std::string> _variables;
 		std::vector<std::map<std::string, std::string> > _locations;
 		std::string _errorMessage;
