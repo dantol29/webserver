@@ -16,19 +16,7 @@ int main(int argc, char **argv)
 	if (argc > 2)
 		return (1);
 	ConfigFile a(argv[1]);
-	if (!a.getErrorMessage().empty()){
-		std::cout << a.getErrorMessage() << std::endl;
-		return (1);
-	}
-	std::map<std::string, std::string> var = a.getVariables();
-	std::vector<std::map<std::string, std::string> > loc = a.getLocations();
-
-	for (std::map<std::string, std::string>::iterator it = var.begin(); it != var.end(); ++it)
-		std::cout << "Key: " << it->first << ", Value: " << it->second << std::endl;
-    for (unsigned int i = 0; i < loc.size(); ++i){
-		for (std::map<std::string, std::string>::iterator it = loc[i].begin(); it != loc[i].end(); it++)
-			std::cout << i << "LKey: " << it->first << ":" << ", LValue: " << it->second << ":"<< std::endl;
-	}
+	std::cout << a << std::endl;
 	int serverFD;
     struct sockaddr_in address;
     int addrLen = sizeof(address);

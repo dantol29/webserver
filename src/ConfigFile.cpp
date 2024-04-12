@@ -203,3 +203,20 @@ ConfigFile::ConfigFile(char *file) : _errorMessage(""), _tmpPath(""){
 	checkVariablesKey();
 	checkVariablesValue();
 }
+
+std::ostream& operator<<(std::ostream& out, const ConfigFile& a){
+	if (!a.getErrorMessage().empty()){
+		out << a.getErrorMessage();
+		return (out);
+	}
+	std::map<std::string, std::string> var = a.getVariables();
+	std::vector<std::map<std::string, std::string> > loc = a.getLocations();
+
+	for (std::map<std::string, std::string>::iterator it = var.begin(); it != var.end(); ++it)
+		out << "Key: " << it->first << ", Value: " << it->second << std::endl;
+    for (unsigned int i = 0; i < loc.size(); ++i){
+		for (std::map<std::string, std::string>::iterator it = loc[i].begin(); it != loc[i].end(); it++)
+			out << i << "LKey: " << it->first << ":" << ", LValue: " << it->second << ":"<< std::endl;
+	}
+	return (out);
+}

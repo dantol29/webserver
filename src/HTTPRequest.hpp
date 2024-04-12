@@ -56,4 +56,7 @@ class HTTPRequest
 	std::vector<std::string> _body;
 };
 
+std::ostream& operator<<(std::ostream& out, const HTTPRequest& a);
+
+
 #endif

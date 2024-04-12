@@ -32,4 +32,6 @@ class ConfigFile
 		std::string	_tmpPath;
 };
 
+std::ostream& operator<<(std::ostream& out, const ConfigFile& fixed);
+
 #endif

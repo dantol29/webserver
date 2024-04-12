@@ -264,3 +264,27 @@ int	HTTPRequest::parseBody(const char *request){
 		return (ft_error(400, "Invalid body"));
 	return (end);
 }
+
+std::ostream& operator<<(std::ostream& out, const HTTPRequest& obj)
+{
+	std::multimap<std::string, std::string> a = obj.getHeaders();
+	std::multimap<std::string, std::string> b = obj.getQueryString();
+	std::vector<std::string>				c = obj.getBody();
+
+	std::multimap<std::string, std::string>::iterator it;
+	out << "---------------------Variables--------------------" << std::endl;
+	for (it = b.begin(); it != b.end(); it++){
+		out << "Key: " << it->first << ", Value: " << it->second << std::endl;
+	}
+	out << "---------------------End--------------------------" << std::endl;
+	out << "---------------------Headers----------------------" << std::endl;
+	for (it = a.begin(); it != a.end(); it++){
+		out << "Key: " << it->first << ", Value: " << it->second << std::endl;
+	}
+	out << "---------------------End--------------------------" << std::endl;
+	out << "---------------------Body-------------------------" << std::endl;
+	for (size_t i = 0; i < c.size(); ++i)
+		out << c[i] << std::endl;
+	out << "---------------------End--------------------------" << std::endl;
+	return (out);
+}
