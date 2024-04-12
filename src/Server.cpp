@@ -44,7 +44,7 @@ void Server::startPollEventLoop()
 					else
 					{
 						// TODO: only the index is actually needed
-						handleConnection(_FDs[i].fd);
+						handleConnection(_connections[i]);
 						_FDs.erase(_FDs.begin() + i);
 						--i;
 					}
@@ -65,34 +65,37 @@ void Server::startPollEventLoop()
 	}
 }
 
-void Server::handleConnection(int clientFD)
+void Server::handleConnection(Connection conn)
 {
-	std::string headers;
-	HTTPResponse response;
-	if (!readHeaders(clientFD, headers, response))
+	// std::string headers;
+	// HTTPResponse response;
+	if (!conn.readHeaders())
 	{
-		closeClientConnection(clientFD, response);
+		// closeClientConnection(clientFD, response);
+		// think if this should be also a method of the Connection class
+		closeClientConnection(conn.getPollFd().fd, conn.getResponse());
 		return;
 	}
 	std::string body;
-	if (isChunked(headers))
+	// isChunked is a 'free' function but it could be a method of the Connection class
+	if (conn.isChunked())
 	{
-		if (!readChunkedBody(clientFD, body, response))
+		if (!conn.readChunkedBody())
 		{
-			closeClientConnection(clientFD, response);
+			closeClientConnection(conn.getPollFd().fd, conn.getResponse());
 			return;
 		}
 	}
 	else
 	{
-		if (!readBody(clientFD, body, headers, response))
+		if (!conn.readBody())
 		{
-			closeClientConnection(clientFD, response);
+			closeClientConnection(conn.getPollFd().fd, conn.getResponse());
 			return;
 		}
 	}
 	// It should be double "\r\n" to separate the headers from the body
-	std::string httpRequestString = headers + "\r\n\r\n" + body;
+	std::string httpRequestString = conn.getHeaders() + "\r\n\r\n" + conn.getBody();
 
 	HTTPRequest request(httpRequestString.c_str());
 	std::cout << request.getStatusCode() << std::endl;
@@ -105,6 +108,9 @@ void Server::handleConnection(int clientFD)
 
 	// std::string response;
 	Router router;
+	HTTPResponse response;
+	// Check if this is the right way to do it
+	response = conn.getResponse();
 	if (!router.pathExists(response, request.getRequestTarget()))
 	{
 		StaticContentHandler staticHandler;
@@ -151,8 +157,8 @@ void Server::handleConnection(int clientFD)
 	}
 	std::string responseString = response.toString();
 
-	write(clientFD, responseString.c_str(), responseString.size());
-	close(clientFD);
+	write(conn.getPollFd().fd, responseString.c_str(), responseString.size());
+	close(conn.getPollFd().fd);
 }
 
 /*** Private Methods ***/
@@ -166,6 +172,8 @@ void Server::loadDefaultConfig()
 {
 	_webRoot = "var/www";
 	_maxClients = 10;
+	_clientMaxHeadersSize = CLIENT_MAX_HEADERS_SIZE;
+	_clientMaxBodySize = CLIENT_MAX_BODY_SIZE;
 	_port = 8080;
 }
 
@@ -216,6 +224,8 @@ void Server::addServerSocketPollFdToFDs()
 
 void Server::acceptNewConnection()
 {
+	// TODO: think about naming.
+	// We have 4 different names for kind of the same thing: clientAddress, newSocket, newSocketPoll, newConnection
 	struct sockaddr_in clientAddress;
 	socklen_t ClientAddrLen = sizeof(clientAddress);
 	std::cout << "New connection detected" << std::endl;
@@ -226,7 +236,11 @@ void Server::acceptNewConnection()
 		newSocketPoll.fd = newSocket;
 		newSocketPoll.events = POLLIN;
 		newSocketPoll.revents = 0;
+		Connection newConnection(newSocketPoll, *this);
+		/* start together */
 		_FDs.push_back(newSocketPoll);
+		_connections.push_back(newConnection);
+		/* end together */
 		char clientIP[INET_ADDRSTRLEN];
 		inet_ntop(AF_INET, &clientAddress.sin_addr, clientIP, INET_ADDRSTRLEN);
 		std::cout << "New connection from " << clientIP << std::endl;
@@ -246,9 +260,12 @@ void Server::handleServerSocketError()
 void Server::handleClientSocketError(int clientFD, size_t &i)
 {
 	close(clientFD);
+	/* start together */
 	_FDs.erase(_FDs.begin() + i);
-	perror("poll client socket error");
+	_connections.erase(_connections.begin() + i);
+	/* end together */
 	--i;
+	perror("poll client socket error");
 }
 
 void Server::handleSocketTimeoutIfAny()
@@ -301,117 +318,16 @@ void Server::closeClientConnection(int clientFD, HTTPResponse &response)
 		std::string responseString = response.toString();
 		send(clientFD, responseString.c_str(), responseString.size(), 0);
 	}
+	// TODO: should we close it with the Destructor of the Connection class?
 	close(clientFD);
 }
 
-bool Server::readHeaders(int clientFD, std::string &headers, HTTPResponse &response)
-{
-	size_t totalRead = 0;
-	bool headersComplete = false;
-	while (!headersComplete)
-	{
-		// We reinitialize it at each iteration to have a clean buffer
-		char buffer[BUFFER_SIZE] = {0};
-		// we could do recv non blocking with MSG_DONTWAIT but we will keep it simple for now
-		ssize_t bytesRead = recv(clientFD, buffer, BUFFER_SIZE, 0);
-		if (bytesRead > 0)
-		{
-
-			headers.append(buffer, bytesRead);
-			totalRead += bytesRead;
-			if (totalRead > MAX_HEADER_SIZE)
-			{
-				std::cerr << "Header too large" << std::endl;
-				response.setStatusCode(413);
-				return false;
-			}
-			if (headers.find("\r\n\r\n") != std::string::npos)
-				headersComplete = true;
-		}
-		else if (bytesRead < 0)
-		{
-			perror("recv failed");
-			return false;
-		}
-		else
-		{
-			// This means biyeRead == 0
-			std::cout << "Connection closed before headers being completely sent" << std::endl;
-			// In this case we don't want to send an error response, because the client closed the connection
-			return false;
-		}
-	}
-	return true;
-}
-
-bool Server::readChunkedBody(int clientFd, std::string &body, HTTPResponse &response)
-{
-	// TODO: check if this is blocking; I mean the two recvs in readChunkSize and readChunk
-	bool bodyComplete = false;
-	while (!bodyComplete)
-	{
-		std::string chunkSizeLine;
-		if (!readChunkSize(clientFd, chunkSizeLine))
-			return false;
-        std::istringstream iss(chunkSizeLine);
-        size_t chunkSize;
-        if (!(iss >> std::hex >> chunkSize))
-        {
-            return false; // as an error
-        }
-
-        if (chunkSize == 0)
-        {
-            bodyComplete = true;
-            return true;
-        }
-		else
-		{
-			std::string chunkData;
-			// readChunk(clientFd, chunkSize, chunkData, response);
-			if (!readChunk(clientFd, chunkSize, chunkData, response))
-			{
-				closeClientConnection(clientFd, response);
-				return false;
-			}
-			body.append(chunkData);
-			// Consume the CRLF at the end of the chunk
-		}
-	}
-	return false;
-}
-
-bool Server::readBody(int clientFD, std::string &body, std::string &headers, HTTPResponse &response)
-{
-	size_t contentLength = getContentLength(headers);
-	char buffer[BUFFER_SIZE];
-	size_t bytesRead = 0;
-	while (bytesRead < contentLength)
-	{
-		// TODO: check if this is blocking
-		ssize_t read = recv(clientFD, buffer, BUFFER_SIZE, 0);
-		if (read > 0)
-		{
-			body.append(buffer, read);
-			bytesRead += read;
-		}
-		else if (read < 0)
-		{
-			perror("recv failed");
-			response.setStatusCode(500); // Internal Server Error
-			return false;
-		}
-		else
-		{
-			std::cout << "Connection closed" << std::endl;
-			response.setStatusCode(400); // Bad Request
-			return false;
-		}
-	}
-	return true;
-}
-
 /* Others */
+
+size_t Server::getClientMaxHeadersSize() const
+{
+	return _clientMaxHeadersSize;
+}
 
 std::string Server::getWebRoot() const
 {

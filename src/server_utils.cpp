@@ -1,5 +1,5 @@
 #include "server_utils.hpp"
-#include <sstream>  // std::istringstream
+#include <sstream>	// std::istringstream
 #include <iostream> // std::cerr
 
 void perrorAndExit(const char *msg)
@@ -8,9 +8,11 @@ void perrorAndExit(const char *msg)
 	exit(EXIT_FAILURE);
 }
 
-char customToLower(char c) {
+char customToLower(char c)
+{
 	// Check if c is uppercase (A-Z)
-	if (c >= 'A' && c <= 'Z') {
+	if (c >= 'A' && c <= 'Z')
+	{
 		// Convert to lowercase
 		return c + 32;
 	}
@@ -18,117 +20,33 @@ char customToLower(char c) {
 	return c;
 }
 
-bool isChunked(const std::string &headers) {
-	// Look for "Transfer-Encoding: chunked" in the headers
-	// This would not work cause headers are case insensitive
-	// std::string search = "Transfer-Encoding: chunked";
-	// return headers.find(search) != std::string::npos;
+size_t getContentLength(const std::string &headers)
+{
 	std::string lowerHeaders;
-	for (std::string::const_iterator it = headers.begin(); it != headers.end(); ++it) {
+	for (std::string::const_iterator it = headers.begin(); it != headers.end(); ++it)
+	{
 		lowerHeaders += customToLower(*it);
 	}
 
-	std::string search = "transfer-encoding: chunked";
+	std::string search = "content-length: ";
 	std::string::size_type pos = lowerHeaders.find(search);
-	if (pos != std::string::npos) {
-		return true;
-	}
-	return false;
-}
-
-size_t getContentLength(const std::string &headers) {
-    std::string lowerHeaders;
-    for (std::string::const_iterator it = headers.begin(); it != headers.end(); ++it) {
-        lowerHeaders += customToLower(*it);
-    }
-
-    std::string search = "content-length: ";
-    std::string::size_type pos = lowerHeaders.find(search);
-    if (pos != std::string::npos) {
-        std::string contentLengthLine = headers.substr(pos + search.size());
-        std::string::size_type endPos = contentLengthLine.find("\r\n");
-        std::string contentLengthStr = contentLengthLine.substr(0, endPos);
-
-        // Convert content length string to size_t
-        std::istringstream iss(contentLengthStr);
-        size_t contentLength;
-        if (!(iss >> contentLength)) {
-            std::cerr << "Failed to convert content length to size_t\n";
-            return 0; // Or use another way to indicate an error
-        }
-        return contentLength;
-    }
-    return 0;
-}
-
-bool readChunkSize(int socket, std::string &line)
-{
-	line.clear();
-	while (true)
+	if (pos != std::string::npos)
 	{
-		char buffer;
-		ssize_t bytesRead = recv(socket, &buffer, 1, 0);
-		if (bytesRead > 0)
-		{
-			line.push_back(buffer);
-			if (line.size() >= 2 && line.substr(line.size() - 2) == "\r\n")
-			{
-				line.resize(line.size() - 2); // remove the CRLF
-				return true;
-			}
-		}
-		else if (bytesRead < 0)
-		{
-			perror("recv failed");
-			return false;
-		}
-		else
-		{
-			std::cout << "Connection closed" << std::endl;
-			return false;
-		}
-	}
-	return true;
-}
+		std::string contentLengthLine = headers.substr(pos + search.size());
+		std::string::size_type endPos = contentLengthLine.find("\r\n");
+		std::string contentLengthStr = contentLengthLine.substr(0, endPos);
 
-bool readChunk(int socket, size_t chunkSize, std::string &chunkData, HTTPResponse &response)
-{
-	// Reserve space in the string to avoid reallocations
-	chunkData.reserve(chunkSize + chunkData.size());
-	while (chunkSize > 0)
-	{
-		char buffer[BUFFER_SIZE];
-		size_t bytesToRead = std::min(chunkSize, (size_t)BUFFER_SIZE);
-		ssize_t bytesRead = recv(socket, buffer, bytesToRead, 0);
-		if (bytesRead > 0)
+		// Convert content length string to size_t
+		std::istringstream iss(contentLengthStr);
+		size_t contentLength;
+		if (!(iss >> contentLength))
 		{
-			chunkData.append(buffer, bytesRead);
-			chunkSize -= bytesRead;
+			std::cerr << "Failed to convert content length to size_t\n";
+			return 0; // Or use another way to indicate an error
 		}
-		else if (bytesRead < 0)
-		{
-			perror("recv failed in readChunk");
-			// Internal Server Error
-			response.setStatusCode(500);
-			return false;
-		}
-		else
-		{
-			// bytes read == 0, connection closed prematurely
-			std::cout << "Connection closed while reading chunk" << std::endl;
-			response.setStatusCode(400); // Bad Request
-			return false;
-		}
+		return contentLength;
 	}
-	char crlf[2];
-	ssize_t crlfRead = recv(socket, crlf, 2, 0);
-	if (crlfRead < 2)
-	{
-		std::cout << "Connection closed while reading CRLF" << std::endl;
-		response.setStatusCode(400); // Bad Request
-		return false;
-	}
-	return true;
+	return 0;
 }
 
 void printVariablesHeadersBody(const HTTPRequest &obj)

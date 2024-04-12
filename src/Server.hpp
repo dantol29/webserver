@@ -14,6 +14,9 @@
 #include "Environment.hpp"
 #include "HTTPRequest.hpp"
 #include "server_utils.hpp"
+#include "Connection.hpp"
+
+class Connection; // Forward declaration for circular dependency
 
 class Server
 {
@@ -28,6 +31,7 @@ class Server
 	int getPort() const;
 	void setPort(int port);
 
+	size_t getClientMaxHeadersSize() const;
 	std::string getWebRoot() const;
 	void setWebRoot(const std::string &webRoot);
 	std::string getConfigFilePath() const;
@@ -36,11 +40,14 @@ class Server
 	/* Private Attributes */
 	int _port;
 	int _serverFD;
+	size_t _clientMaxHeadersSize;
+	int _clientMaxBodySize;
 	int _maxClients; // i.e. max number of pending connections
 	std::string _configFilePath;
 	std::string _webRoot;
 	struct sockaddr_in _serverAddr;
 	std::vector<struct pollfd> _FDs;
+	std::vector<Connection> _connections;
 
 	/*** Private Methods ***/
 	/* for Constructors */
@@ -54,17 +61,16 @@ class Server
 	/* for startPollEventLoop */
 	void addServerSocketPollFdToFDs();
 	void acceptNewConnection();
-	void handleConnection(int clientFD);
+	// void handleConnection(int clientFD);
+	void handleConnection(Connection conn);
 	void handleServerSocketError();
 	void handleClientSocketError(int clientFD, size_t &i);
 	void handleSocketTimeoutIfAny();
 	void handlePollFailure();
 	void AlertAdminAndTryToRecover();
+
 	/* for handleConnection */
-	bool readHeaders(int clientFD, std::string &headers, HTTPResponse &response);
 	void closeClientConnection(int clientFD, HTTPResponse &response);
-	bool readChunkedBody(int clientFD, std::string &body, HTTPResponse &response);
-	bool readBody(int clientFD, std::string &body, std::string &headers, HTTPResponse &response);
 
 	/* Not avaiable constructors */
 
