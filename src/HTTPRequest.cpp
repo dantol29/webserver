@@ -222,14 +222,14 @@ int HTTPRequest::parseHeaders(const char *request)
 		value = extractHeaderValue(request, i);
 		if (value.empty())
 			return (ft_error(400, "Invalid header value"));
-		if (request[i] != '\r' || request[i + 1] != '\n')
+		if (!hasCRLF(request, i, 0))
 			return (ft_error(400, "No CRLF after header"));
 		_headers.insert(std::make_pair(key, value));
 		i += 2; // skip '\r' and '\n'
 		if (hasCRLF(request, i, 0)) // end of header section
 			break ;
 	}
-	if (request[i] != '\r' || request[i + 1] != '\n')
+	if (!hasCRLF(request, i, 0))
 		return (ft_error(400, "No CRLF after header"));
 	makeHeadersLowCase();
 	if (!hasMandatoryHeaders(*this))
