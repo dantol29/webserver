@@ -193,7 +193,8 @@ bool	ConfigFile::checkVariablesKey(){
 	return (true);
 }
 
-bool	ConfigFile::checkVariablesKey(){
+bool	ConfigFile::checkVariablesValue(){
+	// I have to somehow check every value
 	return (true);
 }
 

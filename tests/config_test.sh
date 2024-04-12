@@ -30,7 +30,7 @@ else
 	exit;
 fi
 
-if test -f "config_files/config1.test"; then
+if test -f "invalid_config_files/config1.test"; then
 	echo ""
 else
 	echo -e "$RED Tests no found...\n$RESET"
@@ -40,7 +40,7 @@ fi
 echo -e "$PURPLE Invalid configuration files:$RESET"
 for i in {1..21}; do
 	echo -e "config$i"
-	timeout 1 $NAME "config_files/config$i.test" >/dev/null 2>&1
+	timeout 0.5 $NAME "invalid_config_files/config$i.test" >/dev/null 2>&1
 	if [ $? -eq 124 ]; then
 		echo -e "${RED}KO${RESET}\n"
 	else
@@ -49,3 +49,23 @@ for i in {1..21}; do
 	sleep 0.2
 done
 
+sleep 1
+
+if test -f "valid_config_files/config1.test"; then
+	echo ""
+else
+	echo -e "$RED Tests no found...\n$RESET"
+	exit;
+fi
+
+echo -e "$PURPLE Valid configuration files:$RESET"
+for i in {1..2}; do
+	echo -e "config$i"
+	timeout 0.5 $NAME "valid_config_files/config$i.test" >/dev/null 2>&1
+	if [ $? -eq 124 ]; then
+		echo -e "${GREEN}OK${RESET}\n"
+	else
+		echo -e "${RED}KO${RESET}\n"
+	fi
+	sleep 0.2
+done
