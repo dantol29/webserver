@@ -21,7 +21,7 @@ class HTTPRequest
 	HTTPRequest(const HTTPRequest &obj);
 	HTTPRequest &operator=(const HTTPRequest &obj);
 	~HTTPRequest();
-	HTTPRequest(char *request);
+	HTTPRequest(const char *request);
 	std::string getMethod() const;
 	int getStatusCode() const;
 	std::string getRequestTarget() const;
