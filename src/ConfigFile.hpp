@@ -20,9 +20,9 @@ class ConfigFile
 		ConfigFile& operator=(const ConfigFile& obj);
 		bool		error(std::string message, char *line);
 		bool		parseFile(char *file);
-		bool		parseLine(char *line);
 		bool		parseLocation(char *line, int fd);
-		bool		parseLocationLine(char *line, std::string& key, std::string& value);
+		bool		saveVariable(char *line);
+		bool		saveLocationVariable(char *line, std::string& key, std::string& value);
 		bool		isLocation(char *line);
 		std::map<std::string, std::string> _variables;
 		std::vector<std::map<std::string, std::string> > _locations;

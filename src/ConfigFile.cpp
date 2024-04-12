@@ -46,7 +46,7 @@ bool	ConfigFile::error(std::string message, char *line){
 
 
 // [TAB][KEY][SP][VALUE][;]
-bool	ConfigFile::parseLine(char *line){
+bool	ConfigFile::saveVariable(char *line){
 	std::string stringLine(line);
 	std::string	key;
 	std::string value;
@@ -106,7 +106,7 @@ bool	ConfigFile::isLocation(char *line){
 }
 
 // [TAB][TAB][KEY][SP][VALUE][;]
-bool	ConfigFile::parseLocationLine(char *line, std::string& key, std::string& value){
+bool	ConfigFile::saveLocationVariable(char *line, std::string& key, std::string& value){
 	std::string stringLine(line);
 	int i = 0;
 	int	start;
@@ -143,7 +143,7 @@ bool	ConfigFile::parseLocation(char *line, int fd){
 		line = get_next_line(fd);
 		if (line == NULL || std::strcmp(line, "\t}\n") == 0)
 			break ;
-		if (!parseLocationLine(line, key, value))
+		if (!saveLocationVariable(line, key, value))
 			return (error("Config file: Syntax error", line));
 		var.insert(std::make_pair(key, value));
 	}
@@ -157,7 +157,7 @@ bool	ConfigFile::parseFile(char *file){
 	if (fd == -1) { return (error("Config file: Invalid file", NULL)); }
 
 	line = get_next_line(fd);
-	if (std::strcmp(line, "server {\n") != 0) { return (error("Config file: Syntax error", line)); }
+	if (line == NULL || std::strcmp(line, "server {\n") != 0) { return (error("Config file: Syntax error", line)); }
 	delete line;
 
 	while (1){
@@ -166,7 +166,7 @@ bool	ConfigFile::parseFile(char *file){
 		else if (std::strcmp(line, "}") == 0 && !get_next_line(fd)) { delete line; return (true); }
 		else if (std::strcmp(line, "\n") == 0) { delete line; }
 		else if (isLocation(line)) { parseLocation(line, fd); }
-		else if (!parseLine(line)) { return (error("Config file: Syntax error", line)); }
+		else if (!saveVariable(line)) { return (error("Config file: Syntax error", line)); }
 	}
 	return (error("Config file: Syntax error", line));
 }
