@@ -44,7 +44,7 @@ void Server::startPollEventLoop()
 					else
 					{
 						// TODO: only the index is actually needed
-						handleConnection(_FDs[i].fd);
+						handleConnection(_connections[i]);
 						_FDs.erase(_FDs.begin() + i);
 						--i;
 					}
@@ -80,22 +80,22 @@ void Server::handleConnection(Connection conn)
 	// isChunked is a 'free' function but it could be a method of the Connection class
 	if (conn.isChunked())
 	{
-		if (!readChunkedBody(clientFD, body, response))
+		if (!conn.readChunkedBody())
 		{
-			closeClientConnection(clientFD, response);
+			closeClientConnection(conn.getPollFd().fd, conn.getResponse());
 			return;
 		}
 	}
 	else
 	{
-		if (!readBody(clientFD, body, headers, response))
+		if (!conn.readBody())
 		{
-			closeClientConnection(clientFD, response);
+			closeClientConnection(conn.getPollFd().fd, conn.getResponse());
 			return;
 		}
 	}
 	// It should be double "\r\n" to separate the headers from the body
-	std::string httpRequestString = headers + "\r\n\r\n" + body;
+	std::string httpRequestString = conn.getHeaders() + "\r\n\r\n" + conn.getBody();
 
 	HTTPRequest request(httpRequestString.c_str());
 	std::cout << request.getStatusCode() << std::endl;
@@ -108,6 +108,9 @@ void Server::handleConnection(Connection conn)
 
 	// std::string response;
 	Router router;
+	HTTPResponse response;
+	// Check if this is the right way to do it
+	response = conn.getResponse();
 	if (!router.pathExists(response, request.getRequestTarget()))
 	{
 		StaticContentHandler staticHandler;
@@ -154,8 +157,8 @@ void Server::handleConnection(Connection conn)
 	}
 	std::string responseString = response.toString();
 
-	write(clientFD, responseString.c_str(), responseString.size());
-	close(clientFD);
+	write(conn.getPollFd().fd, responseString.c_str(), responseString.size());
+	close(conn.getPollFd().fd);
 }
 
 /*** Private Methods ***/
@@ -233,7 +236,7 @@ void Server::acceptNewConnection()
 		newSocketPoll.fd = newSocket;
 		newSocketPoll.events = POLLIN;
 		newSocketPoll.revents = 0;
-		Connection newConnection(newSocketPoll);
+		Connection newConnection(newSocketPoll, *this);
 		/* start together */
 		_FDs.push_back(newSocketPoll);
 		_connections.push_back(newConnection);
@@ -317,132 +320,6 @@ void Server::closeClientConnection(int clientFD, HTTPResponse &response)
 	}
 	// TODO: should we close it with the Destructor of the Connection class?
 	close(clientFD);
-}
-
-/* We will move readHeader to the Connection class */
-
-// bool Server::readHeaders(int clientFD, std::string &headers, HTTPResponse &response)
-/*
-bool Server::readHeaders(Connection conn)
-{
-	// Both are in the Connection object now
-	// size_t totalRead = 0;
-	// bool headersComplete = false;
-	// while (!headersComplete)
-	if (!client.getHeadersComplete())
-	{
-		// We reinitialize it at each iteration to have a clean buffer
-		char buffer[BUFFER_SIZE] = {0};
-		// we could do recv non blocking with MSG_DONTWAIT but we will keep it simple for now
-		ssize_t bytesRead = recv(client.getPollFd().fd, buffer, BUFFER_SIZE, 0);
-		if (bytesRead > 0)
-		{
-			// TODO: shorten these three lines. Do we really need all these getters and setters? Maybe readHeaders
-			// should be a method of the Connection class!
-			std::string headers;
-			headers.append(buffer, bytesRead);
-			client.setHeaders(headers);
-			//  TILL HERE MAKE A METHOD OF CLIENT CLASS!
-			totalRead += bytesRead;
-			if (totalRead > _clientMaxHeadersSize)
-			{
-				std::cerr << "Header too large" << std::endl;
-				response.setStatusCode(413);
-				return false;
-			}
-			if (headers.find("\r\n\r\n") != std::string::npos)
-				headersComplete = true;
-		}
-		else if (bytesRead < 0)
-		{
-			perror("recv failed");
-			return false;
-		}
-		else
-		{
-			// This means biyeRead == 0
-			std::cout << "Connection closed before headers being completely sent" << std::endl;
-			// In this case we don't want to send an error response, because the client closed the connection
-			return false;
-		}
-	}
-	return true;
-}
-*/
-
-bool Server::readChunkedBody(int clientFd, std::string &body, HTTPResponse &response)
-{
-	// TODO: check if this is blocking; I mean the two recvs in readChunkSize and readChunk
-	bool bodyComplete = false;
-	while (!bodyComplete)
-	{
-		std::string chunkSizeLine;
-		if (!readChunkSize(clientFd, chunkSizeLine))
-			return false;
-		// Convert the hexadecimal string from `chunkSizeLine` to a size_t value.
-		// Here, `std::istringstream` is used to create a stream from the string,
-		// which then allows for input operations similar to cin. The `std::hex`
-		// manipulator is used to interpret the input as a hexadecimal value.
-		// We attempt to stream the input into the `chunkSize` variable. If this operation
-		// fails (e.g., because of invalid input characters that can't be interpreted as hex),
-		// the stream's failbit is set, and the conditional check fails. In this case,
-		// we return false indicating an error in parsing the chunk size.
-		std::istringstream iss(chunkSizeLine);
-		size_t chunkSize;
-		if (!(iss >> std::hex >> chunkSize))
-		{
-			return false; // as an error
-		}
-
-		if (chunkSize == 0)
-		{
-			bodyComplete = true;
-			return true;
-		}
-		else
-		{
-			std::string chunkData;
-			// readChunk(clientFd, chunkSize, chunkData, response);
-			if (!readChunk(clientFd, chunkSize, chunkData, response))
-			{
-				closeClientConnection(clientFd, response);
-				return false;
-			}
-			body.append(chunkData);
-			// Consume the CRLF at the end of the chunk
-		}
-	}
-	return false;
-}
-
-bool Server::readBody(int clientFD, std::string &body, std::string &headers, HTTPResponse &response)
-{
-	size_t contentLength = getContentLength(headers);
-	char buffer[BUFFER_SIZE];
-	size_t bytesRead = 0;
-	while (bytesRead < contentLength)
-	{
-		// TODO: check if this is blocking
-		ssize_t read = recv(clientFD, buffer, BUFFER_SIZE, 0);
-		if (read > 0)
-		{
-			body.append(buffer, read);
-			bytesRead += read;
-		}
-		else if (read < 0)
-		{
-			perror("recv failed");
-			response.setStatusCode(500); // Internal Server Error
-			return false;
-		}
-		else
-		{
-			std::cout << "Connection closed" << std::endl;
-			response.setStatusCode(400); // Bad Request
-			return false;
-		}
-	}
-	return true;
 }
 
 /* Others */

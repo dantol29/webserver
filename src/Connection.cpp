@@ -110,11 +110,6 @@ void Connection::setBodyComplete(bool bodyComplete)
 	_bodyComplete = bodyComplete;
 }
 
-void Connection::setBodyIsChunked(bool bodyIsChunked)
-{
-	_bodyIsChunked = bodyIsChunked;
-}
-
 void Connection::setHeaders(const std::string &headers)
 {
 	_headers = headers;
@@ -175,13 +170,149 @@ bool Connection::readHeaders()
 	}
 	return true;
 }
+// About the hexa conversion
+// Convert the hexadecimal string from `chunkSizeLine` to a size_t value.
+// Here, `std::istringstream` is used to create a stream from the string,
+// which then allows for input operations similar to cin. The `std::hex`
+// manipulator is used to interpret the input as a hexadecimal value.
+// We attempt to stream the input into the `chunkSize` variable. If this operation
+// fails (e.g., because of invalid input characters that can't be interpreted as hex),
+// the stream's failbit is set, and the conditional check fails. In this case,
+// we return false indicating an error in parsing the chunk size.
+
+bool Connection::readChunkedBody()
+{
+	// TODO: check if this is blocking; I mean the two recvs in readChunkSize and readChunk
+	if (!_bodyComplete)
+	{
+		std::string chunkSizeLine;
+		// readChiunkSize cuould be a method of Connection, now it's a free function.
+		if (!readChunkSize(chunkSizeLine))
+			return false;
+
+		std::istringstream iss(chunkSizeLine);
+		size_t chunkSize;
+		if (!(iss >> std::hex >> chunkSize))
+			return false;
+
+		if (chunkSize == 0)
+		{
+			_bodyComplete = true;
+			return true;
+		}
+		else
+		{
+			std::string chunkData;
+			if (!readChunk(chunkSize, chunkData, _response))
+				return false;
+			_body.append(chunkData);
+			// Consume the CRLF at the end of the chunk
+		}
+	}
+	return false;
+}
+
+bool Connection::readChunkSize(std::string &line)
+{
+	// TODO: check this while loop that could be infinite
+	// TODO: check if this is blocking
+
+	line.clear();
+	while (true)
+	{
+		char buffer;
+		ssize_t bytesRead = recv(_pollFd.fd, &buffer, 1, 0);
+		if (bytesRead > 0)
+		{
+			line.push_back(buffer);
+			if (line.size() >= 2 && line.substr(line.size() - 2) == "\r\n")
+			{
+				line.resize(line.size() - 2); // remove the CRLF
+				return true;
+			}
+		}
+		else if (bytesRead < 0)
+		{
+			perror("recv failed");
+			return false;
+		}
+		else
+		{
+			std::cout << "Connection closed" << std::endl;
+			return false;
+		}
+	}
+	return true;
+}
+
+bool Connection::readChunk(size_t chunkSize, std::string &chunkData, HTTPResponse &response)
+{
+	// Reserve space in the string to avoid reallocations
+	chunkData.reserve(chunkSize + chunkData.size());
+	while (chunkSize > 0)
+	{
+		char buffer[BUFFER_SIZE];
+		size_t bytesToRead = std::min(chunkSize, (size_t)BUFFER_SIZE);
+		ssize_t bytesRead = recv(_pollFd.fd, buffer, bytesToRead, 0);
+		if (bytesRead > 0)
+		{
+			chunkData.append(buffer, bytesRead);
+			chunkSize -= bytesRead;
+		}
+		else if (bytesRead < 0)
+		{
+			perror("recv failed in readChunk");
+			// Internal Server Error
+			response.setStatusCode(500);
+			return false;
+		}
+		else
+		{
+			// bytes read == 0, connection closed prematurely
+			std::cout << "Connection closed while reading chunk" << std::endl;
+			response.setStatusCode(400); // Bad Request
+			return false;
+		}
+	}
+	char crlf[2];
+	ssize_t crlfRead = recv(_pollFd.fd, crlf, 2, 0);
+	if (crlfRead < 2)
+	{
+		std::cout << "Connection closed while reading CRLF" << std::endl;
+		response.setStatusCode(400); // Bad Request
+		return false;
+	}
+	return true;
+}
 
 bool Connection::readBody()
 {
-	// Read body from the client socket
-	// If the body is complete, set _bodyComplete to true
-	// Return true if the body is complete, false otherwise
-	return false;
+	size_t contentLength = getContentLength(_headers);
+	char buffer[BUFFER_SIZE];
+	size_t bytesRead = 0;
+	if (bytesRead < contentLength)
+	{
+		// TODO: check if this is blocking
+		ssize_t read = recv(_pollFd.fd, buffer, BUFFER_SIZE, 0);
+		if (read > 0)
+		{
+			_body.append(buffer, read);
+			bytesRead += read;
+		}
+		else if (read < 0)
+		{
+			perror("recv failed");
+			_response.setStatusCode(500); // Internal Server Error
+			return false;
+		}
+		else
+		{
+			std::cout << "Connection closed" << std::endl;
+			_response.setStatusCode(400); // Bad Request
+			return false;
+		}
+	}
+	return true;
 }
 
 bool Connection::isChunked()

@@ -35,6 +35,9 @@ class Connection
 
 	bool readHeaders();
 	bool isChunked();
+	bool readChunkedBody();
+	bool readChunkSize(std::string &line);
+	bool readChunk(size_t chunkSize, std::string &chunkedData, HTTPResponse &response);
 	bool readBody();
 	/* Getters */
 	struct pollfd getPollFd() const;

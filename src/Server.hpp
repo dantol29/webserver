@@ -16,6 +16,8 @@
 #include "server_utils.hpp"
 #include "Connection.hpp"
 
+class Connection; // Forward declaration for circular dependency
+
 class Server
 {
   public:
@@ -60,18 +62,15 @@ class Server
 	void addServerSocketPollFdToFDs();
 	void acceptNewConnection();
 	// void handleConnection(int clientFD);
-	void Server::handleConnection(Connection conn);
+	void handleConnection(Connection conn);
 	void handleServerSocketError();
 	void handleClientSocketError(int clientFD, size_t &i);
 	void handleSocketTimeoutIfAny();
 	void handlePollFailure();
 	void AlertAdminAndTryToRecover();
+
 	/* for handleConnection */
-	// bool readHeaders(int clientFD, std::string &headers, HTTPResponse &response);
-	// bool Server::readHeaders(Client client);
 	void closeClientConnection(int clientFD, HTTPResponse &response);
-	bool readChunkedBody(int clientFD, std::string &body, HTTPResponse &response);
-	bool readBody(int clientFD, std::string &body, std::string &headers, HTTPResponse &response);
 
 	/* Not avaiable constructors */
 
