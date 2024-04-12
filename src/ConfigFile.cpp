@@ -1,6 +1,8 @@
 #include "ConfigFile.hpp"
 #include <iostream>
 #include <cstring>
+#include <list>
+#include <algorithm>
 
 int	checkFile(const char *path);
 char	*get_next_line(int fd);
@@ -171,7 +173,32 @@ bool	ConfigFile::parseFile(char *file){
 	return (error("Config file: Syntax error", line));
 }
 
+bool	ConfigFile::checkVariablesKey(){
+	std::string var[] = {"listen", "host", "server_name", "error_page", "index", "root", "client_max_body_size", "autoindex", "allow_methods", "alias", "cgi_path", "cgi_ext"};
+	std::list<std::string> validVar(var, var + sizeof(var) / sizeof(var[0]));
+
+
+	for (std::map<std::string, std::string>::const_iterator it = _variables.begin(); it != _variables.end(); ++it){
+		if (std::find(validVar.begin(), validVar.end(), it->first) == validVar.end())
+			return (error("Config file: Invalid variable", NULL));
+	}
+	for (unsigned int i = 0; i < _locations.size(); ++i){
+		for (std::map<std::string, std::string>::const_iterator it = _locations[i].begin(); it != _locations[i].end(); ++it){
+			if (it->first == "path")
+				continue;
+			if (std::find(validVar.begin(), validVar.end(), it->first) == validVar.end())
+				return (error("Config file: Invalid variable(in the location)", NULL));
+		}
+	}
+	return (true);
+}
+
+bool	ConfigFile::checkVariablesKey(){
+	return (true);
+}
+
 ConfigFile::ConfigFile(char *file) : _errorMessage(""), _tmpPath(""){
 	parseFile(file);
-	//checkVariables
+	checkVariablesKey();
+	checkVariablesValue();
 }
