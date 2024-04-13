@@ -75,30 +75,34 @@ void Router::splitTarget(const std::string &target)
 	}
 }
 
-bool Router::pathExists(HTTPResponse &response, const std::string &originalPath)
+bool Router::pathExists(HTTPRequest &request, HTTPResponse &response)
 {
-    std::string path = originalPath;
-    struct stat buffer;
-    if (stat(path.c_str(), &buffer) != 0)
-    {
-        response.setStatusCode(404);
-        response.setBody("Not Found");
-        return false;
-    }
-    if (S_ISDIR(buffer.st_mode))
-    {
-        if (!path.empty() && path[path.length() - 1] != '/')
-        {
-            path += "/";
-        }
-        path += "index.html";
-        // Check if index.html exists
-        if (stat(path.c_str(), &buffer) != 0)
-        {
-            response.setStatusCode(404);
-            response.setBody("Not Found");
-            return false;
-        }
-    }
-    return true;
+
+	std::string host = request.std::string path = request.getRequestTarget();
+	std::cout << "Path: " << path << std::endl;
+	struct stat buffer;
+	if (stat(path.c_str(), &buffer) != 0)
+	{
+		response.setStatusCode(404);
+		response.setBody("Not Found");
+		return false;
+	}
+	if (S_ISDIR(buffer.st_mode))
+	{
+		std::cout << "Path is a directory" << std::endl;
+		if (!path.empty() && path[path.length() - 1] != '/')
+		{
+			path += "/";
+		}
+		path += "index.html";
+		std::cout << "Path: " << path << std::endl;
+		// Check if index.html exists
+		if (stat(path.c_str(), &buffer) != 0)
+		{
+			response.setStatusCode(404);
+			response.setBody("Not Found");
+			return false;
+		}
+	}
+	return true;
 }

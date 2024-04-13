@@ -22,7 +22,7 @@ class Router
 
 	void splitTarget(const std::string &target);
 	bool isDynamicRequest(const HTTPRequest &request);
-	bool pathExists(HTTPResponse &response, const std::string &path);
+	bool Router::pathExists(HTTPRequest &request, HTTPResponse &response);
 
   private:
 	Router(const Router &other);

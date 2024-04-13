@@ -32,14 +32,13 @@ void Server::startPollEventLoop()
 	addServerSocketPollFdToVectors();
 	while (1)
 	{
-		std::cout << "++++++++++++++ Waiting for new connection +++++++++++++++" << std::endl;
-		std::cout << "++++++++++++++ Or Polling +++++++++++++++" << std::endl;
-		std::cout << "printFDsVector(_FDs); - before polling" << std::endl;
-		printFDsVector(_FDs);
+		std::cout << "++++++++++++++ Waiting for new connection or Polling +++++++++++++++" << std::endl;
+		// std::cout << "printFDsVector(_FDs); - before polling" << std::endl;
+		// printFDsVector(_FDs);
 		int ret = poll(_FDs.data(), _FDs.size(), -1);
-		std::cout << "printFDsVector(_FDs); - after polling" << std::endl;
-		printFDsVector(_FDs);
-		print_connectionsVector(_connections);
+		// std::cout << "printFDsVector(_FDs); - after polling" << std::endl;
+		// printFDsVector(_FDs);
+		// print_connectionsVector(_connections);
 		std::cout << "poll() returned: " << ret << std::endl;
 		if (ret > 0)
 		{
@@ -48,11 +47,11 @@ void Server::startPollEventLoop()
 				std::cout << "i: " << i << std::endl;
 				if (_FDs[i].revents & POLLIN)
 				{
-					std::cout << "POLLIN" << std::endl;
+					// std::cout << "POLLIN" << std::endl;
 					if (i == 0)
 					{
 						std::cout << "Server socket event" << std::endl;
-						std::cout << "i == 0" << std::endl;
+						// std::cout << "i == 0" << std::endl;
 
 						acceptNewConnection();
 						printFDsVector(_FDs);
@@ -61,7 +60,7 @@ void Server::startPollEventLoop()
 					else
 					{
 						std::cout << "Client socket event" << std::endl;
-						std::cout << "i != 0" << std::endl;
+						// std::cout << "i != 0" << std::endl;
 						// TODO: only the index is actually needed
 						// handleConnection(_connections[i]);
 						handleConnection(_connections[i]);
@@ -122,7 +121,7 @@ void Server::handleConnection(Connection conn)
 	}
 	// It should be double "\r\n" to separate the headers from the body
 	std::string httpRequestString = conn.getHeaders() + "\r\n\r\n" + conn.getBody();
-
+	std::cout << "Received HTTP request: " << std::endl << httpRequestString << std::endl;
 	HTTPRequest request(httpRequestString.c_str());
 	std::cout << request.getStatusCode() << std::endl;
 	std::cout << "Received HTTP request: " << std::endl << httpRequestString << std::endl;
@@ -137,13 +136,15 @@ void Server::handleConnection(Connection conn)
 	HTTPResponse response;
 	// Check if this is the right way to do it
 	response = conn.getResponse();
-	if (!router.pathExists(response, request.getRequestTarget()))
+	if (!router.pathExists(request, response, request.getRequestTarget()))
 	{
+		std::cout << "Path does not exist" << std::endl;
 		StaticContentHandler staticHandler;
 		response = staticHandler.handleNotFound();
 	}
 	else
 	{
+		std::cout << "Path exists" << std::endl;
 
 		if (router.isDynamicRequest(request))
 		{
