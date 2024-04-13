@@ -80,7 +80,20 @@ bool Router::pathExists(HTTPRequest &request, HTTPResponse &response)
 
 	std::string host = request.getHost();
 	std::cout << "Host: " << host << std::endl;
+	size_t pos = host.find(":");
+	if (pos != std::string::npos)
+	{
+		host = host.substr(0, pos);
+	}
+	std::cout << "Host (after : trailing) :" << host << std::endl;
 	std::string path = request.getRequestTarget();
+	// TODO: read the _webRoot from the server instead of hardcoding it
+	std::string webRoot = "/var/www";
+	if (host == "localhost" || host == "/" || host == "")
+	{
+		webRoot = "html";
+	}
+	path = webRoot + path;
 	std::cout << "Path: " << path << std::endl;
 	struct stat buffer;
 	if (stat(path.c_str(), &buffer) != 0)

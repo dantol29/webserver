@@ -82,7 +82,7 @@ HTTPResponse StaticContentHandler::handleRequest(const HTTPRequest &request)
 // }
 HTTPResponse StaticContentHandler::handleHomePage()
 {
-	std::string htmlContent = readHtml("./html/home.html");
+	std::string htmlContent = readHtml("./html/index.html");
 	HTTPResponse response;
 	response.setStatusCode(200);
 	response.setBody(htmlContent);
