@@ -35,6 +35,7 @@ bool Router::isDynamicRequest(const HTTPRequest &request)
 		return true;
 	}
 	return false;
+
 }
 
 std::string Router::getFileExtension(const std::string &fileName)
@@ -75,9 +76,8 @@ void Router::splitTarget(const std::string &target)
 	}
 }
 
-bool Router::pathExists(HTTPRequest &request, HTTPResponse &response)
+bool Router::pathExists(HTTPRequest &request, HTTPResponse &response, std::string webRoot)
 {
-
 	std::string host = request.getHost();
 	std::cout << "Host: " << host << std::endl;
 	size_t pos = host.find(":");
@@ -87,12 +87,10 @@ bool Router::pathExists(HTTPRequest &request, HTTPResponse &response)
 	}
 	std::cout << "Host (after : trailing) :" << host << std::endl;
 	std::string path = request.getRequestTarget();
-	// TODO: read the _webRoot from the server instead of hardcoding it
-	std::string webRoot = "/var/www";
-	if (host == "localhost" || host == "/" || host == "")
-	{
-		webRoot = "html";
-	}
+	// if (host == "localhost" || host == "/" || host == "")
+	// {
+	// 	webRoot = "html";
+	// }
 	path = webRoot + path;
 	std::cout << "Path: " << path << std::endl;
 	struct stat buffer;

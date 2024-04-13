@@ -130,9 +130,10 @@ void Server::handleConnection(Connection conn)
 	// std::string response;
 	Router router;
 	HTTPResponse response;
+	std::string _webRoot = getWebRoot();
 	// Check if this is the right way to do it
 	response = conn.getResponse();
-	if (!router.pathExists(request, response))
+	if (!router.pathExists(request, response, _webRoot))
 	{
 		std::cout << "Path does not exist" << std::endl;
 		StaticContentHandler staticHandler;
@@ -142,9 +143,9 @@ void Server::handleConnection(Connection conn)
 	{
 		std::cout << "Path exists" << std::endl;
 
-		if (router.isDynamicRequest(request))
-		{
-			if (request.getMethod() == "GET" && request.getRequestTarget() == "/hello")
+		// if (router.isDynamicRequest(request))
+		// {
+			if (request.getMethod() == "GET" && request.getRequestTarget() == "/hello.cgi")
 			{
 				CGIHandler cgiInstance;
 				Environment env;
@@ -155,21 +156,21 @@ void Server::handleConnection(Connection conn)
 			{
 				std::cout << "Dynamic request not supported" << std::endl;
 			}
-		}
-		else
-		{
-			StaticContentHandler staticContentHandler;
-			// This if condition only for legacy reasons! TODO: remove
-			if (request.getMethod() == "GET" &&
-				(request.getRequestTarget() == "/" || request.getRequestTarget() == "/home"))
-			{
-				response = staticContentHandler.handleHomePage();
-			}
-			else
-			{
-				response = staticContentHandler.handleRequest(request);
-			}
-		}
+		// }
+		// else
+		// {
+		// 	StaticContentHandler staticContentHandler;
+		// 	// This if condition only for legacy reasons! TODO: remove
+		// 	if (request.getMethod() == "GET" &&
+		// 		(request.getRequestTarget() == "/" || request.getRequestTarget() == "/home"))
+		// 	{
+		// 		response = staticContentHandler.handleHomePage();
+		// 	}
+		// 	else
+		// 	{
+		// 		response = staticContentHandler.handleRequest(request);
+		// 	}
+		// }
 	}
 	std::string responseString = response.toString();
 
