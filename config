@@ -7,20 +7,20 @@ server {
 	cgi_ext .py .php .pl;
 
 	location /random {
-		root abc;
-		cgi_path be;
+		root docs;
+		cgi_path docs;
 	}
 
 
-	error_page 404 /Makefile;
+	error_page 404 html/index.html;
 	client_max_body_size 228;
-	root docs/BIGGEST...;
-	index index.html;
+	root docs;
+	index html/index.html;
 	location /path {
-		index ggg;
-		cgi_ext .brainfuck;
+		index invalid1 invalid2 html/index.html;
+		cgi_ext .py;
 	}
 	location / {
-		root mama;
+		root docs;
 	}
 }

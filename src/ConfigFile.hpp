@@ -26,6 +26,8 @@ class ConfigFile
 		bool		isLocation(char *line);
 		bool		checkVariablesKey();
 		bool		checkVariablesValue(std::map<std::string, std::string> var);
+		bool		checkErrorPage(std::map<std::string, std::string> list);
+		bool		pathExists(std::map<std::string, std::string> list, std::string variable);
 		std::map<std::string, std::string> _variables;
 		std::vector<std::map<std::string, std::string> > _locations;
 		std::string _errorMessage;

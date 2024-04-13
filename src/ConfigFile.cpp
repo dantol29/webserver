@@ -5,6 +5,8 @@
 #include <algorithm>
 #include "webserv.hpp"
 #include <unistd.h>
+#include <sys/types.h>
+#include <dirent.h>
 
 bool	isValidErrorCode(std::string errorCode);
 int		checkFile(const char *path);
@@ -196,16 +198,75 @@ bool	ConfigFile::checkVariablesKey(){
 	return (true);
 }
 
+bool	ConfigFile::pathExists(std::map<std::string, std::string> list, std::string variable)
+{
+	std::map<std::string, std::string>::iterator it;
+	unsigned int	start = 0;
+
+	it = list.find(variable);
+	if (it != list.end()){
+		for (unsigned int i = 0; i < it->second.length(); ++i){
+			start = i;
+			while (i < it->second.length() && it->second[i] != ' ')
+				i++;
+			DIR* dir = opendir((it->second.substr(start, i - start)).c_str());
+			if (!dir)
+				return (error(("Config file: Invalid " + variable).c_str(), NULL));
+			closedir(dir);
+		}
+	}
+	return (true);
+}
+
+bool	ConfigFile::checkErrorPage(std::map<std::string, std::string> list)
+{
+	// count1 and count2 to check if both path and number are present
+	int				count1 = 0;
+	int				count2 = 0;
+	unsigned int	start = 0;
+	std::map<std::string, std::string>::iterator it;
+
+	it = list.find("error_page");
+	if (it != list.end()){
+		for (unsigned int i = 0; i < it->second.length(); ++i){
+			start = i;
+			while (i < it->second.length() && it->second[i] != ' ')
+				i++;
+			if (access((it->second.substr(start, i - start)).c_str(), F_OK) == 0){
+				count1++;
+				continue ;
+			}
+			if (!isValidErrorCode(it->second.substr(start, i - start)))
+				return (error("Config file: Invalid error_page", NULL));
+			count2++;
+		}
+		if (count1 == 0 || count1 > 1 || count2 == 0)
+			return (error("Config file: Invalid error_page", NULL));
+	}
+	return (true);
+}
+
+
 bool	ConfigFile::checkVariablesValue(std::map<std::string, std::string> var){
 	std::string tmp_meth[] = {"GET", "POST", "DELETE"};
-	std::string tmp_cgi[] = {".py", ".php", ".pl"};
+	std::string tmp_cgi[] = {".py", ".php", ".pl", ".cgi"};
 	std::list<std::string> methods(tmp_meth, tmp_meth + sizeof(tmp_meth) / sizeof(tmp_meth[0]));
 	std::list<std::string> cgi_ext(tmp_cgi, tmp_cgi + sizeof(tmp_cgi) / sizeof(tmp_cgi[0]));
 	std::map<std::string, std::string>::iterator it;
 	unsigned int	start = 0;
-	int				count1 = 0;
-	int				count2 = 0;
 
+	// ROOT
+	if (!pathExists(var, "root"))
+		return (false);
+	// ALIAS
+	if (!pathExists(var, "alias"))
+		return (false);
+	// CGI_PATH
+	if (!pathExists(var, "cgi_path"))
+		return (false);
+	// ERROR_PAGE
+	if (!checkErrorPage(var))
+		return (false);
 	// ALLOW_METHODS
 	it = var.find("allow_methods");
 	if (it != var.end()){
@@ -239,24 +300,17 @@ bool	ConfigFile::checkVariablesValue(std::map<std::string, std::string> var){
 				return (error("Config file: Invalid cgi_ext", NULL));
 		}
 	}
-	// ERROR_PAGE
-	// count1 and count2 to check if both path and number are present
-	it = var.find("error_page");
+	// INDEX
+	it = var.find("index");
 	if (it != var.end()){
 		for (unsigned int i = 0; i < it->second.length(); ++i){
 			start = i;
 			while (i < it->second.length() && it->second[i] != ' ')
 				i++;
-			if (access(("." + it->second.substr(start, i - start)).c_str(), F_OK) == 0){
-				count1++;
-				continue ;
-			}
-			if (!isValidErrorCode(it->second.substr(start, i - start)))
-				return (error("Config file: Invalid error_page", NULL));
-			count2++;
+			if (access((it->second.substr(start, i - start)).c_str(), F_OK) == 0)
+				return (true);
 		}
-		if (count1 == 0 || count1 > 1 || count2 == 0)
-			return (error("Config file: Invalid error_page", NULL));
+		return (error("Config file: Invalid index", NULL));
 	}
 	return (true);
 }
@@ -265,6 +319,10 @@ ConfigFile::ConfigFile(char *file) : _errorMessage(""), _tmpPath(""){
 	parseFile(file);
 	checkVariablesKey();
 	checkVariablesValue(_variables);
+	// check each location variables values
+	for (unsigned int i = 0; i < _locations.size(); ++i){
+		checkVariablesValue(_locations[i]);
+	}
 }
 
 std::ostream& operator<<(std::ostream& out, const ConfigFile& a){
