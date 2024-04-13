@@ -1,4 +1,5 @@
 #include "Server.hpp"
+#include "webserv.hpp"
 
 #define EXIT_FAILURE 1
 

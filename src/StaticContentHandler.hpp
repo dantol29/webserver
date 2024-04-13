@@ -20,6 +20,7 @@ class StaticContentHandler : public ARequestHandler
 	StaticContentHandler(const std::string &webRoot);
 	~StaticContentHandler();
 	HTTPResponse handleRequest(const HTTPRequest &request);
+	std::string handleCGIRequest(const HTTPRequest &request);
 
 	// std::string handleHomePage();
 	HTTPResponse handleHomePage();

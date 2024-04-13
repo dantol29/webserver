@@ -2,6 +2,8 @@
 #define AREQUESTHANDLER_HPP
 
 #include "HTTPRequest.hpp"
+#include "HTTPResponse.hpp"
+#include "webserv.hpp"
 
 class ARequestHandler
 {
@@ -11,7 +13,8 @@ class ARequestHandler
 	virtual ~ARequestHandler()
 	{
 	}
-	virtual std::string handleRequest(const HTTPRequest &request) = 0;
+	virtual HTTPResponse handleRequest(const HTTPRequest &request) = 0;
+	virtual std::string handleCGIRequest(const HTTPRequest &request) = 0;
 
   private:
 	ARequestHandler(const ARequestHandler &other);

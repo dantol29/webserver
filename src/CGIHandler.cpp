@@ -18,7 +18,16 @@ CGIHandler &CGIHandler::operator=(const CGIHandler &other) {
     return *this;
 }
 
-std::string CGIHandler::handleRequest(const HTTPRequest &request) {
+HTTPResponse CGIHandler::handleRequest(const HTTPRequest &request) {
+    std::string cgiOutput = handleCGIRequest(request);
+    // You'll need to construct an HTTPResponse object from cgiOutput.
+    // This is a simplified example. You should set the appropriate headers and status code.
+    HTTPResponse response;
+    response.setBody(cgiOutput);
+    return response;
+}
+
+std::string CGIHandler::handleCGIRequest(const HTTPRequest &request) {
     Environment env;
 
     //load the meta vars from the request to env

@@ -12,6 +12,11 @@ StaticContentHandler::~StaticContentHandler()
 {
 }
 
+std::string StaticContentHandler::handleCGIRequest(const HTTPRequest &request) {
+    return "CGI requests are not supported by this handler.";
+}
+
+
 bool endsWith(const std::string &str, const std::string &suffix)
 {
 	if (str.length() >= suffix.length())

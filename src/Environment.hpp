@@ -1,13 +1,6 @@
 #ifndef ENVIRONMENT_HPP
 #define ENVIRONMENT_HPP
 
-// #include "webserv.hpp"
-#ifndef ENVIRONMENT_HPP
-#define ENVIRONMENT_HPP
-
-// #include "webserv.hpp"
-#include "HTTPRequest.hpp"
-#include "webserv.hpp"
 #include "webserv.hpp"
 #include <iostream>
 #include <sys/wait.h>
@@ -25,10 +18,10 @@ class Environment
 	std::map<std::string, std::string> metaVars;
 
   public:
-	Environment();									  // Default constructor if needed
-	Environment(const Environment &other);			  // Copy constructor
-	Environment &operator=(const Environment &other); // Copy assignment operator
-													  // access unique var
+	Environment();
+	Environment(const Environment &other);
+	Environment &operator=(const Environment &other);
+	// access unique var
 	void setVar(const std::string &key, const std::string &value);
 	std::string getVar(const std::string &key) const;
 	void printMetaVars() const;
@@ -42,8 +35,6 @@ class Environment
 	void HTTPRequestToMetaVars(HTTPRequest request, Environment &env);
 
 	// convert to execve format
-	std::vector<char *> getForExecve() const;
-	~Environment();
 	std::vector<char *> getForExecve() const;
 	~Environment();
 };

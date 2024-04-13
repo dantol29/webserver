@@ -2,13 +2,19 @@
 #define WEBSERV_H
 
 #include <string>
-#include "Environment.hpp"
 #include <sstream>
 #include <cstdlib>
 #include <string.h>
 #include "Environment.hpp"
 #include "HTTPRequest.hpp"
-#include "CGIHandler.hpp"
+
+// #include "Environment.hpp"
+// #include "HTTPRequest.hpp"
+// #include "CGIHandler.hpp"
+// #include "StaticContentHandler.hpp"
+// #include "Router.hpp"
+// #include "HTTPResponse.hpp"
+// #include "server_utils.hpp"
 
 // declared here because it is a template function
 // instead of to_string which is c++11, we use this function
