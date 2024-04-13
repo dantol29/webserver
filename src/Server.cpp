@@ -125,11 +125,7 @@ void Server::handleConnection(Connection conn)
 	HTTPRequest request(httpRequestString.c_str());
 	std::cout << request.getStatusCode() << std::endl;
 	std::cout << "Received HTTP request: " << std::endl << httpRequestString << std::endl;
-
-	// test to execute the python script (see: https://www.tutorialspoint.com/python/python_cgi_programming.htm)
-	const char *argv[] = {"./cgi-bin/hello_py.cgi", NULL};
-	// const char* argv[] = { "./cgi-bin/thirty_py.cgi", NULL };
-	// const char* argv[] = { "./cgi-bin/hello.cgi", NULL };
+	printVariablesHeadersBody(request);
 
 	// std::string response;
 	Router router;
@@ -151,20 +147,16 @@ void Server::handleConnection(Connection conn)
 			if (request.getMethod() == "GET" && request.getRequestTarget() == "/hello")
 			{
 				// env has to be created before CGI, because it is passed to the CGI
-				CGIHandler cgiHandler;
+				CGIHandler cgiInstance;
 				Environment env;
+				// env.RequestTargetToMetaVars(request.getRequestTarget());
 				env.setVar("QUERY_STRING", "Hello from C++ CGI!");
-				// cgiHandler.executeCGI(argv, env);
-				handleCGIRequest(argv, env);
+
+      			response = cgiInstance.handleRequest(request);				
 			}
 			else
 			{
-				CGIHandler cgiHandler;
-				Environment env;
-				env.setVar("request.getQueryString()", "request.getBody()");
-				// response = cgiHandler.handleCGIRequest(argv, request);
-				// cgiHandler.executeCGI(argv, env);
-				handleCGIRequest(argv, env);
+				std::cout << "Dynamic request not supported" << std::endl;
 			}
 		}
 		else

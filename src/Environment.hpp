@@ -2,6 +2,7 @@
 #define ENVIRONMENT_HPP
 
 #include "webserv.hpp"
+#include "HTTPRequest.hpp"
 #include <iostream>
 #include <sys/wait.h>
 #include <string.h>

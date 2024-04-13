@@ -13,7 +13,8 @@ StaticContentHandler::~StaticContentHandler()
 }
 
 std::string StaticContentHandler::handleCGIRequest(const HTTPRequest &request) {
-    return "CGI requests are not supported by this handler.";
+(void)(request);
+	return "CGI requests are not supported by this handler.";
 }
 
 
@@ -103,22 +104,22 @@ HTTPResponse StaticContentHandler::handleNotFound(void)
 
 	// Create a simple HTML body for the 404 page
 	std::string htmlBody = "<!DOCTYPE html>\n"
-						   "<html lang=\"en\">\n"
-						   "<head>\n"
-						   "    <meta charset=\"UTF-8\">\n"
-						   "    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n"
-						   "    <title>404 Not Found</title>\n"
-						   "    <style>\n"
-						   "        body { font-family: Arial, sans-serif; text-align: center; margin-top: 50px; }\n"
-						   "        h1 { color: #ff6347; }\n"
-						   "        p { color: #757575; }\n"
-						   "    </style>\n"
-						   "</head>\n"
-						   "<body>\n"
-						   "    <h1>404 Not Found</h1>\n"
-						   "    <p>Sorry, the page you're looking for cannot be found.</p>\n"
-						   "</body>\n"
-						   "</html>";
+						"<html lang=\"en\">\n"
+						"<head>\n"
+						"    <meta charset=\"UTF-8\">\n"
+						"    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n"
+						"    <title>404 Not Found</title>\n"
+						"    <style>\n"
+						"        body { font-family: Arial, sans-serif; text-align: center; margin-top: 50px; }\n"
+						"        h1 { color: #ff6347; }\n"
+						"        p { color: #757575; }\n"
+						"    </style>\n"
+						"</head>\n"
+						"<body>\n"
+						"    <h1>404 Not Found</h1>\n"
+						"    <p>Sorry, the page you're looking for cannot be found.</p>\n"
+						"</body>\n"
+						"</html>";
 
 	response.setBody(htmlBody);
 	response.setHeader("Content-Type", "text/html"); // Set the Content-Type to text/html
