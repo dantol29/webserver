@@ -72,7 +72,7 @@ char *const *CGIHandler::createArgvForExecve(const Environment &env)
 	(void)env;
 	char **argv = new char *[2];
 
-	std::string command = "cgi-bin/hello_py.cgi";
+	std::string command = "cgi-bin/hello.cgi";
 	argv[0] = new char[command.size() + 1];
 	ft_strcpy(argv[0], command.c_str());
 
@@ -87,7 +87,7 @@ std::string CGIHandler::executeCGI(const Environment &env)
 
 	char *const *argv = createArgvForExecve(env);
 	std::cout << "argv[0]: " << argv[0] << std::endl;
-	std::cout << "argv[1]: " << argv[1] << std::endl;
+	// std::cout << "argv[1]: " << argv[1] << std::endl;
 
 	int pipeFD[2];
 	if (pipe(pipeFD) == -1)
