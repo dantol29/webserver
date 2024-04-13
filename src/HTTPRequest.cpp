@@ -1,6 +1,10 @@
 #include "HTTPRequest.hpp"
 #include "webserv.hpp"
 
+bool isValidContentType(std::string type);
+bool isValidHost(std::string host);
+std::string extractUploadBoundary(std::string line);
+
 HTTPRequest::HTTPRequest() : _statusCode(200), _isChunked(false), _method(""), _requestTarget(""), _protocolVersion("")
 {
 }
@@ -129,6 +133,55 @@ void HTTPRequest::setIsChunked(bool n)
 	_isChunked = n;
 }
 
+bool HTTPRequest::hasMandatoryHeaders()
+{
+	int isHost = 0;
+	int isContentLength = 0;
+	int isContentType = 0;
+	std::multimap<std::string, std::string> headers = _headers;
+	std::multimap<std::string, std::string>::iterator it;
+
+	for (it = headers.begin(); it != headers.end(); it++)
+	{
+		if (it->first == "host")
+		{
+			if (!isValidHost(it->second))
+				return (ft_error(400, "Invalid host"));
+			isHost++;
+		}
+		else if (it->first == "content-length")
+		{
+			if (!isNumber(it->second) || _method != "POST")
+				return (ft_error(400, "Invalid content-length"));
+			isContentLength++;
+		}
+		else if (it->first == "content-type")
+		{
+			if (!isValidContentType(it->second) || _method != "POST")
+				return (ft_error(400, "Invalid content-type"));
+			if (it->second.substr(0, 30) == "multipart/form-data; boundary=")
+				std::cout << extractUploadBoundary(it->second) << std::endl;
+			isContentType++;
+		}
+		else if (it->first == "transfer-encoding")
+		{
+			if (it->second != "chunked" || _method != "POST")
+				return (ft_error(400, "Invalid transfer-encoding"));
+			_isChunked = true;
+		}
+	}
+	if (_isChunked && isContentLength > 0)
+		return (ft_error(400, "Invalid chunked request"));
+	if (_method == "POST" || _method == "DELETE"){
+		if (!(isHost == 1 && isContentLength == 1 && isContentType == 1))
+			return (ft_error(400, "Invalid headers"));
+	}
+	else
+		if (isHost != 1)
+			return (ft_error(400, "Request MUST have host"));
+	return (1);
+}
+
 bool HTTPRequest::saveVariables(std::string &variables)
 {
 	int startPos = 0;
@@ -245,8 +298,8 @@ int HTTPRequest::parseHeaders(const char *request)
 	}
 	if (request[i] != '\r' || request[i + 1] != '\n')
 		return (ft_error(400, "No CRLF after header"));
-	if (!hasMandatoryHeaders(*this))
-		return (ft_error(400, "Invalid headers"));
+	if (!hasMandatoryHeaders())
+		return (400);
 	if (_method == "GET" && request[i + 2]) // has something after headers
 		return (ft_error(400, "Invalid headers"));
 	return (200);

@@ -48,7 +48,9 @@ void skipHeader(const char *request, unsigned int &i)
 
 bool isValidContentType(std::string type)
 {
-	if (type == "text/plain" || type == "text/html")
+	std::cout << type.substr(0, 30) << std::endl;
+	if (type == "text/plain" || type == "text/html" || \
+	type.substr(0, 30) == "multipart/form-data; boundary=")
 		return (true);
 	return (false);
 }
@@ -79,49 +81,6 @@ bool hasCRLF(const char *request, unsigned int &i, int mode)
 		return (false);
 	}
 	return (false);
-}
-
-bool hasMandatoryHeaders(HTTPRequest &obj)
-{
-	int isHost = 0;
-	int isContentLength = 0;
-	int isContentType = 0;
-	std::multimap<std::string, std::string> headers = obj.getHeaders();
-	std::multimap<std::string, std::string>::iterator it;
-
-	for (it = headers.begin(); it != headers.end(); it++)
-	{
-		if (it->first == "Host")
-		{
-			if (!isValidHost(it->second))
-				return (false);
-			isHost++;
-		}
-		else if (it->first == "Content-Length")
-		{
-			if (!isNumber(it->second) || obj.getMethod() != "POST")
-				return (false);
-			isContentLength++;
-		}
-		else if (it->first == "Content-Type")
-		{
-			if (!isValidContentType(it->second) || obj.getMethod() != "POST")
-				return (false);
-			isContentType++;
-		}
-		else if (it->first == "Transfer-Encoding")
-		{
-			if (it->second != "chunked" || obj.getMethod() != "POST")
-				return (false);
-			obj.setIsChunked(true);
-		}
-	}
-	if (obj.getIsChunked() && isContentLength > 0)
-		return (false);
-	if (obj.getMethod() == "POST" || obj.getMethod() == "DELETE")
-		return (isHost == 1 && isContentLength == 1 && isContentType == 1);
-	else
-		return (isHost == 1);
 }
 
 std::string extractValue(std::string &variables, int &i)
@@ -243,7 +202,7 @@ unsigned int extractLineLength(const char *request, unsigned int &i)
 
 	while (request[i] && request[i] != '\r')
 		i++;
-	if (request[i] != '\r' || request[i + 1] != '\n')
+	if (!hasCRLF(request, i, 0))
 		return (-1);
 	size = hexToInt(string_request.substr(start, i - start));
 	if (size <= 0)
@@ -257,17 +216,24 @@ std::string extractLine(const char *request, unsigned int &i, const unsigned int
 	std::string string_request(request);
 	std::string line = string_request.substr(i, size);
 	i += size; // skip line
-	if (request[i] != '\r' || request[i + 1] != '\n')
+	if (!hasCRLF(request, i, 0))
 		return ("");
 	i += 2; // skip '\r' and '\n'
 	return (line);
 }
 
-// bool	fileExists(std::string &requestTarget, bool isOriginForm, int queryStart){
-// 	if (isOriginForm &&
-// 	access(("." + requestTarget.substr(0, queryStart)).c_str(), F_OK) == -1)
-// 		return (false);
-// 	if (!isOriginForm && access(("." + requestTarget).c_str(), F_OK) == -1)
-// 		return (false);
-// 	return (true);
-// }
+std::string extractUploadBoundary(std::string line)
+{
+	unsigned int start = 0;
+
+	for (unsigned int i = 0; i < line.length(); ++i){
+		if (line[i] == '='){
+			start = ++i;
+			while (i < line.length())
+				i++;
+			return (line.substr(start, i - start));
+		}
+	}
+	return ("");
+}
+
