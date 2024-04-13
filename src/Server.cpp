@@ -146,12 +146,9 @@ void Server::handleConnection(Connection conn)
 		{
 			if (request.getMethod() == "GET" && request.getRequestTarget() == "/hello")
 			{
-				// env has to be created before CGI, because it is passed to the CGI
 				CGIHandler cgiInstance;
 				Environment env;
-				// env.RequestTargetToMetaVars(request.getRequestTarget());
-				env.setVar("QUERY_STRING", "Hello from C++ CGI!");
-
+				env.HTTPRequestToMetaVars(request, env);
       			response = cgiInstance.handleRequest(request);				
 			}
 			else
