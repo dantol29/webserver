@@ -13,7 +13,7 @@ Environment::Environment(const Environment &other) : metaVars(other.metaVars)
 Environment &Environment::operator=(const Environment &other)
 {
 	if (this != &other)
-	{							 // Protect against self-assignment
+	{							   // Protect against self-assignment
 		metaVars = other.metaVars; // Use std::map's assignment operator for a deep copy
 	}
 	return *this;
@@ -42,12 +42,13 @@ std::string Environment::getVar(const std::string &key) const
 	}
 }
 
-void Environment::printMetaVars() const {
-    for (std::map<std::string, std::string>::const_iterator it = metaVars.begin(); it != metaVars.end(); ++it) {
-        std::cout << it->first << " = " << it->second << std::endl;
-    }
+void Environment::printMetaVars() const
+{
+	for (std::map<std::string, std::string>::const_iterator it = metaVars.begin(); it != metaVars.end(); ++it)
+	{
+		std::cout << it->first << " = " << it->second << std::endl;
+	}
 }
-
 
 /**
  * @brief Generates a vector of C-style strings suitable for execve.
@@ -174,9 +175,6 @@ bool Environment::isAuthorityForm(const HTTPRequest &request)
 	return true;
 }
 
-// This function is used to set the CGI environment variables based on the request target.
-//  atm this is more of a debug function, especially as we implement only GET, POST and DELETE
-// or a draft for a future more advanced implementation
 void Environment::RequestTargetToMetaVars(HTTPRequest request, Environment &env)
 {
 	std::string requestTarget = request.getRequestTarget();
@@ -243,18 +241,19 @@ std::string Environment::formatQueryString(const std::multimap<std::string, std:
 	}
 	return queryString;
 }
-void Environment::subtractQueryFromPathInfo(std::string& pathInfo, const std::string& queryString) {
-	if (queryString.empty()) {
+void Environment::subtractQueryFromPathInfo(std::string &pathInfo, const std::string &queryString)
+{
+	if (queryString.empty())
+	{
 		return;
 	}
 
 	if (pathInfo.length() >= queryString.length() &&
-		pathInfo.compare(pathInfo.length() - queryString.length(), queryString.length(), queryString) == 0) {
+		pathInfo.compare(pathInfo.length() - queryString.length(), queryString.length(), queryString) == 0)
+	{
 		pathInfo.erase(pathInfo.length() - queryString.length());
 	}
-
 }
-
 
 // RFC 3875 for more information on CGI environment variables, or README_CGI_ENV.md
 void Environment::HTTPRequestToMetaVars(HTTPRequest request, Environment &env)
@@ -286,7 +285,7 @@ void Environment::HTTPRequestToMetaVars(HTTPRequest request, Environment &env)
 	env.setVar("PATH_INFO", pathInfo);
 	// most likely append the PATH_INFO to the root directory of the script OR MAYBE use a specific mapping logic
 	// std::string pathTranslated = translatePathToPhysical(scriptVirtualPath, pathInfo); // Implement this function
-	env.setVar("PATH_TRANSLATED", scriptName);//TEMPORARY
+	env.setVar("PATH_TRANSLATED", scriptName); // TEMPORARY
 	// SCRIPT_NAME = URI path to identify CGI script, not just the name of the script
 	env.setVar("SCRIPT_NAME", scriptName);
 	// The query string from the URL sent by the client

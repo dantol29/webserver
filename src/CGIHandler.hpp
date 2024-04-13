@@ -11,15 +11,15 @@
 
 class CGIHandler : public ARequestHandler
 {
-public:
+  public:
 	CGIHandler();
 	virtual ~CGIHandler();
 	HTTPResponse handleRequest(const HTTPRequest &request);
 	std::string handleCGIRequest(const HTTPRequest &request);
-	char* const* createArgvForExecve(const Environment& env);
+	char *const *createArgvForExecve(const Environment &env);
 	std::string executeCGI(const Environment &env);
 
-private:
+  private:
 	CGIHandler(const CGIHandler &other);
 	CGIHandler &operator=(const CGIHandler &other);
 };

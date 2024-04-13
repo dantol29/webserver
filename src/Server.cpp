@@ -145,17 +145,17 @@ void Server::handleConnection(Connection conn)
 
 		// if (router.isDynamicRequest(request))
 		// {
-			if (request.getMethod() == "GET" && request.getRequestTarget() == "/hello.cgi")
-			{
-				CGIHandler cgiInstance;
-				Environment env;
-				env.HTTPRequestToMetaVars(request, env);
-      			response = cgiInstance.handleRequest(request);				
-			}
-			else
-			{
-				std::cout << "Dynamic request not supported" << std::endl;
-			}
+		if (request.getMethod() == "GET" && request.getRequestTarget() == "/hello.cgi")
+		{
+			CGIHandler cgiInstance;
+			Environment env;
+			env.HTTPRequestToMetaVars(request, env);
+			response = cgiInstance.handleRequest(request);
+		}
+		else
+		{
+			std::cout << "Dynamic request not supported" << std::endl;
+		}
 		// }
 		// else
 		// {

@@ -44,12 +44,11 @@ void HTTPResponse::setHeader(const std::string &name, const std::string &value)
 
 void HTTPResponse::setBody(const std::string &body)
 {
-    _body = body;
-    std::ostringstream oss;
-    oss << body.size();
-    setHeader("Content-Length", oss.str());
+	_body = body;
+	std::ostringstream oss;
+	oss << body.size();
+	setHeader("Content-Length", oss.str());
 }
-
 
 std::string HTTPResponse::toString() const
 {

@@ -35,7 +35,6 @@ bool Router::isDynamicRequest(const HTTPRequest &request)
 		return true;
 	}
 	return false;
-
 }
 
 std::string Router::getFileExtension(const std::string &fileName)
