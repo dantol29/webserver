@@ -120,7 +120,7 @@ void Server::handleConnection(Connection conn)
 		}
 	}
 	// It should be double "\r\n" to separate the headers from the body
-	std::string httpRequestString = conn.getHeaders() + "\r\n\r\n" + conn.getBody();
+	std::string httpRequestString = conn.getHeaders() + conn.getBody();
 	std::cout << "Received HTTP request: " << std::endl << httpRequestString << std::endl;
 	HTTPRequest request(httpRequestString.c_str());
 	std::cout << request.getStatusCode() << std::endl;
