@@ -62,8 +62,7 @@ void Server::startPollEventLoop()
 						std::cout << "Client socket event" << std::endl;
 						// std::cout << "i != 0" << std::endl;
 						// TODO: only the index is actually needed
-						// handleConnection(_connections[i]);
-						handleConnection(_connections[i]);
+						handleConnection(_connections[i], i);
 						printFDsVector(_FDs);
 						print_connectionsVector(_connections);
 						// _FDs.erase(_FDs.begin() + i);
@@ -88,7 +87,7 @@ void Server::startPollEventLoop()
 	}
 }
 
-void Server::handleConnection(Connection conn)
+void Server::handleConnection(Connection conn, size_t &i)
 {
 	std::cout << "\nhandleConnection" << std::endl;
 	conn.printConnection();
@@ -98,7 +97,7 @@ void Server::handleConnection(Connection conn)
 	{
 		// closeClientConnection(clientFD, response);
 		// think if this should be also a method of the Connection class
-		closeClientConnection(conn.getPollFd().fd, conn.getResponse());
+		closeClientConnection(conn, i);
 		return;
 	}
 	std::string body;
@@ -107,7 +106,7 @@ void Server::handleConnection(Connection conn)
 	{
 		if (!conn.readChunkedBody())
 		{
-			closeClientConnection(conn.getPollFd().fd, conn.getResponse());
+			closeClientConnection(conn, i);
 			return;
 		}
 	}
@@ -115,7 +114,7 @@ void Server::handleConnection(Connection conn)
 	{
 		if (!conn.readBody())
 		{
-			closeClientConnection(conn.getPollFd().fd, conn.getResponse());
+			closeClientConnection(conn, i);
 			return;
 		}
 	}
@@ -186,6 +185,9 @@ void Server::handleConnection(Connection conn)
 
 	write(conn.getPollFd().fd, responseString.c_str(), responseString.size());
 	close(conn.getPollFd().fd);
+	_FDs.erase(_FDs.begin() + i);
+	_connections.erase(_connections.begin() + i);
+	--i;
 }
 
 /*** Private Methods ***/
@@ -357,15 +359,19 @@ void Server::AlertAdminAndTryToRecover()
 
 /* for handleConnection */
 
-void Server::closeClientConnection(int clientFD, HTTPResponse &response)
+void Server::closeClientConnection(Connection &conn, size_t &i)
 {
-	if (response.getStatusCode() != 0)
+	// if (response.getStatusCode() != 0)
+	if (conn.getResponse().getStatusCode() != 0)
 	{
-		std::string responseString = response.toString();
-		send(clientFD, responseString.c_str(), responseString.size(), 0);
+		std::string responseString = conn.getResponse().toString();
+		send(conn.getPollFd().fd, responseString.c_str(), responseString.size(), 0);
 	}
 	// TODO: should we close it with the Destructor of the Connection class?
-	close(clientFD);
+	close(conn.getPollFd().fd);
+	_FDs.erase(_FDs.begin() + i);
+	_connections.erase(_connections.begin() + i);
+	--i;
 }
 
 /* Others */

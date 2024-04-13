@@ -62,8 +62,7 @@ class Server
 	/* for startPollEventLoop */
 	void addServerSocketPollFdToVectors();
 	void acceptNewConnection();
-	// void handleConnection(int clientFD);
-	void handleConnection(Connection conn);
+	void handleConnection(Connection conn, size_t &i);
 	void handleServerSocketError();
 	void handleClientSocketError(int clientFD, size_t &i);
 	void handleSocketTimeoutIfAny();
@@ -71,7 +70,8 @@ class Server
 	void AlertAdminAndTryToRecover();
 
 	/* for handleConnection */
-	void closeClientConnection(int clientFD, HTTPResponse &response);
+	// void closeClientConnection(int clientFD, HTTPResponse &response);
+	void closeClientConnection(Connection &conn, size_t &i);
 
 	/* Not avaiable constructors */
 
