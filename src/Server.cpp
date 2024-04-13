@@ -172,7 +172,7 @@ void Server::handleConnection(Connection conn)
 		// 	}
 		// }
 	}
-	std::string responseString = response.toString();
+	std::string responseString = response.getBody();
 
 	write(conn.getPollFd().fd, responseString.c_str(), responseString.size());
 	close(conn.getPollFd().fd);

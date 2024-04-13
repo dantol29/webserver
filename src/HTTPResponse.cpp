@@ -47,7 +47,12 @@ void HTTPResponse::setBody(const std::string &body)
 	_body = body;
 	std::ostringstream oss;
 	oss << body.size();
-	setHeader("Content-Length", oss.str());
+	// setHeader("Content-Length", oss.str());
+}
+
+std::string HTTPResponse::getBody() const
+{
+	return _body;
 }
 
 std::string HTTPResponse::toString() const
