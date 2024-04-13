@@ -2,7 +2,12 @@
 #define ENVIRONMENT_HPP
 
 // #include "webserv.hpp"
+#ifndef ENVIRONMENT_HPP
+#define ENVIRONMENT_HPP
+
+// #include "webserv.hpp"
 #include "HTTPRequest.hpp"
+#include "webserv.hpp"
 #include "webserv.hpp"
 #include <iostream>
 #include <sys/wait.h>
@@ -37,6 +42,8 @@ class Environment
 	void HTTPRequestToMetaVars(HTTPRequest request, Environment &env);
 
 	// convert to execve format
+	std::vector<char *> getForExecve() const;
+	~Environment();
 	std::vector<char *> getForExecve() const;
 	~Environment();
 };

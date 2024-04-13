@@ -2,7 +2,7 @@
 #define WEBSERV_H
 
 #include <string>
-#include "../src/Environment.hpp"
+#include "Environment.hpp"
 #include <sstream>
 #include <cstdlib>
 #include <string.h>
@@ -10,19 +10,18 @@
 #include "HTTPRequest.hpp"
 #include "CGIHandler.hpp"
 
-//declared here because it is a template function
-//instead of to_string which is c++11, we use this function
+// declared here because it is a template function
+// instead of to_string which is c++11, we use this function
 template <typename T>
-std::string toString(const T& value) {
-    std::ostringstream oss;
-    oss << value;
-    return oss.str();
+std::string toString(const T &value)
+{
+	std::ostringstream oss;
+	oss << value;
+	return oss.str();
 }
 
-void *ft_memset(void *ptr, int value, size_t num);
 char *ft_strcpy(char *dest, const char *src);
-bool startsWith(const std::string& fullString, const std::string& starting);
-
+bool startsWith(const std::string &fullString, const std::string &starting);
 
 /**
  * Reads the entire content of an HTML file into a string.
@@ -32,7 +31,7 @@ bool startsWith(const std::string& fullString, const std::string& starting);
  * @param filePath The relative or absolute path to the HTML file.
  * @return A string containing the HTML content of the file, or an empty string if the file cannot be opened.
  */
-std::string readHtml(const std::string& filePath);
+std::string readHtml(const std::string &filePath);
 
 /**
  * Constructs an HTTP response containing the HTML content for the home page.
@@ -48,7 +47,7 @@ std::string handleHomePage();
  * It includes headers specifying that no content is being returned.
  * @return An HTTP 404 Not Found response string.
  */
-std::string handleNotFound(void);
+// std::string handleNotFound(void);
 
 /**
  * Reads an HTTP request from a socket, determines the type of request,
@@ -61,25 +60,25 @@ std::string handleNotFound(void);
 void handleConnection(int socket);
 
 // utils.cpp
-int		hexToInt(std::string hex);
-bool	isNumber(std::string line);;
+int hexToInt(std::string hex);
+bool isNumber(std::string line);
+;
 
 // HTTPRequestUtils.cpp
-bool		isOrigForm(std::string& requestTarget, int &queryStart);
-void		skipRequestLine(const char *request, unsigned int& i);
-void		skipHeader(const char *request, unsigned int& i);
-bool		hasMandatoryHeaders(HTTPRequest& obj);
-bool		hasCRLF(const char* request, unsigned int& i, int mode);
-std::string		extractValue(std::string& variables, int &i);
-std::string 	extractKey(std::string& variables, int &i, int startPos);
-std::string 	extractRequestTarget(const char *request, unsigned int& i);
-std::string		extractVariables(std::string& requestTarget, bool& isOriginForm);
-std::string 	extractProtocolVersion(const char *request, unsigned int& i);
-std::string		extractMethod(const char *request, unsigned int& i);
-std::string		extractHeaderKey(const char *request, unsigned int& i);
-std::string		extractHeaderValue(const char *request, unsigned int& i);
-unsigned int	extractLineLength(const char *request, unsigned int& i);
-std::string		extractLine(const char *request, unsigned int& i, const unsigned int& size);
-
+bool isOrigForm(std::string &requestTarget, int &queryStart);
+void skipRequestLine(const char *request, unsigned int &i);
+void skipHeader(const char *request, unsigned int &i);
+bool hasMandatoryHeaders(HTTPRequest &obj);
+bool hasCRLF(const char *request, unsigned int &i, int mode);
+std::string extractValue(std::string &variables, int &i);
+std::string extractKey(std::string &variables, int &i, int startPos);
+std::string extractRequestTarget(const char *request, unsigned int &i);
+std::string extractVariables(std::string &requestTarget, bool &isOriginForm);
+std::string extractProtocolVersion(const char *request, unsigned int &i);
+std::string extractMethod(const char *request, unsigned int &i);
+std::string extractHeaderKey(const char *request, unsigned int &i);
+std::string extractHeaderValue(const char *request, unsigned int &i);
+unsigned int extractLineLength(const char *request, unsigned int &i);
+std::string extractLine(const char *request, unsigned int &i, const unsigned int &size);
 
 #endif
