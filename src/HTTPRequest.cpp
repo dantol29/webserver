@@ -1,45 +1,49 @@
 #include "HTTPRequest.hpp"
 #include "webserv.hpp"
 
-HTTPRequest::HTTPRequest() : _statusCode(200), _isChunked(false), _method(""), \
-_requestTarget(""), _protocolVersion(""){
-
+HTTPRequest::HTTPRequest() : _statusCode(200), _isChunked(false), _method(""), _requestTarget(""), _protocolVersion("")
+{
 }
 
-HTTPRequest::HTTPRequest(const HTTPRequest& obj){
+HTTPRequest::HTTPRequest(const HTTPRequest &obj)
+{
 	_statusCode = obj._statusCode;
 	_isChunked = obj._isChunked;
 	_method = obj._method;
 	_requestTarget = obj._requestTarget;
 	_protocolVersion = obj._protocolVersion;
 	_body = obj._body;
-	_headers  = obj._headers;
+	_headers = obj._headers;
 	_queryString = obj._queryString;
 }
 
-HTTPRequest& HTTPRequest::operator=(const HTTPRequest& obj){
-	if (this != &obj){
+HTTPRequest &HTTPRequest::operator=(const HTTPRequest &obj)
+{
+	if (this != &obj)
+	{
 		_statusCode = obj._statusCode;
 		_isChunked = obj._isChunked;
 		_method = obj._method;
 		_requestTarget = obj._requestTarget;
 		_protocolVersion = obj._protocolVersion;
 		_body = obj._body;
-		_headers  = obj._headers;
+		_headers = obj._headers;
 		_queryString = obj._queryString;
 	}
 	return (*this);
 }
 
-HTTPRequest::~HTTPRequest(){
-
+HTTPRequest::~HTTPRequest()
+{
 }
 
-HTTPRequest::HTTPRequest(char *request){
+HTTPRequest::HTTPRequest(const char *request)
+{
 	_statusCode = 200;
 	if (strlen(request) < 10)
 		ft_error(400, "Invalid request-line");
-	else{
+	else
+	{
 		parseRequestLine(request);
 		if (_statusCode == 200)
 			parseHeaders(request);
@@ -48,68 +52,93 @@ HTTPRequest::HTTPRequest(char *request){
 	}
 }
 
-std::string HTTPRequest::getMethod() const{
+std::string HTTPRequest::getMethod() const
+{
 	return (_method);
 }
 
-std::string HTTPRequest::getProtocolVersion() const{
+std::string HTTPRequest::getProtocolVersion() const
+{
 	return (_protocolVersion);
 }
 
-std::string HTTPRequest::getRequestTarget() const{
+std::string HTTPRequest::getRequestTarget() const
+{
 	return (_requestTarget);
 }
 
-int	HTTPRequest::getStatusCode() const{
+int HTTPRequest::getStatusCode() const
+{
 	return (_statusCode);
 }
 
-bool	HTTPRequest::getIsChunked() const{
+bool HTTPRequest::getIsChunked() const
+{
 	return (_isChunked);
 }
 
-std::multimap<std::string, std::string>	HTTPRequest::getQueryString() const{
+std::string HTTPRequest::getHost() const
+{
+	std::multimap<std::string, std::string>::const_iterator it = _headers.find("Host");
+	if (it != _headers.end())
+	{
+		return it->second;
+	}
+	return "";
+}
+
+std::multimap<std::string, std::string> HTTPRequest::getQueryString() const
+{
 	return (_queryString);
 }
 
-std::multimap<std::string, std::string>	HTTPRequest::getHeaders() const{
+std::multimap<std::string, std::string> HTTPRequest::getHeaders() const
+{
 	return (_headers);
 }
 
-std::pair<std::string, std::string> HTTPRequest::getHeaders(std::string key) const{
+std::pair<std::string, std::string> HTTPRequest::getHeaders(std::string key) const
+{
 	std::multimap<std::string, std::string>::const_iterator it;
 
-	for (it = _headers.begin(); it != _headers.end(); ++it){
+	for (it = _headers.begin(); it != _headers.end(); ++it)
+	{
 		if (it->first == key)
 			return (std::make_pair(it->first, it->second));
 	}
 	return (std::make_pair("", ""));
 }
 
-bool HTTPRequest::getIsChunkFinish() const{
+bool HTTPRequest::getIsChunkFinish() const
+{
 	return (_isChunkFinish);
 }
 
-std::vector<std::string> HTTPRequest::getBody() const{
+std::vector<std::string> HTTPRequest::getBody() const
+{
 	return (_body);
 }
 
-std::string	HTTPRequest::getErrorMessage() const{
+std::string HTTPRequest::getErrorMessage() const
+{
 	return (_errorMessage);
 }
 
-void	HTTPRequest::setIsChunked(bool n){
+void HTTPRequest::setIsChunked(bool n)
+{
 	_isChunked = n;
 }
 
-bool	HTTPRequest::saveVariables(std::string& variables)
+bool HTTPRequest::saveVariables(std::string &variables)
 {
-	int	startPos = 0;
-	std::string	key;
-	std::string	value;
+	int startPos = 0;
+	std::string key;
+	std::string value;
 
-	for (int i = 0; i < (int)variables.length(); i++){
-		if (variables[i] == '='){
+	for (int i = 0; i < (int)variables.length(); i++)
+	{
+		if (variables[i] == '=')
+		{
 			key = extractKey(variables, i, startPos);
 			if (key.empty())
 				return (false);
@@ -123,17 +152,18 @@ bool	HTTPRequest::saveVariables(std::string& variables)
 	return (true);
 }
 
-int	HTTPRequest::ft_error(int statusCode, std::string message){
+int HTTPRequest::ft_error(int statusCode, std::string message)
+{
 	_errorMessage = message;
 	_statusCode = statusCode;
 	return (statusCode);
 }
 
-int	HTTPRequest::parseRequestLine(const char *request)
+int HTTPRequest::parseRequestLine(const char *request)
 {
-	unsigned int	i = 0;
-	bool			isOriginForm = false;
-	std::string		variables;
+	unsigned int i = 0;
+	bool isOriginForm = false;
+	std::string variables;
 
 	_method = extractMethod(request, i);
 	if (_method.empty())
@@ -156,22 +186,24 @@ int	HTTPRequest::parseRequestLine(const char *request)
 		return (ft_error(400, "Invalid protocol"));
 	if (!hasCRLF(request, i, 0))
 		return (ft_error(400, "Invalid CRLF for request-line"));
-	return (200); 
+	return (200);
 }
 
-int	HTTPRequest::parseChunkedBody(const char *request)
+int HTTPRequest::parseChunkedBody(const char *request)
 {
-	unsigned int	i = 0;
-	int				size = 0;
-	std::string		line;
+	unsigned int i = 0;
+	int size = 0;
+	std::string line;
 
 	skipHeader(request, i);
-	while (request[i]){
+	while (request[i])
+	{
 		size = extractLineLength(request, i);
-		if (size <= 0){
+		if (size <= 0)
+		{
 			if (size == -1)
 				return (ft_error(400, "Invalid body"));
-			break ;
+			break;
 		}
 		line = extractLine(request, i, size);
 		if (line.empty())
@@ -206,13 +238,14 @@ void	HTTPRequest::makeHeadersLowCase()
 
 int HTTPRequest::parseHeaders(const char *request)
 {
-	unsigned int	i;
-	std::string		key;
-	std::string		value;
+	unsigned int i;
+	std::string key;
+	std::string value;
 
 	i = 0;
 	skipRequestLine(request, i);
-	while (request[i]){
+	while (request[i])
+	{
 		key = extractHeaderKey(request, i);
 		if (key.empty())
 			return (ft_error(400, "Invalid header key"));
@@ -225,30 +258,33 @@ int HTTPRequest::parseHeaders(const char *request)
 		if (!hasCRLF(request, i, 0))
 			return (ft_error(400, "No CRLF after header"));
 		_headers.insert(std::make_pair(key, value));
-		i += 2; // skip '\r' and '\n'
+		i += 2;						// skip '\r' and '\n'
 		if (hasCRLF(request, i, 0)) // end of header section
-			break ;
+			break;
 	}
 	if (!hasCRLF(request, i, 0))
 		return (ft_error(400, "No CRLF after header"));
 	makeHeadersLowCase();
 	if (!hasMandatoryHeaders(*this))
 		return (ft_error(400, "Invalid headers"));
-	if (_method == "GET" && request[i + 2]) //has something after headers
+	if (_method == "GET" && request[i + 2]) // has something after headers
 		return (ft_error(400, "Invalid headers"));
 	return (200);
 }
 
-int	HTTPRequest::parseBody(const char *request){
-	unsigned int	end = 400;
-	unsigned int	i = 0;
-	unsigned int	start = 0;
-	std::string		string_request(request);
+int HTTPRequest::parseBody(const char *request)
+{
+	unsigned int end = 400;
+	unsigned int i = 0;
+	unsigned int start = 0;
+	std::string string_request(request);
 
 	skipHeader(request, i);
 	start = i;
-	while (request[i] && end != 200){
-		if (hasCRLF(request, i, 0)){
+	while (request[i] && end != 200)
+	{
+		if (hasCRLF(request, i, 0))
+		{
 			if (hasCRLF(request, i, 1))
 				end = 200;
 			_body.push_back(string_request.substr(start, i - start));
