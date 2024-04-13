@@ -1,7 +1,10 @@
 #include <iostream>
-#include <cstdlib> // For getenv() and system()
+#include <cstdlib>	// For getenv()
+#include <unistd.h> // For environ
 
 using namespace std;
+
+extern char **environ; // Declare the external environ variable
 
 int main()
 {
@@ -16,15 +19,11 @@ int main()
 	cout << "<body>\n";
 	cout << "<h1>Hello from C++ CGI!</h1>\n";
 
-	// Getting the QUERY_STRING environment variable
-	char *query_string = getenv("QUERY_STRING");
-	if (query_string)
+	// Print all environment variables
+	cout << "<h2>Environment Variables</h2>\n";
+	for (char **env = environ; *env != nullptr; ++env)
 	{
-		cout << "<p>Query String: " << query_string << "</p>\n";
-	}
-	else
-	{
-		cout << "<p>No query string provided.</p>\n";
+		cout << "<p>" << *env << "</p>\n";
 	}
 
 	// End of the HTML content
@@ -33,6 +32,3 @@ int main()
 
 	return 0;
 }
-
-//    $> c++ hello.cpp -o hello.cgi
-//    $> chmod +x hello.cgi

@@ -10,14 +10,15 @@ CGIHandler::~CGIHandler()
 {
 }
 
-CGIHandler& CGIHandler::operator=(const CGIHandler &other) {
-    if (this != &other) { // Protect against self-assignment
-        ARequestHandler::operator=(other); // Call the base class assignment operator
-        // Copy or assign other members of CGIHandler if necessary
-    }
-    return *this;
+CGIHandler &CGIHandler::operator=(const CGIHandler &other)
+{
+	if (this != &other)
+	{									   // Protect against self-assignment
+		ARequestHandler::operator=(other); // Call the base class assignment operator
+										   // Copy or assign other members of CGIHandler if necessary
+	}
+	return *this;
 }
-
 
 HTTPResponse CGIHandler::handleRequest(const HTTPRequest &request)
 {
@@ -47,34 +48,15 @@ std::string CGIHandler::handleCGIRequest(const HTTPRequest &request)
 //=> what is passed as command-line arguments ? path to the script + the path to the file to process ?
 char *const *CGIHandler::createArgvForExecve(const Environment &env)
 {
-	// std::vector<const char*> argv;
-
-	// std::string scriptName = env.getVar("SCRIPT_NAME");
-	// std::string pathTranslated = env.getVar("PATH_TRANSLATED");
-	// std::string pathToFile = pathTranslated + scriptName;
-	// // std::string queryString = env.getVar("QUERY_STRING");
-
-	// argv.push_back(scriptName.c_str());
-	// argv.push_back(pathTranslated.c_str());
-	// // argv.push_back(queryString.c_str());
-	// argv.push_back(NULL);
-
-	// char* const* argvArray = new char*[argv.size()];
-	// for (size_t i = 0; i < argv.size(); ++i) {
-	//     size_t len = strlen(argv[i]);
-	//     argvArray[i] = new char[len + 1];
-	//     ft_strcpy(argvArray[i], argv[i]);
-	// }
-
-	// UPDATE: for now, we will just hardcode the path to the script
-	(void)env;
 	char **argv = new char *[2];
 
-	std::string command = "cgi-bin/hello.cgi";
-	argv[0] = new char[command.size() + 1];
-	ft_strcpy(argv[0], command.c_str());
+	std::string scriptName = env.getVar("SCRIPT_NAME");
+	std::string pathTranslated = env.getVar("PATH_TRANSLATED");
+	std::string scriptPath = pathTranslated + scriptName;
 
-	// Null terminate the array
+	argv[0] = new char[scriptPath.length() + 1]; // +1 for the null terminator
+	ft_strcpy(argv[0], scriptPath.c_str());
+
 	argv[1] = NULL;
 
 	return argv;
@@ -84,8 +66,6 @@ std::string CGIHandler::executeCGI(const Environment &env)
 {
 
 	char *const *argv = createArgvForExecve(env);
-	std::cout << "argv[0]: " << argv[0] << std::endl;
-	// std::cout << "argv[1]: " << argv[1] << std::endl;
 
 	int pipeFD[2];
 	if (pipe(pipeFD) == -1)

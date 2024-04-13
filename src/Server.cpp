@@ -145,7 +145,8 @@ void Server::handleConnection(Connection conn)
 
 		// if (router.isDynamicRequest(request))
 		// {
-		if (request.getMethod() == "GET" && request.getRequestTarget() == "/hello.cgi")
+		// if (request.getMethod() == "GET" && request.getRequestTarget() == "/hello.cgi")
+		if (request.getMethod() == "GET")
 		{
 			CGIHandler cgiInstance;
 			Environment env;
