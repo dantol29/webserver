@@ -10,16 +10,14 @@ CGIHandler::~CGIHandler()
 {
 }
 
-CGIHandler::CGIHandler(const CGIHandler &other)
-{
-	(void)other;
+CGIHandler& CGIHandler::operator=(const CGIHandler &other) {
+    if (this != &other) { // Protect against self-assignment
+        ARequestHandler::operator=(other); // Call the base class assignment operator
+        // Copy or assign other members of CGIHandler if necessary
+    }
+    return *this;
 }
 
-CGIHandler &CGIHandler::operator=(const CGIHandler &other)
-{
-	(void)other;
-	return *this;
-}
 
 HTTPResponse CGIHandler::handleRequest(const HTTPRequest &request)
 {
