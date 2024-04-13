@@ -53,6 +53,7 @@ char *const *CGIHandler::createArgvForExecve(const Environment &env)
 	std::string scriptName = env.getVar("SCRIPT_NAME");
 	std::string pathTranslated = env.getVar("PATH_TRANSLATED");
 	std::string scriptPath = pathTranslated + scriptName;
+	std::cout << std::endl << "\033[31mscriptPath: " << scriptPath << "\033[0m" << std::endl;
 
 	argv[0] = new char[scriptPath.length() + 1]; // +1 for the null terminator
 	ft_strcpy(argv[0], scriptPath.c_str());
