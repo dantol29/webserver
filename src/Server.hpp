@@ -35,6 +35,7 @@ class Server
 	std::string getWebRoot() const;
 	void setWebRoot(const std::string &webRoot);
 	std::string getConfigFilePath() const;
+	void checkSocketOptions();
 
   private:
 	/* Private Attributes */
@@ -59,7 +60,7 @@ class Server
 	void bindToPort(int port);
 	void listen();
 	/* for startPollEventLoop */
-	void addServerSocketPollFdToFDs();
+	void addServerSocketPollFdToVectors();
 	void acceptNewConnection();
 	// void handleConnection(int clientFD);
 	void handleConnection(Connection conn);

@@ -22,37 +22,61 @@ void Server::startListening()
 
 	createServerSocket();
 	setReuseAddrAndPort();
+	checkSocketOptions();
 	bindToPort(_port);
 	listen();
 }
 
 void Server::startPollEventLoop()
 {
-	addServerSocketPollFdToFDs();
+	addServerSocketPollFdToVectors();
 	while (1)
 	{
 		std::cout << "++++++++++++++ Waiting for new connection +++++++++++++++" << std::endl;
+		std::cout << "++++++++++++++ Or Polling +++++++++++++++" << std::endl;
+		std::cout << "printFDsVector(_FDs); - before polling" << std::endl;
+		printFDsVector(_FDs);
 		int ret = poll(_FDs.data(), _FDs.size(), -1);
+		std::cout << "printFDsVector(_FDs); - after polling" << std::endl;
+		printFDsVector(_FDs);
+		print_connectionsVector(_connections);
+		std::cout << "poll() returned: " << ret << std::endl;
 		if (ret > 0)
 		{
 			for (size_t i = 0; i < _FDs.size(); i++)
 			{
+				std::cout << "i: " << i << std::endl;
 				if (_FDs[i].revents & POLLIN)
 				{
+					std::cout << "POLLIN" << std::endl;
 					if (i == 0)
+					{
+						std::cout << "Server socket event" << std::endl;
+						std::cout << "i == 0" << std::endl;
+
 						acceptNewConnection();
+						printFDsVector(_FDs);
+						print_connectionsVector(_connections);
+					}
 					else
 					{
+						std::cout << "Client socket event" << std::endl;
+						std::cout << "i != 0" << std::endl;
 						// TODO: only the index is actually needed
+						// handleConnection(_connections[i]);
 						handleConnection(_connections[i]);
-						_FDs.erase(_FDs.begin() + i);
-						--i;
+						printFDsVector(_FDs);
+						print_connectionsVector(_connections);
+						// _FDs.erase(_FDs.begin() + i);
+						// --i;
 					}
 				}
 				else if (_FDs[i].revents & (POLLERR | POLLHUP | POLLNVAL))
 				{
 					if (i == 0)
+					{
 						handleServerSocketError();
+					}
 					else
 						handleClientSocketError(_FDs[i].fd, i);
 				}
@@ -67,6 +91,8 @@ void Server::startPollEventLoop()
 
 void Server::handleConnection(Connection conn)
 {
+	std::cout << "\nhandleConnection" << std::endl;
+	conn.printConnection();
 	// std::string headers;
 	// HTTPResponse response;
 	if (!conn.readHeaders())
@@ -183,6 +209,8 @@ void Server::createServerSocket()
 {
 	if ((_serverFD = socket(AF_INET, SOCK_STREAM, 0)) == 0)
 		perrorAndExit("Failed to create server socket");
+	std::cout << "Server socket created" << std::endl;
+	std::cout << "Server socket file descriptor: " << _serverFD << std::endl;
 }
 
 void Server::setReuseAddrAndPort()
@@ -192,6 +220,7 @@ void Server::setReuseAddrAndPort()
 		perror("setsockopt SO_REUSEADDR: Protocol not available, continuing without SO_REUSEADDR");
 	if (setsockopt(_serverFD, SOL_SOCKET, SO_REUSEPORT, &opt, sizeof(opt)))
 		perror("setsockopt SO_REUSEPORT: Protocol not available, continuing without SO_REUSEPORT");
+	std::cout << "SO_REUSEADDR and SO_REUSEPORT set" << std::endl;
 }
 
 void Server::bindToPort(int port)
@@ -203,23 +232,31 @@ void Server::bindToPort(int port)
 
 	if (bind(_serverFD, (struct sockaddr *)&_serverAddr, sizeof(_serverAddr)) < 0)
 		perrorAndExit("In bind");
+	std::cout << "Server socket bound to port " << port << std::endl;
+	std::cout << "Server socket address: " << inet_ntoa(_serverAddr.sin_addr) << std::endl;
+	std::cout << "Server socket port: " << ntohs(_serverAddr.sin_port) << std::endl;
 }
 
 void Server::listen()
 {
 	if (::listen(_serverFD, _maxClients) < 0)
 		perrorAndExit("In listen");
+	std::cout << "Server socket listening on port " << ntohs(_serverAddr.sin_port) << std::endl;
 }
 
 /* startPollEventsLoop */
 
-void Server::addServerSocketPollFdToFDs()
+void Server::addServerSocketPollFdToVectors()
 {
+	// In this function we also create the struct pollfd for the server socket
 	struct pollfd serverPollFd;
+	memset(&serverPollFd, 0, sizeof(serverPollFd));
 	serverPollFd.fd = _serverFD;
 	serverPollFd.events = POLLIN;
 	serverPollFd.revents = 0;
 	_FDs.push_back(serverPollFd);
+	Connection serverConnection(serverPollFd, *this);
+	_connections.push_back(serverConnection);
 }
 
 void Server::acceptNewConnection()
@@ -254,11 +291,19 @@ void Server::acceptNewConnection()
 
 void Server::handleServerSocketError()
 {
+	static int errorCounter = 0;
 	perror("poll server socket error");
+	if (errorCounter > 5)
+	{
+		std::cerr << "Too many errors on server socket. Exiting." << std::endl;
+		exit(EXIT_FAILURE);
+	}
+	++errorCounter;
 }
 
 void Server::handleClientSocketError(int clientFD, size_t &i)
 {
+	std::cout << "handleClientSocketError" << std::endl;
 	close(clientFD);
 	/* start together */
 	_FDs.erase(_FDs.begin() + i);
@@ -342,4 +387,28 @@ void Server::setWebRoot(const std::string &webRoot)
 std::string Server::getConfigFilePath() const
 {
 	return _configFilePath;
+}
+
+void Server::checkSocketOptions()
+{
+	int optval;
+	socklen_t optlen = sizeof(optval);
+
+	if (getsockopt(_serverFD, SOL_SOCKET, SO_REUSEADDR, &optval, &optlen) < 0)
+	{
+		perror("getsockopt SO_REUSEADDR failed");
+	}
+	else
+	{
+		std::cout << "SO_REUSEADDR is " << (optval ? "enabled" : "disabled") << std::endl;
+	}
+
+	if (getsockopt(_serverFD, SOL_SOCKET, SO_REUSEPORT, &optval, &optlen) < 0)
+	{
+		perror("getsockopt SO_REUSEPORT failed");
+	}
+	else
+	{
+		std::cout << "SO_REUSEPORT is " << (optval ? "enabled" : "disabled") << std::endl;
+	}
 }

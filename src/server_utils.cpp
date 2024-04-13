@@ -1,6 +1,7 @@
 #include "server_utils.hpp"
 #include <sstream>	// std::istringstream
 #include <iostream> // std::cerr
+#include "Connection.hpp"
 
 void perrorAndExit(const char *msg)
 {
@@ -69,4 +70,28 @@ void printVariablesHeadersBody(const HTTPRequest &obj)
 	std::cout << "Body: =>" << std::endl;
 	for (size_t i = 0; i < c.size(); ++i)
 		std::cout << c[i] << std::endl;
+}
+
+void printFDsVector(const std::vector<pollfd> &fds)
+{
+	std::cout << "printFDsVector" << std::endl;
+	std::cout << "fds.size(): " << fds.size() << std::endl;
+	std::cout << "_FDs: =>" << std::endl;
+	for (size_t i = 0; i < fds.size(); ++i)
+	{
+		std::cout << "fd: " << fds[i].fd << ", events: " << fds[i].events << ", revents: " << fds[i].revents
+				  << std::endl;
+	}
+}
+
+void print_connectionsVector(const std::vector<Connection> &connections)
+{
+	std::cout << "print_connectionsVector" << std::endl;
+	std::cout << "connections.size(): " << connections.size() << std::endl;
+	std::cout << "connections: =>" << std::endl;
+	for (size_t i = 0; i < connections.size(); ++i)
+	{
+		std::cout << "fd: " << connections[i].getPollFd().fd << ", headers: " << connections[i].getHeaders()
+				  << ", body: " << connections[i].getBody() << std::endl;
+	}
 }

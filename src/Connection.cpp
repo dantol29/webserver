@@ -1,12 +1,11 @@
 #include "Connection.hpp"
 
-Connection::Connection(struct pollfd pollFd, Server &server)
+Connection::Connection(struct pollfd &pollFd, Server &server)
 	: _headersComplete(false), _headersTotalBytesRead(0), _bodyComplete(false), _bodyIsChunked(false)
 {
 	_pollFd.fd = pollFd.fd;
-	_pollFd.events = POLLIN | POLLOUT;
+	_pollFd.events = POLLIN;
 	_pollFd.revents = 0;
-	memset(&_pollFd, 0, sizeof(_pollFd));
 	// TODO: should I initialize the _response here?
 	_response = HTTPResponse();
 	// TODO: should I initialize the _headers, _body, and _chunkData to empty strings?
@@ -18,6 +17,10 @@ Connection::Connection(struct pollfd pollFd, Server &server)
 	_bodyComplete = false;
 	_bodyIsChunked = false;
 	_clientMaxHeadersSize = server.getClientMaxHeadersSize();
+	std::cout << "Connection created" << std::endl;
+	std::cout << "pollFd.fd: " << _pollFd.fd << std::endl;
+	std::cout << "pollFd.events: " << _pollFd.events << std::endl;
+	std::cout << "pollFd.revents: " << _pollFd.revents << std::endl;
 }
 
 Connection::Connection(const Connection &other)
@@ -31,6 +34,8 @@ Connection::Connection(const Connection &other)
 	_headersTotalBytesRead = other._headersTotalBytesRead;
 	_bodyIsChunked = other._bodyIsChunked;
 	_chunkData = other._chunkData;
+
+	std::cout << "Connection object copied" << std::endl;
 }
 
 Connection &Connection::operator=(const Connection &other)
@@ -47,17 +52,22 @@ Connection &Connection::operator=(const Connection &other)
 		_bodyIsChunked = other._bodyIsChunked;
 		_chunkData = other._chunkData;
 	}
+	std::cout << "Connection object assigned" << std::endl;
 	return *this;
 }
 
 Connection::~Connection()
 {
+	std::cout << "Connection object destroyed" << std::endl;
 	// Should I close the file descriptor here?
-	if (_pollFd.fd != -1)
-	{
-		close(_pollFd.fd);
-		_pollFd.fd = -1; // Invalidate the file descriptor to prevent double closing
-	}
+	// This was causing errors, cause when exiting from scope of the function where the Connection object was creted it
+	// was closing the file descriptor. When we push back the Connection object in the vector of connections we make a
+	// copy of the object, so the file descriptor was closed in the original object and the copy was left with an
+	// invalid file descriptor. if (_pollFd.fd != -1)
+	// {
+	// 	close(_pollFd.fd);
+	// 	_pollFd.fd = -1; // Invalidate the file descriptor to prevent double closing
+	// }
 }
 
 struct pollfd Connection::getPollFd() const
@@ -132,6 +142,7 @@ void Connection::setBodyIsChunked(bool bodyIsChunked)
 
 bool Connection::readHeaders()
 {
+	std::cout << "\nreadHeaders" << std::endl;
 	// Both are in the Connection object now
 	// size_t totalRead = 0;
 	// bool headersComplete = false;
@@ -141,7 +152,9 @@ bool Connection::readHeaders()
 		// We reinitialize it at each iteration to have a clean buffer
 		char buffer[BUFFER_SIZE] = {0};
 		// we could do recv non blocking with MSG_DONTWAIT but we will keep it simple for now
+		std::cout << "_pollFd.fd: " << _pollFd.fd << std::endl;
 		ssize_t bytesRead = recv(_pollFd.fd, buffer, BUFFER_SIZE, 0);
+		std::cout << "bytesRead: " << bytesRead << std::endl;
 		if (bytesRead > 0)
 		{
 			_headers.append(buffer, bytesRead);
@@ -334,4 +347,18 @@ bool Connection::isChunked()
 		return true;
 	}
 	return false;
+}
+
+/* Debugging */
+
+void Connection::printConnection() const
+{
+	std::cout << "\nprintConnection" << std::endl;
+	std::cout << "Connection: " << _pollFd.fd << std::endl;
+	std::cout << "Headers: " << _headers << std::endl;
+	// std::cout << "Headers complete: " << _headersComplete << std::endl;
+	// std::cout << "Body: " << _body << std::endl;
+	// std::cout << "Body complete: " << _bodyComplete << std::endl;
+	// std::cout << "Body is chunked: " << _bodyIsChunked << std::endl;
+	// std::cout << "Chunk data: " << _chunkData << std::endl;
 }

@@ -12,8 +12,12 @@
 #include "webserv.hpp"
 #include "HTTPRequest.hpp"
 #include "HTTPResponse.hpp"
+#include "Connection.hpp"
 #include "Environment.hpp"
 #include "Router.hpp"
+#include <poll.h>
+
+class Connection; // Forward declaration for circular dependency
 
 const int BUFFER_SIZE = 1024;
 const size_t CLIENT_MAX_HEADERS_SIZE = 8192; // 8KB - This is the limit of the header size also in NGINX
@@ -28,5 +32,7 @@ size_t getContentLength(const std::string &headers);
 void printVariablesHeadersBody(const HTTPRequest &obj);
 void perrorAndExit(const char *msg);
 char customToLower(char c);
+void printFDsVector(const std::vector<pollfd> &fds);
+void print_connectionsVector(const std::vector<Connection> &connections);
 
 #endif // SERVER_UTILS_HPP

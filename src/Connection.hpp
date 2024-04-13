@@ -28,7 +28,7 @@ class Connection
 	// Additional client state can be managed here
 
   public:
-	Connection(struct pollfd pollFd, Server &server);
+	Connection(struct pollfd &pollFd, Server &server);
 	Connection(const Connection &other);			// Copy constructor
 	Connection &operator=(const Connection &other); // Copy assignment operator
 	~Connection();
@@ -56,6 +56,8 @@ class Connection
 	void setBody(const std::string &body);
 	void setChunkData(const std::string &chunkData);
 	// We will not provide the setter for HTTPResponse as it should be managed by the HTTPResponse class
+	/* Debugging */
+	void printConnection() const;
 };
 
 #endif
