@@ -77,6 +77,16 @@ bool HTTPRequest::getIsChunked() const
 	return (_isChunked);
 }
 
+std::string HTTPRequest::getHost() const
+{
+	std::multimap<std::string, std::string>::const_iterator it = _headers.find("Host");
+	if (it != _headers.end())
+	{
+		return it->second;
+	}
+	return "";
+}
+
 std::multimap<std::string, std::string> HTTPRequest::getQueryString() const
 {
 	return (_queryString);

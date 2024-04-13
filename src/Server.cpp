@@ -136,7 +136,7 @@ void Server::handleConnection(Connection conn)
 	HTTPResponse response;
 	// Check if this is the right way to do it
 	response = conn.getResponse();
-	if (!router.pathExists(request, response, request.getRequestTarget()))
+	if (!router.pathExists(request, response))
 	{
 		std::cout << "Path does not exist" << std::endl;
 		StaticContentHandler staticHandler;

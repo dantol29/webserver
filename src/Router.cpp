@@ -78,7 +78,9 @@ void Router::splitTarget(const std::string &target)
 bool Router::pathExists(HTTPRequest &request, HTTPResponse &response)
 {
 
-	std::string host = request.std::string path = request.getRequestTarget();
+	std::string host = request.getHost();
+	std::cout << "Host: " << host << std::endl;
+	std::string path = request.getRequestTarget();
 	std::cout << "Path: " << path << std::endl;
 	struct stat buffer;
 	if (stat(path.c_str(), &buffer) != 0)

@@ -23,6 +23,7 @@ class HTTPRequest
 	~HTTPRequest();
 	HTTPRequest(const char *request);
 	std::string getMethod() const;
+	std::string getHost() const;
 	int getStatusCode() const;
 	std::string getRequestTarget() const;
 	std::string getProtocolVersion() const;
