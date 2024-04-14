@@ -36,7 +36,7 @@ std::string CGIHandler::handleCGIRequest(const HTTPRequest &request)
 
 	// load the meta vars from the request to env
 	env.HTTPRequestToMetaVars(request, env);
-	env.printMetaVars();
+	std::cout << env;
 
 	std::string cgiOutput = executeCGI(env);
 
