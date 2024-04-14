@@ -11,16 +11,23 @@ Router::~Router()
 
 HTTPResponse Router::routeRequest(const HTTPRequest &request)
 {
-	HTTPResponse response;
-	if (isDynamicRequest(request))
+	if (isCGI(request))
 	{
-		response = _cgiHandler.handleRequest(request);
+		CGIHandler cgiInstance;
+		Environment env;
+		env.HTTPRequestToMetaVars(request, env);
+		return cgiInstance.handleRequest(request); // this returns the string ready to go
+	}
+	else if (isDynamicRequest(request))
+	{
+		std::cout << "\033[31mwe do not handle dynamic requests at the moment\033[0m" << std::endl;
 	}
 	else
 	{
-		response = _staticContentHandler.handleRequest(request);
+		StaticContentHandler staticContentInstance;
+		return staticContentInstance.handleRequest(request);
 	}
-	return response;
+	return HTTPResponse(); // check if this return is correct
 }
 
 bool Router::isDynamicRequest(const HTTPRequest &request)
@@ -29,8 +36,8 @@ bool Router::isDynamicRequest(const HTTPRequest &request)
 	{
 		return true;
 	}
-	// Check against config file defined value
 	std::string fileExtension = getFileExtension(request.getRequestTarget());
+	// Check against config file defined value
 	if (fileExtension == "cgi" || fileExtension == "php" || fileExtension == "py" || fileExtension == "pl")
 	{
 		return true;
@@ -46,6 +53,13 @@ std::string Router::getFileExtension(const std::string &fileName)
 		return ""; // No file extension
 	}
 	return fileName.substr(dotIndex + 1);
+}
+
+// works as long as GI scripts are identified by file extensions,
+bool Router::isCGI(const HTTPRequest &request)
+{
+	std::string fileExtension = getFileExtension(request.getRequestTarget());
+	return (fileExtension == "cgi" || fileExtension == "pl" || fileExtension == "py" || fileExtension == "php");
 }
 
 void Router::splitTarget(const std::string &target)

@@ -31,6 +31,7 @@ class Router
 	CGIHandler _cgiHandler;
 
 	std::string getFileExtension(const std::string &fileName);
+	bool isCGI(const HTTPRequest &request);
 	resourcePath _path;
 };
 

@@ -12,11 +12,11 @@ StaticContentHandler::~StaticContentHandler()
 {
 }
 
-std::string StaticContentHandler::handleCGIRequest(const HTTPRequest &request) {
-(void)(request);
+std::string StaticContentHandler::handleCGIRequest(const HTTPRequest &request)
+{
+	(void)(request);
 	return "CGI requests are not supported by this handler.";
 }
-
 
 bool endsWith(const std::string &str, const std::string &suffix)
 {
@@ -58,18 +58,23 @@ HTTPResponse StaticContentHandler::handleRequest(const HTTPRequest &request)
 	std::ifstream file(path.c_str());
 	if (file.is_open())
 	{
-		// TODO: consider streaming the file instead of loading it all in memory for large files
-		std::string body((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
-		response.setStatusCode(200);
-		response.setBody(body);
-		response.setHeader("Content-Type", getMimeType(path));
+		if (request.getMethod() == "GET" &&
+			(request.getRequestTarget() == "/" || request.getRequestTarget() == "/home"))
+		{
+			response = handleHomePage();
+		}
+		else
+		{
+			// TODO: consider streaming the file instead of loading it all in memory for large files
+			std::string body((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
+			response.setStatusCode(200);
+			response.setBody(body);
+			response.setHeader("Content-Type", getMimeType(path));
+		}
 	}
 	else
 	{
-		// TODO: consider serving a 404.html page
-		response.setStatusCode(404);
-		response.setBody("Not Found");
-		response.setHeader("Content-Type", "text/plain");
+		response = handleNotFound();
 	}
 	return response;
 }
@@ -104,22 +109,22 @@ HTTPResponse StaticContentHandler::handleNotFound(void)
 
 	// Create a simple HTML body for the 404 page
 	std::string htmlBody = "<!DOCTYPE html>\n"
-						"<html lang=\"en\">\n"
-						"<head>\n"
-						"    <meta charset=\"UTF-8\">\n"
-						"    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n"
-						"    <title>404 Not Found</title>\n"
-						"    <style>\n"
-						"        body { font-family: Arial, sans-serif; text-align: center; margin-top: 50px; }\n"
-						"        h1 { color: #ff6347; }\n"
-						"        p { color: #757575; }\n"
-						"    </style>\n"
-						"</head>\n"
-						"<body>\n"
-						"    <h1>404 Not Found</h1>\n"
-						"    <p>Sorry, the page you're looking for cannot be found.</p>\n"
-						"</body>\n"
-						"</html>";
+						   "<html lang=\"en\">\n"
+						   "<head>\n"
+						   "    <meta charset=\"UTF-8\">\n"
+						   "    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n"
+						   "    <title>404 Not Found</title>\n"
+						   "    <style>\n"
+						   "        body { font-family: Arial, sans-serif; text-align: center; margin-top: 50px; }\n"
+						   "        h1 { color: #ff6347; }\n"
+						   "        p { color: #757575; }\n"
+						   "    </style>\n"
+						   "</head>\n"
+						   "<body>\n"
+						   "    <h1>404 Not Found</h1>\n"
+						   "    <p>Sorry, the page you're looking for cannot be found.</p>\n"
+						   "</body>\n"
+						   "</html>";
 
 	response.setBody(htmlBody);
 	response.setHeader("Content-Type", "text/html"); // Set the Content-Type to text/html
