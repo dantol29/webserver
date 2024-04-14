@@ -74,9 +74,7 @@ HTTPResponse StaticContentHandler::handleRequest(const HTTPRequest &request)
 		std::cout << "body : " << body << std::endl;
 
 		// response.setStatusCode(200);
-		std::cout << "\033[34msetting body\033[0m" << std::endl;
 		response.setBody(body);
-		std::cout << "\033[34msetting header\033[0m" << std::endl;
 		response.setHeader("Content-Type: ", getMimeType(path));
 
 		// ADD MORE HEADER LINE
@@ -84,7 +82,6 @@ HTTPResponse StaticContentHandler::handleRequest(const HTTPRequest &request)
 		//  response.setHeader("Connection: ", "close");
 		//  response.setHeader("Server: ", "webserv");
 
-		std::cout << "\033[34mreturning response\033[0m" << std::endl;
 		std::cout << "_body : " << response.getBody() << std::endl;
 		file.close();
 	}

@@ -25,7 +25,6 @@ HTTPResponse Router::routeRequest(const HTTPRequest &request)
 	}
 	else
 	{
-		std::cout << "____Static content request" << std::endl;
 		StaticContentHandler staticContentInstance;
 		return staticContentInstance.handleRequest(request);
 	}
@@ -35,12 +34,6 @@ HTTPResponse Router::routeRequest(const HTTPRequest &request)
 bool Router::isDynamicRequest(const HTTPRequest &request)
 {
 	if (request.getMethod() == "POST" || request.getMethod() == "DELETE")
-	{
-		return true;
-	}
-	std::string fileExtension = getFileExtension(request.getRequestTarget());
-	// Check against config file defined value
-	if (fileExtension == "cgi" || fileExtension == "php" || fileExtension == "py" || fileExtension == "pl")
 	{
 		return true;
 	}
@@ -60,6 +53,7 @@ std::string Router::getFileExtension(const std::string &fileName)
 // works as long as GI scripts are identified by file extensions,
 bool Router::isCGI(const HTTPRequest &request)
 {
+	// check against config file, not this hardcoded version
 	std::string fileExtension = getFileExtension(request.getRequestTarget());
 	return (fileExtension == "cgi" || fileExtension == "pl" || fileExtension == "py" || fileExtension == "php");
 }
