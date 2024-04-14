@@ -114,7 +114,7 @@ void Server::handleConnection(Connection conn)
 	std::string _webRoot = getWebRoot();
 	// Check if this is the right way to do it
 	response = conn.getResponse();
-	if (!router.pathExists(request, response, _webRoot))
+	if (!router.pathisValid(request, response, _webRoot))
 	{
 		std::cout << "Path does not exist" << std::endl;
 		StaticContentHandler staticHandler;
@@ -172,7 +172,7 @@ void Server::handleConnection(Connection conn)
 // 	std::string _webRoot = getWebRoot();
 // 	// Check if this is the right way to do it
 // 	response = conn.getResponse();
-// 	if (!router.pathExists(request, response, _webRoot))
+// 	if (!router.pathisValid(request, response, _webRoot))
 // 	{
 // 		std::cout << "Path does not exist" << std::endl;
 // 		StaticContentHandler staticHandler;

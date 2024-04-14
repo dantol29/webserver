@@ -54,27 +54,19 @@ HTTPResponse StaticContentHandler::handleRequest(const HTTPRequest &request)
 	HTTPResponse response;
 	std::string requestTarget = request.getRequestTarget();
 	std::string path = _webRoot + requestTarget;
-	// Eventually sanitze path, remove ".." and other dangerous characters
 	std::ifstream file(path.c_str());
-	if (file.is_open())
+
+	if (request.getMethod() == "GET" && (request.getRequestTarget() == "/" || request.getRequestTarget() == "/home"))
 	{
-		if (request.getMethod() == "GET" &&
-			(request.getRequestTarget() == "/" || request.getRequestTarget() == "/home"))
-		{
-			response = handleHomePage();
-		}
-		else
-		{
-			// TODO: consider streaming the file instead of loading it all in memory for large files
-			std::string body((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
-			response.setStatusCode(200);
-			response.setBody(body);
-			response.setHeader("Content-Type", getMimeType(path));
-		}
+		response = handleHomePage();
 	}
 	else
 	{
-		response = handleNotFound();
+		// TODO: consider streaming the file instead of loading it all in memory for large files
+		std::string body((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
+		response.setStatusCode(200);
+		response.setBody(body);
+		response.setHeader("Content-Type", getMimeType(path));
 	}
 	return response;
 }

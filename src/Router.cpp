@@ -11,6 +11,7 @@ Router::~Router()
 
 HTTPResponse Router::routeRequest(const HTTPRequest &request)
 {
+	std::cout << "____Routing request" << std::endl;
 	if (isCGI(request))
 	{
 		CGIHandler cgiInstance;
@@ -24,6 +25,7 @@ HTTPResponse Router::routeRequest(const HTTPRequest &request)
 	}
 	else
 	{
+		std::cout << "____Static content request" << std::endl;
 		StaticContentHandler staticContentInstance;
 		return staticContentInstance.handleRequest(request);
 	}
@@ -90,7 +92,7 @@ void Router::splitTarget(const std::string &target)
 	}
 }
 
-bool Router::pathExists(HTTPRequest &request, HTTPResponse &response, std::string webRoot)
+bool Router::pathisValid(HTTPRequest &request, HTTPResponse &response, std::string webRoot)
 {
 	std::string host = request.getHost();
 	std::cout << "Host: " << host << std::endl;
@@ -132,5 +134,17 @@ bool Router::pathExists(HTTPRequest &request, HTTPResponse &response, std::strin
 		}
 	}
 	std::cout << "Path: " << path << " exists" << std::endl;
+
+	std::ifstream file(path.c_str());
+	if (!file.is_open())
+	{
+		std::cout << "Failed to open the file at path: " << path << std::endl;
+		response.setStatusCode(403); // Or another appropriate error code
+		response.setBody("Access Denied");
+		return false;
+	}
+	file.close();
+
+	std::cout << "Path is an accesible and readable file" << std::endl;
 	return true;
 }
