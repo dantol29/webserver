@@ -27,6 +27,7 @@ HTTPResponse CGIHandler::handleRequest(const HTTPRequest &request)
 	// This is a simplified example. You should set the appropriate headers and status code.
 	HTTPResponse response;
 	response.setBody(cgiOutput);
+	response.setIsCGI(true);
 	return response;
 }
 

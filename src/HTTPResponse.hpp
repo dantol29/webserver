@@ -26,6 +26,9 @@ class HTTPResponse
 	void setBody(const std::string &body);
 	std::string toString() const;
 
+	bool isCGI() const;
+	void setIsCGI(bool isCGI);
+
   private:
 	int _statusCode;
 	std::string _statusMessage;
@@ -35,6 +38,7 @@ class HTTPResponse
 	std::string _body;
 	// private cause it's used only to set the status message based on the status code
 	std::string getStatusMessage(int statusCode) const;
+	bool _isCGI;
 };
 
 #endif // HTTPRESPONSE_HPP

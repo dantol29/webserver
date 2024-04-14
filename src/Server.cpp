@@ -54,8 +54,8 @@ void Server::startPollEventLoop()
 						// std::cout << "i == 0" << std::endl;
 
 						acceptNewConnection();
-						printFDsVector(_FDs);
-						print_connectionsVector(_connections);
+						// printFDsVector(_FDs);
+						// print_connectionsVector(_connections);
 					}
 					else
 					{
@@ -64,8 +64,8 @@ void Server::startPollEventLoop()
 						// TODO: only the index is actually needed
 						// handleConnection(_connections[i]);
 						handleConnection(_connections[i]);
-						printFDsVector(_FDs);
-						print_connectionsVector(_connections);
+						// printFDsVector(_FDs);
+						// print_connectionsVector(_connections);
 						// _FDs.erase(_FDs.begin() + i);
 						// --i;
 					}
@@ -90,7 +90,7 @@ void Server::startPollEventLoop()
 
 void Server::handleConnection(Connection conn)
 {
-	std::cout << "inside handleConnection function" << std::endl;
+	std::cout << "\033[31m" << "inside handleConnection function" << "\033[0m" << std::endl;
 	conn.printConnection();
 
 	if (!conn.readRequestHeadersAndBody())
@@ -101,11 +101,9 @@ void Server::handleConnection(Connection conn)
 	}
 
 	// It should be double "\r\n" to separate the headers from the body
-	std::string httpRequestString = conn.getHeaders() + "\r\n\r\n" + conn.getBody();
-	std::cout << "Received HTTP request: " << std::endl << httpRequestString << std::endl;
+	std::string httpRequestString = conn.getHeaders() + conn.getBody();
 	HTTPRequest request(httpRequestString.c_str());
 	std::cout << request.getStatusCode() << std::endl;
-	std::cout << "Received HTTP request: " << std::endl << httpRequestString << std::endl;
 	printVariablesHeadersBody(request);
 
 	// std::string response;
@@ -122,7 +120,18 @@ void Server::handleConnection(Connection conn)
 		return;
 	}
 	response = router.routeRequest(request);
-	std::string responseString = response.toString();
+	std::string responseString;
+
+	if (!response.isCGI())
+	{
+		std::cout << "\033[34m" << "                       Response is not CGI" << "\033[0m" << std::endl;
+		responseString = response.toString();
+	}
+	else
+	{
+		std::cout << "\033[31m" << "                       Response IS CGI" << "\033[0m" << std::endl;
+		responseString = response.getBody();
+	}
 	write(conn.getPollFd().fd, responseString.c_str(), responseString.size());
 	close(conn.getPollFd().fd);
 }

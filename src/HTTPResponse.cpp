@@ -69,6 +69,16 @@ std::string HTTPResponse::toString() const
 	return responseStream.str();
 }
 
+bool HTTPResponse::isCGI() const
+{
+	return _isCGI;
+}
+
+void HTTPResponse::setIsCGI(bool isCGI)
+{
+	_isCGI = isCGI;
+}
+
 std::string HTTPResponse::getStatusMessage(int statusCode) const
 {
 	switch (statusCode)
