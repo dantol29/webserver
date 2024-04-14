@@ -8,6 +8,7 @@
 #include <sys/types.h>
 #include <dirent.h>
 
+bool	isVulnerablePath(const std::string& path);
 bool	isValidErrorCode(std::string errorCode);
 int		checkFile(const char *path);
 char	*get_next_line(int fd);
@@ -213,6 +214,8 @@ bool	ConfigFile::pathExists(std::map<std::string, std::string> list, std::string
 			if (!dir)
 				return (error(("Config file: Invalid " + variable).c_str(), NULL));
 			closedir(dir);
+			if (isVulnerablePath(it->second.substr(start, i - start)))
+				return (error("Config file: Path is vulnerable", NULL));
 		}
 	}
 	return (true);
@@ -233,6 +236,8 @@ bool	ConfigFile::checkErrorPage(std::map<std::string, std::string> list)
 			while (i < it->second.length() && it->second[i] != ' ')
 				i++;
 			if (access((it->second.substr(start, i - start)).c_str(), F_OK) == 0){
+				if (isVulnerablePath(it->second.substr(start, i - start)))
+					return (error("Config file: Path is vulnerable", NULL));
 				count1++;
 				continue ;
 			}
@@ -307,8 +312,11 @@ bool	ConfigFile::checkVariablesValue(std::map<std::string, std::string> var){
 			start = i;
 			while (i < it->second.length() && it->second[i] != ' ')
 				i++;
-			if (access((it->second.substr(start, i - start)).c_str(), F_OK) == 0)
+			if (access((it->second.substr(start, i - start)).c_str(), F_OK) == 0){
+				if (isVulnerablePath(it->second.substr(start, i - start)))
+					return (error("Config file: Path is vulnerable", NULL));
 				return (true);
+			}
 		}
 		return (error("Config file: Invalid index", NULL));
 	}
