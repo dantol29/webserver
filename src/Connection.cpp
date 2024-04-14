@@ -140,6 +140,7 @@ void Connection::setBodyIsChunked(bool bodyIsChunked)
 	_bodyIsChunked = bodyIsChunked;
 }
 
+// Attempts to read HTTP request headers from the client connection into _headers.
 bool Connection::readHeaders()
 {
 	std::cout << "\nreadHeaders" << std::endl;
@@ -175,7 +176,7 @@ bool Connection::readHeaders()
 		}
 		else
 		{
-			// This means biyeRead == 0
+			// This means biteRead == 0
 			std::cout << "Connection closed before headers being completely sent" << std::endl;
 			// In this case we don't want to send an error response, because the client closed the connection
 			return false;
@@ -326,6 +327,23 @@ bool Connection::readBody()
 		}
 	}
 	return true;
+}
+
+bool Connection::readRequestHeadersAndBody()
+{
+	if (!this->readHeaders())
+	{
+		return false;
+	}
+	// isChunked could be a method of the Connection class
+	if (this->isChunked())
+	{
+		return this->readChunkedBody();
+	}
+	else
+	{
+		return this->readBody();
+	}
 }
 
 bool Connection::isChunked()

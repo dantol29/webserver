@@ -29,6 +29,7 @@ bool Router::isDynamicRequest(const HTTPRequest &request)
 	{
 		return true;
 	}
+	// Check against config file defined value
 	std::string fileExtension = getFileExtension(request.getRequestTarget());
 	if (fileExtension == "cgi" || fileExtension == "php" || fileExtension == "py" || fileExtension == "pl")
 	{
@@ -116,5 +117,6 @@ bool Router::pathExists(HTTPRequest &request, HTTPResponse &response, std::strin
 			return false;
 		}
 	}
+	std::cout << "Path: " << path << " exists" << std::endl;
 	return true;
 }
