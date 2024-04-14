@@ -76,23 +76,9 @@ void handleConnection(int socket);
 // utils.cpp
 int hexToInt(std::string hex);
 bool isNumber(std::string line);
-;
-
-// HTTPRequestUtils.cpp
-bool isOrigForm(std::string &requestTarget, int &queryStart);
-void skipRequestLine(const char *request, unsigned int &i);
-void skipHeader(const char *request, unsigned int &i);
-bool hasMandatoryHeaders(HTTPRequest &obj);
+bool isInvalidChar(const unsigned char &c);
 bool hasCRLF(const char *request, unsigned int &i, int mode);
-std::string extractValue(std::string &variables, int &i);
-std::string extractKey(std::string &variables, int &i, int startPos);
-std::string extractRequestTarget(const char *request, unsigned int &i);
-std::string extractVariables(std::string &requestTarget, bool &isOriginForm);
-std::string extractProtocolVersion(const char *request, unsigned int &i);
-std::string extractMethod(const char *request, unsigned int &i);
-std::string extractHeaderKey(const char *request, unsigned int &i);
-std::string extractHeaderValue(const char *request, unsigned int &i);
-unsigned int extractLineLength(const char *request, unsigned int &i);
-std::string extractLine(const char *request, unsigned int &i, const unsigned int &size);
+bool isVulnerablePath(const std::string& path);
+int	checkFile(const char *path);
 
 #endif

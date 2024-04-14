@@ -105,3 +105,31 @@ int	checkFile(const char *path)
 	return (fd);
 }
 
+/*
+The combination of \\r\\n
+is as a standard way to denote the end of a line in HTTP headers.
+*/
+bool hasCRLF(const char *request, unsigned int &i, int mode)
+{
+	if (mode == 0)
+	{
+		if (request[i] && request[i + 1] && request[i] == '\r' && request[i + 1] == '\n')
+			return (true);
+		return (false);
+	}
+	if (mode == 1)
+	{
+		if (request[i] && request[i + 1] && request[i + 2] && request[i + 3] && request[i] == '\r' &&
+			request[i + 1] == '\n' && request[i + 2] == '\r' && request[i + 3] == '\n')
+			return (true);
+		return (false);
+	}
+	return (false);
+}
+
+bool isInvalidChar(const unsigned char &c)
+{
+	if ((c <= 31) || c == 127)
+		return (true);
+	return (false);
+}
