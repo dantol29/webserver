@@ -39,14 +39,20 @@ void HTTPResponse::setStatusCode(int statusCode)
 
 void HTTPResponse::setHeader(const std::string &name, const std::string &value)
 {
+	std::cout << "\033[32m" << "Adding Header -> Name: " << name << ", Value: " << value << "\033[0m" << std::endl;
+
 	_headers.push_back(std::make_pair(name, value));
 }
 
 void HTTPResponse::setBody(const std::string &body)
 {
+	// harcoded:
+	//  std::string header = "HTTP/1.1 200 OK\r\n";
+	//  std::string contentType = "Content-Type: text/html\r\n";
+	//  _body = header + contentType + body;
 	_body = body;
 	std::ostringstream oss;
-	oss << body.size();
+	// oss << body.size();
 	// setHeader("Content-Length", oss.str());
 }
 

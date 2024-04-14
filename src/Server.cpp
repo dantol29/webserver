@@ -122,7 +122,7 @@ void Server::handleConnection(Connection conn)
 		return;
 	}
 	response = router.routeRequest(request);
-	std::string responseString = response.getBody();
+	std::string responseString = response.toString();
 	write(conn.getPollFd().fd, responseString.c_str(), responseString.size());
 	close(conn.getPollFd().fd);
 }
