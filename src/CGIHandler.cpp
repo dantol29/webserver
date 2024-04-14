@@ -25,24 +25,12 @@ HTTPResponse CGIHandler::handleRequest(const HTTPRequest &request)
 	CGIHandler cgiInstance;
 	Environment env;
 	env.HTTPRequestToMetaVars(request, env);
-	std::string cgiOutput = handleCGIRequest(request);
+	std::string cgiOutput = executeCGI(env);
+
 	HTTPResponse response;
 	response.setBody(cgiOutput);
 	response.setIsCGI(true);
 	return response;
-}
-
-std::string CGIHandler::handleCGIRequest(const HTTPRequest &request)
-{
-	Environment env;
-
-	// load the meta vars from the request to env
-	env.HTTPRequestToMetaVars(request, env);
-	env.printMetaVars();
-
-	std::string cgiOutput = executeCGI(env);
-
-	return cgiOutput;
 }
 
 // NOTE FOR SELF: key1=value1&key2=value2&key3=value3 might not be directly passed as command-line arguments (i.e., in
@@ -55,9 +43,8 @@ char *const *CGIHandler::createArgvForExecve(const Environment &env)
 	std::string scriptName = env.getVar("SCRIPT_NAME");
 	std::string pathTranslated = env.getVar("PATH_TRANSLATED");
 	std::string scriptPath = pathTranslated + scriptName;
-	std::cout << std::endl << "\033[31mscriptPath: " << scriptPath << "\033[0m" << std::endl;
 
-	argv[0] = new char[scriptPath.length() + 1]; // +1 for the null terminator
+	argv[0] = new char[scriptPath.length() + 1];
 	ft_strcpy(argv[0], scriptPath.c_str());
 
 	argv[1] = NULL;
@@ -113,7 +100,7 @@ std::string CGIHandler::executeCGI(const Environment &env)
 		int status;
 		waitpid(pid, &status, 0);
 		std::cout << "------------------CGI output prepared-------------------" << std::endl;
-		std::cout << cgiOutput << std::endl;
+		// std::cout << cgiOutput << std::endl;
 		return cgiOutput;
 	}
 

@@ -14,7 +14,6 @@ class ARequestHandler
 	ARequestHandler(const ARequestHandler &other);
 	ARequestHandler &operator=(const ARequestHandler &other);
 	virtual HTTPResponse handleRequest(const HTTPRequest &request) = 0;
-	virtual std::string handleCGIRequest(const HTTPRequest &request) = 0;
 };
 
 #endif

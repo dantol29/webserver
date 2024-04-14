@@ -13,7 +13,6 @@ HTTPResponse Router::routeRequest(const HTTPRequest &request)
 {
 	if (isCGI(request))
 	{
-		std::cout << "\033[31m" << "identified as a CGI" << "\033[0m" << std::endl;
 		HTTPResponse response;
 		response = CGIHandler().handleRequest(request);
 		return response;

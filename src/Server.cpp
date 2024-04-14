@@ -90,7 +90,6 @@ void Server::startPollEventLoop()
 
 void Server::handleConnection(Connection conn)
 {
-	std::cout << "\033[31m" << "inside handleConnection function" << "\033[0m" << std::endl;
 	conn.printConnection();
 
 	if (!conn.readRequestHeadersAndBody())
