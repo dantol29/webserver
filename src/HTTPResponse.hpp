@@ -21,6 +21,7 @@ class HTTPResponse
 	const std::string &getStatusMessage() const;
 	void setStatusCode(int statusCode);
 	std::string getBody() const;
+	std::string getHeader(const std::string &name) const;
 
 	void setHeader(const std::string &name, const std::string &value);
 	void setBody(const std::string &body);
@@ -28,6 +29,8 @@ class HTTPResponse
 
 	bool isCGI() const;
 	void setIsCGI(bool isCGI);
+
+	friend std::ostream &operator<<(std::ostream &out, const HTTPResponse &response);
 
   private:
 	int _statusCode;

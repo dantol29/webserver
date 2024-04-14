@@ -56,6 +56,18 @@ std::string HTTPResponse::getBody() const
 	return _body;
 }
 
+std::string HTTPResponse::getHeader(const std::string &name) const
+{
+	for (size_t i = 0; i < _headers.size(); ++i)
+	{
+		if (_headers[i].first == name)
+		{
+			return _headers[i].second;
+		}
+	}
+	return "";
+}
+
 std::string HTTPResponse::toString() const
 {
 	std::stringstream responseStream;
@@ -211,4 +223,28 @@ std::string HTTPResponse::getStatusMessage(int statusCode) const
 	default:
 		return "Unknown";
 	}
+}
+
+std::ostream &operator<<(std::ostream &out, const HTTPResponse &response)
+{
+	std::cout << "HTTPResponse operator<< called" << std::endl;
+	// Output the status
+	out << "\033[35m";
+	out << "Status Code: " << response.getStatusCode() << "\n";
+	// out << "Status Message: " << response.getStatusMessage() << "\n";
+
+	// Output headers
+	out << "Headers:\n";
+	for (size_t i = 0; i < response._headers.size(); ++i)
+	{
+		out << response._headers[i].first << ": " << response._headers[i].second << "\n";
+	}
+
+	// Output body
+	if (!response.getBody().empty())
+	{
+		out << "\nBody:\n" << response.getBody();
+	}
+	out << "\033[0m";
+	return out;
 }

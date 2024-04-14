@@ -30,6 +30,7 @@ HTTPResponse CGIHandler::handleRequest(const HTTPRequest &request)
 	HTTPResponse response;
 	response.setBody(cgiOutput);
 	response.setIsCGI(true);
+	std::cout << response;
 	return response;
 }
 
