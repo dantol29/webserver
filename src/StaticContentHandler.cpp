@@ -53,9 +53,12 @@ HTTPResponse StaticContentHandler::handleRequest(const HTTPRequest &request)
 {
 	HTTPResponse response;
 	std::string requestTarget = request.getRequestTarget();
-	std::string path = _webRoot + requestTarget;
+	std::string webRoot = "var/www/";
+	std::cout << "path : " << webRoot << std::endl;
+	std::string path = webRoot + requestTarget;
+	// shoul nt be hardcoded: (added underscore) std::string path = _webRoot + requestTarget;
 	std::ifstream file(path.c_str());
-
+	// check this: we might be at the root of a website among others
 	if (request.getMethod() == "GET" && (request.getRequestTarget() == "/" || request.getRequestTarget() == "/home"))
 	{
 		response = handleHomePage();
@@ -63,10 +66,22 @@ HTTPResponse StaticContentHandler::handleRequest(const HTTPRequest &request)
 	else
 	{
 		// TODO: consider streaming the file instead of loading it all in memory for large files
+		std::cout << "path : " << path << std::endl;
+		std::ifstream file(path.c_str());
+		file.is_open();
+
 		std::string body((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
+		std::cout << "body : " << body << std::endl;
+
+		std::cout << "setting status code" << std::endl;
 		response.setStatusCode(200);
+		std::cout << "\033[34msetting body\033[0m" << std::endl;
 		response.setBody(body);
+		std::cout << "\033[34msetting header\033[0m" << std::endl;
 		response.setHeader("Content-Type", getMimeType(path));
+		std::cout << "\033[34mreturning response\033[0m" << std::endl;
+		std::cout << "_body : " << response.getBody() << std::endl;
+		file.close();
 	}
 	return response;
 }
