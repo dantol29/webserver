@@ -109,6 +109,7 @@ void Server::handleConnection(Connection conn)
 	// std::string response;
 	Router router;
 	HTTPResponse response;
+	// response.setIsCGI(false);
 	std::string _webRoot = getWebRoot();
 	// Check if this is the right way to do it
 	response = conn.getResponse();
@@ -121,16 +122,13 @@ void Server::handleConnection(Connection conn)
 	}
 	response = router.routeRequest(request);
 	std::string responseString;
-
-	if (!response.isCGI())
+	if (response.isCGI() == true)
 	{
-		std::cout << "\033[34m" << "                       Response is not CGI" << "\033[0m" << std::endl;
-		responseString = response.toString();
+		responseString = response.getBody();
 	}
 	else
 	{
-		std::cout << "\033[31m" << "                       Response IS CGI" << "\033[0m" << std::endl;
-		responseString = response.getBody();
+		responseString = response.toString();
 	}
 	write(conn.getPollFd().fd, responseString.c_str(), responseString.size());
 	close(conn.getPollFd().fd);

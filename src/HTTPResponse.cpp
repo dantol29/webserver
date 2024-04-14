@@ -7,7 +7,7 @@ HTTPResponse::HTTPResponse() : _statusCode(0)
 }
 
 HTTPResponse::HTTPResponse(const HTTPResponse &other)
-	: _statusCode(other._statusCode), _headers(other._headers), _body(other._body)
+	: _statusCode(other._statusCode), _headers(other._headers), _body(other._body), _isCGI(other._isCGI)
 {
 }
 
@@ -18,6 +18,7 @@ HTTPResponse &HTTPResponse::operator=(const HTTPResponse &other)
 		_statusCode = other._statusCode;
 		_headers = other._headers;
 		_body = other._body;
+		_isCGI = other._isCGI;
 	}
 	return *this;
 }

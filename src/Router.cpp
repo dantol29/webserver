@@ -11,13 +11,12 @@ Router::~Router()
 
 HTTPResponse Router::routeRequest(const HTTPRequest &request)
 {
-	std::cout << "____Routing request" << std::endl;
 	if (isCGI(request))
 	{
-		CGIHandler cgiInstance;
-		Environment env;
-		env.HTTPRequestToMetaVars(request, env);
-		return cgiInstance.handleRequest(request); // this returns the string ready to go
+		std::cout << "\033[31m" << "identified as a CGI" << "\033[0m" << std::endl;
+		HTTPResponse response;
+		response = CGIHandler().handleRequest(request);
+		return response;
 	}
 	else if (isDynamicRequest(request))
 	{
