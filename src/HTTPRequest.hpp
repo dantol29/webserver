@@ -40,7 +40,7 @@ class HTTPRequest
 
 	// CHUNKED REQUESTS
 	void setIsChunked(bool a);
-	int parseChunkedBody(const char *request);
+	bool parseChunkedBody(const char *request);
 
 	// FILE UPLOAD
 	struct File
@@ -52,11 +52,11 @@ class HTTPRequest
 
   private:
 	HTTPRequest();
-	int parseRequestLine(const char *request);
-	int parseHeaders(const char *request);
-	int parseBody(const char *request);
-	int parseFileBody(const char *request);
-	int ft_error(int statusCode, std::string message);
+	bool parseRequestLine(const char *request);
+	bool parseHeaders(const char *request);
+	bool parseBody(const char *request);
+	bool parseFileBody(const char *request);
+	bool ft_error(int statusCode, std::string message);
 
 	// VARIABLES
 	int _statusCode;

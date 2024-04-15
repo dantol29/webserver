@@ -141,6 +141,202 @@ void HTTPRequest::setIsChunked(bool n)
 	_isChunked = n;
 }
 
+
+bool HTTPRequest::ft_error(int statusCode, std::string message)
+{
+	_errorMessage = message;
+	_statusCode = statusCode;
+	return (false);
+}
+
+bool HTTPRequest::parseRequestLine(const char *request)
+{
+	unsigned int i = 0;
+	bool isOriginForm = false;
+	std::string variables;
+
+	_method = extractMethod(request, i);
+	if (_method.empty())
+		return (ft_error(501, "Invalid method"));
+	if (request[i++] != ' ')
+		return (ft_error(400, "Invalid request-line syntax"));
+	_requestTarget = extractRequestTarget(request, i);
+	if (_requestTarget.empty())
+		return (ft_error(414, "Request-target is too long"));
+	if (request[i++] != ' ')
+		return (ft_error(400, "Invalid request-line syntax"));
+	variables = extractVariables(_requestTarget, isOriginForm);
+	if (variables.empty())
+		return (ft_error(400, "Invalid query"));
+	if (isOriginForm)
+		if (!saveVariables(variables))
+			return (ft_error(400, "Invalid query"));
+	_protocolVersion = extractProtocolVersion(request, i);
+	if (_protocolVersion.empty())
+		return (ft_error(400, "Invalid protocol"));
+	if (!hasCRLF(request, i, 0))
+		return (ft_error(400, "Invalid CRLF for request-line"));
+	return (true);
+}
+
+bool HTTPRequest::parseChunkedBody(const char *request)
+{
+	unsigned int i = 0;
+	int size = 0;
+	std::string line;
+
+	skipHeader(request, i);
+	while (request[i])
+	{
+		size = extractLineLength(request, i);
+		if (size <= 0)
+		{
+			if (size == -1)
+				return (ft_error(400, "Invalid body"));
+			break;
+		}
+		line = extractLine(request, i, size);
+		if (line.empty())
+			return (ft_error(400, "Invalid body"));
+		_body.push_back(line);
+	}
+	if (!hasCRLF(request, i, 0))
+		return (ft_error(400, "Invalid body"));
+	if (hasCRLF(request, i, 1))
+		_isChunkFinish = true;
+	return (true);
+}
+
+bool HTTPRequest::parseHeaders(const char *request)
+{
+	unsigned int i;
+	std::string key;
+	std::string value;
+
+	i = 0;
+	skipRequestLine(request, i);
+	while (request[i])
+	{
+		key = extractHeaderKey(request, i);
+		if (key.empty())
+			return (ft_error(400, "Invalid header key"));
+		i++; // skip ':'
+		if (request[i++] != ' ')
+			return (ft_error(400, "Invalid header syntax"));
+		value = extractHeaderValue(request, i);
+		if (value.empty())
+			return (ft_error(400, "Invalid header value"));
+		if (!hasCRLF(request, i, 0))
+			return (ft_error(400, "No CRLF after header"));
+		_headers.insert(std::make_pair(key, value));
+		i += 2;						// skip '\r' and '\n'
+		if (hasCRLF(request, i, 0)) // end of header section
+			break;
+	}
+	if (!hasCRLF(request, i, 0))
+		return (ft_error(400, "No CRLF after header"));
+	makeHeadersLowCase();
+	if (!hasMandatoryHeaders())
+		return (400);
+	if (_method == "GET" && request[i + 2]) // has something after headers
+		return (ft_error(400, "Invalid headers"));
+	return (true);
+}
+
+bool HTTPRequest::parseBody(const char *request)
+{
+	bool end = false;
+	unsigned int i = 0;
+	unsigned int start = 0;
+	std::string string_request(request);
+
+	skipHeader(request, i);
+	start = i;
+	while (request[i] && !end)
+	{
+		if (hasCRLF(request, i, 0))
+		{
+			if (hasCRLF(request, i, 1))
+				end = true;
+			_body.push_back(string_request.substr(start, i - start));
+			i += 2;
+			start = i;
+			continue;
+		}
+		else if (!hasCRLF(request, i, 0) && request[i] == '\r')
+			return (ft_error(400, "Invalid body"));
+		i++;
+	}
+	if (end && hasCRLF(request, i, 0) && request[i + 2])
+		return (ft_error(400, "Invalid body"));
+	return (end);
+}
+
+bool HTTPRequest::parseFileBody(const char *request)
+{
+	unsigned int i = 0;
+	unsigned int start = 0;
+	std::string string_request(request);
+
+	skipHeader(request, i);
+	start = i;
+	while (request[i])
+	{
+		while (request[i] && !hasCRLF(request, i, 0))
+			i++;
+		std::cout << string_request.substr(start, i) << std::endl;
+		if (string_request.substr(start, i) != _uploadBoundary) // starting boundary
+			return (ft_error(400, "Invalid boundary in the file upload body"));
+		i += 2; // skip '/r/n'
+		start = i;
+		while (request[i] && !hasCRLF(request, i, 0))
+			i++;
+		std::cout << string_request.substr(start, i) << std::endl;
+		if (string_request.substr(start, i) != _uploadBoundary) // ending boundary
+			return (ft_error(400, "Invalid boundary in the file upload body"));
+		if (hasCRLF(request, i, 1))	
+			break ;
+		i++;
+	}
+	if (hasCRLF(request, i, 1) && !request[i + 4])
+		return (true);
+	return (ft_error(400, "Invalid body"));
+}
+
+std::ostream& operator<<(std::ostream& out, const HTTPRequest& obj)
+{
+	std::multimap<std::string, std::string> a = obj.getHeaders();
+	std::multimap<std::string, std::string> b = obj.getQueryString();
+	std::vector<std::string>				c = obj.getBody();
+
+	std::multimap<std::string, std::string>::iterator it;
+	out << "---------------------Variables--------------------" << std::endl;
+	for (it = b.begin(); it != b.end(); it++){
+		out << "Key: " << it->first << ", Value: " << it->second << std::endl;
+	}
+	out << "---------------------End--------------------------" << std::endl;
+	out << "---------------------Headers----------------------" << std::endl;
+	for (it = a.begin(); it != a.end(); it++){
+		out << "Key: " << it->first << ", Value: " << it->second << std::endl;
+	}
+	out << "---------------------End--------------------------" << std::endl;
+	out << "---------------------Body-------------------------" << std::endl;
+	for (size_t i = 0; i < c.size(); ++i)
+		out << c[i] << std::endl;
+	out << "---------------------End--------------------------" << std::endl;
+	return (out);
+}
+
+
+
+
+
+
+// -----------------------UTILS-------------------------------
+
+
+
+
 bool HTTPRequest::hasMandatoryHeaders()
 {
 	int isHost = 0;
@@ -187,195 +383,8 @@ bool HTTPRequest::hasMandatoryHeaders()
 	else
 		if (isHost != 1)
 			return (ft_error(400, "Request MUST have host"));
-	return (1);
-}
-
-bool HTTPRequest::saveVariables(std::string &variables)
-{
-	int startPos = 0;
-	std::string key;
-	std::string value;
-
-	for (int i = 0; i < (int)variables.length(); i++)
-	{
-		if (variables[i] == '=')
-		{
-			key = extractKey(variables, i, startPos);
-			if (key.empty())
-				return (false);
-			value = extractValue(variables, i);
-			if (value.empty())
-				return (false);
-			startPos = i;
-			_queryString.insert(std::make_pair(key, value));
-		}
-	}
 	return (true);
 }
-
-int HTTPRequest::ft_error(int statusCode, std::string message)
-{
-	_errorMessage = message;
-	_statusCode = statusCode;
-	return (statusCode);
-}
-
-int HTTPRequest::parseRequestLine(const char *request)
-{
-	unsigned int i = 0;
-	bool isOriginForm = false;
-	std::string variables;
-
-	_method = extractMethod(request, i);
-	if (_method.empty())
-		return (ft_error(501, "Invalid method"));
-	if (request[i++] != ' ')
-		return (ft_error(400, "Invalid request-line syntax"));
-	_requestTarget = extractRequestTarget(request, i);
-	if (_requestTarget.empty())
-		return (ft_error(414, "Request-target is too long"));
-	if (request[i++] != ' ')
-		return (ft_error(400, "Invalid request-line syntax"));
-	variables = extractVariables(_requestTarget, isOriginForm);
-	if (variables.empty())
-		return (ft_error(400, "Invalid query"));
-	if (isOriginForm)
-		if (!saveVariables(variables))
-			return (ft_error(400, "Invalid query"));
-	_protocolVersion = extractProtocolVersion(request, i);
-	if (_protocolVersion.empty())
-		return (ft_error(400, "Invalid protocol"));
-	if (!hasCRLF(request, i, 0))
-		return (ft_error(400, "Invalid CRLF for request-line"));
-	return (200);
-}
-
-int HTTPRequest::parseChunkedBody(const char *request)
-{
-	unsigned int i = 0;
-	int size = 0;
-	std::string line;
-
-	skipHeader(request, i);
-	while (request[i])
-	{
-		size = extractLineLength(request, i);
-		if (size <= 0)
-		{
-			if (size == -1)
-				return (ft_error(400, "Invalid body"));
-			break;
-		}
-		line = extractLine(request, i, size);
-		if (line.empty())
-			return (ft_error(400, "Invalid body"));
-		_body.push_back(line);
-	}
-	if (!hasCRLF(request, i, 0))
-		return (ft_error(400, "Invalid body"));
-	if (hasCRLF(request, i, 1))
-		_isChunkFinish = true;
-	return (200);
-}
-
-int HTTPRequest::parseHeaders(const char *request)
-{
-	unsigned int i;
-	std::string key;
-	std::string value;
-
-	i = 0;
-	skipRequestLine(request, i);
-	while (request[i])
-	{
-		key = extractHeaderKey(request, i);
-		if (key.empty())
-			return (ft_error(400, "Invalid header key"));
-		i++; // skip ':'
-		if (request[i++] != ' ')
-			return (ft_error(400, "Invalid header syntax"));
-		value = extractHeaderValue(request, i);
-		if (value.empty())
-			return (ft_error(400, "Invalid header value"));
-		if (!hasCRLF(request, i, 0))
-			return (ft_error(400, "No CRLF after header"));
-		_headers.insert(std::make_pair(key, value));
-		i += 2;						// skip '\r' and '\n'
-		if (hasCRLF(request, i, 0)) // end of header section
-			break;
-	}
-	if (!hasCRLF(request, i, 0))
-		return (ft_error(400, "No CRLF after header"));
-	if (!hasMandatoryHeaders())
-		return (400);
-	if (_method == "GET" && request[i + 2]) // has something after headers
-		return (ft_error(400, "Invalid headers"));
-	return (200);
-}
-
-int HTTPRequest::parseBody(const char *request)
-{
-	unsigned int end = 400;
-	unsigned int i = 0;
-	unsigned int start = 0;
-	std::string string_request(request);
-
-	skipHeader(request, i);
-	start = i;
-	while (request[i] && end != 200)
-	{
-		if (hasCRLF(request, i, 0))
-		{
-			if (hasCRLF(request, i, 1))
-				end = 200;
-			_body.push_back(string_request.substr(start, i - start));
-			i += 2;
-			start = i;
-			continue;
-		}
-		else if (!hasCRLF(request, i, 0) && request[i] == '\r')
-			return (ft_error(400, "Invalid body"));
-		i++;
-	}
-	if (end == 200 && hasCRLF(request, i, 0) && request[i + 2])
-		return (ft_error(400, "Invalid body"));
-	return (end);
-}
-
-std::ostream& operator<<(std::ostream& out, const HTTPRequest& obj)
-{
-	std::multimap<std::string, std::string> a = obj.getHeaders();
-	std::multimap<std::string, std::string> b = obj.getQueryString();
-	std::vector<std::string>				c = obj.getBody();
-
-	std::multimap<std::string, std::string>::iterator it;
-	out << "---------------------Variables--------------------" << std::endl;
-	for (it = b.begin(); it != b.end(); it++){
-		out << "Key: " << it->first << ", Value: " << it->second << std::endl;
-	}
-	out << "---------------------End--------------------------" << std::endl;
-	out << "---------------------Headers----------------------" << std::endl;
-	for (it = a.begin(); it != a.end(); it++){
-		out << "Key: " << it->first << ", Value: " << it->second << std::endl;
-	}
-	out << "---------------------End--------------------------" << std::endl;
-	out << "---------------------Body-------------------------" << std::endl;
-	for (size_t i = 0; i < c.size(); ++i)
-		out << c[i] << std::endl;
-	out << "---------------------End--------------------------" << std::endl;
-	return (out);
-}
-
-
-
-
-
-
-// -----------------------UTILS-------------------------------
-
-
-
-
 
 bool HTTPRequest::saveVariables(std::string &variables)
 {
