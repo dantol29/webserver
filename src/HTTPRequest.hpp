@@ -22,6 +22,8 @@ class HTTPRequest
 	HTTPRequest &operator=(const HTTPRequest &obj);
 	~HTTPRequest();
 	HTTPRequest(const char *request);
+
+	// GETTERS
 	int getStatusCode() const;
 	std::string getMethod() const;
 	std::string getHost() const;
@@ -35,17 +37,28 @@ class HTTPRequest
 	std::multimap<std::string, std::string> getHeaders() const;
 	std::pair<std::string, std::string> getHeaders(std::string key) const;
 	std::vector<std::string> getBody() const;
+
+	// CHUNKED REQUESTS
 	void setIsChunked(bool a);
 	int parseChunkedBody(const char *request);
+
+	// FILE UPLOAD
+	struct File
+	{
+		std::map<std::string, std::string> headers;
+		std::vector<std::string> fileContent;
+	};
+
 
   private:
 	HTTPRequest();
 	int parseRequestLine(const char *request);
 	int parseHeaders(const char *request);
 	int parseBody(const char *request);
+	int parseFileBody(const char *request);
 	int ft_error(int statusCode, std::string message);
-	bool saveVariables(std::string &variables);
-	bool hasMandatoryHeaders();
+
+	// VARIABLES
 	int _statusCode;
 	bool _isChunked;
 	bool _isChunkFinish;
@@ -57,6 +70,30 @@ class HTTPRequest
 	std::multimap<std::string, std::string> _queryString;
 	std::multimap<std::string, std::string> _headers;
 	std::vector<std::string> _body;
+	std::vector<File> _files;
+
+	// UTILS
+	bool saveVariables(std::string &variables);
+	void makeHeadersLowCase();
+	bool isValidHost(std::string host);
+	bool isValidContentType(std::string type);
+	bool isOrigForm(std::string &requestTarget, int &queryStart);
+	void skipRequestLine(const char *request, unsigned int &i);
+	void skipHeader(const char *request, unsigned int &i);
+	bool hasMandatoryHeaders();
+	unsigned int extractLineLength(const char *request, unsigned int &i);
+	std::string extractValue(std::string &variables, int &i);
+	std::string extractKey(std::string &variables, int &i, int startPos);
+	std::string extractRequestTarget(const char *request, unsigned int &i);
+	std::string extractVariables(std::string &requestTarget, bool &isOriginForm);
+	std::string extractProtocolVersion(const char *request, unsigned int &i);
+	std::string extractMethod(const char *request, unsigned int &i);
+	std::string extractHeaderKey(const char *request, unsigned int &i);
+	std::string extractHeaderValue(const char *request, unsigned int &i);
+	std::string extractLine(const char *request, unsigned int &i, const unsigned int &size);
+	std::string extractUploadBoundary(std::string line);
 };
+
+std::ostream& operator<<(std::ostream& out, const HTTPRequest& obj);
 
 #endif
