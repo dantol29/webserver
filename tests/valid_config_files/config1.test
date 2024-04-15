@@ -1,0 +1,24 @@
+server {
+	listen 8081;
+	host 127.0.0.1;
+	server_name free_money_near_u;
+
+
+	location /random {
+		root abc;
+		cgi_path be;
+	}
+
+
+	error_page 404 /error/404.html;
+	client_max_body_size 228;
+	root docs/BIGGEST...;
+	index index.html;
+	location /path {
+		index ggg;
+		cgi_ext .brainfuck;
+	}
+	location / {
+		root mama;
+	}
+}

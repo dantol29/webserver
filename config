@@ -1,0 +1,26 @@
+server {
+	listen 8081;
+	host 127.0.0.1;
+	server_name free_money_near_u;
+	allow_methods GET POST DELETE;
+	autoindex on;
+	cgi_ext .py .php .pl;
+
+	location /random {
+		root docs;
+		cgi_path docs;
+	}
+
+
+	error_page 404 html/index.html;
+	client_max_body_size 228;
+	root docs;
+	index html/index.html;
+	location /path {
+		index invalid1 invalid2 html/index.html;
+		cgi_ext .py;
+	}
+	location / {
+		root docs;
+	}
+}
