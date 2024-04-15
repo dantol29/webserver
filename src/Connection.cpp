@@ -9,6 +9,7 @@ Connection::Connection(struct pollfd &pollFd, Server &server)
 	// TODO: should I initialize the _response here?
 	_response = HTTPResponse();
 	// TODO: should I initialize the _headers, _body, and _chunkData to empty strings?
+	_buffer = "";
 	_headers = "";
 	_headersComplete = false;
 	_headersTotalBytesRead = 0;
@@ -143,6 +144,7 @@ void Connection::setBodyIsChunked(bool bodyIsChunked)
 // Attempts to read HTTP request headers from the client connection into _headers.
 bool Connection::readHeaders()
 {
+	// char buffer[BUFFER_SIZE] = {0};
 	std::cout << "\nreadHeaders" << std::endl;
 	// Both are in the Connection object now
 	// size_t totalRead = 0;
@@ -158,7 +160,25 @@ bool Connection::readHeaders()
 		std::cout << "bytesRead: " << bytesRead << std::endl;
 		if (bytesRead > 0)
 		{
-			_headers.append(buffer, bytesRead);
+			std::cout << "bytesRead > 0" << std::endl;
+			// _headers.append(buffer, bytesRead);
+			_buffer.append(buffer, bytesRead);
+			std::cout << "_buffer: " << _buffer << std::endl;
+			// This will return the index of the first occurrence of "\r\n\r\n" in the string, i.e. the index of '\r' in
+			// the last CRLF
+			std::size_t headersEnd = _buffer.find("\r\n\r\n");
+			if (headersEnd != std::string::npos)
+			{
+				_headers = _buffer.substr(0, headersEnd);
+				_headersComplete = true;
+				// We don't want to include the body in the buffer
+				_buffer = _buffer.substr(headersEnd + 4);
+				_bodyTotalBytesRead = _buffer.size();
+				std::cout << "_headers: " << _headers << std::endl;
+				std::cout << "_buffer: " << _buffer << std::endl;
+				return true;
+			}
+			// std::cout << "_headers: " << _headers << std::endl;
 			_headersTotalBytesRead += bytesRead;
 			if (_headersTotalBytesRead > _clientMaxHeadersSize)
 			{
@@ -166,8 +186,6 @@ bool Connection::readHeaders()
 				_response.setStatusCode(413);
 				return false;
 			}
-			if (_headers.find("\r\n\r\n") != std::string::npos)
-				_headersComplete = true;
 		}
 		else if (bytesRead < 0)
 		{
@@ -182,6 +200,7 @@ bool Connection::readHeaders()
 			return false;
 		}
 	}
+	std::cout << "Exiting readHeaders" << std::endl;
 	return true;
 }
 // About the hexa conversion
@@ -301,17 +320,28 @@ bool Connection::readChunk(size_t chunkSize, std::string &chunkData, HTTPRespons
 
 bool Connection::readBody()
 {
+	std::cout << "\nEntering readBody" << std::endl;
 	size_t contentLength = getContentLength(_headers);
+	std::cout << "Content-Length: " << contentLength << std::endl;
 	char buffer[BUFFER_SIZE];
-	size_t bytesRead = 0;
+	size_t bytesRead = _buffer.size();
+	std::cout << "bytesRead: " << bytesRead << std::endl;
+	_body.append(_buffer);
 	if (bytesRead < contentLength)
 	{
 		// TODO: check if this is blocking
 		ssize_t read = recv(_pollFd.fd, buffer, BUFFER_SIZE, 0);
 		if (read > 0)
 		{
+			std::cout << "read > 0" << std::endl;
 			_body.append(buffer, read);
+			std::cout << "_body: " << _body << std::endl;
 			bytesRead += read;
+			if (bytesRead == contentLength)
+			{
+				_bodyComplete = true;
+				return true;
+			}
 		}
 		else if (read < 0)
 		{
@@ -321,11 +351,19 @@ bool Connection::readBody()
 		}
 		else
 		{
+			std::cout << "read == 0" << std::endl;
 			std::cout << "Connection closed" << std::endl;
-			_response.setStatusCode(400); // Bad Request
+			// 400 is not always correct in this case
+			// _response.setStatusCode(400); // Bad Request
 			return false;
 		}
 	}
+	else
+	{
+		_bodyComplete = true;
+	}
+	std::cout << "Exiting readBody" << std::endl;
+	_bodyComplete = true;
 	return true;
 }
 

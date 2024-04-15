@@ -63,7 +63,7 @@ std::string handleHomePage();
  * The response is then written back to the socket.
  * @param socket The socket descriptor representing the connection from a client.
  */
-void handleConnection(int socket);
+// void handleConnection(int socket);
 
 // utils.cpp
 int hexToInt(std::string hex);

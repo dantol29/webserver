@@ -88,17 +88,46 @@ void Server::startPollEventLoop()
 	}
 }
 
-void Server::handleConnection(Connection conn)
+void Server::handleConnection(Connection conn, size_t &i)
 {
 	conn.printConnection();
 
 	if (!conn.readRequestHeadersAndBody())
 	{
-		// think if closeClientConnection should be also a method of the Connection class
-		this->closeClientConnection(conn.getPollFd().fd, conn.getResponse());
+		std::cout << "Error reading headers" << std::endl;
+		// closeClientConnection(clientFD, response);
+		// think if this should be also a method of the Connection class
+		closeClientConnection(conn, i);
 		return;
 	}
-
+	// Explicit check if headers are complete
+	if (!conn.getHeadersComplete())
+	{
+		std::cout << "Headers incomplete, exiting handleConnection." << std::endl;
+		closeClientConnection(conn, i);
+		return; // Early exit if headers are not complete
+	}
+	std::string body;
+	// isChunked is a 'free' function but it could be a method of the Connection class
+	if (conn.isChunked())
+	{
+		std::cout << "Chunked body" << std::endl;
+		if (!conn.readChunkedBody())
+		{
+			closeClientConnection(conn, i);
+			return;
+		}
+	}
+	else
+	{
+		std::cout << "Regular body" << std::endl;
+		if (!conn.readBody())
+		{
+			std::cout << "Error reading body" << std::endl;
+			closeClientConnection(conn, i);
+			return;
+		}
+	}
 	// It should be double "\r\n" to separate the headers from the body
 	std::string httpRequestString = conn.getHeaders() + conn.getBody();
 	HTTPRequest request(httpRequestString.c_str());
@@ -131,6 +160,9 @@ void Server::handleConnection(Connection conn)
 	}
 	write(conn.getPollFd().fd, responseString.c_str(), responseString.size());
 	close(conn.getPollFd().fd);
+	_FDs.erase(_FDs.begin() + i);
+	_connections.erase(_connections.begin() + i);
+	--i;
 }
 
 /*** Private Methods ***/
@@ -302,15 +334,19 @@ void Server::AlertAdminAndTryToRecover()
 
 /* for handleConnection */
 
-void Server::closeClientConnection(int clientFD, HTTPResponse &response)
+void Server::closeClientConnection(Connection &conn, size_t &i)
 {
-	if (response.getStatusCode() != 0)
+	// if (response.getStatusCode() != 0)
+	if (conn.getResponse().getStatusCode() != 0)
 	{
-		std::string responseString = response.toString();
-		send(clientFD, responseString.c_str(), responseString.size(), 0);
+		std::string responseString = conn.getResponse().toString();
+		send(conn.getPollFd().fd, responseString.c_str(), responseString.size(), 0);
 	}
 	// TODO: should we close it with the Destructor of the Connection class?
-	close(clientFD);
+	close(conn.getPollFd().fd);
+	_FDs.erase(_FDs.begin() + i);
+	_connections.erase(_connections.begin() + i);
+	--i;
 }
 
 /* Others */
