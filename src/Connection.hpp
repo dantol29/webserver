@@ -16,12 +16,14 @@ class Connection
   private:
 	struct pollfd _pollFd;
 	HTTPResponse _response;
+	std::string _buffer;
 	std::string _headers;
 	bool _headersComplete;
 	size_t _headersTotalBytesRead;
 	size_t _clientMaxHeadersSize;
 	std::string _body;
 	bool _bodyComplete;
+	size_t _bodyTotalBytesRead;
 	bool _bodyIsChunked;
 	std::string _chunkData;
 
