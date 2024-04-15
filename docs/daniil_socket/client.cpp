@@ -6,24 +6,53 @@
 #include <iomanip>	// std::hex, std::setw, std::setfill
 #include <string>
 
-// Helper function to print characters in hexadecimal
 void printHex(const std::string &data)
 {
 	std::cout << "Hexadecimal representation:" << std::endl;
-	// in C++98 without range-based for loop
 	for (unsigned int i = 0; i < data.size(); ++i)
-	{
 		std::cout << std::hex << std::setw(2) << std::setfill('0') << (int)data[i] << " ";
-	}
-
-	// for (unsigned char c : data)
-	// {
-	// 	std::cout << std::hex << std::setw(2) << std::setfill('0') << (int)c << " ";
-	// }
-	// std::cout << std::dec << std::endl;
 }
 
-// Function to print the HTTP request, showing escape characters like \n and \r
+void printHexStartLength(const std::string &data, size_t start, size_t length)
+{
+	for (size_t i = start; i < start + length && i < data.size(); ++i)
+	{
+		std::cout << std::hex << std::setw(2) << std::setfill('0') << (int)(unsigned char)data[i] << " ";
+	}
+	std::cout << std::dec << std::endl;
+}
+
+void printHexThird(const std::string &data, size_t start, size_t length)
+{
+	std::cout << "Hexadecimal output from position " << start << ":" << std::endl;
+	std::cout << "start: " << start << ", length: " << length << std::endl;
+	std::cout << "data.size(): " << data.size() << std::endl;
+	size_t end = (start + length <= data.size()) ? start + length : data.size() - start;
+	std::cout << "end: " << end << std::endl;
+	char *data_c = (char *)data.c_str();
+	std::cout << "while loop" << std::endl;
+	while (*data_c != '\0')
+	{
+		std::cout << std::hex << std::setw(2) << std::setfill('0') << (int)(unsigned char)*data_c << " ";
+		std::cout << "[" << *data_c << "] ";
+
+		data_c++;
+	}
+
+	std::cout << std::dec << std::endl;
+	std::cout << "for loop" << std::endl;
+	for (size_t i = start; i < end; ++i)
+	{
+		std::cout << std::setw(2) << std::setfill('0') << std::hex << (int)(unsigned char)data[i] << " ";
+		if (data[i] == '\r')
+			std::cout << "(CR) ";
+
+		if (data[i] == '\n')
+			std::cout << "(LF) ";
+	}
+	std::cout << std::dec << std::endl;
+}
+
 void printHTTPRequest(const std::string httpRequest, size_t startPos = 0)
 {
 	std::cout << "HTTP Request with not printables:" << std::endl;
@@ -33,32 +62,26 @@ void printHTTPRequest(const std::string httpRequest, size_t startPos = 0)
 		{
 			switch (c)
 			{
-			case '\n': // Newline character
+			case '\n':
 				std::cout << "\\n";
 				break;
-			case '\r': // Carriage return
+			case '\r':
 				std::cout << "\\r";
 				break;
-			case '\t': // Tab character
+			case '\t':
 				std::cout << "\\t";
 				break;
 			default:
 				if (c >= 32 && c <= 126)
-				{
-					std::cout << c; // Print all printable ASCII characters
-				}
+					std::cout << c;
 				else
-				{
-					// Print other non-printables as a hexadecimal value for visibility
 					std::cout << "\\x" << std::hex << std::setw(2) << std::setfill('0') << (int)c << std::dec;
-				}
 			}
 		}
 	}
 	std::cout << std::endl;
 }
 
-// Function to extract content length from HTTP header
 int extractContentLength(const std::string &httpRequest)
 {
 	size_t startPos = httpRequest.find("Content-Length: ");
@@ -105,19 +128,20 @@ int extractContentLengthAlt(const std::string &httpRequest)
 	std::cout << "startPos: " << startPos << std::endl;
 	printHTTPRequest(httpRequest, startPos);
 	startPos += 15; // Move past "Content-Length:"
-	std::cout << "startPos after moving: " << startPos << std::endl;
+	// std::cout << "startPos after moving: " << startPos << std::endl;
 	printHTTPRequest(httpRequest, startPos);
 	while (startPos < httpRequest.size() && std::isspace(httpRequest[startPos]))
-	{
 		startPos++; // Skip any spaces after the colon
-	}
-
+	// std::cout << "startPos after skipping spaces: " << startPos << std::endl;
 	size_t endPos = httpRequest.find("\r\n", startPos);
 	std::cout << "endPos: " << endPos << std::endl;
 	printHTTPRequest(httpRequest, endPos);
 	if (endPos == std::string::npos)
 	{
 		std::cout << "Malformed HTTP header, no CRLF after Content-Length." << std::endl;
+		printHTTPRequest(httpRequest, startPos);
+		// printHexStartLength(httpRequest, startPos, 50);
+		printHexThird(httpRequest, startPos, 50);
 		return -1;
 	}
 
@@ -127,7 +151,9 @@ int extractContentLengthAlt(const std::string &httpRequest)
 
 	try
 	{
-		return std::stoi(contentLengthStr);
+		int contentLength = std::stoi(contentLengthStr);
+		std::cout << "Parsed Content-Length: " << contentLength << std::endl;
+		return contentLength;
 	}
 	catch (const std::exception &e)
 	{
