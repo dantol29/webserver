@@ -57,6 +57,15 @@ HTTPRequest::HTTPRequest(const char *request)
 			parseBody(request);
 		else if (_statusCode == 200 && !_isChunked && _method != "GET")
 			parseFileBody(request);
+		std::vector<File>::iterator it;
+		std::map<std::string, std::string>::iterator it2;
+		std::vector<std::string>::iterator it3;
+		for (it = _files.begin(); it != _files.end(); ++it){
+			for (it2 = it->headers.begin(); it2 != it->headers.end(); ++it2)
+				std::cout << "Key: " << it2->first << ", Value: " << it2->second << std::endl;
+			for (it3 = it->fileContent.begin(); it3 != it->fileContent.end(); ++it3)
+				std::cout << "Data: " << *it3 << std::endl;
+		}
 	}
 }
 
@@ -132,9 +141,15 @@ std::string HTTPRequest::getErrorMessage() const
 	return (_errorMessage);
 }
 
-std::string HTTPRequest::getUploadBoundary() const{
+std::string HTTPRequest::getUploadBoundary() const
+{
 	return (_uploadBoundary);
 }
+
+// std::vector<File> HTTPRequest::getFiles() const
+// {
+// 	return (_files);
+// }
 
 void HTTPRequest::setIsChunked(bool n)
 {
@@ -294,12 +309,14 @@ bool HTTPRequest::parseFileBody(const char *request)
 		start = i;
 		while (request[i] && !hasCRLF(request, i, 0))
 			i++;
-		saveFileHeaders(str_request.substr(start, i - start)); // [HEADERS]
+		if (!saveFileHeaders(str_request.substr(start, i - start))) // [HEADERS]
+			return (ft_error(400, "Invalid file upload headers"));
 		i += 2; // [CRLF]
 		start = i;
 		while (request[i] && !hasCRLF(request, i, 0))
 			i++;
-		//saveData [DATA]
+		if (!saveFileData(request, i)) // [DATA]
+			return (ft_error(400, "Invalid file data"));
 		i += 2; // [CRLF]
 		start = i;
 		while (request[i] && !hasCRLF(request, i, 0))
@@ -336,6 +353,8 @@ std::ostream& operator<<(std::ostream& out, const HTTPRequest& obj)
 	for (size_t i = 0; i < c.size(); ++i)
 		out << c[i] << std::endl;
 	out << "---------------------End--------------------------" << std::endl;
+
+	// for (unsigned int i = 0; i <)
 	return (out);
 }
 
@@ -344,7 +363,15 @@ std::ostream& operator<<(std::ostream& out, const HTTPRequest& obj)
 
 
 
+
+
 // -----------------------UTILS-------------------------------
+
+
+
+
+
+
 
 
 
@@ -398,12 +425,68 @@ bool HTTPRequest::hasMandatoryHeaders()
 	return (true);
 }
 
-bool HTTPRequest::saveFileHeaders(std::string& headers)
+// [KEY][:][SP][VALUE][;][SP][KEY][:][SP][VALUE][CRLF]
+bool HTTPRequest::saveFileHeaders(const std::string& headers)
 {
-	
+	struct File file;
+	std::string key;
+	std::string value;
+	unsigned int start = 0;
+	unsigned int i = 0;
+
+	while (i < headers.length()){
+		start = i;
+		while (i < headers.length() && headers[i] != ':')
+			i++;
+		key = headers.substr(start, i - start); // [KEY]
+		std::cout << key << std::endl;
+		if (headers[i++] != ':') // [:]
+			return (false);
+		if (headers[i++] != ' ') // [SP]
+			return (false);
+		start = i;
+		while (i < headers.length() && headers[i] != ';' && !hasCRLF(headers.c_str(), i, 0)){
+			std::cout << headers[i] << std::endl;
+			i++;
+		}
+		value = headers.substr(start, i - start); // [VALUE]
+		file.headers.insert(std::make_pair(key, value));
+		if (hasCRLF(headers.c_str(), i, 0)){
+			std::cout << value << std::endl;
+			break ;
+		} // [CRLF]
+		if (headers[i++] != ';') // [;]
+			return (false);
+		if (headers[i++] != ' ') // [SP]
+			return (false);
+	}
+	if (hasCRLF(headers.c_str(), i, 0)){ // [CRLF]
+		_files.push_back(file);
+		return (true);
+	}
+	return (false);
 }
 
-bool HTTPRequest::saveVariables(std::string &variables)
+// [DATA][CRLF][DATA[CRLF]
+bool HTTPRequest::saveFileData(const std::string& data, unsigned int& i)
+{
+	std::vector<std::string> tmpArray;
+	unsigned int start = 0;
+
+	while (i < data.length()){
+		start = i;
+		while (i < data.length() && data[i] != '\r')
+			i++;
+		tmpArray.push_back(data.substr(start, i - start)); // [DATA]
+		if (!hasCRLF(data.c_str(), i, 0)) // [CRLF]
+			return (false);
+		i += 2;
+	}
+	_files.back().fileContent = tmpArray;
+	return (true);
+}
+
+bool HTTPRequest::saveVariables(std::string& variables)
 {
 	int startPos = 0;
 	std::string key;

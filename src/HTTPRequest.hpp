@@ -7,9 +7,15 @@
 #include <map>
 #include <vector>
 
+// For file upload
+//./client $'POST / HTTP/1.1\r\nhost: www.example.com\r\ncontent-type: multipart/form-data; boundary=1234567890\r\ncontent-length: 5\r\n\r\n1234567890\r\nContent-Disposition: form-data; name="text"\r\nSome text data\r\n1234567890--\r\n\r\n' 
+
+
 // It is RECOMMENDED that all HTTP
 // senders and recipients support, at a minimum, request-line lengths of 8000 octets
 #define MAX_URI 200
+
+struct File;
 
 class HTTPRequest
 {
@@ -33,10 +39,21 @@ class HTTPRequest
 	std::multimap<std::string, std::string> getHeaders() const;
 	std::pair<std::string, std::string> getHeaders(std::string key) const;
 	std::vector<std::string> getBody() const;
+	std::vector<File> getFiles() const;
 
 	// CHUNKED REQUESTS
 	void setIsChunked(bool a);
 	bool parseChunkedBody(const char *request);
+
+  private:
+	
+	// INTERNAL TOOLS
+	HTTPRequest();
+	bool parseRequestLine(const char *request);
+	bool parseHeaders(const char *request);
+	bool parseBody(const char *request);
+	bool parseFileBody(const char *request);
+	bool ft_error(int statusCode, std::string message);
 
 	// FILE UPLOAD
 	struct File
@@ -44,15 +61,6 @@ class HTTPRequest
 		std::map<std::string, std::string> headers;
 		std::vector<std::string> fileContent;
 	};
-
-
-  private:
-	HTTPRequest();
-	bool parseRequestLine(const char *request);
-	bool parseHeaders(const char *request);
-	bool parseBody(const char *request);
-	bool parseFileBody(const char *request);
-	bool ft_error(int statusCode, std::string message);
 
 	// VARIABLES
 	int _statusCode;
@@ -69,7 +77,8 @@ class HTTPRequest
 	std::vector<File> _files;
 
 	// UTILS
-	bool saveFileHeaders(std::string& headers);
+	bool saveFileHeaders(const std::string& headers);
+	bool saveFileData(const std::string& data, unsigned int& i);
 	bool saveVariables(std::string &variables);
 	void makeHeadersLowCase();
 	bool isValidHost(std::string host);
