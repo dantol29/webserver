@@ -272,11 +272,12 @@ bool HTTPRequest::parseBody(const char *request)
 	return (end);
 }
 
+// [BOUNDARY][CRLF][HEADERS][CRLF][DATA][CRLF][BOUNDARY--][CRLF][CRLF]
 bool HTTPRequest::parseFileBody(const char *request)
 {
 	unsigned int i = 0;
 	unsigned int start = 0;
-	std::string string_request(request);
+	std::string str_request(request);
 
 	skipHeader(request, i);
 	start = i;
@@ -285,30 +286,29 @@ bool HTTPRequest::parseFileBody(const char *request)
 		start = i;
 		while (request[i] && !hasCRLF(request, i, 0))
 			i++;
-		//std::cout << string_request.substr(start, i - start) << "==" << _uploadBoundary << std::endl;
-		if (string_request.substr(start, i - start) != _uploadBoundary) // starting boundary
+		if (str_request.substr(start, i - start) != _uploadBoundary) // [BOUNDARY]
 			return (ft_error(400, "Invalid boundary in the file upload body"));
-		i += 2; // skip '/r/n'
+		i += 2; // [CRLF]
 		start = i;
 		while (request[i] && !hasCRLF(request, i, 0))
 			i++;
-		//saveFileHeaders // headers
-		i += 2; // skip '/r/n'
-		start = i;
-		while (request[i] && !hasCRLF(request, i, 0)) // body
-			i++;
-		i += 2; // skip '/r/n'
+		saveFileHeaders(str_request.substr(start, i - start)); // [HEADERS]
+		i += 2; // [CRLF]
 		start = i;
 		while (request[i] && !hasCRLF(request, i, 0))
 			i++;
-		//std::cout << string_request.substr(start, i - start) << "==" << _uploadBoundary + "--" << std::endl;
-		if (string_request.substr(start, i - start) != _uploadBoundary + "--") // ending boundary
+		//saveData [DATA]
+		i += 2; // [CRLF]
+		start = i;
+		while (request[i] && !hasCRLF(request, i, 0))
+			i++;
+		if (str_request.substr(start, i - start) != _uploadBoundary + "--") // [BOUNDARY]
 			return (ft_error(400, "Invalid boundary in the file upload body"));
-		if (hasCRLF(request, i, 1))	
+		if (hasCRLF(request, i, 1))	// [CRLF][CRLF]
 			break ;
 		i++;
 	}
-	if (hasCRLF(request, i, 1) && !request[i + 4])
+	if (hasCRLF(request, i, 1) && !request[i + 4]) // nothing after body
 		return (true);
 	return (ft_error(400, "Invalid body"));
 }
@@ -394,6 +394,11 @@ bool HTTPRequest::hasMandatoryHeaders()
 		if (isHost != 1)
 			return (ft_error(400, "Request MUST have host"));
 	return (true);
+}
+
+bool HTTPRequest::saveFileHeaders(std::string& headers)
+{
+	
 }
 
 bool HTTPRequest::saveVariables(std::string &variables)
