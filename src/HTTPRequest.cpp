@@ -5,7 +5,7 @@ bool isValidContentType(std::string type);
 bool isValidHost(std::string host);
 std::string extractUploadBoundary(std::string line);
 
-HTTPRequest::HTTPRequest() : _statusCode(200), _isChunked(false), _method(""), _requestTarget(""), _protocolVersion("")
+HTTPRequest::HTTPRequest() : _statusCode(200), _isChunked(false), _method(""), _requestTarget(""), _protocolVersion(""), _uploadBoundary(""), _errorMessage("")
 {
 }
 
@@ -19,6 +19,9 @@ HTTPRequest::HTTPRequest(const HTTPRequest &obj)
 	_body = obj._body;
 	_headers = obj._headers;
 	_queryString = obj._queryString;
+	_uploadBoundary = obj._uploadBoundary;
+	_errorMessage = obj._errorMessage;
+	_isChunkFinish = obj._isChunkFinish;
 }
 
 HTTPRequest &HTTPRequest::operator=(const HTTPRequest &obj)
@@ -33,6 +36,9 @@ HTTPRequest &HTTPRequest::operator=(const HTTPRequest &obj)
 		_body = obj._body;
 		_headers = obj._headers;
 		_queryString = obj._queryString;
+		_uploadBoundary = obj._uploadBoundary;
+		_errorMessage = obj._errorMessage;
+		_isChunkFinish = obj._isChunkFinish;
 	}
 	return (*this);
 }
@@ -128,6 +134,10 @@ std::string HTTPRequest::getErrorMessage() const
 	return (_errorMessage);
 }
 
+std::string HTTPRequest::getUploadBoundary() const{
+	return (_uploadBoundary);
+}
+
 void HTTPRequest::setIsChunked(bool n)
 {
 	_isChunked = n;
@@ -160,7 +170,7 @@ bool HTTPRequest::hasMandatoryHeaders()
 			if (!isValidContentType(it->second) || _method != "POST")
 				return (ft_error(400, "Invalid content-type"));
 			if (it->second.substr(0, 30) == "multipart/form-data; boundary=")
-				std::cout << extractUploadBoundary(it->second) << std::endl;
+				_uploadBoundary = extractUploadBoundary(it->second);
 			isContentType++;
 		}
 		else if (it->first == "transfer-encoding")

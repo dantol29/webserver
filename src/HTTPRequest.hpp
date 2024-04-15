@@ -22,14 +22,15 @@ class HTTPRequest
 	HTTPRequest &operator=(const HTTPRequest &obj);
 	~HTTPRequest();
 	HTTPRequest(const char *request);
+	int getStatusCode() const;
 	std::string getMethod() const;
 	std::string getHost() const;
-	int getStatusCode() const;
 	std::string getRequestTarget() const;
 	std::string getProtocolVersion() const;
+	std::string getErrorMessage() const;
+	std::string getUploadBoundary() const;
 	bool getIsChunked() const;
 	bool getIsChunkFinish() const;
-	std::string getErrorMessage() const;
 	std::multimap<std::string, std::string> getQueryString() const;
 	std::multimap<std::string, std::string> getHeaders() const;
 	std::pair<std::string, std::string> getHeaders(std::string key) const;
@@ -51,6 +52,7 @@ class HTTPRequest
 	std::string _method;
 	std::string _requestTarget;
 	std::string _protocolVersion;
+	std::string	_uploadBoundary;
 	std::string _errorMessage;
 	std::multimap<std::string, std::string> _queryString;
 	std::multimap<std::string, std::string> _headers;

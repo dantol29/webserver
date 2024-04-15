@@ -39,7 +39,7 @@ void Server::startPollEventLoop()
 		// std::cout << "printFDsVector(_FDs); - after polling" << std::endl;
 		// printFDsVector(_FDs);
 		// print_connectionsVector(_connections);
-		std::cout << "poll() returned: " << ret << std::endl;
+		//std::cout << "poll() returned: " << ret << std::endl;
 		if (ret > 0)
 		{
 			for (size_t i = 0; i < _FDs.size(); i++)
@@ -50,21 +50,21 @@ void Server::startPollEventLoop()
 					// std::cout << "POLLIN" << std::endl;
 					if (i == 0)
 					{
-						std::cout << "Server socket event" << std::endl;
+						//std::cout << "Server socket event" << std::endl;
 						// std::cout << "i == 0" << std::endl;
 
 						acceptNewConnection();
-						printFDsVector(_FDs);
-						print_connectionsVector(_connections);
+						//printFDsVector(_FDs);
+						//print_connectionsVector(_connections);
 					}
 					else
 					{
-						std::cout << "Client socket event" << std::endl;
+						//std::cout << "Client socket event" << std::endl;
 						// std::cout << "i != 0" << std::endl;
 						// TODO: only the index is actually needed
 						handleConnection(_connections[i], i);
-						printFDsVector(_FDs);
-						print_connectionsVector(_connections);
+						//printFDsVector(_FDs);
+						//print_connectionsVector(_connections);
 						// _FDs.erase(_FDs.begin() + i);
 						// --i;
 					}
@@ -130,10 +130,12 @@ void Server::handleConnection(Connection conn, size_t &i)
 		}
 	}
 	// It should be double "\r\n" to separate the headers from the body
-	std::string httpRequestString = conn.getHeaders() + conn.getBody();
+	std::string httpRequestString = conn.getHeaders() + "\r\n\r\n" + conn.getBody();
 	std::cout << "Received HTTP request: " << std::endl << httpRequestString << std::endl;
 	HTTPRequest request(httpRequestString.c_str());
 	std::cout << request.getStatusCode() << std::endl;
+	std::cout << request.getErrorMessage() << std::endl;
+	std::cout << request.getUploadBoundary() << std::endl;
 	std::cout << "Received HTTP request: " << std::endl << httpRequestString << std::endl;
 
 	// test to execute the python script (see: https://www.tutorialspoint.com/python/python_cgi_programming.htm)

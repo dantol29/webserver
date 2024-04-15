@@ -48,7 +48,6 @@ void skipHeader(const char *request, unsigned int &i)
 
 bool isValidContentType(std::string type)
 {
-	std::cout << type.substr(0, 30) << std::endl;
 	if (type == "text/plain" || type == "text/html" || \
 	type.substr(0, 30) == "multipart/form-data; boundary=")
 		return (true);

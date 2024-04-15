@@ -170,37 +170,6 @@ int main(int argc, char **argv)
 		return (1);
 	}
 
-	std::string request = argv[1];
-	std::cout << "Request (std::cout): " << request << std::endl;
-	printHTTPRequest(request);
-	size_t headersBodySeparator = request.find("\r\n\r\n");
-	if (headersBodySeparator == std::string::npos)
-	{
-		std::cerr << "Error: Malformed HTTP request" << std::endl;
-		return 1;
-	}
-	std::string headers(request.substr(0, headersBodySeparator));
-	std::string body(request.substr(request.find("\r\n\r\n") + 4));
-
-	// Extract and calculate content length
-	// int declaredContentLength = extractContentLength(headers);
-	int declaredContentLength = extractContentLengthAlt(headers);
-	if (declaredContentLength == -1)
-	{
-		std::cerr << "Error: Failed to extract Content-Length" << std::endl;
-		return 1;
-	}
-	size_t actualBodyLength = body.length();
-
-	std::cout << "Declared Content-Length: " << declaredContentLength << std::endl;
-	std::cout << "Actual Body Length: " << actualBodyLength << std::endl;
-
-	if (declaredContentLength != (int)actualBodyLength)
-	{
-		std::cerr << "Error: Declared Content-Length does not match the actual body length." << std::endl;
-		return 1;
-	}
-
 	// create socket by using the socket() system call.
 	int clientSocket = socket(AF_INET, SOCK_STREAM, 0);
 	// AF_INET: It specifies the IPv4 protocol family.
