@@ -53,10 +53,10 @@ HTTPRequest::HTTPRequest(const char *request)
 		parseRequestLine(request);
 		if (_statusCode == 200)
 			parseHeaders(request);
-		if (_statusCode == 200 && !_uploadBoundary.empty() && _method != "GET")
-			parseFileBody(request);
-		else if (_statusCode == 200 && !_isChunked && _method != "GET")
+		if (_statusCode == 200 && !_isChunked && _method != "GET" && _uploadBoundary.empty())
 			parseBody(request);
+		else if (_statusCode == 200 && !_isChunked && _method != "GET")
+			parseFileBody(request);
 	}
 }
 
@@ -282,17 +282,27 @@ bool HTTPRequest::parseFileBody(const char *request)
 	start = i;
 	while (request[i])
 	{
+		start = i;
 		while (request[i] && !hasCRLF(request, i, 0))
 			i++;
-		std::cout << string_request.substr(start, i) << std::endl;
-		if (string_request.substr(start, i) != _uploadBoundary) // starting boundary
+		//std::cout << string_request.substr(start, i - start) << "==" << _uploadBoundary << std::endl;
+		if (string_request.substr(start, i - start) != _uploadBoundary) // starting boundary
 			return (ft_error(400, "Invalid boundary in the file upload body"));
 		i += 2; // skip '/r/n'
 		start = i;
 		while (request[i] && !hasCRLF(request, i, 0))
 			i++;
-		std::cout << string_request.substr(start, i) << std::endl;
-		if (string_request.substr(start, i) != _uploadBoundary) // ending boundary
+		//saveFileHeaders // headers
+		i += 2; // skip '/r/n'
+		start = i;
+		while (request[i] && !hasCRLF(request, i, 0)) // body
+			i++;
+		i += 2; // skip '/r/n'
+		start = i;
+		while (request[i] && !hasCRLF(request, i, 0))
+			i++;
+		//std::cout << string_request.substr(start, i - start) << "==" << _uploadBoundary + "--" << std::endl;
+		if (string_request.substr(start, i - start) != _uploadBoundary + "--") // ending boundary
 			return (ft_error(400, "Invalid boundary in the file upload body"));
 		if (hasCRLF(request, i, 1))	
 			break ;
@@ -583,7 +593,8 @@ bool HTTPRequest::isOrigForm(std::string &requestTarget, int &queryStart)
 
 bool HTTPRequest::isValidContentType(std::string type)
 {
-	if (type == "text/plain" || type == "text/html")
+	if (type == "text/plain" || type == "text/html" || \
+	type.substr(0, 30) == "multipart/form-data; boundary=")
 		return (true);
 	return (false);
 }
