@@ -1,5 +1,6 @@
 #include "webserv.hpp"
 #include "HTTPRequest.hpp"
+#include <cstdlib>
 
 #define EXIT_FAILURE 1
 

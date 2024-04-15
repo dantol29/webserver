@@ -76,7 +76,9 @@ std::string readHtml(const std::string &filePath);
 // utils.cpp
 int hexToInt(std::string hex);
 bool isNumber(std::string line);
-bool hasCRLF(const char *request, unsigned int &i, int mode);
 bool isInvalidChar(const unsigned char &c);
+bool hasCRLF(const char *request, unsigned int &i, int mode);
+bool isVulnerablePath(const std::string& path);
+int	checkFile(const char *path);
 
 #endif
