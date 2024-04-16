@@ -14,5 +14,11 @@ h1 {
 <body>
 <h1>Hello, Webserv!</h1>
 <h1>you are on home, go to /hello for CGI returned html</h1>
+<form action="http://localhost:8080/" method="post" enctype="multipart/form-data">
+	<label for="file">Choose a file:</label>
+	<input type="file" id="file" name="file">
+	<br>
+	<input type="submit" value="Upload">
+</form>
 </body>
 </html>
