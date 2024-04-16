@@ -12,11 +12,12 @@ SRCS = src/main.cpp \
 	src/utils.cpp \
 	src/HTTPRequest.cpp \
 	src/HTTPResponse.cpp \
-	src/HTTPRequestUtils.cpp \
 	src/Router.cpp \
 	src/server_utils.cpp \
 	src/Server.cpp \
-	src/StaticContentHandler.cpp
+	src/StaticContentHandler.cpp \
+	src/ConfigFile.cpp \
+	src/get_next_line.cpp
 OBJDIR = obj
 OBJS = $(SRCS:%.cpp=$(OBJDIR)/%.o)
 
