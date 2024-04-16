@@ -141,16 +141,16 @@ void Server::handleConnection(Connection conn, size_t &i)
 	std::string _webRoot = getWebRoot();
 	// Check if this is the right way to do it
 	response = conn.getResponse();
+	std::string responseString;
+	response = router.routeRequest(request);
 	if (!router.pathisValid(request, response, _webRoot))
 	{
 		std::cout << "Path does not exist" << std::endl;
 		StaticContentHandler staticHandler;
 		response = staticHandler.handleNotFound();
-		return;
+		responseString = response.toString();
 	}
-	response = router.routeRequest(request);
-	std::string responseString;
-	if (response.isCGI() == true)
+	else if (response.isCGI() == true)
 	{
 		responseString = response.getBody();
 	}
