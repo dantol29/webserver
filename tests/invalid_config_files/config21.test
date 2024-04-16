@@ -1,0 +1,8 @@
+server {
+	listen 8001;
+
+	location /path {
+		random 22;
+		22;
+	}
+}
