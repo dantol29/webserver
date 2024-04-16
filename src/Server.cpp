@@ -63,7 +63,7 @@ void Server::startPollEventLoop()
 						// std::cout << "i != 0" << std::endl;
 						// TODO: only the index is actually needed
 						// handleConnection(_connections[i]);
-						handleConnection(_connections[i]);
+						handleConnection(_connections[i], i);
 						// printFDsVector(_FDs);
 						// print_connectionsVector(_connections);
 						// _FDs.erase(_FDs.begin() + i);
