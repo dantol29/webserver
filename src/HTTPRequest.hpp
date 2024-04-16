@@ -8,8 +8,7 @@
 #include <vector>
 
 // For file upload
-//./client $'POST / HTTP/1.1\r\nhost: www.example.com\r\ncontent-type: multipart/form-data; boundary=1234567890\r\ncontent-length: 5\r\n\r\n1234567890\r\nContent-Disposition: form-data; name="text"\r\nSome text data\r\n1234567890--\r\n\r\n' 
-
+// ./client $'POST / HTTP/1.1\r\nhost: www.example.com\r\ncontent-type: multipart/form-data; boundary=1234567890\r\ncontent-length: 5\r\n\r\n1234567890\r\nContent-Disposition: form-data; name: text\r\n\r\nSome text data\r\nMore data\r\nOK\r\n1234567890\r\nheader1: value1; header2: value2\r\n\r\nhahaha\r\n1234567890--\r\n\r\n'
 
 // It is RECOMMENDED that all HTTP
 // senders and recipients support, at a minimum, request-line lengths of 8000 octets
@@ -77,8 +76,9 @@ class HTTPRequest
 	std::vector<File> _files;
 
 	// UTILS
-	bool saveFileHeaders(const std::string& headers);
-	bool saveFileData(const std::string& data, unsigned int& i);
+	bool isUploadBoundary(const std::string& data, unsigned int& i);
+	bool saveFileHeaders(const std::string& headers, unsigned int& i);
+	bool saveFileData(const std::string& data, unsigned int& i, bool& isFinish);
 	bool saveVariables(std::string &variables);
 	void makeHeadersLowCase();
 	bool isValidHost(std::string host);

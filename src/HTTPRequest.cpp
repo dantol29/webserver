@@ -294,42 +294,24 @@ bool HTTPRequest::parseFileBody(const char *request)
 {
 	unsigned int i = 0;
 	unsigned int start = 0;
-	std::string str_request(request);
+	bool isFinish = false;
 
 	skipHeader(request, i);
 	start = i;
 	while (request[i])
 	{
-		start = i;
-		while (request[i] && !hasCRLF(request, i, 0))
-			i++;
-		if (str_request.substr(start, i - start) != _uploadBoundary) // [BOUNDARY]
-			return (ft_error(400, "Invalid boundary in the file upload body"));
-		i += 2; // [CRLF]
-		start = i;
-		while (request[i] && !hasCRLF(request, i, 0))
-			i++;
-		if (!saveFileHeaders(str_request.substr(start, i - start))) // [HEADERS]
+		if (start == i && !isUploadBoundary(request, i)) // [BOUNDARY] [CRLF]
+			return (ft_error(400, "Invalid boundary in the file upload"));
+		if (!saveFileHeaders(request, i)) // [HEADERS] [CRLF]
 			return (ft_error(400, "Invalid file upload headers"));
-		i += 2; // [CRLF]
-		start = i;
-		while (request[i] && !hasCRLF(request, i, 0))
-			i++;
-		if (!saveFileData(request, i)) // [DATA]
+		if (!saveFileData(request, i, isFinish)) // [DATA] [BOUNDARY--]
 			return (ft_error(400, "Invalid file data"));
-		i += 2; // [CRLF]
-		start = i;
-		while (request[i] && !hasCRLF(request, i, 0))
-			i++;
-		if (str_request.substr(start, i - start) != _uploadBoundary + "--") // [BOUNDARY]
-			return (ft_error(400, "Invalid boundary in the file upload body"));
-		if (hasCRLF(request, i, 1))	// [CRLF][CRLF]
+		if (isFinish)
 			break ;
-		i++;
 	}
-	if (hasCRLF(request, i, 1) && !request[i + 4]) // nothing after body
+	if (isFinish && hasCRLF(request, i, 0) && !request[i + 2]) // nothing after body
 		return (true);
-	return (ft_error(400, "Invalid body"));
+	return (ft_error(400, "Invalid file upload body"));
 }
 
 std::ostream& operator<<(std::ostream& out, const HTTPRequest& obj)
@@ -425,64 +407,79 @@ bool HTTPRequest::hasMandatoryHeaders()
 	return (true);
 }
 
-// [KEY][:][SP][VALUE][;][SP][KEY][:][SP][VALUE][CRLF]
-bool HTTPRequest::saveFileHeaders(const std::string& headers)
+// [KEY][:][SP][VALUE][;][SP][KEY][:][SP][VALUE][CRLF][CRLF]
+bool HTTPRequest::saveFileHeaders(const std::string& headers, unsigned int& i)
 {
 	struct File file;
 	std::string key;
 	std::string value;
 	unsigned int start = 0;
-	unsigned int i = 0;
 
 	while (i < headers.length()){
 		start = i;
 		while (i < headers.length() && headers[i] != ':')
 			i++;
 		key = headers.substr(start, i - start); // [KEY]
-		std::cout << key << std::endl;
 		if (headers[i++] != ':') // [:]
 			return (false);
 		if (headers[i++] != ' ') // [SP]
 			return (false);
 		start = i;
-		while (i < headers.length() && headers[i] != ';' && !hasCRLF(headers.c_str(), i, 0)){
-			std::cout << headers[i] << std::endl;
+		while (i < headers.length() && headers[i] != ';' && !hasCRLF(headers.c_str(), i, 0))
 			i++;
-		}
 		value = headers.substr(start, i - start); // [VALUE]
 		file.headers.insert(std::make_pair(key, value));
-		if (hasCRLF(headers.c_str(), i, 0)){
-			std::cout << value << std::endl;
+		if (hasCRLF(headers.c_str(), i, 1)) // [CRLF] [CRLF]
 			break ;
-		} // [CRLF]
-		if (headers[i++] != ';') // [;]
+		if (headers[i] && headers[i++] != ';') // [;]
 			return (false);
-		if (headers[i++] != ' ') // [SP]
+		if (headers[i] && headers[i++] != ' ') // [SP]
 			return (false);
 	}
-	if (hasCRLF(headers.c_str(), i, 0)){ // [CRLF]
-		_files.push_back(file);
-		return (true);
-	}
-	return (false);
+	if (!hasCRLF(headers.c_str(), i, 1)) // [CRLF] [CRLF]
+		return (false);
+	_files.push_back(file);
+	i += 4; // skip [CRLF] [CRLF]
+	return (true);
 }
 
-// [DATA][CRLF][DATA[CRLF]
-bool HTTPRequest::saveFileData(const std::string& data, unsigned int& i)
+// [DATA][CRLF][DATA[CRLF][BOUNDARY]
+bool HTTPRequest::saveFileData(const std::string& data, unsigned int& i, bool& isFinish)
 {
 	std::vector<std::string> tmpArray;
 	unsigned int start = 0;
 
 	while (i < data.length()){
 		start = i;
-		while (i < data.length() && data[i] != '\r')
+		while (i < data.length() && !hasCRLF(data.c_str(), i, 0))
 			i++;
-		tmpArray.push_back(data.substr(start, i - start)); // [DATA]
 		if (!hasCRLF(data.c_str(), i, 0)) // [CRLF]
 			return (false);
-		i += 2;
+		if (data.substr(start, i - start) == _uploadBoundary + "--"){ // [BOUNDARY--]
+			isFinish = true;
+			break ;
+		}
+		if (data.substr(start, i - start) == _uploadBoundary) // [BOUNDARY]
+			break ;
+		tmpArray.push_back(data.substr(start, i - start)); // [DATA]
+		i += 2; // skip [CRLF]
 	}
 	_files.back().fileContent = tmpArray;
+	i += 2; // skip [CRLF]
+	return (true);
+}
+
+bool HTTPRequest::isUploadBoundary(const std::string& data, unsigned int& i)
+{
+	unsigned int start = i;
+
+	while (i < data.length() && !hasCRLF(data.c_str(), i, 0))
+		i++;
+	if (!hasCRLF(data.c_str(), i, 0))
+		return (false);
+	if (data.substr(start, i - start) != _uploadBoundary) // [BOUNDARY]
+		return (false);
+	i += 2; // [CRLF]
 	return (true);
 }
 
