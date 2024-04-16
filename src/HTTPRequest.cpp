@@ -301,7 +301,7 @@ bool HTTPRequest::parseFileBody(const char *request)
 	while (request[i])
 	{
 		if (start == i && !isUploadBoundary(request, i)) // [BOUNDARY] [CRLF]
-			return (ft_error(400, "Invalid boundary in the file upload"));
+			return (ft_error(400, "Invalid boundary in the file upload1"));
 		if (!saveFileHeaders(request, i)) // [HEADERS] [CRLF]
 			return (ft_error(400, "Invalid file upload headers"));
 		if (!saveFileData(request, i, isFinish)) // [DATA] [BOUNDARY--]
@@ -309,7 +309,7 @@ bool HTTPRequest::parseFileBody(const char *request)
 		if (isFinish)
 			break ;
 	}
-	if (isFinish && hasCRLF(request, i, 0) && !request[i + 2]) // nothing after body
+	if (isFinish) // nothing after body // TODO: check CRLF and if there is nothing after body
 		return (true);
 	return (ft_error(400, "Invalid file upload body"));
 }
@@ -360,6 +360,7 @@ std::ostream& operator<<(std::ostream& out, const HTTPRequest& obj)
 
 bool HTTPRequest::hasMandatoryHeaders()
 {
+	_isChunked = false;
 	int isHost = 0;
 	int isContentLength = 0;
 	int isContentType = 0;
@@ -395,8 +396,10 @@ bool HTTPRequest::hasMandatoryHeaders()
 			_isChunked = true;
 		}
 	}
-	if (_isChunked && isContentLength > 0)
+	if (_isChunked && isContentLength > 0){
+		std::cout << "\033[1;31mbbbbbbbbbbbbbbbb\033[0m" << std::endl;
 		return (ft_error(400, "Invalid chunked request"));
+	}
 	if (_method == "POST" || _method == "DELETE"){
 		if (!(isHost == 1 && isContentLength == 1 && isContentType == 1))
 			return (ft_error(400, "Invalid headers"));
@@ -455,7 +458,7 @@ bool HTTPRequest::saveFileData(const std::string& data, unsigned int& i, bool& i
 			i++;
 		if (!hasCRLF(data.c_str(), i, 0)) // [CRLF]
 			return (false);
-		if (data.substr(start, i - start) == _uploadBoundary + "--"){ // [BOUNDARY--]
+		if (data.substr(start, i - start) == "--" + _uploadBoundary + "--"){ // [BOUNDARY--]
 			isFinish = true;
 			break ;
 		}
@@ -477,7 +480,7 @@ bool HTTPRequest::isUploadBoundary(const std::string& data, unsigned int& i)
 		i++;
 	if (!hasCRLF(data.c_str(), i, 0))
 		return (false);
-	if (data.substr(start, i - start) != _uploadBoundary) // [BOUNDARY]
+	if (data.substr(start, i - start) != "--" + _uploadBoundary) // [BOUNDARY]
 		return (false);
 	i += 2; // [CRLF]
 	return (true);
