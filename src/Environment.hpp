@@ -18,6 +18,8 @@ class Environment
   private:
 	std::map<std::string, std::string> metaVars;
 
+	friend std::ostream &operator<<(std::ostream &out, const Environment &instancePrinted);
+
   public:
 	Environment();
 	Environment(const Environment &other);

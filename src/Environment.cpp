@@ -335,3 +335,18 @@ Environment::~Environment()
 		delete[] envp[i];
 	}
 }
+
+std::ostream &operator<<(std::ostream &out, const Environment &instancePrinted)
+{
+	out << "\033[35m";
+	out << "Environment Variables:" << std::endl;
+	for (std::map<std::string, std::string>::const_iterator it = instancePrinted.metaVars.begin();
+		 it != instancePrinted.metaVars.end();
+		 ++it)
+	{
+		out << it->first << "=" << it->second << std::endl;
+	}
+
+	out << "\033[0m";
+	return out;
+}

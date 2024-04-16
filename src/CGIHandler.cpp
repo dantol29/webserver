@@ -34,6 +34,19 @@ HTTPResponse CGIHandler::handleRequest(const HTTPRequest &request)
 	return response;
 }
 
+std::string CGIHandler::handleCGIRequest(const HTTPRequest &request)
+{
+	Environment env;
+
+	// load the meta vars from the request to env
+	env.HTTPRequestToMetaVars(request, env);
+	std::cout << env;
+
+	std::string cgiOutput = executeCGI(env);
+
+	return cgiOutput;
+}
+
 // NOTE FOR SELF: key1=value1&key2=value2&key3=value3 might not be directly passed as command-line arguments (i.e., in
 // argv) it migth  be passed to the script as part of the environment variables
 //=> what is passed as command-line arguments ? path to the script + the path to the file to process ?
