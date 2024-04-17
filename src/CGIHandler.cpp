@@ -36,21 +36,29 @@ HTTPResponse CGIHandler::handleRequest(const HTTPRequest &request)
 	return response;
 }
 
-// NOTE FOR SELF: key1=value1&key2=value2&key3=value3 might not be directly passed as command-line arguments (i.e., in
-// argv) it migth  be passed to the script as part of the environment variables
-//=> what is passed as command-line arguments ? path to the script + the path to the file to process ?
 char *const *CGIHandler::createArgvForExecve(const Environment &env)
 {
+	std::cout << env;
 	char **argv = new char *[2];
 
 	std::string scriptName = env.getVar("SCRIPT_NAME");
 	std::string pathTranslated = env.getVar("PATH_TRANSLATED");
 	std::string scriptPath = pathTranslated + scriptName;
 
-	argv[0] = new char[scriptPath.length() + 1];
-	ft_strcpy(argv[0], scriptPath.c_str());
-
-	argv[1] = NULL;
+	if (env.getVar("X_INTERPRETER_PATH") != "")
+	{
+		argv[0] = new char[env.getVar("X_INTERPRETER_PATH").length() + 1];
+		ft_strcpy(argv[0], env.getVar("X_INTERPRETER_PATH").c_str());
+		argv[1] = new char[scriptPath.length() + 1];
+		ft_strcpy(argv[1], scriptPath.c_str());
+		argv[2] = NULL;
+	}
+	else
+	{
+		argv[0] = new char[scriptPath.length() + 1];
+		ft_strcpy(argv[0], scriptPath.c_str());
+		argv[1] = NULL;
+	}
 
 	return argv;
 }

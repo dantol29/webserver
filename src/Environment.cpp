@@ -258,6 +258,7 @@ void Environment::subtractQueryFromPathInfo(std::string &pathInfo, const std::st
 // RFC 3875 for more information on CGI environment variables, or README_CGI_ENV.md
 void Environment::HTTPRequestToMetaVars(HTTPRequest request, Environment &env)
 {
+	env.setVar("X_INTERPRETER_PATH", "/home/lmangall/.brew/bin/python3"); // school computer...
 	//________General variables
 	// Set the method used for the request (e.g., GET, POST)
 	env.setVar("REQUEST_METHOD", request.getMethod());
