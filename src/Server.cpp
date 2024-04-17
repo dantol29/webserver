@@ -130,13 +130,11 @@ void Server::handleConnection(Connection conn, size_t &i)
 	}
 
 	// NOTE: end of buffering/parsing part, start of router
+
+	Router router;
 	std::string httpRequestString = conn.getHeaders() + conn.getBody();
 	HTTPRequest request(httpRequestString.c_str());
 	std::string responseString;
-	// std::cout << request.getStatusCode() << std::endl;
-	// printVariablesHeadersBody(request);
-	Router router;
-
 	HTTPResponse response;
 	response = conn.getResponse();
 	response = router.routeRequest(request);
