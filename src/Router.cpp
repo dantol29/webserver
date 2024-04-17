@@ -15,7 +15,8 @@ HTTPResponse Router::routeRequest(const HTTPRequest &request)
 	std::string _webRoot = "var/www"; // TODO: get this from the config file
 	if (isCGI(request))
 	{
-		response = CGIHandler().handleRequest(request);
+		CGIHandler cgiHandler;
+		response = cgiHandler.handleRequest(request);
 	}
 	else if (isDynamicRequest(request))
 	{
