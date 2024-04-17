@@ -24,7 +24,7 @@ HTTPResponse Router::routeRequest(const HTTPRequest &request)
 	else // it is a static request
 	{
 		StaticContentHandler staticContentInstance;
-		if (!pathisValid(const_cast<HTTPRequest &>(request), _webRoot))
+		if (!pathIsValid(const_cast<HTTPRequest &>(request), _webRoot))
 		{
 
 			std::cout << "Path does not exist" << std::endl;
@@ -91,7 +91,7 @@ void Router::splitTarget(const std::string &target)
 	}
 }
 
-bool Router::pathisValid(HTTPRequest &request, std::string webRoot)
+bool Router::pathIsValid(HTTPRequest &request, std::string webRoot)
 {
 	std::string host = request.getHost();
 	std::cout << "Host: " << host << std::endl;
