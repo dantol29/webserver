@@ -1,7 +1,5 @@
 #include "CGIHandler.hpp"
 
-#define EXIT_FAILURE 1
-
 CGIHandler::CGIHandler()
 {
 }
