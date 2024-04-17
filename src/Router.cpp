@@ -24,16 +24,15 @@ HTTPResponse Router::routeRequest(const HTTPRequest &request)
 	}
 	else // it is a static request
 	{
+		StaticContentHandler staticContentInstance;
 		if (!pathisValid(const_cast<HTTPRequest &>(request), response, _webRoot))
 		{
 
 			std::cout << "Path does not exist" << std::endl;
-			StaticContentHandler staticHandler;
-			response = staticHandler.handleNotFound();
+			response = staticContentInstance.handleNotFound();
 		}
 		else
 		{
-			StaticContentHandler staticContentInstance;
 			response = staticContentInstance.handleRequest(request);
 		}
 	}

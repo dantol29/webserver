@@ -25,13 +25,11 @@ HTTPResponse CGIHandler::handleRequest(const HTTPRequest &request)
 	env.HTTPRequestToMetaVars(request, env);
 	std::string cgiOutput = executeCGI(env);
 
-	HTTPResponse response = CGIStringToResponse(cgiOutput);
-
 	// HTTPResponse response;
 	// response.setBody(cgiOutput);
 	// response.setIsCGI(true);
 	// std::cout << response;
-	return response;
+	return CGIStringToResponse(cgiOutput);
 }
 
 char *const *CGIHandler::createArgvForExecve(const MetaVariables &env)
