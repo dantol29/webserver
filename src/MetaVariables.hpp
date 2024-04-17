@@ -30,8 +30,8 @@ class MetaVariables
 	void printMetaVars() const;
 
 	// transform request to meta vars (MetaVariables object)
-	bool isAuthorityForm(const HTTPRequest &request);
-	void RequestTargetToMetaVars(HTTPRequest request, MetaVariables &env);
+	// bool isAuthorityForm(const HTTPRequest &request);
+	// void RequestTargetToMetaVars(HTTPRequest request, MetaVariables &env);
 	std::string formatQueryString(const std::multimap<std::string, std::string> &queryParams) const;
 	std::pair<std::string, std::string> separatePathAndInfo(const std::string &requestTarget) const;
 	void subtractQueryFromPathInfo(std::string &pathInfo, const std::string &queryString);
