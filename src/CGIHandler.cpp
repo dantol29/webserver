@@ -44,15 +44,15 @@ char *const *CGIHandler::createArgvForExecve(const MetaVariables &env)
 	if (env.getVar("X_INTERPRETER_PATH") != "")
 	{
 		argv[0] = new char[env.getVar("X_INTERPRETER_PATH").length() + 1];
-		ft_strcpy(argv[0], env.getVar("X_INTERPRETER_PATH").c_str());
+		std::strcpy(argv[0], env.getVar("X_INTERPRETER_PATH").c_str());
 		argv[1] = new char[scriptPath.length() + 1];
-		ft_strcpy(argv[1], scriptPath.c_str());
+		std::strcpy(argv[1], scriptPath.c_str());
 		argv[2] = NULL;
 	}
 	else
 	{
 		argv[0] = new char[scriptPath.length() + 1];
-		ft_strcpy(argv[0], scriptPath.c_str());
+		std::strcpy(argv[0], scriptPath.c_str());
 		argv[1] = NULL;
 	}
 

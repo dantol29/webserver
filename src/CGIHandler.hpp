@@ -8,6 +8,7 @@
 #include <sys/wait.h>
 #include <fcntl.h>
 #include <vector>
+#include <cstring>
 
 class CGIHandler : public AResponseHandler
 {
