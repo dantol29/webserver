@@ -11,12 +11,11 @@ Router::~Router()
 
 HTTPResponse Router::routeRequest(const HTTPRequest &request)
 {
-	HTTPResponse response;
 	std::string _webRoot = "var/www"; // TODO: get this from the config file
 	if (isCGI(request))
 	{
 		CGIHandler cgiHandler;
-		response = cgiHandler.handleRequest(request);
+		return cgiHandler.handleRequest(request);
 	}
 	else if (isDynamicRequest(request))
 	{
@@ -25,18 +24,18 @@ HTTPResponse Router::routeRequest(const HTTPRequest &request)
 	else // it is a static request
 	{
 		StaticContentHandler staticContentInstance;
-		if (!pathisValid(const_cast<HTTPRequest &>(request), response, _webRoot))
+		if (!pathisValid(const_cast<HTTPRequest &>(request), _webRoot))
 		{
 
 			std::cout << "Path does not exist" << std::endl;
-			response = staticContentInstance.handleNotFound();
+			return staticContentInstance.handleNotFound();
 		}
 		else
 		{
-			response = staticContentInstance.handleRequest(request);
+			return staticContentInstance.handleRequest(request);
 		}
 	}
-	return response;
+	return HTTPResponse();
 }
 
 bool Router::isDynamicRequest(const HTTPRequest &request)
@@ -92,7 +91,7 @@ void Router::splitTarget(const std::string &target)
 	}
 }
 
-bool Router::pathisValid(HTTPRequest &request, HTTPResponse &response, std::string webRoot)
+bool Router::pathisValid(HTTPRequest &request, std::string webRoot)
 {
 	std::string host = request.getHost();
 	std::cout << "Host: " << host << std::endl;
@@ -108,8 +107,6 @@ bool Router::pathisValid(HTTPRequest &request, HTTPResponse &response, std::stri
 	struct stat buffer;
 	if (stat(path.c_str(), &buffer) != 0)
 	{
-		response.setStatusCode(404);
-		response.setBody("Not Found");
 		return false;
 	}
 	if (S_ISDIR(buffer.st_mode))
@@ -124,8 +121,6 @@ bool Router::pathisValid(HTTPRequest &request, HTTPResponse &response, std::stri
 		if (stat(path.c_str(), &buffer) != 0)
 		{
 			// TODO: decide if we should return a custom error for a directory without an index.html
-			response.setStatusCode(404);
-			response.setBody("Not Found");
 			return false;
 		}
 	}
@@ -135,8 +130,6 @@ bool Router::pathisValid(HTTPRequest &request, HTTPResponse &response, std::stri
 	if (!file.is_open())
 	{
 		std::cout << "Failed to open the file at path: " << path << std::endl;
-		response.setStatusCode(403);
-		response.setBody("Access Denied");
 		return false;
 	}
 	file.close();
