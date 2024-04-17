@@ -89,6 +89,7 @@ HTTPResponse StaticContentHandler::handleHomePage()
 
 HTTPResponse StaticContentHandler::handleNotFound(void)
 {
+	std::cout << "\033[1;31minside handleNotFound\033[0m" << std::endl;
 	HTTPResponse response;
 	response.setStatusCode(404);
 
@@ -112,7 +113,7 @@ HTTPResponse StaticContentHandler::handleNotFound(void)
 						   "</html>";
 
 	response.setBody(htmlBody);
-	response.setHeader("Content-Type", "text/html"); // Set the Content-Type to text/html
+	response.setHeader("Content-Type", "text/html");
 	std::cout << "------------------404 Not Found sent-------------------" << std::endl;
 	return response;
 }

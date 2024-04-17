@@ -16,12 +16,10 @@ HTTPResponse Router::routeRequest(const HTTPRequest &request)
 	// std::string _webRoot = getWebRoot(); // next step is using the config file
 	if (isCGI(request))
 	{
-		std::cout << "\033[1;31mCGI request\033[0m" << std::endl;
 		response = CGIHandler().handleRequest(request);
 	}
 	else if (isDynamicRequest(request))
 	{
-		std::cout << "\033[1;31mnot CGI but Dynamic\033[0m" << std::endl;
 		std::cout << "\033[31mCGI is the only dynamic requests we handle at the moment\033[0m" << std::endl;
 	}
 	else // it is a static request
@@ -33,9 +31,11 @@ HTTPResponse Router::routeRequest(const HTTPRequest &request)
 			StaticContentHandler staticHandler;
 			response = staticHandler.handleNotFound();
 		}
-		std::cout << "\033[1;31melse\033[0m" << std::endl;
-		StaticContentHandler staticContentInstance;
-		response = staticContentInstance.handleRequest(request);
+		else
+		{
+			StaticContentHandler staticContentInstance;
+			response = staticContentInstance.handleRequest(request);
+		}
 	}
 	return response;
 }

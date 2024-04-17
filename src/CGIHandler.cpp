@@ -30,8 +30,8 @@ HTTPResponse CGIHandler::handleRequest(const HTTPRequest &request)
 	HTTPResponse response = CGIStringToResponse(cgiOutput);
 
 	// HTTPResponse response;
-	response.setBody(cgiOutput);
-	response.setIsCGI(true);
+	// response.setBody(cgiOutput);
+	// response.setIsCGI(true);
 	// std::cout << response;
 	return response;
 }
@@ -66,7 +66,7 @@ HTTPResponse CGIHandler::CGIStringToResponse(const std::string &cgiOutput)
 	}
 
 	std::string headersPart = cgiOutput.substr(0, headerEndPos);
-	std::string bodyPart = cgiOutput.substr(headerEndPos + 4); // separator
+	std::string bodyPart = cgiOutput.substr(headerEndPos); // separator
 
 	std::istringstream headerStream(headersPart);
 	std::string headerLine;
@@ -88,6 +88,7 @@ HTTPResponse CGIHandler::CGIStringToResponse(const std::string &cgiOutput)
 
 	response.setBody(bodyPart);
 	response.setIsCGI(true);
+	response.setStatusCode(200);
 	return response;
 }
 
