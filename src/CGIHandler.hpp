@@ -1,7 +1,7 @@
 #ifndef CGIHANDLER_HPP
 #define CGIHANDLER_HPP
 
-#include "ARequestHandler.hpp"
+#include "AResponseHandler.hpp"
 #include "HTTPRequest.hpp"
 #include "Environment.hpp"
 #include <unistd.h>
@@ -9,7 +9,7 @@
 #include <fcntl.h>
 #include <vector>
 
-class CGIHandler : public ARequestHandler
+class CGIHandler : public AResponseHandler
 {
   public:
 	CGIHandler();

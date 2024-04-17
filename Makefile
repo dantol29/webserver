@@ -5,7 +5,7 @@ DEPFLAGS = -MMD -MP
 
 # Source and Object Files
 SRCS = src/main.cpp \
-	src/ARequestHandler.cpp \
+	src/AResponseHandler.cpp \
 	src/Connection.cpp \
 	src/CGIHandler.cpp \
 	src/Environment.cpp \

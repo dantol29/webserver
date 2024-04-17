@@ -13,9 +13,9 @@ CGIHandler::~CGIHandler()
 CGIHandler &CGIHandler::operator=(const CGIHandler &other)
 {
 	if (this != &other)
-	{									   // Protect against self-assignment
-		ARequestHandler::operator=(other); // Call the base class assignment operator
-										   // Copy or assign other members of CGIHandler if necessary
+	{										// Protect against self-assignment
+		AResponseHandler::operator=(other); // Call the base class assignment operator
+											// Copy or assign other members of CGIHandler if necessary
 	}
 	return *this;
 }
@@ -30,7 +30,7 @@ HTTPResponse CGIHandler::handleRequest(const HTTPRequest &request)
 	HTTPResponse response;
 	response.setBody(cgiOutput);
 	response.setIsCGI(true);
-	std::cout << response;
+	// std::cout << response;
 	return response;
 }
 

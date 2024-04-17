@@ -1,7 +1,7 @@
 #ifndef STATICCONTENTHANDLER_HPP
 #define STATICCONTENTHANDLER_HPP
 
-#include "ARequestHandler.hpp"
+#include "AResponseHandler.hpp"
 #include <string>
 #include <fstream>
 #include <cstdlib> // For exit() and EXIT_FAILURE
@@ -13,7 +13,7 @@
 #include <sstream>
 #include "webserv.hpp"
 
-class StaticContentHandler : public ARequestHandler
+class StaticContentHandler : public AResponseHandler
 {
   public:
 	StaticContentHandler();
