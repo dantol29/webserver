@@ -12,8 +12,7 @@ Router::~Router()
 HTTPResponse Router::routeRequest(const HTTPRequest &request)
 {
 	HTTPResponse response;
-	std::string _webRoot = "var/www"; // hardcoded for now
-	// std::string _webRoot = getWebRoot(); // next step is using the config file
+	std::string _webRoot = "var/www"; // TODO: get this from the config file
 	if (isCGI(request))
 	{
 		response = CGIHandler().handleRequest(request);
@@ -54,15 +53,14 @@ std::string Router::getFileExtension(const std::string &fileName)
 	size_t dotIndex = fileName.find_last_of(".");
 	if (dotIndex == std::string::npos)
 	{
-		return ""; // No file extension
+		return "";
 	}
 	return fileName.substr(dotIndex + 1);
 }
 
-// works as long as GI scripts are identified by file extensions,
 bool Router::isCGI(const HTTPRequest &request)
 {
-	// check against config file, not this hardcoded version
+	// TODO: check against config file, not this hardcoded version
 	std::string fileExtension = getFileExtension(request.getRequestTarget());
 	return (fileExtension == "cgi" || fileExtension == "pl" || fileExtension == "py" || fileExtension == "php");
 }
@@ -72,10 +70,9 @@ void Router::splitTarget(const std::string &target)
 	_path.directories.clear();
 	_path.resource.clear();
 
-	// First, check for and remove any query parameters
 	// TODO: Eventually remove if already done in the request
 	std::string::size_type queryPos = target.find('?');
-	std::string path = target.substr(0, queryPos); // If '?' is not found, substr returns the entire string
+	std::string path = target.substr(0, queryPos);
 
 	std::string::size_type start = 0, end = 0;
 
@@ -106,10 +103,6 @@ bool Router::pathisValid(HTTPRequest &request, HTTPResponse &response, std::stri
 	}
 	std::cout << "Host (after : trailing) :" << host << std::endl;
 	std::string path = request.getRequestTarget();
-	// if (host == "localhost" || host == "/" || host == "")
-	// {
-	// 	webRoot = "html";
-	// }
 	path = webRoot + path;
 	std::cout << "Path: " << path << std::endl;
 	struct stat buffer;
@@ -128,9 +121,9 @@ bool Router::pathisValid(HTTPRequest &request, HTTPResponse &response, std::stri
 		}
 		path += "index.html";
 		std::cout << "Path: " << path << std::endl;
-		// Check if index.html exists
 		if (stat(path.c_str(), &buffer) != 0)
 		{
+			// TODO: decide if we should return a custom error for a directory without an index.html
 			response.setStatusCode(404);
 			response.setBody("Not Found");
 			return false;
@@ -142,7 +135,7 @@ bool Router::pathisValid(HTTPRequest &request, HTTPResponse &response, std::stri
 	if (!file.is_open())
 	{
 		std::cout << "Failed to open the file at path: " << path << std::endl;
-		response.setStatusCode(403); // Or another appropriate error code
+		response.setStatusCode(403);
 		response.setBody("Access Denied");
 		return false;
 	}

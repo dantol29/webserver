@@ -37,14 +37,6 @@ std::string MetaVariables::getVar(const std::string &key) const
 	}
 }
 
-void MetaVariables::printMetaVars() const
-{
-	for (std::map<std::string, std::string>::const_iterator it = metaVars.begin(); it != metaVars.end(); ++it)
-	{
-		std::cout << it->first << " = " << it->second << std::endl;
-	}
-}
-
 std::vector<char *> MetaVariables::getForExecve() const
 {
 	std::vector<char *> result;
@@ -199,6 +191,7 @@ void MetaVariables::subtractQueryFromPathInfo(std::string &pathInfo, const std::
 void MetaVariables::HTTPRequestToMetaVars(HTTPRequest request, MetaVariables &env)
 {
 	// env.setVar("X_INTERPRETER_PATH", "/home/lmangall/.brew/bin/python3"); // school computer...
+
 	//________General variables
 	// Set the method used for the request (e.g., GET, POST)
 	env.setVar("REQUEST_METHOD", request.getMethod());
@@ -218,8 +211,8 @@ void MetaVariables::HTTPRequestToMetaVars(HTTPRequest request, MetaVariables &en
 	std::string queryString = formatQueryString(request.getQueryString());
 	env.setVar("QUERY_STRING", queryString);
 	std::pair<std::string, std::string> pathComponents = separatePathAndInfo(request.getRequestTarget());
-	std::string scriptName = pathComponents.first; // path to the script
-	std::string pathInfo = pathComponents.second;  // path after the script
+	std::string scriptName = pathComponents.first;
+	std::string pathInfo = pathComponents.second;
 
 	subtractQueryFromPathInfo(pathInfo, queryString);
 

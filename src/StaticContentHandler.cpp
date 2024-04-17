@@ -34,7 +34,7 @@ std::string getMimeType(const std::string &filePath)
 		return "image/jpeg";
 	else if (endsWith(filePath, ".png"))
 		return "image/png";
-	// Add checks for other file types and dynamic content scripts
+	// TODO: checks for other file types and dynamic content scripts
 	else
 		return "application/octet-stream"; // Default binary type
 }
@@ -89,7 +89,6 @@ HTTPResponse StaticContentHandler::handleHomePage()
 
 HTTPResponse StaticContentHandler::handleNotFound(void)
 {
-	std::cout << "\033[1;31minside handleNotFound\033[0m" << std::endl;
 	HTTPResponse response;
 	response.setStatusCode(404);
 

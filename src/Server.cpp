@@ -129,7 +129,7 @@ void Server::handleConnection(Connection conn, size_t &i)
 		}
 	}
 
-	// end of buffering/parsing part, start of router
+	// NOTE: end of buffering/parsing part, start of router
 	std::string httpRequestString = conn.getHeaders() + conn.getBody();
 	HTTPRequest request(httpRequestString.c_str());
 	std::string responseString;
@@ -141,14 +141,6 @@ void Server::handleConnection(Connection conn, size_t &i)
 	response = conn.getResponse();
 	response = router.routeRequest(request);
 	responseString = response.toString();
-	// if (response.isCGI())
-	// {
-	// 	responseString = response.getBody();
-	// }
-	// else
-	// {
-	// 	responseString = response.toString();
-	// }
 	write(conn.getPollFd().fd, responseString.c_str(), responseString.size());
 	close(conn.getPollFd().fd);
 	_FDs.erase(_FDs.begin() + i);

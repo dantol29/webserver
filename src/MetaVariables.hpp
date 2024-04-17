@@ -27,7 +27,6 @@ class MetaVariables
 	// access unique var
 	void setVar(const std::string &key, const std::string &value);
 	std::string getVar(const std::string &key) const;
-	void printMetaVars() const;
 
 	// transform request to meta vars (MetaVariables object)
 	// bool isAuthorityForm(const HTTPRequest &request);
