@@ -1,6 +1,5 @@
 #include "CGIHandler.hpp"
-
-#define EXIT_FAILURE 1
+#include "Server.hpp"
 
 CGIHandler::CGIHandler()
 {
@@ -56,7 +55,7 @@ char *const *CGIHandler::createArgvForExecve(const Environment &env)
 	std::cout << std::endl << "\033[31mscriptPath: " << scriptPath << "\033[0m" << std::endl;
 
 	argv[0] = new char[scriptPath.length() + 1]; // +1 for the null terminator
-	ft_strcpy(argv[0], scriptPath.c_str());
+	std::strcpy(argv[0], scriptPath.c_str());
 
 	argv[1] = NULL;
 
@@ -72,14 +71,14 @@ std::string CGIHandler::executeCGI(const Environment &env)
 	if (pipe(pipeFD) == -1)
 	{
 		perror("pipe failed");
-		_exit(EXIT_FAILURE);
+		exit(EXIT_FAILURE);
 	}
 
 	pid_t pid = fork();
 	if (pid == -1)
 	{
 		perror("fork failed");
-		_exit(EXIT_FAILURE);
+		exit(EXIT_FAILURE);
 	}
 	else if (pid == 0)
 	{
