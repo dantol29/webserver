@@ -16,7 +16,6 @@ std::string toString(const T &value)
 	return oss.str();
 }
 
-char *ft_strcpy(char *dest, const char *src);
 bool startsWith(const std::string &fullString, const std::string &starting);
 std::string readHtml(const std::string &filePath);
 std::string handleHomePage();
