@@ -128,7 +128,9 @@ void Server::handleConnection(Connection conn, size_t &i)
 			return;
 		}
 	}
-	// It should be double "\r\n" to separate the headers from the body
+
+	// end of buffering/parsing part, start of router
+
 	std::string httpRequestString = conn.getHeaders() + conn.getBody();
 	HTTPRequest request(httpRequestString.c_str());
 	std::cout << request.getStatusCode() << std::endl;
@@ -158,6 +160,7 @@ void Server::handleConnection(Connection conn, size_t &i)
 	{
 		responseString = response.toString();
 	}
+
 	write(conn.getPollFd().fd, responseString.c_str(), responseString.size());
 	close(conn.getPollFd().fd);
 	_FDs.erase(_FDs.begin() + i);

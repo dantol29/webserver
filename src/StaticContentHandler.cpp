@@ -1,21 +1,12 @@
 #include "StaticContentHandler.hpp"
 #include "Server.hpp"
-// Default constructor
 StaticContentHandler::StaticContentHandler()
 {
 }
-// Constructor
 StaticContentHandler::StaticContentHandler(const std::string &webRoot) : _webRoot(webRoot) {};
 
-// Destructor
 StaticContentHandler::~StaticContentHandler()
 {
-}
-
-std::string StaticContentHandler::handleCGIRequest(const HTTPRequest &request)
-{
-	(void)(request);
-	return "CGI requests are not supported by this handler.";
 }
 
 bool endsWith(const std::string &str, const std::string &suffix)
@@ -48,7 +39,6 @@ std::string getMimeType(const std::string &filePath)
 		return "application/octet-stream"; // Default binary type
 }
 
-// Handle request
 HTTPResponse StaticContentHandler::handleRequest(const HTTPRequest &request)
 {
 	HTTPResponse response;
@@ -76,7 +66,6 @@ HTTPResponse StaticContentHandler::handleRequest(const HTTPRequest &request)
 		// response.setStatusCode(200);
 		response.setBody(body);
 		response.setHeader("Content-Type: ", getMimeType(path));
-
 		// ADD MORE HEADER LINE
 		//  response.setHeader("Content-Length: ", std::to_string(body.length()));
 		//  response.setHeader("Connection: ", "close");
@@ -88,18 +77,6 @@ HTTPResponse StaticContentHandler::handleRequest(const HTTPRequest &request)
 	return response;
 }
 
-// This should return a HTTPResponse object
-// std::string handleHomePage()
-// {
-// 	std::string htmlContent = readHtml("./html/home.html");
-// 	std::stringstream ss;
-// 	ss << htmlContent.length();
-// 	std::string htmlLength = ss.str();
-// 	std::string httpResponse = "HTTP/1.1 200 OK\nContent-Type: text/html\n" + std::string("Content-Length: ") +
-// 							   htmlLength + "\n\n" + htmlContent;
-// 	std::cout << "------------------Home page returned from handleHomePage()-------------------" << std::endl;
-// 	return httpResponse;
-// }
 HTTPResponse StaticContentHandler::handleHomePage()
 {
 	std::string htmlContent = readHtml("./html/index.html");
