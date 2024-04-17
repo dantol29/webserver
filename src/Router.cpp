@@ -11,22 +11,33 @@ Router::~Router()
 
 HTTPResponse Router::routeRequest(const HTTPRequest &request)
 {
+	HTTPResponse response;
+	std::string _webRoot = "var/www"; // hardcoded for now
+	// std::string _webRoot = getWebRoot(); // next step is using the config file
 	if (isCGI(request))
 	{
-		HTTPResponse response;
+		std::cout << "\033[1;31mCGI request\033[0m" << std::endl;
 		response = CGIHandler().handleRequest(request);
-		return response;
 	}
 	else if (isDynamicRequest(request))
 	{
-		std::cout << "\033[31mwe do not handle dynamic requests at the moment\033[0m" << std::endl;
+		std::cout << "\033[1;31mnot CGI but Dynamic\033[0m" << std::endl;
+		std::cout << "\033[31mCGI is the only dynamic requests we handle at the moment\033[0m" << std::endl;
 	}
-	else
+	else // it is a static request
 	{
+		if (!pathisValid(const_cast<HTTPRequest &>(request), response, _webRoot))
+		{
+
+			std::cout << "Path does not exist" << std::endl;
+			StaticContentHandler staticHandler;
+			response = staticHandler.handleNotFound();
+		}
+		std::cout << "\033[1;31melse\033[0m" << std::endl;
 		StaticContentHandler staticContentInstance;
-		return staticContentInstance.handleRequest(request);
+		response = staticContentInstance.handleRequest(request);
 	}
-	return HTTPResponse(); // check if this return is correct
+	return response;
 }
 
 bool Router::isDynamicRequest(const HTTPRequest &request)

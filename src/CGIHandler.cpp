@@ -27,7 +27,9 @@ HTTPResponse CGIHandler::handleRequest(const HTTPRequest &request)
 	env.HTTPRequestToMetaVars(request, env);
 	std::string cgiOutput = executeCGI(env);
 
-	HTTPResponse response;
+	HTTPResponse response = CGIStringToResponse(cgiOutput);
+
+	// HTTPResponse response;
 	response.setBody(cgiOutput);
 	response.setIsCGI(true);
 	// std::cout << response;
@@ -51,6 +53,42 @@ char *const *CGIHandler::createArgvForExecve(const Environment &env)
 	argv[1] = NULL;
 
 	return argv;
+}
+
+HTTPResponse CGIHandler::CGIStringToResponse(const std::string &cgiOutput)
+{
+	HTTPResponse response;
+
+	std::size_t headerEndPos = cgiOutput.find("\r\n\r\n");
+	if (headerEndPos == std::string::npos)
+	{
+		headerEndPos = cgiOutput.find("\n\n");
+	}
+
+	std::string headersPart = cgiOutput.substr(0, headerEndPos);
+	std::string bodyPart = cgiOutput.substr(headerEndPos + 4); // separator
+
+	std::istringstream headerStream(headersPart);
+	std::string headerLine;
+	while (std::getline(headerStream, headerLine))
+	{
+		if (!headerLine.empty() && headerLine[headerLine.size() - 1] == '\r')
+		{
+			headerLine.erase(headerLine.size() - 1); // carriage return
+		}
+
+		std::size_t separatorPos = headerLine.find(": ");
+		if (separatorPos != std::string::npos)
+		{
+			std::string headerName = headerLine.substr(0, separatorPos);
+			std::string headerValue = headerLine.substr(separatorPos + 2);
+			response.setHeader(headerName, headerValue);
+		}
+	}
+
+	response.setBody(bodyPart);
+	response.setIsCGI(true);
+	return response;
 }
 
 std::string CGIHandler::executeCGI(const Environment &env)

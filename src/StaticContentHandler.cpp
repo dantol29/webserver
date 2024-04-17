@@ -43,12 +43,10 @@ HTTPResponse StaticContentHandler::handleRequest(const HTTPRequest &request)
 {
 	HTTPResponse response;
 	std::string requestTarget = request.getRequestTarget();
-	std::string webRoot = "var/www/";
+	std::string webRoot = "var/www";
 	std::cout << "path : " << webRoot << std::endl;
 	std::string path = webRoot + requestTarget;
-	// shoul nt be hardcoded: (added underscore) std::string path = _webRoot + requestTarget;
 	std::ifstream file(path.c_str());
-	// check this: we might be at the root of a website among others
 	if (request.getMethod() == "GET" && (request.getRequestTarget() == "/" || request.getRequestTarget() == "/home"))
 	{
 		response = handleHomePage();
@@ -71,6 +69,7 @@ HTTPResponse StaticContentHandler::handleRequest(const HTTPRequest &request)
 		//  response.setHeader("Connection: ", "close");
 		//  response.setHeader("Server: ", "webserv");
 
+		std::cout << std::endl;
 		std::cout << "_body : " << response.getBody() << std::endl;
 		file.close();
 	}

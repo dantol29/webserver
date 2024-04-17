@@ -130,37 +130,25 @@ void Server::handleConnection(Connection conn, size_t &i)
 	}
 
 	// end of buffering/parsing part, start of router
-
 	std::string httpRequestString = conn.getHeaders() + conn.getBody();
 	HTTPRequest request(httpRequestString.c_str());
-	std::cout << request.getStatusCode() << std::endl;
-	printVariablesHeadersBody(request);
-
-	// std::string response;
-	Router router;
-	HTTPResponse response;
-	// response.setIsCGI(false);
-	std::string _webRoot = getWebRoot();
-	// Check if this is the right way to do it
-	response = conn.getResponse();
 	std::string responseString;
-	response = router.routeRequest(request);
-	if (!router.pathisValid(request, response, _webRoot))
-	{
-		std::cout << "Path does not exist" << std::endl;
-		StaticContentHandler staticHandler;
-		response = staticHandler.handleNotFound();
-		responseString = response.toString();
-	}
-	else if (response.isCGI() == true)
-	{
-		responseString = response.getBody();
-	}
-	else
-	{
-		responseString = response.toString();
-	}
+	// std::cout << request.getStatusCode() << std::endl;
+	// printVariablesHeadersBody(request);
+	Router router;
 
+	HTTPResponse response;
+	response = conn.getResponse();
+	response = router.routeRequest(request);
+	responseString = response.toString();
+	// if (response.isCGI())
+	// {
+	// 	responseString = response.getBody();
+	// }
+	// else
+	// {
+	// 	responseString = response.toString();
+	// }
 	write(conn.getPollFd().fd, responseString.c_str(), responseString.size());
 	close(conn.getPollFd().fd);
 	_FDs.erase(_FDs.begin() + i);

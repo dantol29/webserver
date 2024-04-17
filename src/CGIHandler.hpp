@@ -17,6 +17,7 @@ class CGIHandler : public AResponseHandler
 	HTTPResponse handleRequest(const HTTPRequest &request);
 	char *const *createArgvForExecve(const Environment &env);
 	std::string executeCGI(const Environment &env);
+	HTTPResponse CGIStringToResponse(const std::string &cgiOutput);
 
   private:
 	CGIHandler(const CGIHandler &other);
