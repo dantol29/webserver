@@ -102,7 +102,7 @@ HTTPResponse CGIHandler::CGIStringToResponse(const std::string &cgiOutput)
 
 std::string CGIHandler::executeCGI(const Environment &env)
 {
-
+	std::string cgiOutput = "";
 	char *const *argv = createArgvForExecve(env);
 
 	int pipeFD[2];
@@ -135,7 +135,6 @@ std::string CGIHandler::executeCGI(const Environment &env)
 	{
 		close(pipeFD[1]);
 
-		std::string cgiOutput;
 		char readBuffer[256];
 		ssize_t bytesRead;
 		while ((bytesRead = read(pipeFD[0], readBuffer, sizeof(readBuffer) - 1)) > 0)
@@ -148,9 +147,8 @@ std::string CGIHandler::executeCGI(const Environment &env)
 		int status;
 		waitpid(pid, &status, 0);
 		std::cout << "------------------CGI output prepared-------------------" << std::endl;
-		// std::cout << cgiOutput << std::endl;
 		return cgiOutput;
 	}
 
-	return ""; // Should not reach here
+	return cgiOutput;
 }
