@@ -23,7 +23,7 @@ CGIHandler &CGIHandler::operator=(const CGIHandler &other)
 HTTPResponse CGIHandler::handleRequest(const HTTPRequest &request)
 {
 	CGIHandler cgiInstance;
-	Environment env;
+	MetaVariables env;
 	env.HTTPRequestToMetaVars(request, env);
 	std::string cgiOutput = executeCGI(env);
 
@@ -36,7 +36,7 @@ HTTPResponse CGIHandler::handleRequest(const HTTPRequest &request)
 	return response;
 }
 
-char *const *CGIHandler::createArgvForExecve(const Environment &env)
+char *const *CGIHandler::createArgvForExecve(const MetaVariables &env)
 {
 	std::cout << env;
 	char **argv = new char *[2];
@@ -100,7 +100,7 @@ HTTPResponse CGIHandler::CGIStringToResponse(const std::string &cgiOutput)
 	return response;
 }
 
-std::string CGIHandler::executeCGI(const Environment &env)
+std::string CGIHandler::executeCGI(const MetaVariables &env)
 {
 	std::string cgiOutput = "";
 	char *const *argv = createArgvForExecve(env);

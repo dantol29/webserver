@@ -3,7 +3,7 @@
 
 #include "AResponseHandler.hpp"
 #include "HTTPRequest.hpp"
-#include "Environment.hpp"
+#include "MetaVariables.hpp"
 #include <unistd.h>
 #include <sys/wait.h>
 #include <fcntl.h>
@@ -15,8 +15,8 @@ class CGIHandler : public AResponseHandler
 	CGIHandler();
 	virtual ~CGIHandler();
 	HTTPResponse handleRequest(const HTTPRequest &request);
-	char *const *createArgvForExecve(const Environment &env);
-	std::string executeCGI(const Environment &env);
+	char *const *createArgvForExecve(const MetaVariables &env);
+	std::string executeCGI(const MetaVariables &env);
 	HTTPResponse CGIStringToResponse(const std::string &cgiOutput);
 
   private:

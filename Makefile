@@ -8,7 +8,7 @@ SRCS = src/main.cpp \
 	src/AResponseHandler.cpp \
 	src/Connection.cpp \
 	src/CGIHandler.cpp \
-	src/Environment.cpp \
+	src/MetaVariables.cpp \
 	src/utils.cpp \
 	src/HTTPRequest.cpp \
 	src/HTTPResponse.cpp \

@@ -2,15 +2,15 @@
 #include <string.h>
 #include <utility>
 
-Environment::Environment()
+MetaVariables::MetaVariables()
 {
 }
 
-Environment::Environment(const Environment &other) : metaVars(other.metaVars)
+MetaVariables::MetaVariables(const MetaVariables &other) : metaVars(other.metaVars)
 {
 }
 
-Environment &Environment::operator=(const Environment &other)
+MetaVariables &MetaVariables::operator=(const MetaVariables &other)
 {
 	if (this != &other)
 	{							   // Protect against self-assignment
@@ -20,16 +20,16 @@ Environment &Environment::operator=(const Environment &other)
 }
 
 /**
- * @brief Sets or updates an environment variable.
+ * @brief Sets or updates an MetaVariables variable.
  */
-void Environment::setVar(const std::string &key, const std::string &value)
+void MetaVariables::setVar(const std::string &key, const std::string &value)
 {
 	metaVars[key] = value;
 }
 
-// it does not modify any member variables of the Environment class
+// it does not modify any member variables of the MetaVariables class
 //  (hence the const at the end of the function signature).
-std::string Environment::getVar(const std::string &key) const
+std::string MetaVariables::getVar(const std::string &key) const
 {
 	std::map<std::string, std::string>::const_iterator it = metaVars.find(key);
 	if (it != metaVars.end())
@@ -42,7 +42,7 @@ std::string Environment::getVar(const std::string &key) const
 	}
 }
 
-void Environment::printMetaVars() const
+void MetaVariables::printMetaVars() const
 {
 	for (std::map<std::string, std::string>::const_iterator it = metaVars.begin(); it != metaVars.end(); ++it)
 	{
@@ -53,16 +53,16 @@ void Environment::printMetaVars() const
 /**
  * @brief Generates a vector of C-style strings suitable for execve.
  *
- * This method converts the stored environment variables into a format that can
+ * This method converts the stored MetaVariables variables into a format that can
  * be used with the execve system call. Each string in the returned vector is
  * in the form of "key=value". The memory for these strings is dynamically
  * allocated and must be freed by the caller. The list is terminated with a NULL
  * pointer as required by execve.
  *
- * @return A vector of C-style strings representing the environment variables,
+ * @return A vector of C-style strings representing the MetaVariables variables,
  *         suitable for passing to execve.
  */
-std::vector<char *> Environment::getForExecve() const
+std::vector<char *> MetaVariables::getForExecve() const
 {
 	std::vector<char *> result;
 	for (std::map<std::string, std::string>::const_iterator it = metaVars.begin(); it != metaVars.end(); ++it)
@@ -96,7 +96,7 @@ std::vector<char *> Environment::getForExecve() const
  *         is the script path (up to and including the script extension) and
  *         the second element is the additional path info (anything after the script path).
  */
-std::pair<std::string, std::string> Environment::separatePathAndInfo(const std::string &requestTarget) const
+std::pair<std::string, std::string> MetaVariables::separatePathAndInfo(const std::string &requestTarget) const
 {
 	const char *extensions[] = {".cgi", ".pl", ".py", ".php"};
 	const size_t extCount = sizeof(extensions) / sizeof(extensions[0]);
@@ -158,7 +158,7 @@ bool startsWith(const std::string &str, const std::string &prefix)
 
 // because at the moment we implement only GET, POST and DELETE methods
 // we don't need that, but we can add it later
-bool Environment::isAuthorityForm(const HTTPRequest &request)
+bool MetaVariables::isAuthorityForm(const HTTPRequest &request)
 {
 	std::string method = request.getMethod();
 	std::string requestTarget = request.getRequestTarget();
@@ -175,7 +175,7 @@ bool Environment::isAuthorityForm(const HTTPRequest &request)
 	return true;
 }
 
-void Environment::RequestTargetToMetaVars(HTTPRequest request, Environment &env)
+void MetaVariables::RequestTargetToMetaVars(HTTPRequest request, MetaVariables &env)
 {
 	std::string requestTarget = request.getRequestTarget();
 
@@ -227,7 +227,7 @@ void Environment::RequestTargetToMetaVars(HTTPRequest request, Environment &env)
  * a reference to a constant std::multimap (that maps std::string keys to std::string values.)
  * @return A string representing the formatted query string.
  */
-std::string Environment::formatQueryString(const std::multimap<std::string, std::string> &queryParams) const
+std::string MetaVariables::formatQueryString(const std::multimap<std::string, std::string> &queryParams) const
 {
 	std::string queryString;
 	for (std::multimap<std::string, std::string>::const_iterator it = queryParams.begin(); it != queryParams.end();)
@@ -241,7 +241,7 @@ std::string Environment::formatQueryString(const std::multimap<std::string, std:
 	}
 	return queryString;
 }
-void Environment::subtractQueryFromPathInfo(std::string &pathInfo, const std::string &queryString)
+void MetaVariables::subtractQueryFromPathInfo(std::string &pathInfo, const std::string &queryString)
 {
 	if (queryString.empty())
 	{
@@ -255,10 +255,10 @@ void Environment::subtractQueryFromPathInfo(std::string &pathInfo, const std::st
 	}
 }
 
-// RFC 3875 for more information on CGI environment variables, or README_CGI_ENV.md
-void Environment::HTTPRequestToMetaVars(HTTPRequest request, Environment &env)
+// RFC 3875 for more information on CGI MetaVariables variables, or README_CGI_ENV.md
+void MetaVariables::HTTPRequestToMetaVars(HTTPRequest request, MetaVariables &env)
 {
-	env.setVar("X_INTERPRETER_PATH", "/home/lmangall/.brew/bin/python3"); // school computer...
+	// env.setVar("X_INTERPRETER_PATH", "/home/lmangall/.brew/bin/python3"); // school computer...
 	//________General variables
 	// Set the method used for the request (e.g., GET, POST)
 	env.setVar("REQUEST_METHOD", request.getMethod());
@@ -328,7 +328,7 @@ void Environment::HTTPRequestToMetaVars(HTTPRequest request, Environment &env)
 	}
 }
 
-Environment::~Environment()
+MetaVariables::~MetaVariables()
 {
 	std::vector<char *> envp = getForExecve();
 	for (size_t i = 0; i < envp.size(); ++i)
@@ -337,10 +337,10 @@ Environment::~Environment()
 	}
 }
 
-std::ostream &operator<<(std::ostream &out, const Environment &instancePrinted)
+std::ostream &operator<<(std::ostream &out, const MetaVariables &instancePrinted)
 {
 	out << "\033[35m";
-	out << "Environment Variables:" << std::endl;
+	out << "MetaVariables Variables:" << std::endl;
 	for (std::map<std::string, std::string>::const_iterator it = instancePrinted.metaVars.begin();
 		 it != instancePrinted.metaVars.end();
 		 ++it)

@@ -19,8 +19,8 @@ int main()
 	cout << "<body>\n";
 	cout << "<h1>Hello from C++ CGI!</h1>\n";
 
-	// Print all environment variables
-	cout << "<h2>Environment Variables</h2>\n";
+	// Print all MetaVariables variables
+	cout << "<h2>MetaVariables Variables</h2>\n";
 	for (char **env = environ; *env != nullptr; ++env)
 	{
 		cout << "<p>" << *env << "</p>\n";

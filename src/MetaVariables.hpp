@@ -1,5 +1,5 @@
-#ifndef ENVIRONMENT_HPP
-#define ENVIRONMENT_HPP
+#ifndef METAVARIABLES_HPP
+#define METAVARIABLES_HPP
 
 #include "webserv.hpp"
 #include "HTTPRequest.hpp"
@@ -13,33 +13,33 @@
 #include <map>
 #include <vector>
 
-class Environment
+class MetaVariables
 {
   private:
 	std::map<std::string, std::string> metaVars;
 
-	friend std::ostream &operator<<(std::ostream &out, const Environment &instancePrinted);
+	friend std::ostream &operator<<(std::ostream &out, const MetaVariables &instancePrinted);
 
   public:
-	Environment();
-	Environment(const Environment &other);
-	Environment &operator=(const Environment &other);
+	MetaVariables();
+	MetaVariables(const MetaVariables &other);
+	MetaVariables &operator=(const MetaVariables &other);
 	// access unique var
 	void setVar(const std::string &key, const std::string &value);
 	std::string getVar(const std::string &key) const;
 	void printMetaVars() const;
 
-	// transform request to meta vars (Environment object)
+	// transform request to meta vars (MetaVariables object)
 	bool isAuthorityForm(const HTTPRequest &request);
-	void RequestTargetToMetaVars(HTTPRequest request, Environment &env);
+	void RequestTargetToMetaVars(HTTPRequest request, MetaVariables &env);
 	std::string formatQueryString(const std::multimap<std::string, std::string> &queryParams) const;
 	std::pair<std::string, std::string> separatePathAndInfo(const std::string &requestTarget) const;
 	void subtractQueryFromPathInfo(std::string &pathInfo, const std::string &queryString);
-	void HTTPRequestToMetaVars(HTTPRequest request, Environment &env);
+	void HTTPRequestToMetaVars(HTTPRequest request, MetaVariables &env);
 
 	// convert to execve format
 	std::vector<char *> getForExecve() const;
-	~Environment();
+	~MetaVariables();
 };
 
 #endif

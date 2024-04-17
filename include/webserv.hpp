@@ -5,10 +5,10 @@
 #include <sstream>
 #include <cstdlib>
 #include <string.h>
-#include "Environment.hpp"
+#include "MetaVariables.hpp"
 #include "HTTPRequest.hpp"
 
-// #include "Environment.hpp"
+// #include "MetaVariables.hpp"
 // #include "HTTPRequest.hpp"
 // #include "CGIHandler.hpp"
 // #include "StaticContentHandler.hpp"
@@ -70,7 +70,7 @@ int hexToInt(std::string hex);
 bool isNumber(std::string line);
 bool isInvalidChar(const unsigned char &c);
 bool hasCRLF(const char *request, unsigned int &i, int mode);
-bool isVulnerablePath(const std::string& path);
-int	checkFile(const char *path);
+bool isVulnerablePath(const std::string &path);
+int checkFile(const char *path);
 
 #endif

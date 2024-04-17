@@ -11,7 +11,7 @@
 #include <poll.h>
 #include <fstream>
 #include <sstream>
-#include "Environment.hpp"
+#include "MetaVariables.hpp"
 #include "HTTPRequest.hpp"
 #include "server_utils.hpp"
 #include "Connection.hpp"

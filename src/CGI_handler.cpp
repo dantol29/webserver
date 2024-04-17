@@ -4,7 +4,7 @@
 
 #define EXIT_FAILURE 1
 
-std::string handleCGIRequest(const char *argv[], Environment env)
+std::string handleCGIRequest(const char *argv[], MetaVariables env)
 {
 
 	std::vector<char *> envp = env.getForExecve();

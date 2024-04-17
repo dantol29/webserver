@@ -10,8 +10,8 @@ print('</head>')
 print('<body>')
 print('<h2>Insert an inspirational quote here</h2>')
 
-# Printing environment variables
-print('<h3>Environment Variables</h3>')
+# Printing MetaVariables variables
+print('<h3>MetaVariables Variables</h3>')
 print('<ul>')
 for key, value in os.environ.items():
     print(f'<li>{key}: {value}</li>')
