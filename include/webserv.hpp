@@ -18,7 +18,6 @@ std::string toString(const T &value)
 
 bool startsWith(const std::string &fullString, const std::string &starting);
 std::string readHtml(const std::string &filePath);
-std::string handleHomePage();
 
 // utils.cpp
 int hexToInt(std::string hex);

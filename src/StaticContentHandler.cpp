@@ -45,45 +45,37 @@ HTTPResponse StaticContentHandler::handleRequest(const HTTPRequest &request)
 	std::string requestTarget = request.getRequestTarget();
 	std::string webRoot = "var/www";
 	std::cout << "path : " << webRoot << std::endl;
+	if (requestTarget == "/")
+		requestTarget = "/index.html";
 	std::string path = webRoot + requestTarget;
 	std::ifstream file(path.c_str());
-	if (request.getMethod() == "GET" && (request.getRequestTarget() == "/" || request.getRequestTarget() == "/home"))
-	{
-		response = handleHomePage();
-	}
-	else
-	{
-		// TODO: consider streaming the file instead of loading it all in memory for large files
-		std::cout << "path : " << path << std::endl;
-		std::ifstream file(path.c_str());
-		file.is_open();
+	// if (request.getMethod() == "GET" && (request.getRequestTarget() == ""))
+	// {
+	// 	path += "index.html";
+	// 	std::cout << "                            new path : " << path << std::endl;
+	// }
+	// else
+	// {
+	// TODO: consider streaming the file instead of loading it all in memory for large files
+	std::cout << "path : " << path << std::endl;
+	// std::ifstream file(path.c_str());
+	file.is_open();
 
-		std::string body((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
-		std::cout << "body : " << body << std::endl;
+	std::string body((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
+	std::cout << "body : " << body << std::endl;
 
-		// response.setStatusCode(200);
-		response.setBody(body);
-		response.setHeader("Content-Type: ", getMimeType(path));
-		// ADD MORE HEADER LINE
-		//  response.setHeader("Content-Length: ", std::to_string(body.length()));
-		//  response.setHeader("Connection: ", "close");
-		//  response.setHeader("Server: ", "webserv");
+	// response.setStatusCode(200);
+	response.setBody(body);
+	response.setHeader("Content-Type: ", getMimeType(path));
+	// ADD MORE HEADER LINE
+	//  response.setHeader("Content-Length: ", std::to_string(body.length()));
+	//  response.setHeader("Connection: ", "close");
+	//  response.setHeader("Server: ", "webserv");
 
-		std::cout << std::endl;
-		std::cout << "_body : " << response.getBody() << std::endl;
-		file.close();
-	}
-	return response;
-}
-
-HTTPResponse StaticContentHandler::handleHomePage()
-{
-	std::string htmlContent = readHtml("./html/index.html");
-	HTTPResponse response;
-	response.setStatusCode(200);
-	response.setBody(htmlContent);
-	response.setHeader("Content-Type", "text/html");
-	std::cout << "------------------Home page returned from handleHomePage()-------------------" << std::endl;
+	std::cout << std::endl;
+	std::cout << "_body : " << response.getBody() << std::endl;
+	file.close();
+	// }
 	return response;
 }
 

@@ -21,8 +21,6 @@ class StaticContentHandler : public AResponseHandler
 	~StaticContentHandler();
 	HTTPResponse handleRequest(const HTTPRequest &request);
 
-	// std::string handleHomePage();
-	HTTPResponse handleHomePage();
 	// std::string handleNotFound();  or setErrorResponse(int statusCode) from WEB-127
 	HTTPResponse handleNotFound();
 
