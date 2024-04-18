@@ -28,7 +28,18 @@ HTTPResponse Router::routeRequest(const HTTPRequest &request)
 		{
 
 			std::cout << "Path does not exist" << std::endl;
-			return staticContentInstance.handleNotFound();
+			std::ifstream file("var/www/errors/404.html");
+			std::stringstream buffer;
+			buffer << file.rdbuf();
+			std::string fileContents = buffer.str();
+
+			HTTPResponse response;
+			response.setBody(fileContents);
+			response.setHeader("Content-Type", "text/html");
+			response.setHeader("Content-Length", toString(fileContents.length()));
+			response.setStatusCode(404);
+
+			return response;
 		}
 		else
 		{
