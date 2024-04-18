@@ -122,11 +122,15 @@ std::string CGIHandler::executeCGI(const MetaVariables &env)
 		close(pipeFD[1]);
 
 		std::vector<char *> envp = env.getForExecve();
-		if (execve(argv[0], argv, envp.data()) == -1)
+		execve(argv[0], argv, envp.data());
+
+		perror("execve");
+		for (int i = 0; argv[i] != NULL; i++)
 		{
-			perror("execve");
-			exit(EXIT_FAILURE);
+			delete[] argv[i];
 		}
+		delete[] argv;
+		exit(EXIT_FAILURE); // TODO: check if _exit isn't better
 	}
 	else
 	{
@@ -143,9 +147,22 @@ std::string CGIHandler::executeCGI(const MetaVariables &env)
 
 		int status;
 		waitpid(pid, &status, 0);
+
+		for (int i = 0; argv[i] != NULL; i++)
+		{
+			delete[] argv[i];
+		}
+		delete[] argv;
+
 		std::cout << "------------------CGI output prepared-------------------" << std::endl;
 		return cgiOutput;
 	}
+
+	for (int i = 0; argv[i] != NULL; i++)
+	{
+		delete[] argv[i];
+	}
+	delete[] argv;
 
 	return cgiOutput;
 }
