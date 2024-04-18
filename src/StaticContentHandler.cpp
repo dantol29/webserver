@@ -67,6 +67,8 @@ HTTPResponse StaticContentHandler::handleRequest(const HTTPRequest &request)
 	// response.setStatusCode(200);
 	response.setBody(body);
 	response.setHeader("Content-Type: ", getMimeType(path));
+	response.setHeader("Content-Length: ", toString(body.length()));
+	response.setStatusCode(200);
 	// ADD MORE HEADER LINE
 	//  response.setHeader("Content-Length: ", std::to_string(body.length()));
 	//  response.setHeader("Connection: ", "close");
