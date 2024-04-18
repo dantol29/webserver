@@ -34,6 +34,13 @@ int HTTPResponse::getStatusCode() const
 
 void HTTPResponse::setStatusCode(int statusCode)
 {
+	if (_statusCode != 0)
+	{
+		std::cerr << "\033[31mWarning: Overwriting existing status code (" << _statusCode << ") and message ("
+				  << _statusMessage << ") with new code (" << statusCode << ") and message ("
+				  << getStatusMessage(statusCode) << ").\033[0m" << std::endl;
+	}
+
 	_statusCode = statusCode;
 	_statusMessage = getStatusMessage(statusCode);
 }
