@@ -125,7 +125,7 @@ bool Router::pathIsValid(HTTPRequest &request, std::string webRoot)
 		{
 			path += "/";
 		}
-		path += "index.html";
+		path += "index.html"; // if it is a directory we check for index.html
 		std::cout << "Path: " << path << std::endl;
 		if (stat(path.c_str(), &buffer) != 0)
 		{

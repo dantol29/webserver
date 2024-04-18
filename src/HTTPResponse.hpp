@@ -4,6 +4,7 @@
 #include <string>
 #include <iostream>
 #include <vector>
+#include "webserv.hpp"
 
 class HTTPResponse
 {
@@ -22,10 +23,11 @@ class HTTPResponse
 	void setStatusCode(int statusCode);
 	std::string getBody() const;
 	std::string getHeader(const std::string &name) const;
+	void setErrorResponse(int statusCode);
 
 	void setHeader(const std::string &name, const std::string &value);
 	void setBody(const std::string &body);
-	std::string toString() const;
+	std::string objToString() const;
 
 	bool isCGI() const;
 	void setIsCGI(bool isCGI);

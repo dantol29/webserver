@@ -134,11 +134,25 @@ void Server::handleConnection(Connection conn, size_t &i)
 	Router router;
 	std::string httpRequestString = conn.getHeaders() + conn.getBody();
 	HTTPRequest request(httpRequestString.c_str());
-	std::string responseString;
 	HTTPResponse response;
+	std::cout << "\033[1;91mRequest: " << request.getStatusCode() << "\033[0m" << std::endl;
+	if (request.getStatusCode() != 200 && request.getStatusCode() != 0)
+	{
+		response.setErrorResponse(request.getStatusCode());
+		std::string responseString = response.objToString();
+		std::cout << "\033[1;91mResponse: " << responseString << "\033[0m" << std::endl;
+		send(conn.getPollFd().fd, responseString.c_str(), responseString.size(), 0);
+		close(conn.getPollFd().fd);
+		_FDs.erase(_FDs.begin() + i);
+		_connections.erase(_connections.begin() + i);
+		--i;
+		return;
+	}
+	std::string responseString;
 	response = conn.getResponse();
 	response = router.routeRequest(request);
-	responseString = response.toString();
+	responseString = response.objToString();
+
 	std::cout << "\033[1;91mResponse: " << responseString << "\033[0m" << std::endl;
 	write(conn.getPollFd().fd, responseString.c_str(), responseString.size());
 	close(conn.getPollFd().fd);
@@ -321,7 +335,7 @@ void Server::closeClientConnection(Connection &conn, size_t &i)
 	// if (response.getStatusCode() != 0)
 	if (conn.getResponse().getStatusCode() != 0)
 	{
-		std::string responseString = conn.getResponse().toString();
+		std::string responseString = conn.getResponse().objToString();
 		send(conn.getPollFd().fd, responseString.c_str(), responseString.size(), 0);
 	}
 	// TODO: should we close it with the Destructor of the Connection class?

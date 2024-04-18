@@ -180,7 +180,8 @@ bool Connection::readHeaders()
 			}
 			// std::cout << "_headers: " << _headers << std::endl;
 			_headersTotalBytesRead += bytesRead;
-			if (_headersTotalBytesRead > _clientMaxHeadersSize)
+			// if (_headersTotalBytesRead > _clientMaxHeadersSize)
+			if (_headersTotalBytesRead > 8000)
 			{
 				std::cerr << "Header too large" << std::endl;
 				_response.setStatusCode(413);
@@ -374,14 +375,18 @@ bool Connection::readRequestHeadersAndBody()
 		return false;
 	}
 	// isChunked could be a method of the Connection class
+	std::cout << "\033[1;33mdebug 1\033[0m" << std::endl;
 	if (this->isChunked())
 	{
+		std::cout << "\033[1;33mdebug 2\033[0m" << std::endl;
 		return this->readChunkedBody();
 	}
 	else
 	{
+		std::cout << "\033[1;33mdebug 3\033[0m" << std::endl;
 		return this->readBody();
 	}
+	std::cout << "\033[1;33mdebug 4\033[0m" << std::endl;
 }
 
 bool Connection::isChunked()

@@ -32,6 +32,19 @@ int HTTPResponse::getStatusCode() const
 	return _statusCode;
 }
 
+void HTTPResponse::setErrorResponse(int statusCode)
+{
+	std::cout << "\033[31m" << "Error " << statusCode << " in request" << "\033[0m" << std::endl;
+	std::string statusMessage = getStatusMessage(statusCode);
+	std::string body = "<html><head><title>Error</title></head>"
+					   "<body><h1>Error: " +
+					   toString(statusCode) + " " + "</h1><p>" + statusMessage + "</p></body></html>";
+	setStatusCode(statusCode);
+	setHeader("Content-Length", toString(body.size()));
+	setHeader("Content-Type", "text/html");
+	setBody(body);
+}
+
 void HTTPResponse::setStatusCode(int statusCode)
 {
 	if (_statusCode != 0)
@@ -75,7 +88,7 @@ std::string HTTPResponse::getHeader(const std::string &name) const
 	return "";
 }
 
-std::string HTTPResponse::toString() const
+std::string HTTPResponse::objToString() const
 {
 	std::stringstream responseStream;
 	responseStream << "HTTP/1.1 " << _statusCode << " " << getStatusMessage(_statusCode) << "\r\n";

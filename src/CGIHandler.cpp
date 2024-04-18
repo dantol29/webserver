@@ -23,7 +23,7 @@ HTTPResponse CGIHandler::handleRequest(const HTTPRequest &request)
 	CGIHandler cgiInstance;
 	MetaVariables env;
 	env.HTTPRequestToMetaVars(request, env);
-	std::cout << env;
+	// std::cout << env;
 	std::string cgiOutput = executeCGI(env);
 
 	// HTTPResponse response;
@@ -35,7 +35,7 @@ HTTPResponse CGIHandler::handleRequest(const HTTPRequest &request)
 
 char *const *CGIHandler::createArgvForExecve(const MetaVariables &env)
 {
-	std::cout << env;
+	// std::cout << env;
 	char **argv = new char *[2];
 
 	std::string scriptName = env.getVar("SCRIPT_NAME");
@@ -64,14 +64,42 @@ HTTPResponse CGIHandler::CGIStringToResponse(const std::string &cgiOutput)
 {
 	HTTPResponse response;
 
+	std::cout << "\033[1;33mINSIDE CGI HANDLE CGI StringToResponse\033[0m" << std::endl;
+	std::cout << "\033[1;33m" << cgiOutput << "\033[0m" << std::endl;
+
 	std::size_t headerEndPos = cgiOutput.find("\r\n\r\n");
 	if (headerEndPos == std::string::npos)
 	{
-		headerEndPos = cgiOutput.find("\n\n");
+		std::ifstream file("var/www/errors/CGIEmpty.html");
+		std::stringstream buffer;
+		buffer << file.rdbuf();
+		std::string fileContents = buffer.str();
+
+		response.setBody(fileContents);
+		response.setHeader("Content-Type", "text/html");
+		response.setHeader("Content-Length", toString(fileContents.length()));
+		response.setStatusCode(404);
+		return response;
+	}
+	std::string headersPart;
+	try
+	{
+		headersPart = cgiOutput.substr(0, headerEndPos);
+	}
+	catch (const std::exception &e)
+	{
+		std::cerr << e.what() << "XXXcatched an error on substr probably";
 	}
 
-	std::string headersPart = cgiOutput.substr(0, headerEndPos);
-	std::string bodyPart = cgiOutput.substr(headerEndPos); // separator
+	std::string bodyPart;
+	try
+	{
+		bodyPart = cgiOutput.substr(headerEndPos);
+	}
+	catch (const std::exception &e)
+	{
+		std::cerr << e.what() << "YYYcatched an error on substr probably";
+	}
 
 	std::istringstream headerStream(headersPart);
 	std::string headerLine;
