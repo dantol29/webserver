@@ -54,7 +54,16 @@ std::string Router::getFileExtension(const std::string &fileName)
 	{
 		return "";
 	}
-	return fileName.substr(dotIndex + 1);
+
+	size_t queryStart = fileName.find("?", dotIndex);
+	if (queryStart == std::string::npos)
+	{
+		return fileName.substr(dotIndex + 1);
+	}
+	else
+	{
+		return fileName.substr(dotIndex + 1, queryStart - dotIndex - 1);
+	}
 }
 
 bool Router::isCGI(const HTTPRequest &request)

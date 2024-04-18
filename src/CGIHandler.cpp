@@ -23,6 +23,7 @@ HTTPResponse CGIHandler::handleRequest(const HTTPRequest &request)
 	CGIHandler cgiInstance;
 	MetaVariables env;
 	env.HTTPRequestToMetaVars(request, env);
+	std::cout << env;
 	std::string cgiOutput = executeCGI(env);
 
 	// HTTPResponse response;
