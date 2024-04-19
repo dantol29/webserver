@@ -1,55 +1,12 @@
 #include "HTTPRequest.hpp"
 #include "webserv.hpp"
 
-HTTPRequest::HTTPRequest() : _statusCode(200), _isChunked(false), _method(""), _requestTarget(""), _protocolVersion("")
+HTTPRequest::HTTPRequest()
 {
-}
-
-HTTPRequest::HTTPRequest(const HTTPRequest &obj)
-{
-	_statusCode = obj._statusCode;
-	_isChunked = obj._isChunked;
-	_method = obj._method;
-	_requestTarget = obj._requestTarget;
-	_protocolVersion = obj._protocolVersion;
-	_body = obj._body;
-	_headers = obj._headers;
-	_queryString = obj._queryString;
-}
-
-HTTPRequest &HTTPRequest::operator=(const HTTPRequest &obj)
-{
-	if (this != &obj)
-	{
-		_statusCode = obj._statusCode;
-		_isChunked = obj._isChunked;
-		_method = obj._method;
-		_requestTarget = obj._requestTarget;
-		_protocolVersion = obj._protocolVersion;
-		_body = obj._body;
-		_headers = obj._headers;
-		_queryString = obj._queryString;
-	}
-	return (*this);
 }
 
 HTTPRequest::~HTTPRequest()
 {
-}
-
-HTTPRequest::HTTPRequest(const char *request)
-{
-	_statusCode = 200;
-	if (strlen(request) < 10)
-		ft_error(400, "Invalid request-line");
-	else
-	{
-		parseRequestLine(request);
-		if (_statusCode == 200)
-			parseHeaders(request);
-		if (_statusCode == 200 && !_isChunked && _method != "GET")
-			parseBody(request);
-	}
 }
 
 std::string HTTPRequest::getMethod() const

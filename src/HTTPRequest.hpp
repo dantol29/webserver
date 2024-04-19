@@ -1,19 +1,11 @@
 #ifndef HTTPREQUEST_HPP
 #define HTTPREQUEST_HPP
 
-#define MAX_URI 200
-
-//./client $'POST /search?price=low HTTP/1.1\r\nHost: www.example.com\r\nContent-type: text/plain\r\nContent-length:
-// 42\r\n\r\n7\r\nChunk 1\r\n6\r\nChunk 2\r\n0\r\n\r\n'
-// test line
-
 class HTTPRequest
 {
   public:
-	HTTPRequest(const HTTPRequest &obj);
-	HTTPRequest &operator=(const HTTPRequest &obj);
+	HTTPRequest();
 	~HTTPRequest();
-	HTTPRequest(const char *request);
 
 	// GETTERS
 	std::string getMethod() const;
@@ -34,19 +26,20 @@ class HTTPRequest
 	int parseChunkedBody(const char *request);
 
   private:
-	HTTPRequest();
+	HTTPRequest(const HTTPRequest &obj);
+	HTTPRequest &operator=(const HTTPRequest &obj);
 	int parseRequestLine(const char *request);
 	int parseHeaders(const char *request);
 	int parseBody(const char *request);
 	int ft_error(int statusCode, std::string message);
 
 	// VARIABLES
-	int _statusCode;
-	bool _isChunked;
-	bool _isChunkFinish;
 	std::string _method;
 	std::string _requestTarget;
 	std::string _protocolVersion;
+	int _statusCode;
+	bool _isChunked;
+	bool _isChunkFinish;
 	std::string _errorMessage;
 	std::multimap<std::string, std::string> _queryString;
 	std::multimap<std::string, std::string> _headers;
