@@ -34,7 +34,7 @@ class MetaVariables
 	std::string formatQueryString(const std::multimap<std::string, std::string> &queryParams) const;
 	std::pair<std::string, std::string> separatePathAndInfo(const std::string &requestTarget) const;
 	void subtractQueryFromPathInfo(std::string &pathInfo, const std::string &queryString);
-	void HTTPRequestToMetaVars(HTTPRequest request, MetaVariables &env);
+	void HTTPRequestToMetaVars(const HTTPRequest &request, MetaVariables &env);
 
 	// convert to execve format
 	std::vector<char *> getForExecve() const;

@@ -188,7 +188,7 @@ void MetaVariables::subtractQueryFromPathInfo(std::string &pathInfo, const std::
 	}
 }
 
-void MetaVariables::HTTPRequestToMetaVars(HTTPRequest request, MetaVariables &env)
+void MetaVariables::HTTPRequestToMetaVars(const HTTPRequest &request, MetaVariables &env)
 {
 	// env.setVar("X_INTERPRETER_PATH", "/home/lmangall/.brew/bin/python3"); // school computer...
 
@@ -239,7 +239,7 @@ void MetaVariables::HTTPRequestToMetaVars(HTTPRequest request, MetaVariables &en
 	// env.setVar("REMOTE_IDENT", ""); // Requires specific server support
 
 	//_______set the metadata from the headers of the request
-	std::pair<std::string, std::string> contentTypeHeader = request.getHeaders("Content-Type");
+	std::pair<std::string, std::string> contentTypeHeader = request.getSingleHeader("Content-Type");
 	if (!contentTypeHeader.first.empty())
 	{
 		env.setVar("CONTENT_TYPE", contentTypeHeader.second);
@@ -248,7 +248,7 @@ void MetaVariables::HTTPRequestToMetaVars(HTTPRequest request, MetaVariables &en
 	{
 		env.setVar("CONTENT_TYPE", "");
 	}
-	std::pair<std::string, std::string> contentLengthHeader = request.getHeaders("Content-Length");
+	std::pair<std::string, std::string> contentLengthHeader = request.getSingleHeader("Content-Length");
 	if (!contentLengthHeader.first.empty())
 	{
 		env.setVar("CONTENT_LENGTH", contentLengthHeader.second);
