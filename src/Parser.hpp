@@ -22,7 +22,7 @@ class HTTPRequest
 	HTTPRequest &operator=(const HTTPRequest &obj);
 	~HTTPRequest();
 	HTTPRequest(const char *request);
-	
+
 	// GETTERS
 	std::string getMethod() const;
 	std::string getHost() const;
@@ -34,9 +34,9 @@ class HTTPRequest
 	std::string getErrorMessage() const;
 	std::multimap<std::string, std::string> getQueryString() const;
 	std::multimap<std::string, std::string> getHeaders() const;
-	std::pair<std::string, std::string> getHeaders(std::string key) const;
+	std::pair<std::string, std::string> getSingleHeader(std::string key) const;
 	std::vector<std::string> getBody() const;
-	
+
 	// CHUNKED REQUESTS
 	void setIsChunked(bool a);
 	int parseChunkedBody(const char *request);
@@ -59,7 +59,7 @@ class HTTPRequest
 	std::multimap<std::string, std::string> _queryString;
 	std::multimap<std::string, std::string> _headers;
 	std::vector<std::string> _body;
-	
+
 	// UTILS
 	bool saveVariables(std::string &variables);
 	void makeHeadersLowCase();
@@ -81,7 +81,6 @@ class HTTPRequest
 	std::string extractLine(const char *request, unsigned int &i, const unsigned int &size);
 };
 
-std::ostream& operator<<(std::ostream& out, const HTTPRequest& a);
-
+std::ostream &operator<<(std::ostream &out, const HTTPRequest &a);
 
 #endif
