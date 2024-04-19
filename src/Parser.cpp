@@ -259,22 +259,20 @@ int HTTPRequest::parseBody(const char *request)
 	return (end);
 }
 
-std::ostream &operator<<(std::ostream &out, const HTTPRequest &obj)
+std::ostream& operator<<(std::ostream& out, const HTTPRequest& obj)
 {
 	std::multimap<std::string, std::string> a = obj.getHeaders();
 	std::multimap<std::string, std::string> b = obj.getQueryString();
-	std::vector<std::string> c = obj.getBody();
+	std::vector<std::string>				c = obj.getBody();
 
 	std::multimap<std::string, std::string>::iterator it;
 	out << "---------------------Variables--------------------" << std::endl;
-	for (it = b.begin(); it != b.end(); it++)
-	{
+	for (it = b.begin(); it != b.end(); it++){
 		out << "Key: " << it->first << ", Value: " << it->second << std::endl;
 	}
 	out << "---------------------End--------------------------" << std::endl;
 	out << "---------------------Headers----------------------" << std::endl;
-	for (it = a.begin(); it != a.end(); it++)
-	{
+	for (it = a.begin(); it != a.end(); it++){
 		out << "Key: " << it->first << ", Value: " << it->second << std::endl;
 	}
 	out << "---------------------End--------------------------" << std::endl;
@@ -285,7 +283,18 @@ std::ostream &operator<<(std::ostream &out, const HTTPRequest &obj)
 	return (out);
 }
 
+
+
+
+
+
 // ----------------UTILS----------------------------
+
+
+
+
+
+
 
 bool HTTPRequest::hasMandatoryHeaders(HTTPRequest &obj)
 {
@@ -295,28 +304,23 @@ bool HTTPRequest::hasMandatoryHeaders(HTTPRequest &obj)
 	std::multimap<std::string, std::string> headers = obj.getHeaders();
 	std::multimap<std::string, std::string>::iterator it;
 
-	for (it = headers.begin(); it != headers.end(); it++)
-	{
-		if (it->first == "host")
-		{
+	for (it = headers.begin(); it != headers.end(); it++){
+		if (it->first == "host"){
 			if (!isValidHost(it->second))
 				return (false);
 			isHost++;
 		}
-		else if (it->first == "content-length")
-		{
-			if (!isNumber(it->second) || obj.getMethod() != "POST")
+		else if (it->first == "content-length"){
+			if (!isNumber(it->second) || obj.getMethod() != "POST" )
 				return (false);
 			isContentLength++;
 		}
-		else if (it->first == "content-type")
-		{
+		else if (it->first == "content-type"){
 			if (!isValidContentType(it->second) || obj.getMethod() != "POST")
 				return (false);
 			isContentType++;
 		}
-		else if (it->first == "transfer-encoding")
-		{
+		else if (it->first == "transfer-encoding"){
 			if (it->second != "chunked" || obj.getMethod() != "POST")
 				return (false);
 			obj.setIsChunked(true);
@@ -353,11 +357,11 @@ bool HTTPRequest::saveVariables(std::string &variables)
 	return (true);
 }
 
-void HTTPRequest::makeHeadersLowCase()
+void	HTTPRequest::makeHeadersLowCase()
 {
 	std::multimap<std::string, std::string>::iterator it;
 	std::multimap<std::string, std::string> newHeaders;
-	std::string tmp;
+	std::string	tmp;
 
 	for (it = _headers.begin(); it != _headers.end(); ++it)
 	{
@@ -523,6 +527,7 @@ bool HTTPRequest::isOrigForm(std::string &requestTarget, int &queryStart)
 	}
 	return (false);
 }
+
 
 bool HTTPRequest::isValidContentType(std::string type)
 {
