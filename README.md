@@ -1,6 +1,6 @@
 # webserv
 
-## usage
+## usage.
 
 1. Compile the webserver running `make` on the root directory of the project
 2. Start the webserver with `./webserver`
@@ -73,6 +73,7 @@
 | opendir                                     | Opens a directory stream corresponding to a directory name.                                                                                                                  |
 | readdir                                     | Reads a directory entry from a directory stream.                                                                                                                             |
 | closedir                                    | Closes a directory stream.                                                                                                                                                   |
+
 ## Naming Conventions
 
 - camelCase for variable names (except for classes which should be PascalCase)
