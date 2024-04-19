@@ -14,26 +14,7 @@ std::string HTTPRequest::getMethod() const
 	return (_method);
 }
 
-std::string HTTPRequest::getProtocolVersion() const
-{
-	return (_protocolVersion);
-}
-
-std::string HTTPRequest::getRequestTarget() const
-{
-	return (_requestTarget);
-}
-
-int HTTPRequest::getStatusCode() const
-{
-	return (_statusCode);
-}
-
-bool HTTPRequest::getIsChunked() const
-{
-	return (_isChunked);
-}
-
+// TODO: Check if "Host" should be written in lower case
 std::string HTTPRequest::getHost() const
 {
 	std::multimap<std::string, std::string>::const_iterator it = _headers.find("Host");
@@ -42,6 +23,16 @@ std::string HTTPRequest::getHost() const
 		return it->second;
 	}
 	return "";
+}
+
+std::string HTTPRequest::getRequestTarget() const
+{
+	return (_requestTarget);
+}
+
+std::string HTTPRequest::getProtocolVersion() const
+{
+	return (_protocolVersion);
 }
 
 std::multimap<std::string, std::string> HTTPRequest::getQueryString() const
@@ -54,7 +45,7 @@ std::multimap<std::string, std::string> HTTPRequest::getHeaders() const
 	return (_headers);
 }
 
-std::pair<std::string, std::string> HTTPRequest::getHeaders(std::string key) const
+std::pair<std::string, std::string> HTTPRequest::getSingleHeader(std::string key) const
 {
 	std::multimap<std::string, std::string>::const_iterator it;
 
@@ -64,11 +55,6 @@ std::pair<std::string, std::string> HTTPRequest::getHeaders(std::string key) con
 			return (std::make_pair(it->first, it->second));
 	}
 	return (std::make_pair("", ""));
-}
-
-bool HTTPRequest::getIsChunkFinish() const
-{
-	return (_isChunkFinish);
 }
 
 std::vector<std::string> HTTPRequest::getBody() const

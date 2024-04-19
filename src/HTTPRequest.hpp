@@ -1,6 +1,12 @@
 #ifndef HTTPREQUEST_HPP
 #define HTTPREQUEST_HPP
 
+#include <string>
+#include <map>
+
+// TODO: remove this later
+#define MAX_URI 200
+
 class HTTPRequest
 {
   public:
@@ -10,15 +16,12 @@ class HTTPRequest
 	// GETTERS
 	std::string getMethod() const;
 	std::string getHost() const;
-	int getStatusCode() const;
 	std::string getRequestTarget() const;
 	std::string getProtocolVersion() const;
-	bool getIsChunked() const;
-	bool getIsChunkFinish() const;
 	std::string getErrorMessage() const;
 	std::multimap<std::string, std::string> getQueryString() const;
 	std::multimap<std::string, std::string> getHeaders() const;
-	std::pair<std::string, std::string> getHeaders(std::string key) const;
+	std::pair<std::string, std::string> getSingleHeader(std::string key) const;
 	std::vector<std::string> getBody() const;
 
 	// CHUNKED REQUESTS
@@ -38,8 +41,6 @@ class HTTPRequest
 	std::string _requestTarget;
 	std::string _protocolVersion;
 	int _statusCode;
-	bool _isChunked;
-	bool _isChunkFinish;
 	std::string _errorMessage;
 	std::multimap<std::string, std::string> _queryString;
 	std::multimap<std::string, std::string> _headers;
