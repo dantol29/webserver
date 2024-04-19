@@ -18,30 +18,19 @@ class HTTPRequest
 	std::string getHost() const;
 	std::string getRequestTarget() const;
 	std::string getProtocolVersion() const;
-	std::string getErrorMessage() const;
 	std::multimap<std::string, std::string> getQueryString() const;
 	std::multimap<std::string, std::string> getHeaders() const;
 	std::pair<std::string, std::string> getSingleHeader(std::string key) const;
 	std::vector<std::string> getBody() const;
 
-	// CHUNKED REQUESTS
-	void setIsChunked(bool a);
-	int parseChunkedBody(const char *request);
-
   private:
 	HTTPRequest(const HTTPRequest &obj);
 	HTTPRequest &operator=(const HTTPRequest &obj);
-	int parseRequestLine(const char *request);
-	int parseHeaders(const char *request);
-	int parseBody(const char *request);
-	int ft_error(int statusCode, std::string message);
 
 	// VARIABLES
 	std::string _method;
 	std::string _requestTarget;
 	std::string _protocolVersion;
-	int _statusCode;
-	std::string _errorMessage;
 	std::multimap<std::string, std::string> _queryString;
 	std::multimap<std::string, std::string> _headers;
 	std::vector<std::string> _body;
