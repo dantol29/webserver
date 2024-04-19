@@ -1,12 +1,6 @@
 #ifndef HTTPREQUEST_HPP
 #define HTTPREQUEST_HPP
 
-#include <string>
-#include <iostream>
-#include <unistd.h>
-#include <map>
-#include <vector>
-
 // It is RECOMMENDED that all HTTP
 // senders and recipients support, at a minimum, request-line lengths of 8000 octets
 #define MAX_URI 200
@@ -22,7 +16,7 @@ class HTTPRequest
 	HTTPRequest &operator=(const HTTPRequest &obj);
 	~HTTPRequest();
 	HTTPRequest(const char *request);
-	
+
 	// GETTERS
 	std::string getMethod() const;
 	std::string getHost() const;
@@ -36,7 +30,7 @@ class HTTPRequest
 	std::multimap<std::string, std::string> getHeaders() const;
 	std::pair<std::string, std::string> getHeaders(std::string key) const;
 	std::vector<std::string> getBody() const;
-	
+
 	// CHUNKED REQUESTS
 	void setIsChunked(bool a);
 	int parseChunkedBody(const char *request);
@@ -59,7 +53,7 @@ class HTTPRequest
 	std::multimap<std::string, std::string> _queryString;
 	std::multimap<std::string, std::string> _headers;
 	std::vector<std::string> _body;
-	
+
 	// UTILS
 	bool saveVariables(std::string &variables);
 	void makeHeadersLowCase();
@@ -81,7 +75,6 @@ class HTTPRequest
 	std::string extractLine(const char *request, unsigned int &i, const unsigned int &size);
 };
 
-std::ostream& operator<<(std::ostream& out, const HTTPRequest& a);
-
+std::ostream &operator<<(std::ostream &out, const HTTPRequest &a);
 
 #endif
