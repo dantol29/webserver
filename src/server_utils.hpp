@@ -13,7 +13,7 @@
 #include "HTTPRequest.hpp"
 #include "HTTPResponse.hpp"
 #include "Connection.hpp"
-#include "Environment.hpp"
+#include "MetaVariables.hpp"
 #include "Router.hpp"
 #include <poll.h>
 
@@ -23,7 +23,7 @@ const int BUFFER_SIZE = 1024;
 const size_t CLIENT_MAX_HEADERS_SIZE = 8192; // 8KB - This is the limit of the header size also in NGINX
 const size_t CLIENT_MAX_BODY_SIZE = 1048576; // 1MB - This is the limit of the body size also in NGINX
 
-std::string handleCGIRequest(const char *argv[], Environment env);
+std::string handleCGIRequest(const char *argv[], MetaVariables env);
 
 // bool isChunked(const std::string &headers);
 size_t getContentLength(const std::string &headers);

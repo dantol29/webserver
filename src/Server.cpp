@@ -54,17 +54,18 @@ void Server::startPollEventLoop()
 						// std::cout << "i == 0" << std::endl;
 
 						acceptNewConnection();
-						printFDsVector(_FDs);
-						print_connectionsVector(_connections);
+						// printFDsVector(_FDs);
+						// print_connectionsVector(_connections);
 					}
 					else
 					{
 						std::cout << "Client socket event" << std::endl;
 						// std::cout << "i != 0" << std::endl;
 						// TODO: only the index is actually needed
+						// handleConnection(_connections[i]);
 						handleConnection(_connections[i], i);
-						printFDsVector(_FDs);
-						print_connectionsVector(_connections);
+						// printFDsVector(_FDs);
+						// print_connectionsVector(_connections);
 						// _FDs.erase(_FDs.begin() + i);
 						// --i;
 					}
@@ -89,11 +90,9 @@ void Server::startPollEventLoop()
 
 void Server::handleConnection(Connection conn, size_t &i)
 {
-	std::cout << "\nhandleConnection" << std::endl;
 	conn.printConnection();
-	// std::string headers;
-	// HTTPResponse response;
-	if (!conn.readHeaders())
+
+	if (!conn.readRequestHeadersAndBody())
 	{
 		std::cout << "Error reading headers" << std::endl;
 		// closeClientConnection(clientFD, response);
@@ -129,71 +128,18 @@ void Server::handleConnection(Connection conn, size_t &i)
 			return;
 		}
 	}
-	// It should be double "\r\n" to separate the headers from the body
-	std::string httpRequestString = conn.getHeaders() + conn.getBody();
-	std::cout << "Received HTTP request: " << std::endl << httpRequestString << std::endl;
-	HTTPRequest request(httpRequestString.c_str());
-	std::cout << request.getStatusCode() << std::endl;
-	std::cout << "Received HTTP request: " << std::endl << httpRequestString << std::endl;
 
-	// test to execute the python script (see: https://www.tutorialspoint.com/python/python_cgi_programming.htm)
-	const char *argv[] = {"./cgi-bin/hello_py.cgi", NULL};
-	// const char* argv[] = { "./cgi-bin/thirty_py.cgi", NULL };
-	// const char* argv[] = { "./cgi-bin/hello.cgi", NULL };
+	// NOTE: end of buffering/parsing part, start of router
 
-	// std::string response;
 	Router router;
+	std::string httpRequestString = conn.getHeaders() + conn.getBody();
+	HTTPRequest request(httpRequestString.c_str());
+	std::string responseString;
 	HTTPResponse response;
-	// Check if this is the right way to do it
 	response = conn.getResponse();
-	if (!router.pathExists(request, response))
-	{
-		std::cout << "Path does not exist" << std::endl;
-		StaticContentHandler staticHandler;
-		response = staticHandler.handleNotFound();
-	}
-	else
-	{
-		std::cout << "Path exists" << std::endl;
-
-		if (router.isDynamicRequest(request))
-		{
-			if (request.getMethod() == "GET" && request.getRequestTarget() == "/hello")
-			{
-				// env has to be created before CGI, because it is passed to the CGI
-				CGIHandler cgiHandler;
-				Environment env;
-				env.setVar("QUERY_STRING", "Hello from C++ CGI!");
-				// cgiHandler.executeCGI(argv, env);
-				handleCGIRequest(argv, env);
-			}
-			else
-			{
-				CGIHandler cgiHandler;
-				Environment env;
-				env.setVar("request.getQueryString()", "request.getBody()");
-				// response = cgiHandler.handleCGIRequest(argv, request);
-				// cgiHandler.executeCGI(argv, env);
-				handleCGIRequest(argv, env);
-			}
-		}
-		else
-		{
-			StaticContentHandler staticContentHandler;
-			// This if condition only for legacy reasons! TODO: remove
-			if (request.getMethod() == "GET" &&
-				(request.getRequestTarget() == "/" || request.getRequestTarget() == "/home"))
-			{
-				response = staticContentHandler.handleHomePage();
-			}
-			else
-			{
-				response = staticContentHandler.handleRequest(request);
-			}
-		}
-	}
-	std::string responseString = response.toString();
-
+	response = router.routeRequest(request);
+	responseString = response.toString();
+	std::cout << "\033[1;91mResponse: " << responseString << "\033[0m" << std::endl;
 	write(conn.getPollFd().fd, responseString.c_str(), responseString.size());
 	close(conn.getPollFd().fd);
 	_FDs.erase(_FDs.begin() + i);

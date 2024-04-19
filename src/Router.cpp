@@ -11,26 +11,36 @@ Router::~Router()
 
 HTTPResponse Router::routeRequest(const HTTPRequest &request)
 {
-	HTTPResponse response;
-	if (isDynamicRequest(request))
+	std::string _webRoot = "var/www"; // TODO: get this from the config file
+	if (isCGI(request))
 	{
-		response = _cgiHandler.handleRequest(request);
+		CGIHandler cgiHandler;
+		return cgiHandler.handleRequest(request);
 	}
-	else
+	else if (isDynamicRequest(request))
 	{
-		response = _staticContentHandler.handleRequest(request);
+		std::cout << "\033[31mCGI is the only dynamic requests we handle at the moment\033[0m" << std::endl;
 	}
-	return response;
+	else // it is a static request
+	{
+		StaticContentHandler staticContentInstance;
+		if (!pathIsValid(const_cast<HTTPRequest &>(request), _webRoot))
+		{
+
+			std::cout << "Path does not exist" << std::endl;
+			return staticContentInstance.handleNotFound();
+		}
+		else
+		{
+			return staticContentInstance.handleRequest(request);
+		}
+	}
+	return HTTPResponse();
 }
 
 bool Router::isDynamicRequest(const HTTPRequest &request)
 {
 	if (request.getMethod() == "POST" || request.getMethod() == "DELETE")
-	{
-		return true;
-	}
-	std::string fileExtension = getFileExtension(request.getRequestTarget());
-	if (fileExtension == "cgi" || fileExtension == "php" || fileExtension == "py" || fileExtension == "pl")
 	{
 		return true;
 	}
@@ -42,9 +52,25 @@ std::string Router::getFileExtension(const std::string &fileName)
 	size_t dotIndex = fileName.find_last_of(".");
 	if (dotIndex == std::string::npos)
 	{
-		return ""; // No file extension
+		return "";
 	}
-	return fileName.substr(dotIndex + 1);
+
+	size_t queryStart = fileName.find("?", dotIndex);
+	if (queryStart == std::string::npos)
+	{
+		return fileName.substr(dotIndex + 1);
+	}
+	else
+	{
+		return fileName.substr(dotIndex + 1, queryStart - dotIndex - 1);
+	}
+}
+
+bool Router::isCGI(const HTTPRequest &request)
+{
+	// TODO: check against config file, not this hardcoded version
+	std::string fileExtension = getFileExtension(request.getRequestTarget());
+	return (fileExtension == "cgi" || fileExtension == "pl" || fileExtension == "py" || fileExtension == "php");
 }
 
 void Router::splitTarget(const std::string &target)
@@ -52,10 +78,9 @@ void Router::splitTarget(const std::string &target)
 	_path.directories.clear();
 	_path.resource.clear();
 
-	// First, check for and remove any query parameters
 	// TODO: Eventually remove if already done in the request
 	std::string::size_type queryPos = target.find('?');
-	std::string path = target.substr(0, queryPos); // If '?' is not found, substr returns the entire string
+	std::string path = target.substr(0, queryPos);
 
 	std::string::size_type start = 0, end = 0;
 
@@ -75,9 +100,8 @@ void Router::splitTarget(const std::string &target)
 	}
 }
 
-bool Router::pathExists(HTTPRequest &request, HTTPResponse &response)
+bool Router::pathIsValid(HTTPRequest &request, std::string webRoot)
 {
-
 	std::string host = request.getHost();
 	std::cout << "Host: " << host << std::endl;
 	size_t pos = host.find(":");
@@ -87,19 +111,11 @@ bool Router::pathExists(HTTPRequest &request, HTTPResponse &response)
 	}
 	std::cout << "Host (after : trailing) :" << host << std::endl;
 	std::string path = request.getRequestTarget();
-	// TODO: read the _webRoot from the server instead of hardcoding it
-	std::string webRoot = "/var/www";
-	if (host == "localhost" || host == "/" || host == "")
-	{
-		webRoot = "html";
-	}
 	path = webRoot + path;
 	std::cout << "Path: " << path << std::endl;
 	struct stat buffer;
 	if (stat(path.c_str(), &buffer) != 0)
 	{
-		response.setStatusCode(404);
-		response.setBody("Not Found");
 		return false;
 	}
 	if (S_ISDIR(buffer.st_mode))
@@ -111,13 +127,22 @@ bool Router::pathExists(HTTPRequest &request, HTTPResponse &response)
 		}
 		path += "index.html";
 		std::cout << "Path: " << path << std::endl;
-		// Check if index.html exists
 		if (stat(path.c_str(), &buffer) != 0)
 		{
-			response.setStatusCode(404);
-			response.setBody("Not Found");
+			// TODO: decide if we should return a custom error for a directory without an index.html
 			return false;
 		}
 	}
+	std::cout << "Path: " << path << " exists" << std::endl;
+
+	std::ifstream file(path.c_str());
+	if (!file.is_open())
+	{
+		std::cout << "Failed to open the file at path: " << path << std::endl;
+		return false;
+	}
+	file.close();
+
+	std::cout << "Path is an accesible and readable file" << std::endl;
 	return true;
 }

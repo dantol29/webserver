@@ -7,7 +7,7 @@ HTTPResponse::HTTPResponse() : _statusCode(0)
 }
 
 HTTPResponse::HTTPResponse(const HTTPResponse &other)
-	: _statusCode(other._statusCode), _headers(other._headers), _body(other._body)
+	: _statusCode(other._statusCode), _headers(other._headers), _body(other._body), _isCGI(other._isCGI)
 {
 }
 
@@ -18,6 +18,7 @@ HTTPResponse &HTTPResponse::operator=(const HTTPResponse &other)
 		_statusCode = other._statusCode;
 		_headers = other._headers;
 		_body = other._body;
+		_isCGI = other._isCGI;
 	}
 	return *this;
 }
@@ -33,6 +34,13 @@ int HTTPResponse::getStatusCode() const
 
 void HTTPResponse::setStatusCode(int statusCode)
 {
+	if (_statusCode != 0)
+	{
+		std::cerr << "\033[31mWarning: Overwriting existing status code (" << _statusCode << ") and message ("
+				  << _statusMessage << ") with new code (" << statusCode << ") and message ("
+				  << getStatusMessage(statusCode) << ").\033[0m" << std::endl;
+	}
+
 	_statusCode = statusCode;
 	_statusMessage = getStatusMessage(statusCode);
 }
@@ -44,12 +52,28 @@ void HTTPResponse::setHeader(const std::string &name, const std::string &value)
 
 void HTTPResponse::setBody(const std::string &body)
 {
-    _body = body;
-    std::ostringstream oss;
-    oss << body.size();
-    setHeader("Content-Length", oss.str());
+	_body = body;
+	std::ostringstream oss;
+	// oss << body.size();
+	// setHeader("Content-Length", oss.str());
 }
 
+std::string HTTPResponse::getBody() const
+{
+	return _body;
+}
+
+std::string HTTPResponse::getHeader(const std::string &name) const
+{
+	for (size_t i = 0; i < _headers.size(); ++i)
+	{
+		if (_headers[i].first == name)
+		{
+			return _headers[i].second;
+		}
+	}
+	return "";
+}
 
 std::string HTTPResponse::toString() const
 {
@@ -63,6 +87,16 @@ std::string HTTPResponse::toString() const
 	responseStream << "\r\n";
 	responseStream << _body;
 	return responseStream.str();
+}
+
+bool HTTPResponse::isCGI() const
+{
+	return _isCGI;
+}
+
+void HTTPResponse::setIsCGI(bool isCGI)
+{
+	_isCGI = isCGI;
 }
 
 std::string HTTPResponse::getStatusMessage(int statusCode) const
@@ -196,4 +230,28 @@ std::string HTTPResponse::getStatusMessage(int statusCode) const
 	default:
 		return "Unknown";
 	}
+}
+
+std::ostream &operator<<(std::ostream &out, const HTTPResponse &response)
+{
+	std::cout << "HTTPResponse operator<< called" << std::endl;
+	// Output the status
+	out << "\033[35m";
+	out << "Status Code: " << response.getStatusCode() << "\n";
+	// out << "Status Message: " << response.getStatusMessage() << "\n";
+
+	// Output headers
+	out << "Headers:\n";
+	for (size_t i = 0; i < response._headers.size(); ++i)
+	{
+		out << response._headers[i].first << ": " << response._headers[i].second << "\n";
+	}
+
+	// Output body
+	if (!response.getBody().empty())
+	{
+		out << "\nBody:\n" << response.getBody();
+	}
+	out << "\033[0m";
+	return out;
 }
