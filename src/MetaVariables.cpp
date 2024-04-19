@@ -1,5 +1,5 @@
 #include "webserv.hpp"
-#include <string.h>
+#include <cstring>
 #include <utility>
 
 MetaVariables::MetaVariables()

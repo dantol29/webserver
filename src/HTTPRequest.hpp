@@ -19,6 +19,13 @@ class HTTPRequest
 	std::multimap<std::string, std::string> getHeaders() const;
 	std::pair<std::string, std::string> getSingleHeader(std::string key) const;
 	std::vector<std::string> getBody() const;
+	// SETTERS
+	void setMethod(std::string method);
+	void setRequestTarget(std::string requestTarget);
+	void setProtocolVersion(std::string protocolVersion);
+	void setQueryString(const std::string &key, const std::string &value);
+	void setHeaders(const std::string &key, const std::string &value);
+	void setBody(const std::string &body);
 
   private:
 	HTTPRequest(const HTTPRequest &obj);

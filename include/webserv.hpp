@@ -4,9 +4,10 @@
 #include <string>
 #include <sstream>
 #include <cstdlib>
-#include <string.h>
+#include <cstring>
 #include "MetaVariables.hpp"
 #include "HTTPRequest.hpp"
+#include "Parser.hpp"
 
 template <typename T>
 std::string toString(const T &value)

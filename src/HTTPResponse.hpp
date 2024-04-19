@@ -19,10 +19,10 @@ class HTTPResponse
 
 	int getStatusCode() const;
 	const std::string &getStatusMessage() const;
-	void setStatusCode(int statusCode);
 	std::string getBody() const;
 	std::string getHeader(const std::string &name) const;
 
+	void setStatusCode(int statusCode);
 	void setHeader(const std::string &name, const std::string &value);
 	void setBody(const std::string &body);
 	std::string toString() const;

@@ -5,7 +5,7 @@
 #include "HTTPRequest.hpp"
 #include <iostream>
 #include <sys/wait.h>
-#include <string.h>
+#include <cstring>
 #include <utility>
 #include <unistd.h>
 #include <fstream>

@@ -131,12 +131,18 @@ void Server::handleConnection(Connection conn, size_t &i)
 
 	// NOTE: end of buffering/parsing part, start of router
 
-	Router router;
 	std::string httpRequestString = conn.getHeaders() + conn.getBody();
-	HTTPRequest request(httpRequestString.c_str());
-	std::string responseString;
+	// We don't use this anymore but we use the Parser!
+	// HTTPRequest request(httpRequestString.c_str());
+	Parser parser;
+	HTTPRequest request;
 	HTTPResponse response;
+	// parser.parseRequestLine(httpRequestString.c_str(), request, response);
+	parser.parseRequestLine(httpRequestString.c_str(), request, response);
+
+	std::string responseString;
 	response = conn.getResponse();
+	Router router;
 	response = router.routeRequest(request);
 	responseString = response.toString();
 	std::cout << "\033[1;91mResponse: " << responseString << "\033[0m" << std::endl;
