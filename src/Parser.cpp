@@ -1,5 +1,5 @@
 #include "Parser.hpp"
-#include "webserv.hpp"
+#include <iomanip>
 
 Parser::Parser()
 {
@@ -52,11 +52,40 @@ void Parser::setIsChunked(bool n)
 // 	return (statusCode);
 // }
 
+void printHTTPRequest(const std::string httpRequest, size_t startPos)
+{
+	std::cout << "HTTP Request with not printables:" << std::endl;
+	for (size_t i = startPos; i < httpRequest.length(); ++i)
+	{
+		unsigned char c = httpRequest[i];
+		{
+			switch (c)
+			{
+			case '\n':
+				std::cout << "\\n";
+				break;
+			case '\r':
+				std::cout << "\\r";
+				break;
+			case '\t':
+				std::cout << "\\t";
+				break;
+			default:
+				if (c >= 32 && c <= 126)
+					std::cout << c;
+				else
+					std::cout << "\\x" << std::hex << std::setw(2) << std::setfill('0') << (int)c << std::dec;
+			}
+		}
+	}
+	std::cout << std::endl;
+}
+
 void Parser::parseRequestLine(const char *request, HTTPRequest &req, HTTPResponse &res)
 {
 	unsigned int i = 0;
 	bool isOriginForm = false;
-
+	printHTTPRequest(request);
 	// We will work with a Response object with a status code of 0. If we encounter an error, we will set the status
 	// code to the appropriate value. The code 200 was checked in the constructor after the call of parseRequestLine. If
 	// the status code is not 200, we would have returned otherwise we would have proceed parsing the headers and after
@@ -64,7 +93,10 @@ void Parser::parseRequestLine(const char *request, HTTPRequest &req, HTTPRespons
 
 	// TODO: check if strlen is the best C++ option
 	if (strlen(request) < 10)
+	{
+		std::cerr << "Invalid request-line" << std::endl;
 		return (res.setStatusCode(400));
+	}
 
 	std::string method = extractMethod(request, i);
 	if (method.empty())
@@ -73,14 +105,25 @@ void Parser::parseRequestLine(const char *request, HTTPRequest &req, HTTPRespons
 		return (res.setStatusCode(501));
 	}
 	if (request[i++] != ' ')
+	{
+		std::cerr << "Invalid request-line" << std::endl;
 		return (res.setStatusCode(400));
+	}
 	req.setMethod(method);
 
 	std::string requestTarget = extractRequestTarget(request, i);
+	std::cout << std::endl << std::endl << "request                            Target = " << requestTarget << std::endl;
 	if (requestTarget.empty())
+	{
+		std::cerr << "Invalid request-target" << std::endl;
 		return (res.setStatusCode(414));
+	}
 	if (request[i++] != ' ')
+	{
+		std::cerr << "Invalid request-line" << std::endl;
 		return (res.setStatusCode(400));
+	}
+	req.setRequestTarget(requestTarget);
 
 	// TODO: which variables are we talking about?
 	std::string variables = extractVariables(requestTarget, isOriginForm);
@@ -95,8 +138,12 @@ void Parser::parseRequestLine(const char *request, HTTPRequest &req, HTTPRespons
 	if (!hasCRLF(request, i, 0))
 		return (res.setStatusCode(400));
 	req.setProtocolVersion(protocolVersion);
+	std::cout << "before res.getStatusCode() = " << res.getStatusCode() << std::endl;
+
 	if (res.getStatusCode() == 0)
 		parseHeaders(request, req, res);
+	std::cout << "after res.getStatusCode() = " << res.getStatusCode() << std::endl;
+
 	if (res.getStatusCode() == 0)
 		parseBody(request, req, res);
 }
@@ -143,7 +190,7 @@ void Parser::parseHeaders(const char *request, HTTPRequest &req, HTTPResponse &r
 	unsigned int i;
 	std::string key;
 	std::string value;
-
+	printHTTPRequest(request);
 	i = 0;
 	// TODO: check if we need to skip the request line in the new implementation
 	skipRequestLine(request, i);
@@ -167,6 +214,7 @@ void Parser::parseHeaders(const char *request, HTTPRequest &req, HTTPResponse &r
 			std::cerr << "Invalid header value" << std::endl;
 			return (res.setStatusCode(400));
 		}
+		std::cout << "res.getStatusCode() = " << res.getStatusCode() << std::endl;
 		if (!hasCRLF(request, i, 0))
 		{
 			std::cerr << "No CRLF after header" << std::endl;

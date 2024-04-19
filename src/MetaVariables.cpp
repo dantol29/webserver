@@ -1,6 +1,6 @@
-#include "webserv.hpp"
 #include <cstring>
 #include <utility>
+#include <MetaVariables.hpp>
 
 MetaVariables::MetaVariables()
 {

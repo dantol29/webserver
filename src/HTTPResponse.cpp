@@ -10,6 +10,32 @@ HTTPResponse::HTTPResponse(const HTTPResponse &other)
 	: _statusCode(other._statusCode), _headers(other._headers), _body(other._body), _isCGI(other._isCGI)
 {
 }
+void HTTPResponse::setErrorResponse(int statusCode)
+{
+	std::cout << "\033[31m" << "Error " << statusCode << " in request" << "\033[0m" << std::endl;
+	std::string statusMessage = getStatusMessage(statusCode);
+	std::string body = "<html><head><title>Error</title></head>"
+					   "<body><h1>Error: " +
+					   toString(_statusCode) + " " + "</h1><p>" + statusMessage + "</p></body></html>";
+	setStatusCode(statusCode);
+	setHeader("Content-Length", toString(body.length()));
+	setHeader("Content-Type", "text/html");
+	setBody(body);
+}
+
+std::string HTTPResponse::objToString() const
+{
+	std::stringstream responseStream;
+	responseStream << "HTTP/1.1 " << _statusCode << " " << getStatusMessage(_statusCode) << "\r\n";
+	for (size_t i = 0; i < _headers.size(); ++i)
+	{
+		responseStream << _headers[i].first << ": " << _headers[i].second << "\r\n";
+	}
+
+	responseStream << "\r\n";
+	responseStream << _body;
+	return responseStream.str();
+}
 
 HTTPResponse &HTTPResponse::operator=(const HTTPResponse &other)
 {
@@ -73,20 +99,6 @@ std::string HTTPResponse::getHeader(const std::string &name) const
 		}
 	}
 	return "";
-}
-
-std::string HTTPResponse::toString() const
-{
-	std::stringstream responseStream;
-	responseStream << "HTTP/1.1 " << _statusCode << " " << getStatusMessage(_statusCode) << "\r\n";
-	for (size_t i = 0; i < _headers.size(); ++i)
-	{
-		responseStream << _headers[i].first << ": " << _headers[i].second << "\r\n";
-	}
-
-	responseStream << "\r\n";
-	responseStream << _body;
-	return responseStream.str();
 }
 
 bool HTTPResponse::isCGI() const

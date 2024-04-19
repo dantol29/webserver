@@ -1,4 +1,5 @@
 #include "Server.hpp"
+#include "Parser.hpp"
 
 // Default constructor
 Server::Server()
@@ -131,7 +132,8 @@ void Server::handleConnection(Connection conn, size_t &i)
 
 	// NOTE: end of buffering/parsing part, start of router
 
-	std::string httpRequestString = conn.getHeaders() + conn.getBody();
+	std::string httpRequestString = conn.getHeaders() + "\r\n\r\n" + conn.getBody();
+	printHTTPRequest(httpRequestString);
 	// We don't use this anymore but we use the Parser!
 	// HTTPRequest request(httpRequestString.c_str());
 	Parser parser;
@@ -140,11 +142,27 @@ void Server::handleConnection(Connection conn, size_t &i)
 	// parser.parseRequestLine(httpRequestString.c_str(), request, response);
 	parser.parseRequestLine(httpRequestString.c_str(), request, response);
 
+	std::cout << "\033[1;91mRequest: " << response.getStatusCode() << "\033[0m" << std::endl;
+	if (response.getStatusCode() != 0)
+	{
+		response.setErrorResponse(response.getStatusCode());
+		std::string responseString = response.objToString();
+		std::cout << "\033[1;91mResponse: " << responseString << "\033[0m" << std::endl;
+		send(conn.getPollFd().fd, responseString.c_str(), responseString.size(), 0);
+		close(conn.getPollFd().fd);
+		_FDs.erase(_FDs.begin() + i);
+		_connections.erase(_connections.begin() + i);
+		--i;
+		return;
+	}
+
 	std::string responseString;
 	response = conn.getResponse();
+	std::cout << std::endl << "                  DEBUG" << std::endl;
+	std::cout << request.getRequestTarget() << std::endl;
 	Router router;
 	response = router.routeRequest(request);
-	responseString = response.toString();
+	responseString = response.objToString();
 	std::cout << "\033[1;91mResponse: " << responseString << "\033[0m" << std::endl;
 	write(conn.getPollFd().fd, responseString.c_str(), responseString.size());
 	close(conn.getPollFd().fd);
@@ -327,7 +345,7 @@ void Server::closeClientConnection(Connection &conn, size_t &i)
 	// if (response.getStatusCode() != 0)
 	if (conn.getResponse().getStatusCode() != 0)
 	{
-		std::string responseString = conn.getResponse().toString();
+		std::string responseString = conn.getResponse().objToString();
 		send(conn.getPollFd().fd, responseString.c_str(), responseString.size(), 0);
 	}
 	// TODO: should we close it with the Destructor of the Connection class?
