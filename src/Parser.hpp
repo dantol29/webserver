@@ -54,12 +54,11 @@ class Parser
 	bool _isChunkFinish;
 
 	// VARIABLES FROM THE CORE PARSING FUNCTIONALITY
-	bool _headersComplete;
 	std::string _buffer;
 	// we could also eventually use the _headers from the HTTPRequest class, but it's a multimap
 	std::string _headersBuffer;
-	// At the moment we are not using it. in raddBody we just read the size of the _buffer that at the moemnt is the
-	// body
+	bool _headersComplete;
+	// ATM not using it. in readBody we just read the size of the _buffer that at the moemnt is the body
 	size_t _bodyTotalBytesRead;
 	size_t _headersTotalBytesRead;
 	size_t _clientMaxHeadersSize;
