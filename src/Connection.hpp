@@ -17,7 +17,6 @@ class Connection
   private:
 	struct pollfd _pollFd;
 	HTTPResponse _response;
-	size_t _headersTotalBytesRead;
 	size_t _clientMaxHeadersSize;
 	std::string _body;
 	bool _bodyComplete;

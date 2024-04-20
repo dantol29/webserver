@@ -1,14 +1,12 @@
 #include "Connection.hpp"
 
-Connection::Connection(struct pollfd &pollFd, Server &server)
-	: _headersTotalBytesRead(0), _bodyComplete(false), _bodyIsChunked(false)
+Connection::Connection(struct pollfd &pollFd, Server &server) : _bodyComplete(false), _bodyIsChunked(false)
 {
 	_pollFd.fd = pollFd.fd;
 	_pollFd.events = POLLIN;
 	_pollFd.revents = 0;
 	// TODO: should I initialize the _response here?
 	_response = HTTPResponse();
-	_headersTotalBytesRead = 0;
 	_bodyComplete = false;
 	_bodyIsChunked = false;
 	_clientMaxHeadersSize = server.getClientMaxHeadersSize();
@@ -24,7 +22,6 @@ Connection::Connection(const Connection &other)
 	_body = other._body;
 	_response = other._response;
 	_bodyComplete = other._bodyComplete;
-	_headersTotalBytesRead = other._headersTotalBytesRead;
 	_bodyIsChunked = other._bodyIsChunked;
 	_chunkData = other._chunkData;
 
@@ -39,7 +36,6 @@ Connection &Connection::operator=(const Connection &other)
 		_body = other._body;
 		_response = other._response;
 		_bodyComplete = other._bodyComplete;
-		_headersTotalBytesRead = other._headersTotalBytesRead;
 		_bodyIsChunked = other._bodyIsChunked;
 		_chunkData = other._chunkData;
 	}
@@ -142,8 +138,8 @@ bool Connection::readHeaders(Parser &parser)
 			std::cout << "_buffer: " << parser.getBuffer() << std::endl;
 			return true;
 		}
-		_headersTotalBytesRead += bytesRead;
-		if (_headersTotalBytesRead > _clientMaxHeadersSize)
+		parser.setHeadersTotalBytesRead(parser.getHeadersTotalBytesRead() + bytesRead);
+		if (parser.getHeadersTotalBytesRead() > _clientMaxHeadersSize)
 		{
 			std::cerr << "Header too large" << std::endl;
 			_response.setStatusCode(413);

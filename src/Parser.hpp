@@ -21,12 +21,14 @@ class Parser
 	std::string getBuffer() const;
 	std::string getHeadersBuffer() const;
 	size_t getBodyTotalBytesRead() const;
+	size_t getHeadersTotalBytesRead() const;
 
 	// SETTERS FROM THE CORE PARSING FUNCTIONALITIES
 	void setHeadersComplete(bool value);
 	void setBuffer(std::string str);
 	void setHeadersBuffer(std::string str);
 	void setBodyTotalBytesRead(size_t value);
+	void setHeadersTotalBytesRead(size_t value);
 
   private:
 	// GETTERS
@@ -46,6 +48,7 @@ class Parser
 	// VARIABLES
 	bool _isChunked;
 	bool _isChunkFinish;
+
 	// VARIABLES FROM THE CORE PARSING FUNCTIONALITY
 	bool _headersComplete;
 	std::string _buffer;
@@ -54,6 +57,7 @@ class Parser
 	// At the moment we are not using it. in raddBody we just read the size of the _buffer that at the moemnt is the
 	// body
 	size_t _bodyTotalBytesRead;
+	size_t _headersTotalBytesRead;
 
 	// UTILS
 	std::string extractVariables(std::string &requestTarget, bool &isOriginForm);
