@@ -75,9 +75,8 @@ int main() {
   //   "http://localhost:8080",
   //   "http://localhost:8080/development_site/cgi-bin/eight_py.cgi",
   //   "http://localhost:8080"};
-      //       "http://localhost:8080",
-      // "http://localhost:8080/development_site/largefile_20M",
-      // "http://localhost:8080"};
+      "http://localhost:8080/development_site/largefile_20M",
+      "http://localhost:8080", "http://localhost:8080"};
   std::string colors[] = {"\033[1;31m", "\033[1;32m", "\033[1;34m"};
 
   std::thread threads[3];
