@@ -104,24 +104,27 @@ void Server::handleConnection(Connection conn, size_t &i)
 			closeClientConnection(conn, i);
 			return;
 		}
-		// parser.preParseHeaders(response);
+		// After writing the socket, if the headers are not complete, we pre-parse the headers to check if they are
+		// complete
 		if (!parser.preParseHeaders(response))
 		{
 			std::cout << "Error pre-parsing headers" << std::endl;
 			send(conn.getPollFd().fd, response.objToString().c_str(), response.objToString().size(), 0);
 			closeClientConnection(conn, i);
-
 			return;
 		}
 	}
 	if (!parser.getHeadersComplete())
 	{
+		// If the headers are not complete we just return so that we can read the rest of the headers in the next poll
 		std::cout << "Headers incomplete, exiting handleConnection." << std::endl;
 		return; // Early exit if headers are not complete. We exit to read the rest of the headers in the next poll.
 	}
 	std::string body;
-	// isChunked is a 'free' function but it could be a method of the Connection class
-	if (conn.isChunked(parser))
+	// We use parse Header to extract all the headers from the headersBuffer. parseHeaders will also call
+	// hasMandatoryHeaders which will set isChunked.
+	parser.parseHeaders(parser.getHeadersBuffer().c_str(), request, response);
+	if (parser.getIsChunked())
 	{
 		std::cout << "Chunked body" << std::endl;
 		if (!conn.readChunkedBody())
@@ -143,7 +146,8 @@ void Server::handleConnection(Connection conn, size_t &i)
 
 	// NOTE: end of buffering/parsing part, start of router
 
-	std::string httpRequestString = parser.getHeadersBuffer() + "\r\n\r\n" + conn.getBody();
+	// std::string httpRequestString = parser.getHeadersBuffer() + "\r\n\r\n" + conn.getBody();
+	std::string httpRequestString = parser.getHeadersBuffer() + conn.getBody();
 	printHTTPRequest(httpRequestString);
 	// We don't use this anymore but we use the Parser!
 	// HTTPRequest request(httpRequestString.c_str());

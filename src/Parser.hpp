@@ -16,6 +16,7 @@ class Parser
 	~Parser();
 	Parser();
 	void parseRequest(const char *request, HTTPRequest &req, HTTPResponse &res);
+	void parseHeaders(const char *request, HTTPRequest &req, HTTPResponse &res);
 	// GETTERS FROM THE CORE PARSING FUNCTIONALITIES
 	bool preParseHeaders(HTTPResponse &res);
 	bool getHeadersComplete() const;
@@ -31,10 +32,12 @@ class Parser
 	void setBodyTotalBytesRead(size_t value);
 	void setHeadersTotalBytesRead(size_t value);
 
-  private:
-	// GETTERS
 	bool getIsChunked() const;
 	bool getIsChunkFinish() const;
+
+  private:
+	// GETTERS
+
 	// std::string getErrorMessage() const;
 
 	// CHUNKED REQUESTS
@@ -42,7 +45,7 @@ class Parser
 	// Is this function necessary? I think we don't use it
 	void parseChunkedBody(const char *request, HTTPRequest &req, HTTPResponse &res);
 	void parseRequestLine(const char *request, HTTPRequest &req, HTTPResponse &res);
-	void parseHeaders(const char *request, HTTPRequest &req, HTTPResponse &res);
+
 	void parseBody(const char *request, HTTPRequest &req, HTTPResponse &res);
 	int ft_error(int statusCode, std::string message);
 

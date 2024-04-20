@@ -1,6 +1,6 @@
 #include "Connection.hpp"
 
-Connection::Connection(struct pollfd &pollFd, Server &server) : _bodyComplete(false), _bodyIsChunked(false)
+Connection::Connection(struct pollfd &pollFd, Server &server) : _bodyComplete(false)
 {
 	(void)server;
 	_pollFd.fd = pollFd.fd;
@@ -9,7 +9,6 @@ Connection::Connection(struct pollfd &pollFd, Server &server) : _bodyComplete(fa
 	// TODO: should I initialize the _response here?
 	_response = HTTPResponse();
 	_bodyComplete = false;
-	_bodyIsChunked = false;
 	std::cout << "Connection created" << std::endl;
 	std::cout << "pollFd.fd: " << _pollFd.fd << std::endl;
 	std::cout << "pollFd.events: " << _pollFd.events << std::endl;
@@ -22,7 +21,6 @@ Connection::Connection(const Connection &other)
 	_body = other._body;
 	_response = other._response;
 	_bodyComplete = other._bodyComplete;
-	_bodyIsChunked = other._bodyIsChunked;
 	_chunkData = other._chunkData;
 
 	std::cout << "Connection object copied" << std::endl;
@@ -36,7 +34,6 @@ Connection &Connection::operator=(const Connection &other)
 		_body = other._body;
 		_response = other._response;
 		_bodyComplete = other._bodyComplete;
-		_bodyIsChunked = other._bodyIsChunked;
 		_chunkData = other._chunkData;
 	}
 	std::cout << "Connection object assigned" << std::endl;
@@ -82,11 +79,6 @@ std::string Connection::getChunkData() const
 	return _chunkData;
 }
 
-bool Connection::getBodyIsChunked() const
-{
-	return _bodyIsChunked;
-}
-
 void Connection::setBodyComplete(bool bodyComplete)
 {
 	_bodyComplete = bodyComplete;
@@ -100,11 +92,6 @@ void Connection::setBody(const std::string &body)
 void Connection::setChunkData(const std::string &chunkData)
 {
 	_chunkData = chunkData;
-}
-
-void Connection::setBodyIsChunked(bool bodyIsChunked)
-{
-	_bodyIsChunked = bodyIsChunked;
 }
 
 // Attempts to read HTTP request headers from the client connection into _headersBuffer on the Parser.
@@ -294,28 +281,6 @@ bool Connection::readBody(Parser &parser)
 	std::cout << "Exiting readBody" << std::endl;
 	_bodyComplete = true;
 	return true;
-}
-
-bool Connection::isChunked(Parser &parser)
-{
-	// Look for "Transfer-Encoding: chunked" in the headers
-	// This would not work cause headers are case insensitive
-	// std::string search = "Transfer-Encoding: chunked";
-	// return headers.find(search) != std::string::npos;
-	std::string headers = parser.getHeadersBuffer();
-	std::string lowerHeaders;
-	for (std::string::const_iterator it = headers.begin(); it != headers.end(); ++it)
-	{
-		lowerHeaders += customToLower(*it);
-	}
-
-	std::string search = "transfer-encoding: chunked";
-	std::string::size_type pos = lowerHeaders.find(search);
-	if (pos != std::string::npos)
-	{
-		return true;
-	}
-	return false;
 }
 
 /* Debugging */

@@ -19,7 +19,6 @@ class Connection
 	HTTPResponse _response;
 	std::string _body;
 	bool _bodyComplete;
-	bool _bodyIsChunked;
 	std::string _chunkData;
 
 	// Additional client state can be managed here
@@ -31,7 +30,6 @@ class Connection
 	~Connection();
 
 	bool readSocket(Parser &parser);
-	bool isChunked(Parser &parser);
 	bool readChunkedBody();
 	bool readChunkSize(std::string &line);
 	bool readChunk(size_t chunkSize, std::string &chunkedData, HTTPResponse &response);
@@ -43,11 +41,9 @@ class Connection
 	HTTPResponse &getResponse();
 	std::string getBody() const;
 	std::string getChunkData() const;
-	bool getBodyIsChunked() const;
 	/* Setters */
 	void setHeadersComplete(bool headersComplete);
 	void setBodyComplete(bool bodyComplete);
-	void setBodyIsChunked(bool bodyIsChunked);
 	void setHeaders(const std::string &headers);
 	void setBody(const std::string &body);
 	void setChunkData(const std::string &chunkData);

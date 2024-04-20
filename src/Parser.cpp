@@ -44,7 +44,7 @@ bool Parser::preParseHeaders(HTTPResponse &res)
 		// headers = _buffer.substr(0, headersEnd);
 		// setHeadersBuffer(headers);
 		// setHeadersComplete(true);
-		_headersBuffer = _buffer.substr(0, headersEnd);
+		_headersBuffer = _buffer.substr(0, headersEnd + 4);
 		_headersComplete = true;
 		_buffer = _buffer.substr(headersEnd + 4);
 		_bodyTotalBytesRead = _buffer.length();
@@ -129,9 +129,9 @@ bool Parser::getIsChunkFinish() const
 // 	return (_errorMessage);
 // }
 
-void Parser::setIsChunked(bool n)
+void Parser::setIsChunked(bool value)
 {
-	_isChunked = n;
+	_isChunked = value;
 }
 
 // int HTTPRequest::ft_error(int statusCode, std::string message)
@@ -193,7 +193,6 @@ void Parser::parseRequestLine(const char *request, HTTPRequest &req, HTTPRespons
 	req.setMethod(method);
 
 	std::string requestTarget = extractRequestTarget(request, i);
-	std::cout << std::endl << std::endl << "request                            Target = " << requestTarget << std::endl;
 	if (requestTarget.empty())
 	{
 		std::cerr << "Invalid request-target" << std::endl;
@@ -219,7 +218,6 @@ void Parser::parseRequestLine(const char *request, HTTPRequest &req, HTTPRespons
 	if (!hasCRLF(request, i, 0))
 		return (res.setStatusCode(400));
 	req.setProtocolVersion(protocolVersion);
-	std::cout << "before res.getStatusCode() = " << res.getStatusCode() << std::endl;
 }
 
 void Parser::parseRequest(const char *request, HTTPRequest &req, HTTPResponse &res)
