@@ -4,6 +4,10 @@
 Parser::Parser()
 {
 	// Fill me
+	_isChunked = false;
+	_isChunkFinish = false;
+	_headersComplete = false;
+	_buffer = "";
 }
 
 Parser::~Parser()
@@ -24,6 +28,28 @@ Parser::~Parser()
 // 			parseBody(request);
 // 	}
 // }
+
+// GETTERS FROM THE CORE PARSING FUNCTIONALITIES
+bool Parser::getHeadersComplete() const
+{
+	return (_headersComplete);
+}
+
+std::string Parser::getBuffer() const
+{
+	return (_buffer);
+}
+
+// SETTERS FROM THE CORE PARSING FUNCTIONALITIES
+void Parser::setHeadersComplete(bool value)
+{
+	_headersComplete = value;
+}
+
+void Parser::setBuffer(std::string str)
+{
+	_buffer = str;
+}
 
 bool Parser::getIsChunked() const
 {

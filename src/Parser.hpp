@@ -16,6 +16,12 @@ class Parser
 	~Parser();
 	Parser();
 	void parseRequest(const char *request, HTTPRequest &req, HTTPResponse &res);
+	// GETTERS FROM THE CORE PARSING FUNCTIONALITIES
+	bool getHeadersComplete() const;
+	std::string getBuffer() const;
+	// SETTERS FROM THE CORE PARSING FUNCTIONALITIES
+	void setHeadersComplete(bool value);
+	void setBuffer(std::string str);
 
   private:
 	// GETTERS
@@ -35,6 +41,9 @@ class Parser
 	// VARIABLES
 	bool _isChunked;
 	bool _isChunkFinish;
+	// VARIABLES FROM THE CORE PARSING FUNCTIONALITY
+	bool _headersComplete;
+	std::string _buffer;
 
 	// UTILS
 	std::string extractVariables(std::string &requestTarget, bool &isOriginForm);
