@@ -17,7 +17,6 @@ class Connection
   private:
 	struct pollfd _pollFd;
 	HTTPResponse _response;
-	std::string _buffer;
 	std::string _headers;
 	size_t _headersTotalBytesRead;
 	size_t _clientMaxHeadersSize;
@@ -40,11 +39,10 @@ class Connection
 	bool readChunkedBody();
 	bool readChunkSize(std::string &line);
 	bool readChunk(size_t chunkSize, std::string &chunkedData, HTTPResponse &response);
-	bool readBody();
+	bool readBody(Parser &parser);
 
 	/* Getters */
 	struct pollfd getPollFd() const;
-	bool getHeadersComplete() const;
 	bool getBodyComplete() const;
 	HTTPResponse &getResponse();
 	std::string getHeaders() const;

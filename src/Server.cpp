@@ -98,14 +98,14 @@ void Server::handleConnection(Connection conn, size_t &i)
 
 	if (!parser.getHeadersComplete())
 	{
-		if (!conn.readHeaders())
+		if (!conn.readHeaders(parser))
 		{
 			std::cout << "Error reading headers" << std::endl;
 			closeClientConnection(conn, i);
 			return;
 		}
 	}
-	if (!conn.getHeadersComplete())
+	if (!parser.getHeadersComplete())
 	{
 		std::cout << "Headers incomplete, exiting handleConnection." << std::endl;
 		return; // Early exit if headers are not complete. We exit to read the rest of the headers in the next poll.
@@ -124,7 +124,7 @@ void Server::handleConnection(Connection conn, size_t &i)
 	else
 	{
 		std::cout << "Regular body" << std::endl;
-		if (!conn.readBody())
+		if (!conn.readBody(parser))
 		{
 			std::cout << "Error reading body" << std::endl;
 			closeClientConnection(conn, i);

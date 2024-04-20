@@ -9,7 +9,6 @@ Connection::Connection(struct pollfd &pollFd, Server &server)
 	// TODO: should I initialize the _response here?
 	_response = HTTPResponse();
 	// TODO: should I initialize the _headers, _body, and _chunkData to empty strings?
-	_buffer = "";
 	_headers = "";
 	_headersTotalBytesRead = 0;
 	_body = "";
@@ -141,19 +140,21 @@ bool Connection::readHeaders(Parser &parser)
 	if (bytesRead > 0)
 	{
 		std::cout << "bytesRead > 0" << std::endl;
-		_buffer.append(buffer, bytesRead);
-		std::cout << "_buffer: " << _buffer << std::endl;
+
+		parser.setBuffer(parser.getBuffer() + std::string(buffer, bytesRead));
+		std::cout << "_buffer: " << parser.getBuffer() << std::endl;
 		// the last CRLF
-		std::size_t headersEnd = _buffer.find("\r\n\r\n");
+		std::size_t headersEnd = parser.getBuffer().find("\r\n\r\n");
 		if (headersEnd != std::string::npos)
 		{
-			_headers = _buffer.substr(0, headersEnd);
+			_headers = parser.getBuffer().substr(0, headersEnd);
 			parser.setHeadersComplete(true);
-			// We don't want to include the body in the buffer
-			_buffer = _buffer.substr(headersEnd + 4);
-			_bodyTotalBytesRead = _buffer.size();
+			// We don't want to include the CRLF in the buffer
+			parser.setBuffer(parser.getBuffer().substr(headersEnd + 4));
+			// _bodyTotalBytesRead = _buffer.size();
+			_bodyTotalBytesRead = parser.getBuffer().size();
 			std::cout << "_headers: " << _headers << std::endl;
-			std::cout << "_buffer: " << _buffer << std::endl;
+			std::cout << "_buffer: " << parser.getBuffer() << std::endl;
 			return true;
 		}
 		_headersTotalBytesRead += bytesRead;
@@ -294,15 +295,15 @@ bool Connection::readChunk(size_t chunkSize, std::string &chunkData, HTTPRespons
 	return true;
 }
 
-bool Connection::readBody()
+bool Connection::readBody(Parser &parser)
 {
 	std::cout << "\nEntering readBody" << std::endl;
 	size_t contentLength = getContentLength(_headers);
 	std::cout << "Content-Length: " << contentLength << std::endl;
 	char buffer[BUFFER_SIZE];
-	size_t bytesRead = _buffer.size();
+	size_t bytesRead = parser.getBuffer().size();
 	std::cout << "bytesRead: " << bytesRead << std::endl;
-	_body.append(_buffer);
+	_body.append(parser.getBuffer());
 	if (bytesRead < contentLength)
 	{
 		// TODO: check if this is blocking
