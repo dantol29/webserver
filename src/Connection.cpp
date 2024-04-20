@@ -144,15 +144,10 @@ void Connection::setBodyIsChunked(bool bodyIsChunked)
 // Attempts to read HTTP request headers from the client connection into _headers.
 bool Connection::readHeaders()
 {
-	// char buffer[BUFFER_SIZE] = {0};
 	std::cout << "\nreadHeaders" << std::endl;
-	// Both are in the Connection object now
-	// size_t totalRead = 0;
-	// bool headersComplete = false;
-	// while (!headersComplete)
+	// TODO: move this check outside the function
 	if (!_headersComplete)
 	{
-		// We reinitialize it at each iteration to have a clean buffer
 		char buffer[BUFFER_SIZE] = {0};
 		// we could do recv non blocking with MSG_DONTWAIT but we will keep it simple for now
 		std::cout << "_pollFd.fd: " << _pollFd.fd << std::endl;
@@ -161,10 +156,8 @@ bool Connection::readHeaders()
 		if (bytesRead > 0)
 		{
 			std::cout << "bytesRead > 0" << std::endl;
-			// _headers.append(buffer, bytesRead);
 			_buffer.append(buffer, bytesRead);
 			std::cout << "_buffer: " << _buffer << std::endl;
-			// This will return the index of the first occurrence of "\r\n\r\n" in the string, i.e. the index of '\r' in
 			// the last CRLF
 			std::size_t headersEnd = _buffer.find("\r\n\r\n");
 			if (headersEnd != std::string::npos)
@@ -178,7 +171,6 @@ bool Connection::readHeaders()
 				std::cout << "_buffer: " << _buffer << std::endl;
 				return true;
 			}
-			// std::cout << "_headers: " << _headers << std::endl;
 			_headersTotalBytesRead += bytesRead;
 			if (_headersTotalBytesRead > _clientMaxHeadersSize)
 			{
@@ -365,23 +357,6 @@ bool Connection::readBody()
 	std::cout << "Exiting readBody" << std::endl;
 	_bodyComplete = true;
 	return true;
-}
-
-bool Connection::readRequestHeadersAndBody()
-{
-	if (!this->readHeaders())
-	{
-		return false;
-	}
-	// isChunked could be a method of the Connection class
-	if (this->isChunked())
-	{
-		return this->readChunkedBody();
-	}
-	else
-	{
-		return this->readBody();
-	}
 }
 
 bool Connection::isChunked()

@@ -93,20 +93,17 @@ void Server::handleConnection(Connection conn, size_t &i)
 {
 	conn.printConnection();
 
-	if (!conn.readRequestHeadersAndBody())
+	// Explicit check if headers are complete
+	if (!conn.readHeaders())
 	{
 		std::cout << "Error reading headers" << std::endl;
-		// closeClientConnection(clientFD, response);
-		// think if this should be also a method of the Connection class
 		closeClientConnection(conn, i);
 		return;
 	}
-	// Explicit check if headers are complete
 	if (!conn.getHeadersComplete())
 	{
 		std::cout << "Headers incomplete, exiting handleConnection." << std::endl;
-		closeClientConnection(conn, i);
-		return; // Early exit if headers are not complete
+		return; // Early exit if headers are not complete. We exit to read the rest of the headers in the next poll.
 	}
 	std::string body;
 	// isChunked is a 'free' function but it could be a method of the Connection class
