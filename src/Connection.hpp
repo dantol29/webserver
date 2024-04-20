@@ -21,7 +21,6 @@ class Connection
 	size_t _clientMaxHeadersSize;
 	std::string _body;
 	bool _bodyComplete;
-	size_t _bodyTotalBytesRead;
 	bool _bodyIsChunked;
 	std::string _chunkData;
 

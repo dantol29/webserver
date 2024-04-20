@@ -137,8 +137,7 @@ bool Connection::readHeaders(Parser &parser)
 			parser.setHeadersComplete(true);
 			// We don't want to include the CRLF in the buffer
 			parser.setBuffer(parser.getBuffer().substr(headersEnd + 4));
-			// _bodyTotalBytesRead = _buffer.size();
-			_bodyTotalBytesRead = parser.getBuffer().size();
+			parser.setBodyTotalBytesRead(parser.getBuffer().size());
 			std::cout << "_headersBuffer: " << parser.getHeadersBuffer() << std::endl;
 			std::cout << "_buffer: " << parser.getBuffer() << std::endl;
 			return true;
@@ -287,6 +286,7 @@ bool Connection::readBody(Parser &parser)
 	size_t contentLength = getContentLength(parser.getHeadersBuffer());
 	std::cout << "Content-Length: " << contentLength << std::endl;
 	char buffer[BUFFER_SIZE];
+	// We could also use _bodyTotalBytesRead from the parser
 	size_t bytesRead = parser.getBuffer().size();
 	std::cout << "bytesRead: " << bytesRead << std::endl;
 	_body.append(parser.getBuffer());

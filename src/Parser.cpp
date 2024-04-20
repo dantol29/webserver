@@ -45,6 +45,11 @@ std::string Parser::getHeadersBuffer() const
 	return (_headersBuffer);
 }
 
+size_t Parser::getBodyTotalBytesRead() const
+{
+	return (_bodyTotalBytesRead);
+}
+
 // SETTERS FROM THE CORE PARSING FUNCTIONALITIES
 void Parser::setHeadersComplete(bool value)
 {
@@ -59,6 +64,11 @@ void Parser::setBuffer(std::string str)
 void Parser::setHeadersBuffer(std::string str)
 {
 	_headersBuffer = str;
+}
+
+void Parser::setBodyTotalBytesRead(size_t value)
+{
+	_bodyTotalBytesRead = value;
 }
 
 // VARIABLES

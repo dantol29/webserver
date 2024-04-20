@@ -20,10 +20,13 @@ class Parser
 	bool getHeadersComplete() const;
 	std::string getBuffer() const;
 	std::string getHeadersBuffer() const;
+	size_t getBodyTotalBytesRead() const;
+
 	// SETTERS FROM THE CORE PARSING FUNCTIONALITIES
 	void setHeadersComplete(bool value);
 	void setBuffer(std::string str);
 	void setHeadersBuffer(std::string str);
+	void setBodyTotalBytesRead(size_t value);
 
   private:
 	// GETTERS
@@ -48,6 +51,9 @@ class Parser
 	std::string _buffer;
 	// we could also eventually use the _headers from the HTTPRequest class, but it's a multimap
 	std::string _headersBuffer;
+	// At the moment we are not using it. in raddBody we just read the size of the _buffer that at the moemnt is the
+	// body
+	size_t _bodyTotalBytesRead;
 
 	// UTILS
 	std::string extractVariables(std::string &requestTarget, bool &isOriginForm);
