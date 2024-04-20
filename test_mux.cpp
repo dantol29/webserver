@@ -69,9 +69,9 @@ void GetRequest(const std::string &url, const std::string &colorCode) {
 
 int main() {
   std::string urls[] = {
-      "http://localhost:8080/development_site/cgi-bin/eight_py.cgi",
-      "http://localhost:8080/development_site/cgi-bin/eight_py.cgi",
-      "http://localhost:8080/development_site/cgi-bin/eight_py.cgi"};
+      // "http://localhost:8080/development_site/cgi-bin/eight_py.cgi",
+      // "http://localhost:8080/development_site/cgi-bin/eight_py.cgi",
+      // "http://localhost:8080/development_site/cgi-bin/eight_py.cgi"};
   //   "http://localhost:8080",
   //   "http://localhost:8080/development_site/cgi-bin/eight_py.cgi",
   //   "http://localhost:8080"};
