@@ -8,6 +8,7 @@
 #include "webserv.hpp"
 #include "server_utils.hpp"
 #include "HTTPResponse.hpp" // Assuming existence of HTTPResponse class
+#include "Parser.hpp"		// Assuming existence of Parser class
 
 class Server; // Forward declaration for circular dependency
 
@@ -18,7 +19,6 @@ class Connection
 	HTTPResponse _response;
 	std::string _buffer;
 	std::string _headers;
-	bool _headersComplete;
 	size_t _headersTotalBytesRead;
 	size_t _clientMaxHeadersSize;
 	std::string _body;
@@ -35,7 +35,7 @@ class Connection
 	Connection &operator=(const Connection &other); // Copy assignment operator
 	~Connection();
 
-	bool readHeaders();
+	bool readHeaders(Parser &parser);
 	bool isChunked();
 	bool readChunkedBody();
 	bool readChunkSize(std::string &line);

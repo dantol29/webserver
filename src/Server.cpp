@@ -91,14 +91,19 @@ void Server::startPollEventLoop()
 
 void Server::handleConnection(Connection conn, size_t &i)
 {
+	Parser parser;
+	HTTPRequest request;
+	HTTPResponse response;
 	conn.printConnection();
 
-	// Explicit check if headers are complete
-	if (!conn.readHeaders())
+	if (!parser.getHeadersComplete())
 	{
-		std::cout << "Error reading headers" << std::endl;
-		closeClientConnection(conn, i);
-		return;
+		if (!conn.readHeaders())
+		{
+			std::cout << "Error reading headers" << std::endl;
+			closeClientConnection(conn, i);
+			return;
+		}
 	}
 	if (!conn.getHeadersComplete())
 	{
@@ -133,9 +138,7 @@ void Server::handleConnection(Connection conn, size_t &i)
 	printHTTPRequest(httpRequestString);
 	// We don't use this anymore but we use the Parser!
 	// HTTPRequest request(httpRequestString.c_str());
-	Parser parser;
-	HTTPRequest request;
-	HTTPResponse response;
+
 	// parser.parseRequestLine(httpRequestString.c_str(), request, response);
 	parser.parseRequest(httpRequestString.c_str(), request, response);
 

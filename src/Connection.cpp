@@ -1,7 +1,7 @@
 #include "Connection.hpp"
 
 Connection::Connection(struct pollfd &pollFd, Server &server)
-	: _headersComplete(false), _headersTotalBytesRead(0), _bodyComplete(false), _bodyIsChunked(false)
+	: _headersTotalBytesRead(0), _bodyComplete(false), _bodyIsChunked(false)
 {
 	_pollFd.fd = pollFd.fd;
 	_pollFd.events = POLLIN;
@@ -11,7 +11,6 @@ Connection::Connection(struct pollfd &pollFd, Server &server)
 	// TODO: should I initialize the _headers, _body, and _chunkData to empty strings?
 	_buffer = "";
 	_headers = "";
-	_headersComplete = false;
 	_headersTotalBytesRead = 0;
 	_body = "";
 	_chunkData = "";
@@ -30,7 +29,6 @@ Connection::Connection(const Connection &other)
 	_headers = other._headers;
 	_body = other._body;
 	_response = other._response;
-	_headersComplete = other._headersComplete;
 	_bodyComplete = other._bodyComplete;
 	_headersTotalBytesRead = other._headersTotalBytesRead;
 	_bodyIsChunked = other._bodyIsChunked;
@@ -47,7 +45,6 @@ Connection &Connection::operator=(const Connection &other)
 		_headers = other._headers;
 		_body = other._body;
 		_response = other._response;
-		_headersComplete = other._headersComplete;
 		_bodyComplete = other._bodyComplete;
 		_headersTotalBytesRead = other._headersTotalBytesRead;
 		_bodyIsChunked = other._bodyIsChunked;
@@ -74,11 +71,6 @@ Connection::~Connection()
 struct pollfd Connection::getPollFd() const
 {
 	return _pollFd;
-}
-
-bool Connection::getHeadersComplete() const
-{
-	return _headersComplete;
 }
 
 bool Connection::getBodyComplete() const
@@ -111,11 +103,6 @@ bool Connection::getBodyIsChunked() const
 	return _bodyIsChunked;
 }
 
-void Connection::setHeadersComplete(bool headersComplete)
-{
-	_headersComplete = headersComplete;
-}
-
 void Connection::setBodyComplete(bool bodyComplete)
 {
 	_bodyComplete = bodyComplete;
@@ -142,55 +129,52 @@ void Connection::setBodyIsChunked(bool bodyIsChunked)
 }
 
 // Attempts to read HTTP request headers from the client connection into _headers.
-bool Connection::readHeaders()
+bool Connection::readHeaders(Parser &parser)
 {
 	std::cout << "\nreadHeaders" << std::endl;
 	// TODO: move this check outside the function
-	if (!_headersComplete)
+	char buffer[BUFFER_SIZE] = {0};
+	// we could do recv non blocking with MSG_DONTWAIT but we will keep it simple for now
+	std::cout << "_pollFd.fd: " << _pollFd.fd << std::endl;
+	ssize_t bytesRead = recv(_pollFd.fd, buffer, BUFFER_SIZE, 0);
+	std::cout << "bytesRead: " << bytesRead << std::endl;
+	if (bytesRead > 0)
 	{
-		char buffer[BUFFER_SIZE] = {0};
-		// we could do recv non blocking with MSG_DONTWAIT but we will keep it simple for now
-		std::cout << "_pollFd.fd: " << _pollFd.fd << std::endl;
-		ssize_t bytesRead = recv(_pollFd.fd, buffer, BUFFER_SIZE, 0);
-		std::cout << "bytesRead: " << bytesRead << std::endl;
-		if (bytesRead > 0)
+		std::cout << "bytesRead > 0" << std::endl;
+		_buffer.append(buffer, bytesRead);
+		std::cout << "_buffer: " << _buffer << std::endl;
+		// the last CRLF
+		std::size_t headersEnd = _buffer.find("\r\n\r\n");
+		if (headersEnd != std::string::npos)
 		{
-			std::cout << "bytesRead > 0" << std::endl;
-			_buffer.append(buffer, bytesRead);
+			_headers = _buffer.substr(0, headersEnd);
+			parser.setHeadersComplete(true);
+			// We don't want to include the body in the buffer
+			_buffer = _buffer.substr(headersEnd + 4);
+			_bodyTotalBytesRead = _buffer.size();
+			std::cout << "_headers: " << _headers << std::endl;
 			std::cout << "_buffer: " << _buffer << std::endl;
-			// the last CRLF
-			std::size_t headersEnd = _buffer.find("\r\n\r\n");
-			if (headersEnd != std::string::npos)
-			{
-				_headers = _buffer.substr(0, headersEnd);
-				_headersComplete = true;
-				// We don't want to include the body in the buffer
-				_buffer = _buffer.substr(headersEnd + 4);
-				_bodyTotalBytesRead = _buffer.size();
-				std::cout << "_headers: " << _headers << std::endl;
-				std::cout << "_buffer: " << _buffer << std::endl;
-				return true;
-			}
-			_headersTotalBytesRead += bytesRead;
-			if (_headersTotalBytesRead > _clientMaxHeadersSize)
-			{
-				std::cerr << "Header too large" << std::endl;
-				_response.setStatusCode(413);
-				return false;
-			}
+			return true;
 		}
-		else if (bytesRead < 0)
+		_headersTotalBytesRead += bytesRead;
+		if (_headersTotalBytesRead > _clientMaxHeadersSize)
 		{
-			perror("recv failed");
+			std::cerr << "Header too large" << std::endl;
+			_response.setStatusCode(413);
 			return false;
 		}
-		else
-		{
-			// This means biteRead == 0
-			std::cout << "Connection closed before headers being completely sent" << std::endl;
-			// In this case we don't want to send an error response, because the client closed the connection
-			return false;
-		}
+	}
+	else if (bytesRead < 0)
+	{
+		perror("recv failed");
+		return false;
+	}
+	else
+	{
+		// This means biteRead == 0
+		std::cout << "Connection closed before headers being completely sent" << std::endl;
+		// In this case we don't want to send an error response, because the client closed the connection
+		return false;
 	}
 	std::cout << "Exiting readHeaders" << std::endl;
 	return true;
@@ -387,7 +371,6 @@ void Connection::printConnection() const
 	std::cout << "\nprintConnection" << std::endl;
 	std::cout << "Connection: " << _pollFd.fd << std::endl;
 	std::cout << "Headers: " << _headers << std::endl;
-	// std::cout << "Headers complete: " << _headersComplete << std::endl;
 	// std::cout << "Body: " << _body << std::endl;
 	// std::cout << "Body complete: " << _bodyComplete << std::endl;
 	// std::cout << "Body is chunked: " << _bodyIsChunked << std::endl;
