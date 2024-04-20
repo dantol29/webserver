@@ -81,13 +81,13 @@ void printHTTPRequest(const std::string httpRequest, size_t startPos)
 	std::cout << std::endl;
 }
 
-void Parser::parseRequestLine(const char *request, HTTPRequest &req, HTTPResponse &res)
+void Parser::parseRequest(const char *request, HTTPRequest &req, HTTPResponse &res)
 {
 	unsigned int i = 0;
 	bool isOriginForm = false;
 	printHTTPRequest(request);
 	// We will work with a Response object with a status code of 0. If we encounter an error, we will set the status
-	// code to the appropriate value. The code 200 was checked in the constructor after the call of parseRequestLine. If
+	// code to the appropriate value. The code 200 was checked in the constructor after the call of parseRequest. If
 	// the status code is not 200, we would have returned otherwise we would have proceed parsing the headers and after
 	// another similar check parsing the body. _statusCode = 200;
 

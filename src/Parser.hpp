@@ -15,7 +15,7 @@ class Parser
   public:
 	~Parser();
 	Parser();
-	void parseRequestLine(const char *request, HTTPRequest &req, HTTPResponse &res);
+	void parseRequest(const char *request, HTTPRequest &req, HTTPResponse &res);
 
   private:
 	// GETTERS

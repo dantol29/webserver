@@ -140,7 +140,7 @@ void Server::handleConnection(Connection conn, size_t &i)
 	HTTPRequest request;
 	HTTPResponse response;
 	// parser.parseRequestLine(httpRequestString.c_str(), request, response);
-	parser.parseRequestLine(httpRequestString.c_str(), request, response);
+	parser.parseRequest(httpRequestString.c_str(), request, response);
 
 	std::cout << "\033[1;91mRequest: " << response.getStatusCode() << "\033[0m" << std::endl;
 	if (response.getStatusCode() != 0)
