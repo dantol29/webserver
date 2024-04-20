@@ -112,7 +112,7 @@ void Server::handleConnection(Connection conn, size_t &i)
 	}
 	std::string body;
 	// isChunked is a 'free' function but it could be a method of the Connection class
-	if (conn.isChunked())
+	if (conn.isChunked(parser))
 	{
 		std::cout << "Chunked body" << std::endl;
 		if (!conn.readChunkedBody())
@@ -134,7 +134,7 @@ void Server::handleConnection(Connection conn, size_t &i)
 
 	// NOTE: end of buffering/parsing part, start of router
 
-	std::string httpRequestString = conn.getHeaders() + "\r\n\r\n" + conn.getBody();
+	std::string httpRequestString = parser.getHeadersBuffer() + "\r\n\r\n" + conn.getBody();
 	printHTTPRequest(httpRequestString);
 	// We don't use this anymore but we use the Parser!
 	// HTTPRequest request(httpRequestString.c_str());

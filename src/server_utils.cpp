@@ -91,7 +91,9 @@ void print_connectionsVector(const std::vector<Connection> &connections)
 	std::cout << "connections: =>" << std::endl;
 	for (size_t i = 0; i < connections.size(); ++i)
 	{
-		std::cout << "fd: " << connections[i].getPollFd().fd << ", headers: " << connections[i].getHeaders()
-				  << ", body: " << connections[i].getBody() << std::endl;
+		std::cout << "fd: " << connections[i].getPollFd().fd << std::endl;
+		std::cout
+			<< "We don't print anymore the header and the body here because they have been moved to the Parser class"
+			<< std::endl;
 	}
 }

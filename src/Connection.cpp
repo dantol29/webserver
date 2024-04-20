@@ -8,11 +8,7 @@ Connection::Connection(struct pollfd &pollFd, Server &server)
 	_pollFd.revents = 0;
 	// TODO: should I initialize the _response here?
 	_response = HTTPResponse();
-	// TODO: should I initialize the _headers, _body, and _chunkData to empty strings?
-	_headers = "";
 	_headersTotalBytesRead = 0;
-	_body = "";
-	_chunkData = "";
 	_bodyComplete = false;
 	_bodyIsChunked = false;
 	_clientMaxHeadersSize = server.getClientMaxHeadersSize();
@@ -25,7 +21,6 @@ Connection::Connection(struct pollfd &pollFd, Server &server)
 Connection::Connection(const Connection &other)
 {
 	_pollFd = other._pollFd;
-	_headers = other._headers;
 	_body = other._body;
 	_response = other._response;
 	_bodyComplete = other._bodyComplete;
@@ -41,7 +36,6 @@ Connection &Connection::operator=(const Connection &other)
 	if (this != &other)
 	{
 		_pollFd = other._pollFd;
-		_headers = other._headers;
 		_body = other._body;
 		_response = other._response;
 		_bodyComplete = other._bodyComplete;
@@ -82,11 +76,6 @@ HTTPResponse &Connection::getResponse()
 	return _response;
 }
 
-std::string Connection::getHeaders() const
-{
-	return _headers;
-}
-
 std::string Connection::getBody() const
 {
 	return _body;
@@ -107,11 +96,6 @@ void Connection::setBodyComplete(bool bodyComplete)
 	_bodyComplete = bodyComplete;
 }
 
-void Connection::setHeaders(const std::string &headers)
-{
-	_headers = headers;
-}
-
 void Connection::setBody(const std::string &body)
 {
 	_body = body;
@@ -127,7 +111,7 @@ void Connection::setBodyIsChunked(bool bodyIsChunked)
 	_bodyIsChunked = bodyIsChunked;
 }
 
-// Attempts to read HTTP request headers from the client connection into _headers.
+// Attempts to read HTTP request headers from the client connection into _headersBuffer on the Parser.
 bool Connection::readHeaders(Parser &parser)
 {
 	std::cout << "\nreadHeaders" << std::endl;
@@ -147,13 +131,15 @@ bool Connection::readHeaders(Parser &parser)
 		std::size_t headersEnd = parser.getBuffer().find("\r\n\r\n");
 		if (headersEnd != std::string::npos)
 		{
-			_headers = parser.getBuffer().substr(0, headersEnd);
+			std::string headers;
+			headers = parser.getBuffer().substr(0, headersEnd);
+			parser.setHeadersBuffer(headers);
 			parser.setHeadersComplete(true);
 			// We don't want to include the CRLF in the buffer
 			parser.setBuffer(parser.getBuffer().substr(headersEnd + 4));
 			// _bodyTotalBytesRead = _buffer.size();
 			_bodyTotalBytesRead = parser.getBuffer().size();
-			std::cout << "_headers: " << _headers << std::endl;
+			std::cout << "_headersBuffer: " << parser.getHeadersBuffer() << std::endl;
 			std::cout << "_buffer: " << parser.getBuffer() << std::endl;
 			return true;
 		}
@@ -298,7 +284,7 @@ bool Connection::readChunk(size_t chunkSize, std::string &chunkData, HTTPRespons
 bool Connection::readBody(Parser &parser)
 {
 	std::cout << "\nEntering readBody" << std::endl;
-	size_t contentLength = getContentLength(_headers);
+	size_t contentLength = getContentLength(parser.getHeadersBuffer());
 	std::cout << "Content-Length: " << contentLength << std::endl;
 	char buffer[BUFFER_SIZE];
 	size_t bytesRead = parser.getBuffer().size();
@@ -344,14 +330,15 @@ bool Connection::readBody(Parser &parser)
 	return true;
 }
 
-bool Connection::isChunked()
+bool Connection::isChunked(Parser &parser)
 {
 	// Look for "Transfer-Encoding: chunked" in the headers
 	// This would not work cause headers are case insensitive
 	// std::string search = "Transfer-Encoding: chunked";
 	// return headers.find(search) != std::string::npos;
+	std::string headers = parser.getHeadersBuffer();
 	std::string lowerHeaders;
-	for (std::string::const_iterator it = _headers.begin(); it != _headers.end(); ++it)
+	for (std::string::const_iterator it = headers.begin(); it != headers.end(); ++it)
 	{
 		lowerHeaders += customToLower(*it);
 	}
@@ -371,9 +358,4 @@ void Connection::printConnection() const
 {
 	std::cout << "\nprintConnection" << std::endl;
 	std::cout << "Connection: " << _pollFd.fd << std::endl;
-	std::cout << "Headers: " << _headers << std::endl;
-	// std::cout << "Body: " << _body << std::endl;
-	// std::cout << "Body complete: " << _bodyComplete << std::endl;
-	// std::cout << "Body is chunked: " << _bodyIsChunked << std::endl;
-	// std::cout << "Chunk data: " << _chunkData << std::endl;
 }

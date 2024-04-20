@@ -19,9 +19,11 @@ class Parser
 	// GETTERS FROM THE CORE PARSING FUNCTIONALITIES
 	bool getHeadersComplete() const;
 	std::string getBuffer() const;
+	std::string getHeadersBuffer() const;
 	// SETTERS FROM THE CORE PARSING FUNCTIONALITIES
 	void setHeadersComplete(bool value);
 	void setBuffer(std::string str);
+	void setHeadersBuffer(std::string str);
 
   private:
 	// GETTERS
@@ -44,6 +46,8 @@ class Parser
 	// VARIABLES FROM THE CORE PARSING FUNCTIONALITY
 	bool _headersComplete;
 	std::string _buffer;
+	// we could also eventually use the _headers from the HTTPRequest class, but it's a multimap
+	std::string _headersBuffer;
 
 	// UTILS
 	std::string extractVariables(std::string &requestTarget, bool &isOriginForm);

@@ -40,6 +40,11 @@ std::string Parser::getBuffer() const
 	return (_buffer);
 }
 
+std::string Parser::getHeadersBuffer() const
+{
+	return (_headersBuffer);
+}
+
 // SETTERS FROM THE CORE PARSING FUNCTIONALITIES
 void Parser::setHeadersComplete(bool value)
 {
@@ -50,6 +55,13 @@ void Parser::setBuffer(std::string str)
 {
 	_buffer = str;
 }
+
+void Parser::setHeadersBuffer(std::string str)
+{
+	_headersBuffer = str;
+}
+
+// VARIABLES
 
 bool Parser::getIsChunked() const
 {
@@ -392,25 +404,6 @@ bool Parser::saveVariables(std::string &variables, HTTPRequest &req)
 	}
 	return (true);
 }
-
-// void Parser::makeHeadersLowCase()
-// {
-// 	std::multimap<std::string, std::string>::iterator it;
-// 	std::multimap<std::string, std::string> newHeaders;
-// 	std::string tmp;
-
-// 	for (it = _headers.begin(); it != _headers.end(); ++it)
-// 	{
-// 		tmp = it->first;
-// 		for (unsigned int i = 0; i < tmp.size(); ++i)
-// 		{
-// 			if (tmp[i] >= 65 && tmp[i] <= 90)
-// 				tmp[i] = tmp[i] + 32;
-// 		}
-// 		newHeaders.insert(std::make_pair(tmp, it->second));
-// 	}
-// 	_headers.swap(newHeaders);
-// }
 
 std::string Parser::extractValue(std::string &variables, int &i)
 {
