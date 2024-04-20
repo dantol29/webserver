@@ -98,10 +98,19 @@ void Server::handleConnection(Connection conn, size_t &i)
 
 	if (!parser.getHeadersComplete())
 	{
-		if (!conn.readHeaders(parser))
+		if (!conn.readSocket(parser))
 		{
 			std::cout << "Error reading headers" << std::endl;
 			closeClientConnection(conn, i);
+			return;
+		}
+		// parser.preParseHeaders(response);
+		if (!parser.preParseHeaders(response))
+		{
+			std::cout << "Error pre-parsing headers" << std::endl;
+			send(conn.getPollFd().fd, response.objToString().c_str(), response.objToString().size(), 0);
+			closeClientConnection(conn, i);
+
 			return;
 		}
 	}

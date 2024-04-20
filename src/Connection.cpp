@@ -2,6 +2,7 @@
 
 Connection::Connection(struct pollfd &pollFd, Server &server) : _bodyComplete(false), _bodyIsChunked(false)
 {
+	(void)server;
 	_pollFd.fd = pollFd.fd;
 	_pollFd.events = POLLIN;
 	_pollFd.revents = 0;
@@ -9,7 +10,6 @@ Connection::Connection(struct pollfd &pollFd, Server &server) : _bodyComplete(fa
 	_response = HTTPResponse();
 	_bodyComplete = false;
 	_bodyIsChunked = false;
-	_clientMaxHeadersSize = server.getClientMaxHeadersSize();
 	std::cout << "Connection created" << std::endl;
 	std::cout << "pollFd.fd: " << _pollFd.fd << std::endl;
 	std::cout << "pollFd.events: " << _pollFd.events << std::endl;
@@ -108,43 +108,15 @@ void Connection::setBodyIsChunked(bool bodyIsChunked)
 }
 
 // Attempts to read HTTP request headers from the client connection into _headersBuffer on the Parser.
-bool Connection::readHeaders(Parser &parser)
+bool Connection::readSocket(Parser &parser)
 {
-	std::cout << "\nreadHeaders" << std::endl;
-	// TODO: move this check outside the function
 	char buffer[BUFFER_SIZE] = {0};
-	// we could do recv non blocking with MSG_DONTWAIT but we will keep it simple for now
-	std::cout << "_pollFd.fd: " << _pollFd.fd << std::endl;
 	ssize_t bytesRead = recv(_pollFd.fd, buffer, BUFFER_SIZE, 0);
-	std::cout << "bytesRead: " << bytesRead << std::endl;
 	if (bytesRead > 0)
 	{
-		std::cout << "bytesRead > 0" << std::endl;
-
 		parser.setBuffer(parser.getBuffer() + std::string(buffer, bytesRead));
-		std::cout << "_buffer: " << parser.getBuffer() << std::endl;
-		// the last CRLF
-		std::size_t headersEnd = parser.getBuffer().find("\r\n\r\n");
-		if (headersEnd != std::string::npos)
-		{
-			std::string headers;
-			headers = parser.getBuffer().substr(0, headersEnd);
-			parser.setHeadersBuffer(headers);
-			parser.setHeadersComplete(true);
-			// We don't want to include the CRLF in the buffer
-			parser.setBuffer(parser.getBuffer().substr(headersEnd + 4));
-			parser.setBodyTotalBytesRead(parser.getBuffer().size());
-			std::cout << "_headersBuffer: " << parser.getHeadersBuffer() << std::endl;
-			std::cout << "_buffer: " << parser.getBuffer() << std::endl;
-			return true;
-		}
-		parser.setHeadersTotalBytesRead(parser.getHeadersTotalBytesRead() + bytesRead);
-		if (parser.getHeadersTotalBytesRead() > _clientMaxHeadersSize)
-		{
-			std::cerr << "Header too large" << std::endl;
-			_response.setStatusCode(413);
-			return false;
-		}
+		std::cout << "Exiting readSocket" << std::endl;
+		return true;
 	}
 	else if (bytesRead < 0)
 	{
@@ -153,12 +125,10 @@ bool Connection::readHeaders(Parser &parser)
 	}
 	else
 	{
-		// This means biteRead == 0
 		std::cout << "Connection closed before headers being completely sent" << std::endl;
-		// In this case we don't want to send an error response, because the client closed the connection
 		return false;
 	}
-	std::cout << "Exiting readHeaders" << std::endl;
+	std::cout << "Exiting readSocket. This will never happen here!" << std::endl;
 	return true;
 }
 // About the hexa conversion

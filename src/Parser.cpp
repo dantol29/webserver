@@ -1,4 +1,6 @@
 #include "Parser.hpp"
+#include "Server.hpp"
+
 #include <iomanip>
 
 Parser::Parser()
@@ -8,6 +10,7 @@ Parser::Parser()
 	_isChunkFinish = false;
 	_headersComplete = false;
 	_buffer = "";
+	_clientMaxHeadersSize = CLIENT_MAX_HEADERS_SIZE;
 }
 
 Parser::~Parser()
@@ -28,6 +31,34 @@ Parser::~Parser()
 // 			parseBody(request);
 // 	}
 // }
+
+// FUNCTIONS FROM THE CORE PARSING FUNCTIONALITIES
+
+bool Parser::preParseHeaders(HTTPResponse &res)
+{
+	// We read the buffer with readSocket if headersComplete is not true and we write the buffer in the _headersBuffer
+	std::size_t headersEnd = _buffer.find("\r\n\r\n");
+	if (headersEnd != std::string::npos)
+	{
+		// std::string headers;
+		// headers = _buffer.substr(0, headersEnd);
+		// setHeadersBuffer(headers);
+		// setHeadersComplete(true);
+		_headersBuffer = _buffer.substr(0, headersEnd);
+		_headersComplete = true;
+		_buffer = _buffer.substr(headersEnd + 4);
+		_bodyTotalBytesRead = _buffer.length();
+		return (true);
+	}
+	_headersTotalBytesRead = _buffer.length();
+	if (_headersTotalBytesRead > _clientMaxHeadersSize)
+	{
+		std::cerr << "Headers too large" << std::endl;
+		res.setStatusCode(431);
+		return false;
+	}
+	return true;
+}
 
 // GETTERS FROM THE CORE PARSING FUNCTIONALITIES
 bool Parser::getHeadersComplete() const

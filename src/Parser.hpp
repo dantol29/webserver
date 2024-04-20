@@ -17,6 +17,7 @@ class Parser
 	Parser();
 	void parseRequest(const char *request, HTTPRequest &req, HTTPResponse &res);
 	// GETTERS FROM THE CORE PARSING FUNCTIONALITIES
+	bool preParseHeaders(HTTPResponse &res);
 	bool getHeadersComplete() const;
 	std::string getBuffer() const;
 	std::string getHeadersBuffer() const;
@@ -58,6 +59,7 @@ class Parser
 	// body
 	size_t _bodyTotalBytesRead;
 	size_t _headersTotalBytesRead;
+	size_t _clientMaxHeadersSize;
 
 	// UTILS
 	std::string extractVariables(std::string &requestTarget, bool &isOriginForm);

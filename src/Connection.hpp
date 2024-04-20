@@ -17,7 +17,6 @@ class Connection
   private:
 	struct pollfd _pollFd;
 	HTTPResponse _response;
-	size_t _clientMaxHeadersSize;
 	std::string _body;
 	bool _bodyComplete;
 	bool _bodyIsChunked;
@@ -31,7 +30,7 @@ class Connection
 	Connection &operator=(const Connection &other); // Copy assignment operator
 	~Connection();
 
-	bool readHeaders(Parser &parser);
+	bool readSocket(Parser &parser);
 	bool isChunked(Parser &parser);
 	bool readChunkedBody();
 	bool readChunkSize(std::string &line);
