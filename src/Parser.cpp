@@ -81,22 +81,14 @@ void printHTTPRequest(const std::string httpRequest, size_t startPos)
 	std::cout << std::endl;
 }
 
-void Parser::parseRequest(const char *request, HTTPRequest &req, HTTPResponse &res)
+void Parser::parseRequestLine(const char *request, HTTPRequest &req, HTTPResponse &res)
 {
+
 	unsigned int i = 0;
 	bool isOriginForm = false;
 	printHTTPRequest(request);
-	// We will work with a Response object with a status code of 0. If we encounter an error, we will set the status
-	// code to the appropriate value. The code 200 was checked in the constructor after the call of parseRequest. If
-	// the status code is not 200, we would have returned otherwise we would have proceed parsing the headers and after
-	// another similar check parsing the body. _statusCode = 200;
 
 	// TODO: check if strlen is the best C++ option
-	if (strlen(request) < 10)
-	{
-		std::cerr << "Invalid request-line" << std::endl;
-		return (res.setStatusCode(400));
-	}
 
 	std::string method = extractMethod(request, i);
 	if (method.empty())
@@ -139,13 +131,28 @@ void Parser::parseRequest(const char *request, HTTPRequest &req, HTTPResponse &r
 		return (res.setStatusCode(400));
 	req.setProtocolVersion(protocolVersion);
 	std::cout << "before res.getStatusCode() = " << res.getStatusCode() << std::endl;
+}
 
-	if (res.getStatusCode() == 0)
-		parseHeaders(request, req, res);
-	std::cout << "after res.getStatusCode() = " << res.getStatusCode() << std::endl;
-
-	if (res.getStatusCode() == 0)
-		parseBody(request, req, res);
+void Parser::parseRequest(const char *request, HTTPRequest &req, HTTPResponse &res)
+{
+	// We will work with a Response object with a status code of 0. If we encounter an error, we will set the status
+	// code to the appropriate value. The code 200 was checked in the constructor after the call of parseRequest. If
+	// the status code is not 200, we would have returned otherwise we would have proceed parsing the headers and after
+	// another similar check parsing the body. _statusCode = 200;
+	if (strlen(request) < 10)
+	{
+		std::cerr << "Invalid request-line" << std::endl;
+		return (res.setStatusCode(400));
+	}
+	else
+	{
+		parseRequestLine(request, req, res);
+		if (res.getStatusCode() == 0)
+			parseHeaders(request, req, res);
+		std::cout << "after res.getStatusCode() = " << res.getStatusCode() << std::endl;
+		if (res.getStatusCode() == 0 && !_isChunked && req.getMethod() != "GET")
+			parseBody(request, req, res);
+	}
 }
 // TODO: probably we will remove this. The parser will always get a chunk of a chunked body and not the whole chunked
 // body, cause the 'core' will read only a chunk of the body at a time

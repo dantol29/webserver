@@ -27,7 +27,7 @@ class Parser
 	void setIsChunked(bool a);
 	// Is this function necessary? I think we don't use it
 	void parseChunkedBody(const char *request, HTTPRequest &req, HTTPResponse &res);
-
+	void parseRequestLine(const char *request, HTTPRequest &req, HTTPResponse &res);
 	void parseHeaders(const char *request, HTTPRequest &req, HTTPResponse &res);
 	void parseBody(const char *request, HTTPRequest &req, HTTPResponse &res);
 	int ft_error(int statusCode, std::string message);
