@@ -120,7 +120,6 @@ void Server::handleConnection(Connection conn, size_t &i)
 		std::cout << "Headers incomplete, exiting handleConnection." << std::endl;
 		return; // Early exit if headers are not complete. We exit to read the rest of the headers in the next poll.
 	}
-	std::string body;
 	// We use parse Header to extract all the headers from the headersBuffer. parseHeaders will also call
 	// hasMandatoryHeaders which will set isChunked.
 	parser.parseHeaders(parser.getHeadersBuffer().c_str(), request, response);
