@@ -127,7 +127,7 @@ void Server::handleConnection(Connection conn, size_t &i)
 	if (parser.getIsChunked())
 	{
 		std::cout << "Chunked body" << std::endl;
-		if (!conn.readChunkedBody())
+		if (!conn.readChunkedBody(parser))
 		{
 			closeClientConnection(conn, i);
 			return;
