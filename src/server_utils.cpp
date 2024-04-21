@@ -21,34 +21,34 @@ char customToLower(char c)
 	return c;
 }
 
-size_t getContentLength(const std::string &headers)
-{
-	std::string lowerHeaders;
-	for (std::string::const_iterator it = headers.begin(); it != headers.end(); ++it)
-	{
-		lowerHeaders += customToLower(*it);
-	}
+// size_t getContentLength(const std::string &headers)
+// {
+// 	std::string lowerHeaders;
+// 	for (std::string::const_iterator it = headers.begin(); it != headers.end(); ++it)
+// 	{
+// 		lowerHeaders += customToLower(*it);
+// 	}
 
-	std::string search = "content-length: ";
-	std::string::size_type pos = lowerHeaders.find(search);
-	if (pos != std::string::npos)
-	{
-		std::string contentLengthLine = headers.substr(pos + search.size());
-		std::string::size_type endPos = contentLengthLine.find("\r\n");
-		std::string contentLengthStr = contentLengthLine.substr(0, endPos);
+// 	std::string search = "content-length: ";
+// 	std::string::size_type pos = lowerHeaders.find(search);
+// 	if (pos != std::string::npos)
+// 	{
+// 		std::string contentLengthLine = headers.substr(pos + search.size());
+// 		std::string::size_type endPos = contentLengthLine.find("\r\n");
+// 		std::string contentLengthStr = contentLengthLine.substr(0, endPos);
 
-		// Convert content length string to size_t
-		std::istringstream iss(contentLengthStr);
-		size_t contentLength;
-		if (!(iss >> contentLength))
-		{
-			std::cerr << "Failed to convert content length to size_t\n";
-			return 0; // Or use another way to indicate an error
-		}
-		return contentLength;
-	}
-	return 0;
-}
+// 		// Convert content length string to size_t
+// 		std::istringstream iss(contentLengthStr);
+// 		size_t contentLength;
+// 		if (!(iss >> contentLength))
+// 		{
+// 			std::cerr << "Failed to convert content length to size_t\n";
+// 			return 0; // Or use another way to indicate an error
+// 		}
+// 		return contentLength;
+// 	}
+// 	return 0;
+// }
 
 void printVariablesHeadersBody(const HTTPRequest &obj)
 {

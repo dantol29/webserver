@@ -1,7 +1,6 @@
 #include "Parser.hpp"
+#include "HTTPRequest.hpp"
 #include "Server.hpp"
-
-#include <iomanip>
 
 Parser::Parser()
 {
@@ -392,6 +391,7 @@ void Parser::parseBody(const char *request, HTTPRequest &req, HTTPResponse &res)
 
 bool Parser::hasMandatoryHeaders(HTTPRequest &req)
 {
+	std::cout << "hasMandatoryHeaders" << std::endl;
 	// int isHost = 0;
 	// int isContentLength = 0;
 	// int isContentType = 0;
@@ -413,8 +413,22 @@ bool Parser::hasMandatoryHeaders(HTTPRequest &req)
 		}
 		else if (it->first == "content-length")
 		{
-			if (!isNumber(it->second) || req.getMethod() != "POST")
+			// if (!isNumber(it->second) || req.getMethod() != "POST")
+			if (!isNumber(it->second))
 				return (false);
+			req.setHasContentLengthHeader(true);
+			// req.setContentLength(std::stoi(it->second));
+			std::istringstream iss(it->second);
+			int contentLength;
+
+			iss >> contentLength;
+			if (iss.fail())
+			{
+				std::cerr << "conversion failed" << std::endl;
+				return (false);
+			}
+			std::cout << "contentLength: " << contentLength << std::endl;
+			req.setContentLength(contentLength);
 			isContentLength = true;
 			// isContentLength++;
 		}

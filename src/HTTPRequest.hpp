@@ -16,6 +16,8 @@ class HTTPRequest
 	std::string getHost() const;
 	std::string getRequestTarget() const;
 	std::string getProtocolVersion() const;
+	bool hasContentLengthHeader() const;
+	size_t getContentLength() const;
 	std::multimap<std::string, std::string> getQueryString() const;
 	std::multimap<std::string, std::string> getHeaders() const;
 	std::pair<std::string, std::string> getSingleHeader(std::string key) const;
@@ -26,6 +28,9 @@ class HTTPRequest
 	void setProtocolVersion(std::string protocolVersion);
 	void setQueryString(const std::string &key, const std::string &value);
 	void setHeaders(const std::string &key, const std::string &value);
+	void setContentLength(size_t contentLength);
+	void setHasContentLengthHeader(bool value);
+
 	void setBody(const std::string &body);
 
   private:
@@ -36,6 +41,8 @@ class HTTPRequest
 	std::string _method;
 	std::string _requestTarget;
 	std::string _protocolVersion;
+	bool _hasContentLengthHeader;
+	size_t _contentLength;
 	std::multimap<std::string, std::string> _queryString;
 	std::multimap<std::string, std::string> _headers;
 	std::vector<std::string> _body;

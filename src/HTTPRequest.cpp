@@ -3,6 +3,7 @@
 
 HTTPRequest::HTTPRequest()
 {
+	_contentLength = 0;
 }
 
 HTTPRequest::~HTTPRequest()
@@ -62,6 +63,16 @@ std::vector<std::string> HTTPRequest::getBody() const
 	return (_body);
 }
 
+size_t HTTPRequest::getContentLength() const
+{
+	return (_contentLength);
+}
+
+bool HTTPRequest::hasContentLengthHeader() const
+{
+	return (_hasContentLengthHeader);
+}
+
 void HTTPRequest::setMethod(std::string method)
 {
 	_method = method;
@@ -99,6 +110,16 @@ void HTTPRequest::setBody(const std::string &body)
 void HTTPRequest::setProtocolVersion(std::string protocolVersion)
 {
 	_protocolVersion = protocolVersion;
+}
+
+void HTTPRequest::setContentLength(size_t contentLength)
+{
+	_contentLength = contentLength;
+}
+
+void HTTPRequest::setHasContentLengthHeader(bool value)
+{
+	_hasContentLengthHeader = value;
 }
 
 std::ostream &operator<<(std::ostream &out, const HTTPRequest &obj)

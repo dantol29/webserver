@@ -12,7 +12,9 @@ HTTPResponse::HTTPResponse(const HTTPResponse &other)
 }
 void HTTPResponse::setErrorResponse(int statusCode)
 {
-	std::cout << "\033[31m" << "Error " << statusCode << " in request" << "\033[0m" << std::endl;
+	std::cout << "\033[31m"
+			  << "Error " << statusCode << " in request"
+			  << "\033[0m" << std::endl;
 	std::string statusMessage = getStatusMessage(statusCode);
 	std::string body = "<html><head><title>Error</title></head>"
 					   "<body><h1>Error: " +
@@ -217,6 +219,8 @@ std::string HTTPResponse::getStatusMessage(int statusCode) const
 		return "Request Header Fields Too Large"; // RFC 6585
 	case 451:
 		return "Unavailable For Legal Reasons"; // RFC 7725
+	case 499:
+		return "Client Closed Request"; // nginx
 	case 500:
 		return "Internal Server Error";
 	case 501:

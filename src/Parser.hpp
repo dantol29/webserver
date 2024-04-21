@@ -3,6 +3,8 @@
 
 #include "HTTPRequest.hpp"
 #include "HTTPResponse.hpp"
+#include <iomanip>
+#include <sstream>
 
 #define MAX_URI 200
 

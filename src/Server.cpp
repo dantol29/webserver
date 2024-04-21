@@ -104,8 +104,6 @@ void Server::handleConnection(Connection conn, size_t &i)
 			closeClientConnection(conn, i);
 			return;
 		}
-		// After writing the socket, if the headers are not complete, we pre-parse the headers to check if they are
-		// complete
 		if (!parser.preParseHeaders(response))
 		{
 			std::cout << "Error pre-parsing headers" << std::endl;
@@ -116,12 +114,9 @@ void Server::handleConnection(Connection conn, size_t &i)
 	}
 	if (!parser.getHeadersComplete())
 	{
-		// If the headers are not complete we just return so that we can read the rest of the headers in the next poll
 		std::cout << "Headers incomplete, exiting handleConnection." << std::endl;
-		return; // Early exit if headers are not complete. We exit to read the rest of the headers in the next poll.
+		return;
 	}
-	// We use parse Header to extract all the headers from the headersBuffer. parseHeaders will also call
-	// hasMandatoryHeaders which will set isChunked.
 	parser.parseHeaders(parser.getHeadersBuffer().c_str(), request, response);
 	if (parser.getIsChunked())
 	{
@@ -135,7 +130,7 @@ void Server::handleConnection(Connection conn, size_t &i)
 	else
 	{
 		std::cout << "Regular body" << std::endl;
-		if (!conn.readBody(parser))
+		if (!conn.readBody(parser, request, response))
 		{
 			std::cout << "Error reading body" << std::endl;
 			closeClientConnection(conn, i);
@@ -143,16 +138,8 @@ void Server::handleConnection(Connection conn, size_t &i)
 		}
 	}
 
-	// NOTE: end of buffering/parsing part, start of router
-
-	// std::string httpRequestString = parser.getHeadersBuffer() + "\r\n\r\n" + conn.getBody();
-	// After reading the Headers the buffer on the parser is the body, if this is confusing we can change it
 	std::string httpRequestString = parser.getHeadersBuffer() + parser.getBuffer();
 	printHTTPRequest(httpRequestString);
-	// We don't use this anymore but we use the Parser!
-	// HTTPRequest request(httpRequestString.c_str());
-
-	// parser.parseRequestLine(httpRequestString.c_str(), request, response);
 	parser.parseRequest(httpRequestString.c_str(), request, response);
 
 	std::cout << "\033[1;91mRequest: " << response.getStatusCode() << "\033[0m" << std::endl;
@@ -356,7 +343,7 @@ void Server::AlertAdminAndTryToRecover()
 void Server::closeClientConnection(Connection &conn, size_t &i)
 {
 	// if (response.getStatusCode() != 0)
-	if (conn.getResponse().getStatusCode() != 0)
+	if (conn.getResponse().getStatusCode() != 0 && conn.getResponse().getStatusCode() != 499)
 	{
 		std::string responseString = conn.getResponse().objToString();
 		send(conn.getPollFd().fd, responseString.c_str(), responseString.size(), 0);

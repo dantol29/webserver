@@ -195,16 +195,17 @@ bool Connection::readChunk(size_t chunkSize, std::string &chunkData, HTTPRespons
 	return true;
 }
 
-bool Connection::readBody(Parser &parser)
+bool Connection::readBody(Parser &parser, HTTPRequest &req, HTTPResponse &res)
 {
 	std::cout << "\nEntering readBody" << std::endl;
-	size_t contentLength = getContentLength(parser.getHeadersBuffer());
+	size_t contentLength = req.getContentLength();
+	// size_t contentLength = getContentLength(parser.getHeadersBuffer());
+	// std::cout << "Content-Length: " << contentLength << std::endl;
 	std::cout << "Content-Length: " << contentLength << std::endl;
 	char buffer[BUFFER_SIZE];
 	// We could also use _bodyTotalBytesRead from the parser
 	size_t bytesRead = parser.getBuffer().size();
 	std::cout << "bytesRead: " << bytesRead << std::endl;
-	// _body.append(parser.getBuffer());
 	if (bytesRead < contentLength)
 	{
 		// TODO: check if this is blocking
@@ -225,15 +226,14 @@ bool Connection::readBody(Parser &parser)
 		else if (read < 0)
 		{
 			perror("recv failed");
-			_response.setStatusCode(500); // Internal Server Error
+			res.setStatusCode(500); // Internal Server Error
 			return false;
 		}
 		else
 		{
 			std::cout << "read == 0" << std::endl;
-			std::cout << "Connection closed" << std::endl;
-			// 400 is not always correct in this case
-			// _response.setStatusCode(400); // Bad Request
+			std::cout << "Connection closed by the client" << std::endl;
+			res.setStatusCode(499); // Client Closed Request
 			return false;
 		}
 	}
