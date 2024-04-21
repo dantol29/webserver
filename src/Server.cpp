@@ -147,7 +147,8 @@ void Server::handleConnection(Connection conn, size_t &i)
 	// NOTE: end of buffering/parsing part, start of router
 
 	// std::string httpRequestString = parser.getHeadersBuffer() + "\r\n\r\n" + conn.getBody();
-	std::string httpRequestString = parser.getHeadersBuffer() + conn.getBody();
+	// After reading the Headers the buffer on the parser is the body, if this is confusing we can change it
+	std::string httpRequestString = parser.getHeadersBuffer() + parser.getBuffer();
 	printHTTPRequest(httpRequestString);
 	// We don't use this anymore but we use the Parser!
 	// HTTPRequest request(httpRequestString.c_str());

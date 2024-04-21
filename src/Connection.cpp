@@ -17,7 +17,6 @@ Connection::Connection(struct pollfd &pollFd, Server &server)
 Connection::Connection(const Connection &other)
 {
 	_pollFd = other._pollFd;
-	_body = other._body;
 	_response = other._response;
 
 	std::cout << "Connection object copied" << std::endl;
@@ -28,7 +27,6 @@ Connection &Connection::operator=(const Connection &other)
 	if (this != &other)
 	{
 		_pollFd = other._pollFd;
-		_body = other._body;
 		_response = other._response;
 	}
 	std::cout << "Connection object assigned" << std::endl;
@@ -57,16 +55,6 @@ struct pollfd Connection::getPollFd() const
 HTTPResponse &Connection::getResponse()
 {
 	return _response;
-}
-
-std::string Connection::getBody() const
-{
-	return _body;
-}
-
-void Connection::setBody(const std::string &body)
-{
-	_body = body;
 }
 
 // Attempts to read HTTP request headers from the client connection into _headersBuffer on the Parser.
@@ -128,8 +116,7 @@ bool Connection::readChunkedBody(Parser &parser)
 			std::string chunkData;
 			if (!readChunk(chunkSize, chunkData, _response))
 				return false;
-			_body.append(chunkData);
-			// Consume the CRLF at the end of the chunk
+			parser.setBuffer(parser.getBuffer() + chunkData);
 		}
 	}
 	return false;
@@ -217,7 +204,7 @@ bool Connection::readBody(Parser &parser)
 	// We could also use _bodyTotalBytesRead from the parser
 	size_t bytesRead = parser.getBuffer().size();
 	std::cout << "bytesRead: " << bytesRead << std::endl;
-	_body.append(parser.getBuffer());
+	// _body.append(parser.getBuffer());
 	if (bytesRead < contentLength)
 	{
 		// TODO: check if this is blocking
@@ -225,8 +212,9 @@ bool Connection::readBody(Parser &parser)
 		if (read > 0)
 		{
 			std::cout << "read > 0" << std::endl;
-			_body.append(buffer, read);
-			std::cout << "_body: " << _body << std::endl;
+			// _body.append(buffer, read);j
+			parser.setBuffer(parser.getBuffer() + std::string(buffer, read));
+			std::cout << "The 'body; is: " << parser.getBuffer() << std::endl;
 			bytesRead += read;
 			if (bytesRead == contentLength)
 			{
