@@ -1,4 +1,4 @@
-# the dd function
+# the dd command
 
 `dd if=/dev/zero of=output.file bs=50M count=1`
 

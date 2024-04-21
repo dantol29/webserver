@@ -1,20 +1,7 @@
-// This program will concurrently send GET requests to the three specified CGI
-// scripts and print messages in different colors for each request.
-// This example uses a very straightforward approach to concurrency.
-
-// Important Notes:
-// Installing libcurl and link against libcurl when compiling
-// add -lcurl to your compiler command.
-
-// brew install libcurl4-openssl-dev
-// c++ -std=c++11 test_mux_cgi.cpp  -o -lcurl -pthread && ./test_mux_cgi
-
-// This command worked on mac after brew installing curl :
-// c++ -std=c++11 -I/usr/local/opt/curl/include -L/usr/local/opt/curl/lib
-// test_mux_cgi.cpp -o test_mux_cgi -lcurl -pthread
 
 #include <chrono>
-#include <curl/curl.h>
+// #include <curl/curl.h> //on mac after installing curl using brew
+#include </home/lmangall/.brew/Cellar/curl/8.7.1/include/curl/curl.h> //on school computer
 #include <iostream>
 #include <string>
 #include <thread>
