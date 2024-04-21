@@ -18,7 +18,6 @@ class Connection
 	struct pollfd _pollFd;
 	HTTPResponse _response;
 	std::string _body;
-	bool _bodyComplete;
 	std::string _chunkData;
 
 	// Additional client state can be managed here
@@ -30,7 +29,7 @@ class Connection
 	~Connection();
 
 	bool readSocket(Parser &parser);
-	bool readChunkedBody();
+	bool readChunkedBody(Parser &parser);
 	bool readChunkSize(std::string &line);
 	bool readChunk(size_t chunkSize, std::string &chunkedData, HTTPResponse &response);
 	bool readBody(Parser &parser);

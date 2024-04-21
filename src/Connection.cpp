@@ -1,6 +1,6 @@
 #include "Connection.hpp"
 
-Connection::Connection(struct pollfd &pollFd, Server &server) : _bodyComplete(false)
+Connection::Connection(struct pollfd &pollFd, Server &server)
 {
 	(void)server;
 	_pollFd.fd = pollFd.fd;
@@ -8,7 +8,6 @@ Connection::Connection(struct pollfd &pollFd, Server &server) : _bodyComplete(fa
 	_pollFd.revents = 0;
 	// TODO: should I initialize the _response here?
 	_response = HTTPResponse();
-	_bodyComplete = false;
 	std::cout << "Connection created" << std::endl;
 	std::cout << "pollFd.fd: " << _pollFd.fd << std::endl;
 	std::cout << "pollFd.events: " << _pollFd.events << std::endl;
@@ -20,7 +19,6 @@ Connection::Connection(const Connection &other)
 	_pollFd = other._pollFd;
 	_body = other._body;
 	_response = other._response;
-	_bodyComplete = other._bodyComplete;
 	_chunkData = other._chunkData;
 
 	std::cout << "Connection object copied" << std::endl;
@@ -33,7 +31,6 @@ Connection &Connection::operator=(const Connection &other)
 		_pollFd = other._pollFd;
 		_body = other._body;
 		_response = other._response;
-		_bodyComplete = other._bodyComplete;
 		_chunkData = other._chunkData;
 	}
 	std::cout << "Connection object assigned" << std::endl;
@@ -59,11 +56,6 @@ struct pollfd Connection::getPollFd() const
 	return _pollFd;
 }
 
-bool Connection::getBodyComplete() const
-{
-	return _bodyComplete;
-}
-
 HTTPResponse &Connection::getResponse()
 {
 	return _response;
@@ -77,11 +69,6 @@ std::string Connection::getBody() const
 std::string Connection::getChunkData() const
 {
 	return _chunkData;
-}
-
-void Connection::setBodyComplete(bool bodyComplete)
-{
-	_bodyComplete = bodyComplete;
 }
 
 void Connection::setBody(const std::string &body)
@@ -128,10 +115,10 @@ bool Connection::readSocket(Parser &parser)
 // the stream's failbit is set, and the conditional check fails. In this case,
 // we return false indicating an error in parsing the chunk size.
 
-bool Connection::readChunkedBody()
+bool Connection::readChunkedBody(Parser &parser)
 {
 	// TODO: check if this is blocking; I mean the two recvs in readChunkSize and readChunk
-	if (!_bodyComplete)
+	if (!parser.getBodyComplete())
 	{
 		std::string chunkSizeLine;
 		// readChiunkSize cuould be a method of Connection, now it's a free function.
@@ -145,7 +132,7 @@ bool Connection::readChunkedBody()
 
 		if (chunkSize == 0)
 		{
-			_bodyComplete = true;
+			parser.setBodyComplete(true);
 			return true;
 		}
 		else
@@ -255,7 +242,7 @@ bool Connection::readBody(Parser &parser)
 			bytesRead += read;
 			if (bytesRead == contentLength)
 			{
-				_bodyComplete = true;
+				parser.setBodyComplete(true);
 				return true;
 			}
 		}
@@ -275,11 +262,9 @@ bool Connection::readBody(Parser &parser)
 		}
 	}
 	else
-	{
-		_bodyComplete = true;
-	}
+		parser.setBodyComplete(true);
 	std::cout << "Exiting readBody" << std::endl;
-	_bodyComplete = true;
+	parser.setBodyComplete(true);
 	return true;
 }
 

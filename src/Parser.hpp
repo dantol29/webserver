@@ -24,6 +24,7 @@ class Parser
 	std::string getHeadersBuffer() const;
 	size_t getBodyTotalBytesRead() const;
 	size_t getHeadersTotalBytesRead() const;
+	bool getBodyComplete() const;
 
 	// SETTERS FROM THE CORE PARSING FUNCTIONALITIES
 	void setHeadersComplete(bool value);
@@ -31,15 +32,12 @@ class Parser
 	void setHeadersBuffer(std::string str);
 	void setBodyTotalBytesRead(size_t value);
 	void setHeadersTotalBytesRead(size_t value);
+	void setBodyComplete(bool value);
 
 	bool getIsChunked() const;
 	bool getIsChunkFinish() const;
 
   private:
-	// GETTERS
-
-	// std::string getErrorMessage() const;
-
 	// CHUNKED REQUESTS
 	void setIsChunked(bool a);
 	// Is this function necessary? I think we don't use it
@@ -58,6 +56,7 @@ class Parser
 	// we could also eventually use the _headers from the HTTPRequest class, but it's a multimap
 	std::string _headersBuffer;
 	bool _headersComplete;
+	bool _bodyComplete;
 	// ATM not using it. in readBody we just read the size of the _buffer that at the moemnt is the body
 	size_t _bodyTotalBytesRead;
 	size_t _headersTotalBytesRead;

@@ -9,6 +9,7 @@ Parser::Parser()
 	_isChunked = false;
 	_isChunkFinish = false;
 	_headersComplete = false;
+	_bodyComplete = false;
 	_buffer = "";
 	_clientMaxHeadersSize = CLIENT_MAX_HEADERS_SIZE;
 }
@@ -86,6 +87,11 @@ size_t Parser::getHeadersTotalBytesRead() const
 	return (_headersTotalBytesRead);
 }
 
+bool Parser::getBodyComplete() const
+{
+	return (_bodyComplete);
+}
+
 // SETTERS FROM THE CORE PARSING FUNCTIONALITIES
 void Parser::setHeadersComplete(bool value)
 {
@@ -110,6 +116,11 @@ void Parser::setBodyTotalBytesRead(size_t value)
 void Parser::setHeadersTotalBytesRead(size_t value)
 {
 	_headersTotalBytesRead = value;
+}
+
+void Parser::setBodyComplete(bool value)
+{
+	_bodyComplete = value;
 }
 
 // VARIABLES
