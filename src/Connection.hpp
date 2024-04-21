@@ -18,7 +18,6 @@ class Connection
 	struct pollfd _pollFd;
 	HTTPResponse _response;
 	std::string _body;
-	std::string _chunkData;
 
 	// Additional client state can be managed here
 

@@ -19,7 +19,6 @@ Connection::Connection(const Connection &other)
 	_pollFd = other._pollFd;
 	_body = other._body;
 	_response = other._response;
-	_chunkData = other._chunkData;
 
 	std::cout << "Connection object copied" << std::endl;
 }
@@ -31,7 +30,6 @@ Connection &Connection::operator=(const Connection &other)
 		_pollFd = other._pollFd;
 		_body = other._body;
 		_response = other._response;
-		_chunkData = other._chunkData;
 	}
 	std::cout << "Connection object assigned" << std::endl;
 	return *this;
@@ -66,19 +64,9 @@ std::string Connection::getBody() const
 	return _body;
 }
 
-std::string Connection::getChunkData() const
-{
-	return _chunkData;
-}
-
 void Connection::setBody(const std::string &body)
 {
 	_body = body;
-}
-
-void Connection::setChunkData(const std::string &chunkData)
-{
-	_chunkData = chunkData;
 }
 
 // Attempts to read HTTP request headers from the client connection into _headersBuffer on the Parser.
