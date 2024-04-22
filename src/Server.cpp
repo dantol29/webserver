@@ -88,6 +88,18 @@ void Server::startPollEventLoop()
 	}
 }
 
+extern std::clock_t startTime;
+
+void printElapsedTime(std::clock_t &lastStartTime)
+{
+	std::clock_t currentTime = std::clock(); // Capture the current time
+	double duration =
+		(currentTime - lastStartTime) / (double)CLOCKS_PER_SEC * 1000; // Calculate elapsed time in milliseconds
+
+	std::cout << "\033[33m" << duration << " ms" << "\033[0m" << std::endl;
+	lastStartTime = currentTime; // Update the last start time to the current time for next measurement
+}
+
 void Server::handleConnection(Connection conn, size_t &i)
 {
 	conn.printConnection();
@@ -130,21 +142,37 @@ void Server::handleConnection(Connection conn, size_t &i)
 	}
 
 	// NOTE: end of buffering/parsing part, start of router
-
 	Router router;
 	std::string httpRequestString = conn.getHeaders() + conn.getBody();
 	HTTPRequest request(httpRequestString.c_str());
 	std::string responseString;
 	HTTPResponse response;
 	response = conn.getResponse();
+
+	std::cout << "before routeRequest";
+	printElapsedTime(startTime);
 	response = router.routeRequest(request);
+	std::cout << "after routeRequest";
+	std::cout << std::endl;
+	printElapsedTime(startTime);
+	std::cout << "\033[33m" << "handleConnection before resposeString : " << "\033[0m";
 	responseString = response.toString();
-	std::cout << "\033[1;91mResponse: " << responseString << "\033[0m" << std::endl;
+	std::cout << "\033[33m" << "handleConnection after resposeString : " << "\033[0m";
+
+	printElapsedTime(startTime);
+
+	// std::cout << "\033[1;91mResponse: " << responseString << "\033[0m" << std::endl;
+	std::cout << "\033[33m" << "handleConnection before writing to poll" << "\033[0m" << std::endl;
 	write(conn.getPollFd().fd, responseString.c_str(), responseString.size());
+	std::cout << "\033[33m" << "handleConnection after writing to poll" << "\033[0m" << std::endl;
+
 	close(conn.getPollFd().fd);
 	_FDs.erase(_FDs.begin() + i);
 	_connections.erase(_connections.begin() + i);
 	--i;
+
+	std::cout << "out of scope of Server::handleConnection:";
+	printElapsedTime(startTime);
 }
 
 /*** Private Methods ***/

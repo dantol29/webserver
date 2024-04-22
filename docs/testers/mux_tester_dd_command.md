@@ -1,6 +1,6 @@
 # the dd command
 
-`dd if=/dev/zero of=output.file bs=50M count=1`
+`dd if=/dev/zero of=var/www/development_site/largefile bs=100M count=1`
 
 - `dd`: Stands for "Data Duplicator." It is the command name and starts the operation.
 - `if=/dev/zero`: This part of the command specifies the input file (`if`) for `dd`. `/dev/zero` is a special file in Unix-like systems that provides as much null characters (`\0`) as are read from it. Essentially, reading from `/dev/zero` will give you a continuous stream of zero-value bytes.

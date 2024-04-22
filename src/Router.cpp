@@ -1,6 +1,10 @@
 #include "Router.hpp"
 #include <string>
 
+extern std::clock_t startTime;
+
+void printElapsedTime(std::clock_t &lastStartTime);
+
 Router::Router()
 {
 }
@@ -23,6 +27,8 @@ HTTPResponse Router::routeRequest(const HTTPRequest &request)
 	}
 	else // it is a static request
 	{
+		std::cout << "Static request in ";
+		printElapsedTime(startTime);
 		StaticContentHandler staticContentInstance;
 		if (!pathIsValid(const_cast<HTTPRequest &>(request), _webRoot))
 		{
@@ -34,6 +40,7 @@ HTTPResponse Router::routeRequest(const HTTPRequest &request)
 		{
 			return staticContentInstance.handleRequest(request);
 		}
+		printElapsedTime(startTime);
 	}
 	return HTTPResponse();
 }
@@ -103,7 +110,7 @@ void Router::splitTarget(const std::string &target)
 bool Router::pathIsValid(HTTPRequest &request, std::string webRoot)
 {
 	std::string host = request.getHost();
-	std::cout << "Host: " << host << std::endl;
+	// std::cout << "Host: " << host << std::endl;
 	size_t pos = host.find(":");
 	if (pos != std::string::npos)
 	{

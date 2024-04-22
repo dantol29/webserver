@@ -15,6 +15,7 @@
 #include "HTTPRequest.hpp"
 #include "server_utils.hpp"
 #include "Connection.hpp"
+#include <ctime>
 
 class Connection; // Forward declaration for circular dependency
 

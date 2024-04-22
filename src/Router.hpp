@@ -6,6 +6,8 @@
 #include "StaticContentHandler.hpp"
 #include "CGIHandler.hpp"
 #include "sys/stat.h"
+#include <string>
+#include <ctime>
 
 struct resourcePath
 {

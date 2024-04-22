@@ -1,5 +1,9 @@
 #include "StaticContentHandler.hpp"
 #include "Server.hpp"
+
+extern std::clock_t startTime;
+void printElapsedTime(std::clock_t &lastStartTime);
+
 StaticContentHandler::StaticContentHandler()
 {
 }
@@ -48,7 +52,12 @@ HTTPResponse StaticContentHandler::handleRequest(const HTTPRequest &request)
 	if (requestTarget == "/")
 		requestTarget = "/index.html";
 	std::string path = webRoot + requestTarget;
+	std::cout << "\033[33m" << "StaticContentHandler::handleRequest 1 : " << "\033[0m";
+	printElapsedTime(startTime);
 	std::ifstream file(path.c_str());
+	std::cout << "\033[33m" << "StaticContentHandler::handleRequest 2 : " << "\033[0m";
+
+	printElapsedTime(startTime);
 	// if (request.getMethod() == "GET" && (request.getRequestTarget() == ""))
 	// {
 	// 	path += "index.html";
@@ -60,9 +69,13 @@ HTTPResponse StaticContentHandler::handleRequest(const HTTPRequest &request)
 	std::cout << "path : " << path << std::endl;
 	// std::ifstream file(path.c_str());
 	file.is_open();
+	std::cout << "\033[33m" << "StaticContentHandler::handleRequest 3: " << "\033[0m";
+	printElapsedTime(startTime);
 
 	std::string body((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
-	std::cout << "body : " << body << std::endl;
+	// std::cout << "body : " << body << std::endl;
+	std::cout << "\033[33m" << "StaticContentHandler::handleRequest 4 : " << "\033[0m";
+	printElapsedTime(startTime);
 
 	// response.setStatusCode(200);
 	response.setBody(body);
@@ -73,10 +86,12 @@ HTTPResponse StaticContentHandler::handleRequest(const HTTPRequest &request)
 	//  response.setHeader("Content-Length: ", std::to_string(body.length()));
 	//  response.setHeader("Connection: ", "close");
 	//  response.setHeader("Server: ", "webserv");
+	std::cout << "\033[33m" << "StaticContentHandler::handleRequest 5 : " << "\033[0m";
 
-	std::cout << std::endl;
-	std::cout << "_body : " << response.getBody() << std::endl;
+	// std::cout << "_body : " << response.getBody() << std::endl;
 	file.close();
+	std::cout << "\033[33m" << "StaticContentHandler::handleRequest 6 : " << "\033[0m";
+
 	// }
 	return response;
 }

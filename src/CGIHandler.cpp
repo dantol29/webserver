@@ -23,7 +23,7 @@ HTTPResponse CGIHandler::handleRequest(const HTTPRequest &request)
 	CGIHandler cgiInstance;
 	MetaVariables env;
 	env.HTTPRequestToMetaVars(request, env);
-	std::cout << env;
+	// std::cout << env;
 	std::string cgiOutput = executeCGI(env);
 
 	// HTTPResponse response;
@@ -35,7 +35,7 @@ HTTPResponse CGIHandler::handleRequest(const HTTPRequest &request)
 
 char *const *CGIHandler::createArgvForExecve(const MetaVariables &env)
 {
-	std::cout << env;
+	// std::cout << env;
 	char **argv = new char *[2];
 
 	std::string scriptName = env.getVar("SCRIPT_NAME");
