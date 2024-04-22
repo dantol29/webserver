@@ -45,7 +45,7 @@ HTTPResponse StaticContentHandler::handleRequest(const HTTPRequest &request)
 	std::string requestTarget = request.getRequestTarget();
 	std::string webRoot = "var/www";
 	std::cout << "path : " << webRoot << std::endl;
-	if (requestTarget == "/")
+	if (requestTarget == "/" || requestTarget == "")
 		requestTarget = "/index.html";
 	std::string path = webRoot + requestTarget;
 	std::ifstream file(path.c_str());

@@ -4,9 +4,7 @@
 #include <string>
 #include <sstream>
 #include <cstdlib>
-#include <string.h>
-#include "MetaVariables.hpp"
-#include "HTTPRequest.hpp"
+#include <cstring>
 
 template <typename T>
 std::string toString(const T &value)
@@ -18,6 +16,7 @@ std::string toString(const T &value)
 
 bool startsWith(const std::string &fullString, const std::string &starting);
 std::string readHtml(const std::string &filePath);
+void printHTTPRequest(const std::string httpRequest, size_t startPos = 0);
 
 // utils.cpp
 int hexToInt(std::string hex);
