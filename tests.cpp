@@ -184,29 +184,30 @@ void body(sockaddr_in serverAddress)
 	const char *requests[] = {
 		"POST / HTTP/1.1\r\nHost: www.example.com\r\nContent-Length: 17\r\nContent-Type: "
 		"text/plain\r\n\r\nThis\r\nis body\r\n\r\n", // 200 (OK)
-		// "POST / HTTP/1.1\r\nHost: www.example.com\r\nContent-Length: 17\r\nContent-Type: "
-		// "text/plain\r\n\r\nThis\r\nis body\r\n", // 400 (Bad Request) -- - Wrong content length
-		// "POST / HTTP/1.1\r\nHost: www.example.com\r\nContent-Length: 17\r\nContent-Type: "
-		// "text/plain\r\n\r\nThis\r\nis body\r\n\n", // 400 (Bad Request) - - Improper line
-		// 										   // termination of the body with '\n'
-		// "POST / HTTP/1.1\r\nHost: www.example.com\r\nContent-Length: 17\r\nContent-Type: "
-		// "text/plain\r\n\rThis\r\nis body\r\n\r\n", // 400 (Bad Request) -- - Malformed headers (misplaced 'r')
-		// "POST / HTTP/1.1\r\nHost: www.example.com\r\nContent-Length: 17\r\nContent-Type: "
-		// "text/plain\r\n\r\nThis\ris body\r\n\r\n", // 400 (Bad Request) -- - Malformed headers (misplaced 'n')
-		// "POST / HTTP/1.1\r\nHost: www.example.com\r\nContent-Length: 17\r\nContent-Type: "
-		// "text/plain\r\n\r\nThis\r\n\r\nis body\r\n\r\n", // 400 (Bad Request) -- - Improper line termination of the
-		// body
-		// 												 // with '\r'
-		// "GET / HTTP/1.1\r\nHost: www.example.com\r\nContent-Length: 17\r\nContent-Type: "
-		// "text/plain\r\n\r\nThis\r\nis body\r\n\r\n", // 400 (Bad Request) -- - GET request with body
-		// "POST / HTTP/1.1\r\nHost: www.example.com\r\nContent-Length: 17\r\n\r\nThis\r\nis "
-		// "body\r\n\r\n", // 400 (Bad Request) -- - Missing content type
-		// "POST / HTTP/1.1\r\nHost: www.example.com\r\nContent-Type: text/plain\r\n\r\nThis\r\nis "
-		// "body\r\n\r\n", // 400 (Bad Request) -- - Missing content length
-		// "POST / HTTP/1.1\r\nHost: www.example.com\r\nContent-Length: 17\r\nContent-Type: "
-		// "text/notplain\r\n\r\nThis\r\nis body\r\n\r\n", // 400 (Bad Request) -- - Invalid content type
-		// "POST / HTTP/1.1\r\nHost: www.example.com\r\nContent-Length: abcd\r\nContent-Type: "
-		// "text/plain\r\n\r\nThis\r\nis body\r\n\r\n", // 400 (Bad Request) -- - Invalid content length value
+		"POST / HTTP/1.1\r\nHost: www.example.com\r\nContent-Length: 17\r\nContent-Type: "
+		"text/plain\r\n\r\nThis\r\nis body\r\n", // 400 (Bad Request) -- - Wrong content length // This case is
+		// complicated: we have an extra linera issue for it!
+		"POST / HTTP/1.1\r\nHost: www.example.com\r\nContent-Length: 16\r\nContent-Type: "
+		"text/plain\r\n\r\nThis\r\nis body\r\n\n", // 400 (Bad Request) - - Improper line
+												   // termination of the body with '\n'
+		"POST / HTTP/1.1\r\nHost: www.example.com\r\nContent-Length: 17\r\nContent-Type: "
+		"text/plain\r\n\rThis\r\nis body\r\n\r\n", // 400 (Bad Request) -- - Malformed headers (misplaced 'r')
+		"POST / HTTP/1.1\r\nHost: www.example.com\r\nContent-Length: 16\r\nContent-Type: "
+		"text/plain\r\n\r\nThis\ris body\r\n\r\n", // 400 (Bad Request) -- - Malformed headers (misplaced 'n') --
+		// TODO : why is this invalid?
+		"POST / HTTP/1.1\r\nHost: www.example.com\r\nContent-Length: 17\r\nContent-Type: "
+		"text/plain\r\n\r\nThis\r\n\r\nis body\r\n\r\n", // 400 (Bad Request) -- - Improper line termination of the
+		// body // with '\r' // TODO: are you sure?
+		"GET / HTTP/1.1\r\nHost: www.example.com\r\nContent-Length: 17\r\nContent-Type: "
+		"text/plain\r\n\r\nThis\r\nis body\r\n\r\n", // 400 (Bad Request) -- - GET request with body
+		"POST / HTTP/1.1\r\nHost: www.example.com\r\nContent-Length: 17\r\n\r\nThis\r\nis "
+		"body\r\n\r\n", // 400 (Bad Request) -- - Missing content type
+		"POST / HTTP/1.1\r\nHost: www.example.com\r\nContent-Type: text/plain\r\n\r\nThis\r\nis "
+		"body\r\n\r\n", // 400 (Bad Request) -- - Missing content length
+		"POST / HTTP/1.1\r\nHost: www.example.com\r\nContent-Length: 17\r\nContent-Type: "
+		"text/notplain\r\n\r\nThis\r\nis body\r\n\r\n", // 400 (Bad Request) -- - Invalid content type
+		"POST / HTTP/1.1\r\nHost: www.example.com\r\nContent-Length: abcd\r\nContent-Type: "
+		"text/plain\r\n\r\nThis\r\nis body\r\n\r\n", // 400 (Bad Request) -- - Invalid content length value
 		NULL};
 	sendData(requests, serverAddress);
 }
