@@ -184,23 +184,23 @@ void body(sockaddr_in serverAddress)
 	const char *requests[] = {
 		"POST / HTTP/1.1\r\nHost: www.example.com\r\nContent-Length: 17\r\nContent-Type: "
 		"text/plain\r\n\r\nThis\r\nis body\r\n\r\n", // 200 (OK)
-		//   "POST / HTTP/1.1\r\nHost: www.example.com\r\nContent-Length: 20\r\nContent-Type: "
+		//   "POST / HTTP/1.1\r\nHost: www.example.com\r\nContent-Length: 17\r\nContent-Type: "
 		//   "text/plain\r\n\r\nThis\r\nis body\r\n", // 400 (Bad Request)
-		//   "POST / HTTP/1.1\r\nHost: www.example.com\r\nContent-Length: 20\r\nContent-Type: "
+		//   "POST / HTTP/1.1\r\nHost: www.example.com\r\nContent-Length: 17\r\nContent-Type: "
 		//   "text/plain\r\n\r\nThis\r\nis body\r\n\n", // 400 (Bad Request)
-		//   "POST / HTTP/1.1\r\nHost: www.example.com\r\nContent-Length: 20\r\nContent-Type: "
+		//   "POST / HTTP/1.1\r\nHost: www.example.com\r\nContent-Length: 17\r\nContent-Type: "
 		//   "text/plain\r\n\rThis\r\nis body\r\n\r\n", // 400 (Bad Request)
-		//   "POST / HTTP/1.1\r\nHost: www.example.com\r\nContent-Length: 20\r\nContent-Type: "
+		//   "POST / HTTP/1.1\r\nHost: www.example.com\r\nContent-Length: 17\r\nContent-Type: "
 		//   "text/plain\r\n\r\nThis\ris body\r\n\r\n", // 400 (Bad Request)
-		//   "POST / HTTP/1.1\r\nHost: www.example.com\r\nContent-Length: 20\r\nContent-Type: "
+		//   "POST / HTTP/1.1\r\nHost: www.example.com\r\nContent-Length: 17\r\nContent-Type: "
 		//   "text/plain\r\n\r\nThis\r\n\r\nis body\r\n\r\n", // 400 (Bad Request)
-		//   "GET / HTTP/1.1\r\nHost: www.example.com\r\nContent-Length: 20\r\nContent-Type: "
+		//   "GET / HTTP/1.1\r\nHost: www.example.com\r\nContent-Length: 17\r\nContent-Type: "
 		//   "text/plain\r\n\r\nThis\r\nis body\r\n\r\n", // 400 (Bad Request)
-		//   "POST / HTTP/1.1\r\nHost: www.example.com\r\nContent-Length: 20\r\n\r\nThis\r\nis "
+		//   "POST / HTTP/1.1\r\nHost: www.example.com\r\nContent-Length: 17\r\n\r\nThis\r\nis "
 		//   "body\r\n\r\n", // 400 (Bad Request)
 		//   "POST / HTTP/1.1\r\nHost: www.example.com\r\nContent-Type: text/plain\r\n\r\nThis\r\nis "
 		//   "body\r\n\r\n", // 400 (Bad Request)
-		//   "POST / HTTP/1.1\r\nHost: www.example.com\r\nContent-Length: 20\r\nContent-Type: "
+		//   "POST / HTTP/1.1\r\nHost: www.example.com\r\nContent-Length: 17\r\nContent-Type: "
 		//   "text/notplain\r\n\r\nThis\r\nis body\r\n\r\n", // 400 (Bad Request)
 		//   "POST / HTTP/1.1\r\nHost: www.example.com\r\nContent-Length: abcd\r\nContent-Type: "
 		//   "text/plain\r\n\r\nThis\r\nis body\r\n\r\n", // 400 (Bad Request)

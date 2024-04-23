@@ -160,7 +160,7 @@ void Server::handleConnection(Connection conn, size_t &i)
 
 	std::string responseString;
 	response = conn.getResponse();
-	std::cout << std::endl << "                  DEBUG" << std::endl;
+	std::cout << std::endl << "DEBUG" << std::endl;
 	std::cout << request.getRequestTarget() << std::endl;
 	Router router;
 	response = router.routeRequest(request);
