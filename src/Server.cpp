@@ -117,6 +117,7 @@ void Server::handleConnection(Connection conn, size_t &i)
 		std::cout << "Headers incomplete, exiting handleConnection." << std::endl;
 		return;
 	}
+	parser.parseRequestLine(parser.getHeadersBuffer().c_str(), request, response);
 	parser.parseHeaders(parser.getHeadersBuffer().c_str(), request, response);
 	if (parser.getIsChunked())
 	{
@@ -137,9 +138,10 @@ void Server::handleConnection(Connection conn, size_t &i)
 			return;
 		}
 	}
+	std::cout << "Reading and parsing complete\n\n" << std::endl;
 
 	std::string httpRequestString = parser.getHeadersBuffer() + parser.getBuffer();
-	printHTTPRequest(httpRequestString);
+	printStrWithNonPrintables(httpRequestString, 0);
 	parser.parseRequest(httpRequestString.c_str(), request, response);
 
 	std::cout << "\033[1;91mRequest: " << response.getStatusCode() << "\033[0m" << std::endl;

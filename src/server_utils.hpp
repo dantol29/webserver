@@ -33,5 +33,6 @@ void perrorAndExit(const char *msg);
 char customToLower(char c);
 void printFDsVector(const std::vector<pollfd> &fds);
 void print_connectionsVector(const std::vector<Connection> &connections);
+void printStrWithNonPrintables(const std::string httpRequest, size_t startPos);
 
 #endif // SERVER_UTILS_HPP

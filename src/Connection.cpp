@@ -60,11 +60,16 @@ HTTPResponse &Connection::getResponse()
 // Attempts to read HTTP request headers from the client connection into _headersBuffer on the Parser.
 bool Connection::readSocket(Parser &parser)
 {
+	std::cout << "\nEntering readSocket" << std::endl;
 	char buffer[BUFFER_SIZE] = {0};
+	std::cout << "buffers size: " << sizeof(buffer) << std::endl;
 	ssize_t bytesRead = recv(_pollFd.fd, buffer, BUFFER_SIZE, 0);
+	std::cout << "bytesRead: " << bytesRead << std::endl;
 	if (bytesRead > 0)
 	{
 		parser.setBuffer(parser.getBuffer() + std::string(buffer, bytesRead));
+		std::cout << "The buffer is: " << parser.getBuffer() << std::endl;
+
 		std::cout << "Exiting readSocket" << std::endl;
 		return true;
 	}

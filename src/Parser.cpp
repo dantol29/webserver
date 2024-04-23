@@ -1,6 +1,7 @@
 #include "Parser.hpp"
 #include "HTTPRequest.hpp"
 #include "Server.hpp"
+#include "server_utils.hpp"
 
 Parser::Parser()
 {
@@ -36,6 +37,7 @@ Parser::~Parser()
 
 bool Parser::preParseHeaders(HTTPResponse &res)
 {
+	std::cout << "\nEntering preParseHeaders" << std::endl;
 	// We read the buffer with readSocket if headersComplete is not true and we write the buffer in the _headersBuffer
 	std::size_t headersEnd = _buffer.find("\r\n\r\n");
 	if (headersEnd != std::string::npos)
@@ -48,6 +50,7 @@ bool Parser::preParseHeaders(HTTPResponse &res)
 		_headersComplete = true;
 		_buffer = _buffer.substr(headersEnd + 4);
 		_bodyTotalBytesRead = _buffer.length();
+		std::cout << "Exiting preParseHeaders: true #1" << std::endl;
 		return (true);
 	}
 	_headersTotalBytesRead = _buffer.length();
@@ -57,6 +60,7 @@ bool Parser::preParseHeaders(HTTPResponse &res)
 		res.setStatusCode(431);
 		return false;
 	}
+	std::cout << "Exiting preParseHeaders: true #2" << std::endl;
 	return true;
 }
 
@@ -151,47 +155,21 @@ void Parser::setIsChunked(bool value)
 // 	return (statusCode);
 // }
 
-void printHTTPRequest(const std::string httpRequest, size_t startPos)
-{
-	std::cout << "HTTP Request with not printables:" << std::endl;
-	for (size_t i = startPos; i < httpRequest.length(); ++i)
-	{
-		unsigned char c = httpRequest[i];
-		{
-			switch (c)
-			{
-			case '\n':
-				std::cout << "\\n";
-				break;
-			case '\r':
-				std::cout << "\\r";
-				break;
-			case '\t':
-				std::cout << "\\t";
-				break;
-			default:
-				if (c >= 32 && c <= 126)
-					std::cout << c;
-				else
-					std::cout << "\\x" << std::hex << std::setw(2) << std::setfill('0') << (int)c << std::dec;
-			}
-		}
-	}
-	std::cout << std::endl;
-}
-
 void Parser::parseRequestLine(const char *request, HTTPRequest &req, HTTPResponse &res)
 {
+	std::cout << "\nEntering parseRequestLine" << std::endl;
 
 	unsigned int i = 0;
 	bool isOriginForm = false;
-	printHTTPRequest(request);
+	printStrWithNonPrintables(request, 0);
 
 	// TODO: check if strlen is the best C++ option
 
 	std::string method = extractMethod(request, i);
 	if (method.empty())
 	{
+		std::cerr << "Invalid request-line" << std::endl;
+		std::cerr << "method: " << method << std::endl;
 		// TODO: 501 or 400?
 		return (res.setStatusCode(501));
 	}
@@ -200,6 +178,7 @@ void Parser::parseRequestLine(const char *request, HTTPRequest &req, HTTPRespons
 		std::cerr << "Invalid request-line" << std::endl;
 		return (res.setStatusCode(400));
 	}
+	std::cout << "method: " << method << std::endl;
 	req.setMethod(method);
 
 	std::string requestTarget = extractRequestTarget(request, i);
@@ -228,10 +207,12 @@ void Parser::parseRequestLine(const char *request, HTTPRequest &req, HTTPRespons
 	if (!hasCRLF(request, i, 0))
 		return (res.setStatusCode(400));
 	req.setProtocolVersion(protocolVersion);
+	std::cout << "Exiting parseRequestLine" << std::endl;
 }
 
 void Parser::parseRequest(const char *request, HTTPRequest &req, HTTPResponse &res)
 {
+	std::cout << "\nEntering parseRequest" << std::endl;
 	// We will work with a Response object with a status code of 0. If we encounter an error, we will set the status
 	// code to the appropriate value. The code 200 was checked in the constructor after the call of parseRequest. If
 	// the status code is not 200, we would have returned otherwise we would have proceed parsing the headers and after
@@ -250,6 +231,7 @@ void Parser::parseRequest(const char *request, HTTPRequest &req, HTTPResponse &r
 		if (res.getStatusCode() == 0 && !_isChunked && req.getMethod() != "GET")
 			parseBody(request, req, res);
 	}
+	std::cout << "Exiting parseRequest" << std::endl;
 }
 // TODO: probably we will remove this. The parser will always get a chunk of a chunked body and not the whole chunked
 // body, cause the 'core' will read only a chunk of the body at a time
@@ -291,16 +273,18 @@ void Parser::parseChunkedBody(const char *request, HTTPRequest &req, HTTPRespons
 
 void Parser::parseHeaders(const char *request, HTTPRequest &req, HTTPResponse &res)
 {
+	std::cout << "\nEntering parseHeaders" << std::endl;
 	unsigned int i;
 	std::string key;
 	std::string value;
-	printHTTPRequest(request);
+	printStrWithNonPrintables(request, 0);
 	i = 0;
 	// TODO: check if we need to skip the request line in the new implementation
 	skipRequestLine(request, i);
 	while (request[i])
 	{
 		key = extractHeaderKey(request, i);
+		std::cout << "key: " << key << std::endl;
 		if (key.empty())
 		{
 			std::cerr << "Invalid header key" << std::endl;
@@ -313,6 +297,7 @@ void Parser::parseHeaders(const char *request, HTTPRequest &req, HTTPResponse &r
 			return (res.setStatusCode(400));
 		}
 		value = extractHeaderValue(request, i);
+		std::cout << "value: " << value << std::endl;
 		if (value.empty())
 		{
 			std::cerr << "Invalid header value" << std::endl;
@@ -348,6 +333,7 @@ void Parser::parseHeaders(const char *request, HTTPRequest &req, HTTPResponse &r
 		std::cerr << "GET request with body" << std::endl;
 		return (res.setStatusCode(400));
 	}
+	std::cout << "Exiting parseHeaders" << std::endl;
 }
 
 // TODO: IMO this is pretty confusing
@@ -391,7 +377,7 @@ void Parser::parseBody(const char *request, HTTPRequest &req, HTTPResponse &res)
 
 bool Parser::hasMandatoryHeaders(HTTPRequest &req)
 {
-	std::cout << "hasMandatoryHeaders" << std::endl;
+	std::cout << "\nEntering hasMandatoryHeaders" << std::endl;
 	// int isHost = 0;
 	// int isContentLength = 0;
 	// int isContentType = 0;
@@ -413,9 +399,14 @@ bool Parser::hasMandatoryHeaders(HTTPRequest &req)
 		}
 		else if (it->first == "content-length")
 		{
+			std::cout << "checking content-length" << std::endl;
 			// if (!isNumber(it->second) || req.getMethod() != "POST")
 			if (!isNumber(it->second))
+			{
+				std::cerr << "Invalid content-length" << std::endl;
+				std::cerr << "it->second: " << it->second << std::endl;
 				return (false);
+			}
 			req.setHasContentLengthHeader(true);
 			// req.setContentLength(std::stoi(it->second));
 			std::istringstream iss(it->second);
@@ -434,8 +425,13 @@ bool Parser::hasMandatoryHeaders(HTTPRequest &req)
 		}
 		else if (it->first == "content-type")
 		{
+			std::cout << "checking content-type" << std::endl;
+			std::cout << "method: " << req.getMethod() << std::endl;
 			if (!isValidContentType(it->second) || req.getMethod() != "POST")
+			{
+				std::cerr << "Invalid content-type" << std::endl;
 				return (false);
+			}
 			isContentType = true;
 			// isContentType++;
 		}
@@ -552,6 +548,7 @@ std::string Parser::extractProtocolVersion(const char *request, unsigned int &i)
 
 std::string Parser::extractMethod(const char *request, unsigned int &i)
 {
+	std::cout << "Entering extractMethod" << std::endl;
 	std::string method;
 	std::string string_request(request);
 
@@ -559,7 +556,13 @@ std::string Parser::extractMethod(const char *request, unsigned int &i)
 		i++;
 	method = string_request.substr(0, i);
 	if (method == "GET" || method == "POST" || method == "DELETE")
+	{
+		std::cout << "Exiting extractMethod with method: " << method << std::endl;
 		return (method);
+	}
+	std::cout << "Exiting extractMethod with "
+				 ""
+			  << std::endl;
 	return ("");
 }
 
@@ -634,8 +637,14 @@ bool Parser::isOrigForm(std::string &requestTarget, int &queryStart)
 
 bool Parser::isValidContentType(std::string type)
 {
+	std::cout << "Entering isValidContentType" << std::endl;
+	std::cout << "type: " << type << std::endl;
 	if (type == "text/plain" || type == "text/html")
+	{
+		std::cout << "Exiting isValidContentType: true!" << std::endl;
 		return (true);
+	}
+	std::cout << "Exiting isValidContentType: false!" << std::endl;
 	return (false);
 }
 

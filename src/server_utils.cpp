@@ -21,6 +21,36 @@ char customToLower(char c)
 	return c;
 }
 
+void printStrWithNonPrintables(const std::string httpRequest, size_t startPos = 0)
+{
+	std::cout << "HTTP Request (normal std::cout):" << httpRequest << std::endl;
+	std::cout << "HTTP Request with not printables:" << std::endl;
+	for (size_t i = startPos; i < httpRequest.length(); ++i)
+	{
+		unsigned char c = httpRequest[i];
+		{
+			switch (c)
+			{
+			case '\n':
+				std::cout << "\\n";
+				break;
+			case '\r':
+				std::cout << "\\r";
+				break;
+			case '\t':
+				std::cout << "\\t";
+				break;
+			default:
+				if (c >= 32 && c <= 126)
+					std::cout << c;
+				else
+					std::cout << "\\x" << std::hex << std::setw(2) << std::setfill('0') << (int)c << std::dec;
+			}
+		}
+	}
+	std::cout << std::endl;
+}
+
 // size_t getContentLength(const std::string &headers)
 // {
 // 	std::string lowerHeaders;
