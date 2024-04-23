@@ -11,6 +11,7 @@ Router::~Router()
 
 HTTPResponse Router::routeRequest(const HTTPRequest &request)
 {
+	HTTPResponse response;
 	std::string _webRoot = "var/www"; // TODO: get this from the config file
 	if (isCGI(request))
 	{
@@ -20,6 +21,7 @@ HTTPResponse Router::routeRequest(const HTTPRequest &request)
 	else if (isDynamicRequest(request))
 	{
 		std::cout << "\033[31mCGI is the only dynamic requests we handle at the moment\033[0m" << std::endl;
+		response.setStatusCode(501);
 	}
 	else // it is a static request
 	{
@@ -35,7 +37,7 @@ HTTPResponse Router::routeRequest(const HTTPRequest &request)
 			return staticContentInstance.handleRequest(request);
 		}
 	}
-	return HTTPResponse();
+	return response;
 }
 
 bool Router::isDynamicRequest(const HTTPRequest &request)
