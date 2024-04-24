@@ -22,7 +22,7 @@ class Router
 
 	void splitTarget(const std::string &target);
 	bool isDynamicRequest(const HTTPRequest &request);
-	bool pathExists(HTTPRequest &request, HTTPResponse &response);
+	bool pathIsValid(HTTPRequest &request, std::string webRoot);
 
   private:
 	Router(const Router &other);
@@ -31,6 +31,7 @@ class Router
 	CGIHandler _cgiHandler;
 
 	std::string getFileExtension(const std::string &fileName);
+	bool isCGI(const HTTPRequest &request);
 	resourcePath _path;
 };
 

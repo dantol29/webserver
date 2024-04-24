@@ -1,13 +1,10 @@
 #include "StaticContentHandler.hpp"
 #include "Server.hpp"
-// Default constructor
 StaticContentHandler::StaticContentHandler()
 {
 }
-// Constructor
 StaticContentHandler::StaticContentHandler(const std::string &webRoot) : _webRoot(webRoot) {};
 
-// Destructor
 StaticContentHandler::~StaticContentHandler()
 {
 }
@@ -37,86 +34,64 @@ std::string getMimeType(const std::string &filePath)
 		return "image/jpeg";
 	else if (endsWith(filePath, ".png"))
 		return "image/png";
-	// Add checks for other file types and dynamic content scripts
+	// TODO: checks for other file types and dynamic content scripts
 	else
 		return "application/octet-stream"; // Default binary type
 }
 
-// Handle request
 HTTPResponse StaticContentHandler::handleRequest(const HTTPRequest &request)
 {
 	HTTPResponse response;
 	std::string requestTarget = request.getRequestTarget();
-	std::string path = _webRoot + requestTarget;
-	// Eventually sanitze path, remove ".." and other dangerous characters
+	std::string webRoot = "var/www";
+	std::cout << "path : " << webRoot << std::endl;
+	if (requestTarget == "/" || requestTarget == "")
+		requestTarget = "/index.html";
+	std::string path = webRoot + requestTarget;
 	std::ifstream file(path.c_str());
-	if (file.is_open())
-	{
-		// TODO: consider streaming the file instead of loading it all in memory for large files
-		std::string body((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
-		response.setStatusCode(200);
-		response.setBody(body);
-		response.setHeader("Content-Type", getMimeType(path));
-	}
-	else
-	{
-		// TODO: consider serving a 404.html page
-		response.setStatusCode(404);
-		response.setBody("Not Found");
-		response.setHeader("Content-Type", "text/plain");
-	}
-	return response;
-}
+	// if (request.getMethod() == "GET" && (request.getRequestTarget() == ""))
+	// {
+	// 	path += "index.html";
+	// 	std::cout << "                            new path : " << path << std::endl;
+	// }
+	// else
+	// {
+	// TODO: consider streaming the file instead of loading it all in memory for large files
+	std::cout << "path : " << path << std::endl;
+	// std::ifstream file(path.c_str());
+	file.is_open();
 
-// This should return a HTTPResponse object
-// std::string handleHomePage()
-// {
-// 	std::string htmlContent = readHtml("./html/home.html");
-// 	std::stringstream ss;
-// 	ss << htmlContent.length();
-// 	std::string htmlLength = ss.str();
-// 	std::string httpResponse = "HTTP/1.1 200 OK\nContent-Type: text/html\n" + std::string("Content-Length: ") +
-// 							   htmlLength + "\n\n" + htmlContent;
-// 	std::cout << "------------------Home page returned from handleHomePage()-------------------" << std::endl;
-// 	return httpResponse;
-// }
-HTTPResponse StaticContentHandler::handleHomePage()
-{
-	std::string htmlContent = readHtml("./html/index.html");
-	HTTPResponse response;
+	std::string body((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
+	std::cout << "body : " << body << std::endl;
+
+	// response.setStatusCode(200);
+	response.setBody(body);
+	response.setHeader("Content-Type", getMimeType(path));
+	response.setHeader("Content-Length", toString(body.length()));
 	response.setStatusCode(200);
-	response.setBody(htmlContent);
-	response.setHeader("Content-Type", "text/html");
-	std::cout << "------------------Home page returned from handleHomePage()-------------------" << std::endl;
+	// TODO ADD MORE HEADER LINE
+	//  response.setHeader("Content-Length: ", std::to_string(body.length()));
+	//  response.setHeader("Connection: ", "close");
+	//  response.setHeader("Server: ", "webserv");
+
+	std::cout << std::endl;
+	std::cout << "_body : " << response.getBody() << std::endl;
+	file.close();
+	// }
 	return response;
 }
 
 HTTPResponse StaticContentHandler::handleNotFound(void)
 {
 	HTTPResponse response;
+	std::ifstream file("var/www/errors/404.html");
+	std::stringstream buffer;
+	buffer << file.rdbuf();
+	std::string fileContents = buffer.str();
+
+	response.setBody(fileContents);
+	response.setHeader("Content-Type", "text/html");
+	response.setHeader("Content-Length", toString(fileContents.length()));
 	response.setStatusCode(404);
-
-	// Create a simple HTML body for the 404 page
-	std::string htmlBody = "<!DOCTYPE html>\n"
-						   "<html lang=\"en\">\n"
-						   "<head>\n"
-						   "    <meta charset=\"UTF-8\">\n"
-						   "    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n"
-						   "    <title>404 Not Found</title>\n"
-						   "    <style>\n"
-						   "        body { font-family: Arial, sans-serif; text-align: center; margin-top: 50px; }\n"
-						   "        h1 { color: #ff6347; }\n"
-						   "        p { color: #757575; }\n"
-						   "    </style>\n"
-						   "</head>\n"
-						   "<body>\n"
-						   "    <h1>404 Not Found</h1>\n"
-						   "    <p>Sorry, the page you're looking for cannot be found.</p>\n"
-						   "</body>\n"
-						   "</html>";
-
-	response.setBody(htmlBody);
-	response.setHeader("Content-Type", "text/html"); // Set the Content-Type to text/html
-	std::cout << "------------------404 Not Found sent-------------------" << std::endl;
 	return response;
 }

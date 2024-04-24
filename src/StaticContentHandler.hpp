@@ -1,7 +1,7 @@
 #ifndef STATICCONTENTHANDLER_HPP
 #define STATICCONTENTHANDLER_HPP
 
-#include "ARequestHandler.hpp"
+#include "AResponseHandler.hpp"
 #include <string>
 #include <fstream>
 #include <cstdlib> // For exit() and EXIT_FAILURE
@@ -13,7 +13,7 @@
 #include <sstream>
 #include "webserv.hpp"
 
-class StaticContentHandler : public ARequestHandler
+class StaticContentHandler : public AResponseHandler
 {
   public:
 	StaticContentHandler();
@@ -21,9 +21,7 @@ class StaticContentHandler : public ARequestHandler
 	~StaticContentHandler();
 	HTTPResponse handleRequest(const HTTPRequest &request);
 
-	// std::string handleHomePage();
-	HTTPResponse handleHomePage();
-	// std::string handleNotFound();
+	// std::string handleNotFound();  or setErrorResponse(int statusCode) from WEB-127
 	HTTPResponse handleNotFound();
 
   private:
@@ -33,4 +31,4 @@ class StaticContentHandler : public ARequestHandler
 	std::string _webRoot;
 };
 
-#endif // STATICCONTENTHANDLER_HPP
+#endif
