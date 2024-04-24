@@ -93,7 +93,7 @@ HTTPResponse CGIHandler::CGIStringToResponse(const std::string &cgiOutput)
 
 	response.setBody(bodyPart);
 	response.setIsCGI(true);
-	response.setStatusCode(200);
+	response.setStatusCode(200, "");
 	return response;
 }
 

@@ -18,24 +18,12 @@ class Parser
 	void parseRequest(const char *request, HTTPRequest &req, HTTPResponse &res);
 
   private:
-	// GETTERS
-	bool getIsChunked() const;
-	bool getIsChunkFinish() const;
-	// std::string getErrorMessage() const;
 
-	// CHUNKED REQUESTS
-	void setIsChunked(bool a);
-	// Is this function necessary? I think we don't use it
-	void parseChunkedBody(const char *request, HTTPRequest &req, HTTPResponse &res);
+	// PARSING FUNC
 	void parseRequestLine(const char *request, HTTPRequest &req, HTTPResponse &res);
 	void parseHeaders(const char *request, HTTPRequest &req, HTTPResponse &res);
 	void parseBody(const char *request, HTTPRequest &req, HTTPResponse &res);
-	int ft_error(int statusCode, std::string message);
-
-	// VARIABLES
-	bool _isChunked;
-	bool _isChunkFinish;
-
+	
 	// UTILS
 	std::string extractVariables(std::string &requestTarget, bool &isOriginForm);
 	bool saveVariables(std::string &variables, HTTPRequest &req);
@@ -55,6 +43,16 @@ class Parser
 	std::string extractHeaderValue(const char *request, unsigned int &i);
 	unsigned int extractLineLength(const char *request, unsigned int &i);
 	std::string extractLine(const char *request, unsigned int &i, const unsigned int &size);
+	
+	// CHUNKED REQUESTS
+	// Maybe not needed
+	bool getIsChunked() const;
+	bool getIsChunkFinish() const;
+	void setIsChunked(bool a);
+	void parseChunkedBody(const char *request, HTTPRequest &req, HTTPResponse &res);
+	bool _isChunked;
+	bool _isChunkFinish;
 };
+
 
 #endif

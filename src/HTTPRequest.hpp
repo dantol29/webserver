@@ -12,7 +12,6 @@ class HTTPRequest
 	~HTTPRequest();
 
 	// GETTERS
-	int getStatusCode() const;
 	std::string getMethod() const;
 	std::string getHost() const;
 	std::string getRequestTarget() const;
@@ -21,6 +20,7 @@ class HTTPRequest
 	std::multimap<std::string, std::string> getHeaders() const;
 	std::pair<std::string, std::string> getSingleHeader(std::string key) const;
 	std::vector<std::string> getBody() const;
+
 	// SETTERS
 	void setMethod(std::string method);
 	void setRequestTarget(std::string requestTarget);

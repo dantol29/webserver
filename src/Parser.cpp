@@ -10,21 +10,6 @@ Parser::~Parser()
 {
 }
 
-// Parser::Parser(const char *request)
-// {
-// 	_statusCode = 200;
-// 	if (strlen(request) < 10)
-// 		ft_error(400, "Invalid request-line");
-// 	else
-// 	{
-// 		parseRequestLine(request);
-// 		if (_statusCode == 200)
-// 			parseHeaders(request);
-// 		if (_statusCode == 200 && !_isChunked && _method != "GET")
-// 			parseBody(request);
-// 	}
-// }
-
 bool Parser::getIsChunked() const
 {
 	return (_isChunked);
@@ -35,50 +20,23 @@ bool Parser::getIsChunkFinish() const
 	return (_isChunkFinish);
 }
 
-// std::string HTTPRequest::getErrorMessage() const
-// {
-// 	return (_errorMessage);
-// }
-
 void Parser::setIsChunked(bool n)
 {
 	_isChunked = n;
 }
 
-// int HTTPRequest::ft_error(int statusCode, std::string message)
-// {
-// 	_errorMessage = message;
-// 	_statusCode = statusCode;
-// 	return (statusCode);
-// }
-
-void printHTTPRequest(const std::string httpRequest, size_t startPos)
+void Parser::parseRequest(const char *request, HTTPRequest &req, HTTPResponse &res)
 {
-	std::cout << "HTTP Request with not printables:" << std::endl;
-	for (size_t i = startPos; i < httpRequest.length(); ++i)
+	if (strlen(request) < 10)
+		return (res.setStatusCode(400, "Invalid request-line"));
+	else
 	{
-		unsigned char c = httpRequest[i];
-		{
-			switch (c)
-			{
-			case '\n':
-				std::cout << "\\n";
-				break;
-			case '\r':
-				std::cout << "\\r";
-				break;
-			case '\t':
-				std::cout << "\\t";
-				break;
-			default:
-				if (c >= 32 && c <= 126)
-					std::cout << c;
-				else
-					std::cout << "\\x" << std::hex << std::setw(2) << std::setfill('0') << (int)c << std::dec;
-			}
-		}
+		parseRequestLine(request, req, res);
+		if (res.getStatusCode() == 0)
+			parseHeaders(request, req, res);
+		if (res.getStatusCode() == 0 && !_isChunked && req.getMethod() != "GET")
+			parseBody(request, req, res);
 	}
-	std::cout << std::endl;
 }
 
 void Parser::parseRequestLine(const char *request, HTTPRequest &req, HTTPResponse &res)
@@ -86,177 +44,74 @@ void Parser::parseRequestLine(const char *request, HTTPRequest &req, HTTPRespons
 
 	unsigned int i = 0;
 	bool isOriginForm = false;
-	printHTTPRequest(request);
-
-	// TODO: check if strlen is the best C++ option
 
 	std::string method = extractMethod(request, i);
 	if (method.empty())
-	{
-		// TODO: 501 or 400?
-		return (res.setStatusCode(501));
-	}
+		return (res.setStatusCode(501, "Invalid method"));
 	if (request[i++] != ' ')
-	{
-		std::cerr << "Invalid request-line" << std::endl;
-		return (res.setStatusCode(400));
-	}
-	req.setMethod(method);
+		return (res.setStatusCode(400, "Invalid request-line"));
 
 	std::string requestTarget = extractRequestTarget(request, i);
-	std::cout << std::endl << std::endl << "request                            Target = " << requestTarget << std::endl;
 	if (requestTarget.empty())
-	{
-		std::cerr << "Invalid request-target" << std::endl;
-		return (res.setStatusCode(414));
-	}
+		return (res.setStatusCode(414, "Invalid request-target"));
 	if (request[i++] != ' ')
-	{
-		std::cerr << "Invalid request-line" << std::endl;
-		return (res.setStatusCode(400));
-	}
-	req.setRequestTarget(requestTarget);
+		return (res.setStatusCode(400, "Invalid request-line"));
 
-	// TODO: which variables are we talking about?
 	std::string variables = extractVariables(requestTarget, isOriginForm);
 	if (variables.empty())
-		return (res.setStatusCode(400));
+		return (res.setStatusCode(400, "Invalid variables in request-line"));
 	if (isOriginForm && !saveVariables(variables, req))
-		return (res.setStatusCode(400));
+		return (res.setStatusCode(400, "Invalid variables in request-line"));
 
 	std::string protocolVersion = extractProtocolVersion(request, i);
 	if (protocolVersion.empty())
-		return (res.setStatusCode(400));
+		return (res.setStatusCode(400, "Invalid protocol version"));
 	if (!hasCRLF(request, i, 0))
-		return (res.setStatusCode(400));
+		return (res.setStatusCode(400, "No CRLF at the end of request-line"));
+
+	req.setMethod(method);
+	req.setRequestTarget(requestTarget);
 	req.setProtocolVersion(protocolVersion);
-	std::cout << "before res.getStatusCode() = " << res.getStatusCode() << std::endl;
 }
 
-void Parser::parseRequest(const char *request, HTTPRequest &req, HTTPResponse &res)
-{
-	// We will work with a Response object with a status code of 0. If we encounter an error, we will set the status
-	// code to the appropriate value. The code 200 was checked in the constructor after the call of parseRequest. If
-	// the status code is not 200, we would have returned otherwise we would have proceed parsing the headers and after
-	// another similar check parsing the body. _statusCode = 200;
-	if (strlen(request) < 10)
-	{
-		std::cerr << "Invalid request-line" << std::endl;
-		return (res.setStatusCode(400));
-	}
-	else
-	{
-		parseRequestLine(request, req, res);
-		if (res.getStatusCode() == 0)
-			parseHeaders(request, req, res);
-		std::cout << "after res.getStatusCode() = " << res.getStatusCode() << std::endl;
-		if (res.getStatusCode() == 0 && !_isChunked && req.getMethod() != "GET")
-			parseBody(request, req, res);
-	}
-}
-// TODO: probably we will remove this. The parser will always get a chunk of a chunked body and not the whole chunked
-// body, cause the 'core' will read only a chunk of the body at a time
-void Parser::parseChunkedBody(const char *request, HTTPRequest &req, HTTPResponse &res)
-{
-	unsigned int i = 0;
-	int size = 0;
-	std::string line;
-
-	skipHeader(request, i);
-	while (request[i])
-	{
-		size = extractLineLength(request, i);
-		if (size <= 0)
-		{
-			if (size == -1)
-			{
-				std::cerr << "Invalid chunk size" << std::endl;
-				return (res.setStatusCode(400));
-			}
-			break;
-		}
-		line = extractLine(request, i, size);
-		if (line.empty())
-		{
-			std::cerr << "Invalid chunk" << std::endl;
-			return (res.setStatusCode(400));
-		}
-		req.setBody(line);
-	}
-	if (!hasCRLF(request, i, 0))
-	{
-		std::cerr << "No CRLF after chunked body" << std::endl;
-		return (res.setStatusCode(400));
-	}
-	if (hasCRLF(request, i, 1))
-		_isChunkFinish = true;
-}
-
+// [KEY][:][SP][VALUE][CRLF][KEY][:][SP][VALUE][CRLF][CRLF]
 void Parser::parseHeaders(const char *request, HTTPRequest &req, HTTPResponse &res)
 {
-	unsigned int i;
+	unsigned int i = 0;
 	std::string key;
 	std::string value;
-	printHTTPRequest(request);
-	i = 0;
-	// TODO: check if we need to skip the request line in the new implementation
+
 	skipRequestLine(request, i);
 	while (request[i])
 	{
-		key = extractHeaderKey(request, i);
+		key = extractHeaderKey(request, i); // [KEY]
 		if (key.empty())
-		{
-			std::cerr << "Invalid header key" << std::endl;
-			return (res.setStatusCode(400));
-		}
-		i++; // skip ':'
-		if (request[i++] != ' ')
-		{
-			std::cerr << "Invalid header value" << std::endl;
-			return (res.setStatusCode(400));
-		}
-		value = extractHeaderValue(request, i);
+			return (res.setStatusCode(400, "Invalid header key"));
+		if (request[i++] != ':') // [:]
+			return (res.setStatusCode(400, "Invalid header key"));
+		if (request[i++] != ' ') // [SP]
+			return (res.setStatusCode(400, "Invalid header key"));
+
+		value = extractHeaderValue(request, i); // [VALUE]
 		if (value.empty())
-		{
-			std::cerr << "Invalid header value" << std::endl;
-			return (res.setStatusCode(400));
-		}
-		std::cout << "res.getStatusCode() = " << res.getStatusCode() << std::endl;
-		if (!hasCRLF(request, i, 0))
-		{
-			std::cerr << "No CRLF after header" << std::endl;
-			return (res.setStatusCode(400));
-		}
+			return (res.setStatusCode(400, "Invalid header value"));
+		if (!hasCRLF(request, i, 0)) // [CRLF]
+			return (res.setStatusCode(400, "No CRLF after header"));
+		i += 2; // skip [CRLF]
+
 		req.setHeaders(key, value);
-		i += 2;						// skip '\r' and '\n'
-		if (hasCRLF(request, i, 0)) // end of header section
+		if (hasCRLF(request, i, 0)) // end of header section ([CRLF][CRLF])
 			break;
 	}
 	if (!hasCRLF(request, i, 0))
-	{
-		std::cerr << "No CRLF after headers" << std::endl;
-		return (res.setStatusCode(400));
-	}
-	// TODO: can't we do them lower case in the setHeaders method?
-	// setHeaders is now dirctly lowercasing the key
-	// makeHeadersLowCase();
+		return (res.setStatusCode(400, "No CRLF after headers"));
 	if (!hasMandatoryHeaders(req))
-	{
-		std::cerr << "Invalid headers" << std::endl;
-		return (res.setStatusCode(400));
-	}
-	// TODO: body in a GET request is not explicitly forbidden
-	if (req.getMethod() == "GET" && request[i + 2]) // has something after headers
-	{
-		std::cerr << "GET request with body" << std::endl;
-		return (res.setStatusCode(400));
-	}
+		return (res.setStatusCode(400, "Invalid headers"));
 }
 
-// TODO: IMO this is pretty confusing
+// [LINE][CRLF][LINE][CRLF][CRLF]
 void Parser::parseBody(const char *request, HTTPRequest &req, HTTPResponse &res)
 {
-	unsigned int end = 400;
 	unsigned int i = 0;
 	unsigned int start = 0;
 	std::string stringRequest(request);
@@ -264,42 +119,70 @@ void Parser::parseBody(const char *request, HTTPRequest &req, HTTPResponse &res)
 
 	skipHeader(request, i);
 	start = i;
-	while (request[i] && end != 200)
+	while (request[i])
 	{
-		if (hasCRLF(request, i, 0))
+		if (hasCRLF(request, i, 0)) // [CRLF]
 		{
-			if (hasCRLF(request, i, 1))
-				end = 200;
-			// body.push_back(stringRequest.substr(start, i - start));
-			req.setBody(stringRequest.substr(start, i - start));
-			i += 2;
+			if (hasCRLF(request, i, 1)){ // [CRLF][CRLF]
+				req.setBody(stringRequest.substr(start, i - start)); // [LINE]
+				break ;
+			}
+			req.setBody(stringRequest.substr(start, i - start)); // [LINE]
+			i += 2; // skip [CRLF]
 			start = i;
 			continue;
 		}
-		else if (!hasCRLF(request, i, 0) && request[i] == '\r')
-		{
-			std::cerr << "Invalid body" << std::endl;
-			return (res.setStatusCode(400));
-		}
 		i++;
 	}
-	if (end == 200 && hasCRLF(request, i, 0) && request[i + 2])
-	{
-		std::cerr << "Invalid body" << std::endl;
-		return (res.setStatusCode(400));
-	}
+	if (!hasCRLF(request, i, 1) || request[i + 4]) // if no [CRLF][CRLF] or there is something after body 
+		return (res.setStatusCode(400, "Invalid body"));
 }
+
+// // TODO: probably we will remove this. The parser will always get a chunk of a chunked body and not the whole chunked
+// // body, cause the 'core' will read only a chunk of the body at a time
+// void Parser::parseChunkedBody(const char *request, HTTPRequest &req, HTTPResponse &res)
+// {
+// 	unsigned int i = 0;
+// 	int size = 0;
+// 	std::string line;
+
+// 	skipHeader(request, i);
+// 	while (request[i])
+// 	{
+// 		size = extractLineLength(request, i);
+// 		if (size <= 0)
+// 		{
+// 			if (size == -1)
+// 			{
+// 				std::cerr << "Invalid chunk size" << std::endl;
+// 				return (res.setStatusCode(400));
+// 			}
+// 			break;
+// 		}
+// 		line = extractLine(request, i, size);
+// 		if (line.empty())
+// 		{
+// 			std::cerr << "Invalid chunk" << std::endl;
+// 			return (res.setStatusCode(400));
+// 		}
+// 		req.setBody(line);
+// 	}
+// 	if (!hasCRLF(request, i, 0))
+// 	{
+// 		std::cerr << "No CRLF after chunked body" << std::endl;
+// 		return (res.setStatusCode(400));
+// 	}
+// 	if (hasCRLF(request, i, 1))
+// 		_isChunkFinish = true;
+// }
 
 // ----------------UTILS----------------------------
 
 bool Parser::hasMandatoryHeaders(HTTPRequest &req)
 {
-	// int isHost = 0;
-	// int isContentLength = 0;
-	// int isContentType = 0;
-	bool isHost = false;
-	bool isContentLength = false;
-	bool isContentType = false;
+	int isHost = 0;
+	int isContentLength = 0;
+	int isContentType = 0;
 
 	std::multimap<std::string, std::string> headers = req.getHeaders();
 	std::multimap<std::string, std::string>::iterator it;
@@ -310,38 +193,33 @@ bool Parser::hasMandatoryHeaders(HTTPRequest &req)
 		{
 			if (!isValidHost(it->second))
 				return (false);
-			isHost = true;
-			// isHost++;
+			isHost++;
 		}
 		else if (it->first == "content-length")
 		{
-			if (!isNumber(it->second) || req.getMethod() != "POST")
+			if (!isNumber(it->second))
 				return (false);
-			isContentLength = true;
-			// isContentLength++;
+			isContentLength++;
 		}
 		else if (it->first == "content-type")
 		{
-			if (!isValidContentType(it->second) || req.getMethod() != "POST")
+			if (!isValidContentType(it->second))
 				return (false);
-			isContentType = true;
-			// isContentType++;
+			isContentType++;
 		}
 		else if (it->first == "transfer-encoding")
 		{
-			if (it->second != "chunked" || req.getMethod() != "POST")
+			if (it->second != "chunked")
 				return (false);
 			setIsChunked(true);
 		}
 	}
-	if (_isChunked && isContentLength)
-		return (false);
+	// if (_isChunked && isContentLength)
+	// 	return (false);
 	if (req.getMethod() == "POST" || req.getMethod() == "DELETE")
-		return (isHost && isContentLength && isContentType);
-	// return (isHost == 1 && isContentLength == 1 && isContentType == 1);
+		return (isHost == 1 && isContentLength == 1 && isContentType == 1);
 	else
-		return (isHost);
-	// return (isHost == 1);
+		return (isHost == 1);
 }
 
 bool Parser::saveVariables(std::string &variables, HTTPRequest &req)
@@ -366,25 +244,6 @@ bool Parser::saveVariables(std::string &variables, HTTPRequest &req)
 	}
 	return (true);
 }
-
-// void Parser::makeHeadersLowCase()
-// {
-// 	std::multimap<std::string, std::string>::iterator it;
-// 	std::multimap<std::string, std::string> newHeaders;
-// 	std::string tmp;
-
-// 	for (it = _headers.begin(); it != _headers.end(); ++it)
-// 	{
-// 		tmp = it->first;
-// 		for (unsigned int i = 0; i < tmp.size(); ++i)
-// 		{
-// 			if (tmp[i] >= 65 && tmp[i] <= 90)
-// 				tmp[i] = tmp[i] + 32;
-// 		}
-// 		newHeaders.insert(std::make_pair(tmp, it->second));
-// 	}
-// 	_headers.swap(newHeaders);
-// }
 
 std::string Parser::extractValue(std::string &variables, int &i)
 {
@@ -438,7 +297,6 @@ std::string Parser::extractVariables(std::string &requestTarget, bool &isOriginF
 		return ("/");
 	isOriginForm = isOrigForm(requestTarget, queryStart);
 	if (isOriginForm)
-		// return (requestTarget.substr(queryStart + 1); // better version
 		return (requestTarget.substr(queryStart + 1, strlen(requestTarget.c_str()) - queryStart));
 	return (requestTarget);
 }

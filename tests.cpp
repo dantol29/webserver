@@ -35,6 +35,7 @@ void	sendData(const char *requests[], sockaddr_in serverAddress)
 
 void	simple(sockaddr_in serverAddress)
 {
+	// 2 request is 400 and 4 request is 200
 	const char *requests[] = {
         "GET / HTTP/1.1\r\nHost: www.example.com\r\n\r\n", // 200 (OK)
         "POST / HTTP/1.1\r\nHost: www.example.com\r\n\r\n", //  200 (OK)
@@ -50,6 +51,7 @@ void	simple(sockaddr_in serverAddress)
 
 void	query(sockaddr_in serverAddress)
 {
+	// everything works
 	const char *requests[] = {
         "GET /search?q=now&price=low HTTP/1.1\r\nHost: www.example.com\r\n\r\n", // 200 (OK)
         "GET /search?q==now&price=low HTTP/1.1\r\nHost: www.example.com\r\n\r\n", //  400 (Bad Request)
@@ -66,6 +68,7 @@ void	query(sockaddr_in serverAddress)
 
 void	headers(sockaddr_in serverAddress)
 {
+	// everything works
 	const char *requests[] = {
         "GET / HTTP/1.1\r\nHost: www.example.com\r\n\r\n", // 200 (OK)
         "GET / HTTP/1.1\r\nHost: www.example.com\r\nSecond: hello\r\n\r\n", // 200 (OK)
@@ -84,6 +87,7 @@ void	headers(sockaddr_in serverAddress)
 
 void	body(sockaddr_in serverAddress)
 {
+	// CANNOT test because we do not handle POST request
 	const char *requests[] = {
         "POST / HTTP/1.1\r\nHost: www.example.com\r\nContent-Length: 20\r\nContent-Type: text/plain\r\n\r\nThis\r\nis body\r\n\r\n", // 200 (OK)
         "POST / HTTP/1.1\r\nHost: www.example.com\r\nContent-Length: 20\r\nContent-Type: text/plain\r\n\r\nThis\r\nis body\r\n", // 400 (Bad Request)

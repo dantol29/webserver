@@ -17,7 +17,7 @@ void HTTPResponse::setErrorResponse(int statusCode)
 	std::string body = "<html><head><title>Error</title></head>"
 					   "<body><h1>Error: " +
 					   toString(_statusCode) + " " + "</h1><p>" + statusMessage + "</p></body></html>";
-	setStatusCode(statusCode);
+	setStatusCode(statusCode, "");
 	setHeader("Content-Length", toString(body.length()));
 	setHeader("Content-Type", "text/html");
 	setBody(body);
@@ -58,8 +58,10 @@ int HTTPResponse::getStatusCode() const
 	return _statusCode;
 }
 
-void HTTPResponse::setStatusCode(int statusCode)
+void HTTPResponse::setStatusCode(int statusCode, std::string message)
 {
+	if (!message.empty())
+		std::cerr << message << std::endl;
 	if (_statusCode != 0)
 	{
 		std::cerr << "\033[31mWarning: Overwriting existing status code (" << _statusCode << ") and message ("

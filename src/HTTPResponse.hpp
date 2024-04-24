@@ -25,7 +25,7 @@ class HTTPResponse
 	void setErrorResponse(int statusCode);
 	std::string objToString() const;
 
-	void setStatusCode(int statusCode);
+	void setStatusCode(int statusCode, std::string message);
 	void setHeader(const std::string &name, const std::string &value);
 	void setBody(const std::string &body);
 

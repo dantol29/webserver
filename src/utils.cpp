@@ -10,6 +10,7 @@
 #include "webserv.hpp"
 #include <list>
 #include <algorithm>
+#include <iomanip>
 
 std::string readHtml(const std::string &filePath)
 {
@@ -149,4 +150,33 @@ bool isInvalidChar(const unsigned char &c)
 	if ((c <= 31) || c == 127)
 		return (true);
 	return (false);
+}
+
+void printHTTPRequest(const std::string httpRequest, size_t startPos)
+{
+	std::cout << "HTTP Request with not printables:" << std::endl;
+	for (size_t i = startPos; i < httpRequest.length(); ++i)
+	{
+		unsigned char c = httpRequest[i];
+		{
+			switch (c)
+			{
+			case '\n':
+				std::cout << "\\n";
+				break;
+			case '\r':
+				std::cout << "\\r";
+				break;
+			case '\t':
+				std::cout << "\\t";
+				break;
+			default:
+				if (c >= 32 && c <= 126)
+					std::cout << c;
+				else
+					std::cout << "\\x" << std::hex << std::setw(2) << std::setfill('0') << (int)c << std::dec;
+			}
+		}
+	}
+	std::cout << std::endl;
 }
