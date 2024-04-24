@@ -126,25 +126,34 @@ std::ostream &operator<<(std::ostream &out, const HTTPRequest &obj)
 	std::multimap<std::string, std::string> headers = obj.getHeaders();
 	std::multimap<std::string, std::string> queryString = obj.getQueryString();
 	std::vector<std::string> body = obj.getBody();
+	std::vector<File> files = obj.getFiles();
 
 	std::multimap<std::string, std::string>::iterator it;
 	out << "---------------------Variables--------------------" << std::endl;
 	for (it = queryString.begin(); it != queryString.end(); it++)
-	{
 		out << "Key: " << it->first << ", Value: " << it->second << std::endl;
-	}
 	out << "---------------------End--------------------------" << std::endl;
+
 	out << "---------------------Headers----------------------" << std::endl;
 	for (it = headers.begin(); it != headers.end(); it++)
-	{
 		out << "Key: " << it->first << ", Value: " << it->second << std::endl;
-	}
 	out << "---------------------End--------------------------" << std::endl;
+	
 	out << "---------------------Body-------------------------" << std::endl;
 	for (size_t i = 0; i < body.size(); ++i)
 		out << body[i] << std::endl;
 	out << "---------------------End--------------------------" << std::endl;
 
-	// for (unsigned int i = 0; i <)
+
+	out << "---------------------File-Upload------------------" << std::endl;
+
+	for (std::vector<File>::iterator it = files.begin(); it != files.end(); ++it)
+	{
+    	for (std::map<std::string, std::string>::iterator it2 = it->headers.begin(); it2 != it->headers.end(); ++it2)
+        	std::cout << "Key: " << it2->first << ", Value: " << it2->second << std::endl;
+    	for (std::vector<std::string>::iterator it3 = it->fileContent.begin(); it3 != it->fileContent.end(); ++it3)
+        	std::cout << "Data: " << *it3 << std::endl;
+	}
+	out << "---------------------End--------------------------" << std::endl;
 	return (out);
 }

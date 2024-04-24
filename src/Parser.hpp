@@ -50,12 +50,14 @@ class Parser
 	
 	// CHUNKED REQUESTS
 	// Maybe not needed
+	// ----------------
 	bool getIsChunked() const;
 	bool getIsChunkFinish() const;
 	void setIsChunked(bool a);
 	void parseChunkedBody(const char *request, HTTPRequest &req, HTTPResponse &res);
 	bool _isChunked;
 	bool _isChunkFinish;
+	// -----------------
 };
 
 #endif
