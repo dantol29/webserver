@@ -43,16 +43,19 @@ std::vector<char *> MetaVariables::getForExecve() const
 	for (std::map<std::string, std::string>::const_iterator it = metaVars.begin(); it != metaVars.end(); ++it)
 	{
 		std::string env = it->first + "=" + it->second;
-		char *envCStr = new char[env.size() + 1];
-		size_t i;
-		for (i = 0; i < env.size(); ++i)
-		{
-			envCStr[i] = env[i];
-		}
-		envCStr[i] = '\0';
-		result.push_back(envCStr);
+		// std::string envCStr = env;
+		result.push_back(const_cast<char *>(env.c_str()));
 	}
-	result.push_back(NULL);
+
+	// char *envCStr = new char[env.size() + 1];
+	// size_t i;
+	// for (i = 0; i < env.size(); ++i)
+	// {
+	// 	envCStr[i] = env[i];
+	// }
+	// envCStr[i] = '\0';
+	// }
+	// result.push_back(NULL);
 	return result;
 }
 
