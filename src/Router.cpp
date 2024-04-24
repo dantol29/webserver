@@ -9,14 +9,13 @@ Router::~Router()
 {
 }
 
-HTTPResponse Router::routeRequest(const HTTPRequest &request)
+void Router::routeRequest(const HTTPRequest &request, HTTPResponse &response)
 {
-	HTTPResponse response;
 	std::string _webRoot = "var/www"; // TODO: get this from the config file
 	if (isCGI(request))
 	{
 		CGIHandler cgiHandler;
-		return cgiHandler.handleRequest(request);
+		cgiHandler.handleRequest(request, response);
 	}
 	else if (isDynamicRequest(request))
 	{
@@ -30,14 +29,14 @@ HTTPResponse Router::routeRequest(const HTTPRequest &request)
 		{
 
 			std::cout << "Path does not exist" << std::endl;
-			return staticContentInstance.handleNotFound();
+			staticContentInstance.handleNotFound(response);
 		}
 		else
 		{
-			return staticContentInstance.handleRequest(request);
+			staticContentInstance.handleRequest(request, response);
 		}
 	}
-	return response;
+	return;
 }
 
 bool Router::isDynamicRequest(const HTTPRequest &request)
@@ -113,7 +112,8 @@ bool Router::pathIsValid(HTTPRequest &request, std::string webRoot)
 	}
 	std::cout << "Host (after : trailing) :" << host << std::endl;
 	std::string path = request.getRequestTarget();
-	path = webRoot + path;
+	path = webRoot + "/" + host + path;
+	std::cout << std::endl << "Path: " << path << std::endl << std::endl;
 	std::cout << "Path: " << path << std::endl;
 	struct stat buffer;
 	if (stat(path.c_str(), &buffer) != 0)

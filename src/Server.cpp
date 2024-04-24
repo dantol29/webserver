@@ -119,6 +119,8 @@ void Server::handleConnection(Connection conn, size_t &i)
 	}
 	parser.parseRequestLine(parser.getHeadersBuffer().c_str(), request, response);
 	parser.parseHeaders(parser.getHeadersBuffer().c_str(), request, response);
+	std::string host = request.getHost();
+	std::cout << "\033[1;35mHost: " << host << "\033[0m" << std::endl;
 	if (parser.getIsChunked())
 	{
 		std::cout << "Chunked body" << std::endl;
@@ -157,13 +159,14 @@ void Server::handleConnection(Connection conn, size_t &i)
 		--i;
 		return;
 	}
+	host = request.getHost();
+	std::cout << "\033[1;35mHost: " << host << "\033[0m" << std::endl;
 
 	std::string responseString;
-	response = conn.getResponse();
 	std::cout << std::endl << "DEBUG" << std::endl;
 	std::cout << request.getRequestTarget() << std::endl;
 	Router router;
-	response = router.routeRequest(request);
+	router.routeRequest(request, response);
 	responseString = response.objToString();
 	std::cout << "\033[1;91mResponse: " << responseString << "\033[0m" << std::endl;
 	write(conn.getPollFd().fd, responseString.c_str(), responseString.size());

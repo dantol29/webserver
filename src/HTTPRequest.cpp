@@ -18,7 +18,7 @@ std::string HTTPRequest::getMethod() const
 // TODO: Check if "Host" should be written in lower case
 std::string HTTPRequest::getHost() const
 {
-	std::multimap<std::string, std::string>::const_iterator it = _headers.find("Host");
+	std::multimap<std::string, std::string>::const_iterator it = _headers.find("host");
 	if (it != _headers.end())
 	{
 		return it->second;

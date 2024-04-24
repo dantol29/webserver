@@ -39,16 +39,24 @@ std::string getMimeType(const std::string &filePath)
 		return "application/octet-stream"; // Default binary type
 }
 
-HTTPResponse StaticContentHandler::handleRequest(const HTTPRequest &request)
+bool isDirectory(const std::string &path)
 {
-	HTTPResponse response;
+	struct stat statbuf;
+	if (stat(path.c_str(), &statbuf) != 0)
+		return false;
+	return S_ISDIR(statbuf.st_mode);
+}
+
+void StaticContentHandler::handleRequest(const HTTPRequest &request, HTTPResponse &response)
+{
 	std::string requestTarget = request.getRequestTarget();
 	std::string webRoot = "var/www";
 	std::cout << "path : " << webRoot << std::endl;
+	std::string host = request.getHost();
+	std::string path = webRoot + "/" + host + requestTarget;
+	std::cout << std::endl << "path : " << path << std::endl << std::endl;
 	if (requestTarget == "/" || requestTarget == "")
 		requestTarget = "/index.html";
-	std::string path = webRoot + requestTarget;
-	std::ifstream file(path.c_str());
 	// if (request.getMethod() == "GET" && (request.getRequestTarget() == ""))
 	// {
 	// 	path += "index.html";
@@ -57,11 +65,25 @@ HTTPResponse StaticContentHandler::handleRequest(const HTTPRequest &request)
 	// else
 	// {
 	// TODO: consider streaming the file instead of loading it all in memory for large files
+	if (isDirectory(path))
+	{
+		path += "/index.html";
+	}
 	std::cout << "path : " << path << std::endl;
 	// std::ifstream file(path.c_str());
-	file.is_open();
+	std::ifstream file(path.c_str());
+	if (!file)
+	{
+		std::cerr << "Error opening file: " << path << std::endl;
+		// Set response for error scenario, e.g., 404 Not Found
+		response.setStatusCode(404);
+		response.setBody("404 Not Found");
+		return;
+	}
 
 	std::string body((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
+
+	// std::string body((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
 	std::cout << "body : " << body << std::endl;
 
 	// response.setStatusCode(200);
@@ -78,12 +100,11 @@ HTTPResponse StaticContentHandler::handleRequest(const HTTPRequest &request)
 	std::cout << "_body : " << response.getBody() << std::endl;
 	file.close();
 	// }
-	return response;
+	return;
 }
 
-HTTPResponse StaticContentHandler::handleNotFound(void)
+void StaticContentHandler::handleNotFound(HTTPResponse &response)
 {
-	HTTPResponse response;
 	std::ifstream file("var/www/errors/404.html");
 	std::stringstream buffer;
 	buffer << file.rdbuf();
@@ -93,5 +114,5 @@ HTTPResponse StaticContentHandler::handleNotFound(void)
 	response.setHeader("Content-Type", "text/html");
 	response.setHeader("Content-Length", toString(fileContents.length()));
 	response.setStatusCode(404);
-	return response;
+	return;
 }
