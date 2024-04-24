@@ -130,7 +130,7 @@ void sendData(const char *requests[], sockaddr_in serverAddress)
 			}
 		}
 		close(clientSockets[i]);
-		sleep(2);
+		sleep(1);
 		std::cout << "--------------------------------" << std::endl;
 	}
 }
