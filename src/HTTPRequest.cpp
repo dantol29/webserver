@@ -62,6 +62,16 @@ std::vector<std::string> HTTPRequest::getBody() const
 	return (_body);
 }
 
+std::string HTTPRequest::getUploadBoundary() const
+{
+	return (_uploadBoundary);
+}
+
+std::vector<File> HTTPRequest::getFiles() const
+{
+	return (_files);
+}
+
 void HTTPRequest::setMethod(std::string method)
 {
 	_method = method;
@@ -76,11 +86,6 @@ void HTTPRequest::setQueryString(const std::string &key, const std::string &valu
 {
 	_queryString.insert(std::make_pair(key, value));
 }
-
-// void HTTPRequest::setHeaders(const std::string &key, const std::string &value)
-// {
-// 	_headers.insert(std::make_pair(key, value));
-// }
 
 // This makes the key lowercase and then inserts the original key
 void HTTPRequest::setHeaders(const std::string &key, const std::string &value)
@@ -99,6 +104,21 @@ void HTTPRequest::setBody(const std::string &body)
 void HTTPRequest::setProtocolVersion(std::string protocolVersion)
 {
 	_protocolVersion = protocolVersion;
+}
+
+void HTTPRequest::setUploadBoundary(const std::string &boundary)
+{
+	_uploadBoundary = boundary;
+}
+
+void HTTPRequest::setFiles(struct File& file)
+{
+	_files.push_back(file);
+}
+
+void HTTPRequest::setFileContent(const std::vector<std::string>& content)
+{
+	_files.back().fileContent = content;
 }
 
 std::ostream &operator<<(std::ostream &out, const HTTPRequest &obj)

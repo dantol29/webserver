@@ -1,5 +1,5 @@
 #include "Parser.hpp"
-#include <iomanip>
+#include "webserv.hpp"
 
 Parser::Parser()
 {
@@ -34,8 +34,12 @@ void Parser::parseRequest(const char *request, HTTPRequest &req, HTTPResponse &r
 		parseRequestLine(request, req, res);
 		if (res.getStatusCode() == 0)
 			parseHeaders(request, req, res);
-		if (res.getStatusCode() == 0 && !_isChunked && req.getMethod() != "GET")
-			parseBody(request, req, res);
+		if (res.getStatusCode() == 0 && !_isChunked && req.getMethod() != "GET"){
+			if (req.getUploadBoundary().empty())
+				parseBody(request, req, res);
+			else
+				parseFileBody(request, req, res);
+		}
 	}
 }
 
@@ -138,6 +142,32 @@ void Parser::parseBody(const char *request, HTTPRequest &req, HTTPResponse &res)
 		return (res.setStatusCode(400, "Invalid body"));
 }
 
+// [--BOUNDARY][CRLF][HEADERS][CRLF][DATA][CRLF][--BOUNDARY--][CRLF][CRLF]
+void Parser::parseFileBody(const char *request, HTTPRequest &req, HTTPResponse &res)
+{
+	unsigned int i = 0;
+	unsigned int start = 0;
+	bool isFinish = false;
+
+	skipHeader(request, i);
+	start = i;
+	while (request[i])
+	{
+		if (start == i && !isUploadBoundary(request, req, i)) // [--BOUNDARY] [CRLF]
+			return (res.setStatusCode(400, "Invalid boundary in the file upload1"));
+		if (!saveFileHeaders(request, req, i)) // [HEADERS] [CRLF]
+			return (res.setStatusCode(400, "Invalid file upload headers"));
+		if (!saveFileData(request, req, i, isFinish)) // [DATA] [--BOUNDARY--]
+			return (res.setStatusCode(400, "Invalid file data"));
+		if (isFinish)
+			break ;
+	}
+	if (isFinish) // nothing after body // TODO: check CRLF and if there is nothing after body
+		return ;
+	return (res.setStatusCode(400, "Invalid file upload body"));
+}
+
+
 // // TODO: probably we will remove this. The parser will always get a chunk of a chunked body and not the whole chunked
 // // body, cause the 'core' will read only a chunk of the body at a time
 // void Parser::parseChunkedBody(const char *request, HTTPRequest &req, HTTPResponse &res)
@@ -178,12 +208,12 @@ void Parser::parseBody(const char *request, HTTPRequest &req, HTTPResponse &res)
 
 // ----------------UTILS----------------------------
 
-bool Parser::hasMandatoryHeaders(HTTPRequest &req)
+bool Parser::hasMandatoryHeaders(HTTPRequest& req)
 {
+	_isChunked = false;
 	int isHost = 0;
 	int isContentLength = 0;
 	int isContentType = 0;
-
 	std::multimap<std::string, std::string> headers = req.getHeaders();
 	std::multimap<std::string, std::string>::iterator it;
 
@@ -205,22 +235,117 @@ bool Parser::hasMandatoryHeaders(HTTPRequest &req)
 		{
 			if (!isValidContentType(it->second))
 				return (false);
+			if (it->second.substr(0, 30) == "multipart/form-data; boundary=")
+				req.setUploadBoundary(extractUploadBoundary(it->second));
 			isContentType++;
 		}
 		else if (it->first == "transfer-encoding")
 		{
 			if (it->second != "chunked")
 				return (false);
-			setIsChunked(true);
+			_isChunked = true;
 		}
 	}
-	// if (_isChunked && isContentLength)
+	// if (_isChunked && isContentLength > 0)
 	// 	return (false);
-	if (req.getMethod() == "POST" || req.getMethod() == "DELETE")
+	if (req.getMethod() == "POST" || req.getMethod()== "DELETE")
 		return (isHost == 1 && isContentLength == 1 && isContentType == 1);
 	else
 		return (isHost == 1);
 }
+
+// [KEY][:][SP][VALUE][;][SP][KEY][:][SP][VALUE][CRLF][CRLF]
+bool Parser::saveFileHeaders(const std::string& headers, HTTPRequest& req, unsigned int& i)
+{
+	struct File file;
+	std::string key;
+	std::string value;
+	unsigned int start = 0;
+
+	while (i < headers.length()){
+		start = i;
+		while (i < headers.length() && headers[i] != ':')
+			i++;
+		key = headers.substr(start, i - start); // [KEY]
+		if (headers[i++] != ':') // [:]
+			return (false);
+		if (headers[i++] != ' ') // [SP]
+			return (false);
+		start = i;
+		while (i < headers.length() && headers[i] != ';' && !hasCRLF(headers.c_str(), i, 0))
+			i++;
+		value = headers.substr(start, i - start); // [VALUE]
+		file.headers.insert(std::make_pair(key, value));
+		if (hasCRLF(headers.c_str(), i, 1)) // [CRLF] [CRLF]
+			break ;
+		if (headers[i] && headers[i++] != ';') // [;]
+			return (false);
+		if (headers[i] && headers[i++] != ' ') // [SP]
+			return (false);
+	}
+	if (!hasCRLF(headers.c_str(), i, 1)) // [CRLF] [CRLF]
+		return (false);
+	i += 4; // skip [CRLF] [CRLF]
+	req.setFiles(file);
+	return (true);
+}
+
+// [DATA][CRLF][DATA[CRLF][BOUNDARY]
+bool Parser::saveFileData(const std::string& data, HTTPRequest& req, unsigned int& i, bool& isFinish)
+{
+	std::vector<std::string> tmpArray;
+	unsigned int start = 0;
+
+	while (i < data.length()){
+		start = i;
+		while (i < data.length() && !hasCRLF(data.c_str(), i, 0))
+			i++;
+		if (!hasCRLF(data.c_str(), i, 0)) // [CRLF]
+			return (false);
+		if (data.substr(start, i - start) == "--" + req.getUploadBoundary() + "--"){ // [BOUNDARY--]
+			isFinish = true;
+			break ;
+		}
+		if (data.substr(start, i - start) == "--" + req.getUploadBoundary()) // [BOUNDARY]
+			break ;
+		tmpArray.push_back(data.substr(start, i - start)); // [DATA]
+		i += 2; // skip [CRLF]
+	}
+	req.setFileContent(tmpArray);
+	i += 2; // skip [CRLF]
+	return (true);
+}
+
+std::string Parser::extractUploadBoundary(std::string line)
+{
+	unsigned int start = 0;
+
+	for (unsigned int i = 0; i < line.length(); ++i){
+		if (line[i] == '='){
+			start = ++i;
+			while (i < line.length())
+				i++;
+			return (line.substr(start, i - start));
+		}
+	}
+	return ("");
+}
+
+bool Parser::isUploadBoundary(const std::string& data, HTTPRequest &req, unsigned int& i)
+{
+	unsigned int start = i;
+
+	while (i < data.length() && !hasCRLF(data.c_str(), i, 0))
+		i++;
+	if (!hasCRLF(data.c_str(), i, 0))
+		return (false);
+	if (data.substr(start, i - start) != "--" + req.getUploadBoundary()) // [BOUNDARY]
+		return (false);
+	i += 2; // [CRLF]
+	return (true);
+}
+
+
 
 bool Parser::saveVariables(std::string &variables, HTTPRequest &req)
 {
@@ -399,7 +524,8 @@ bool Parser::isOrigForm(std::string &requestTarget, int &queryStart)
 
 bool Parser::isValidContentType(std::string type)
 {
-	if (type == "text/plain" || type == "text/html")
+	if (type == "text/plain" || type == "text/html" || \
+	type.substr(0, 30) == "multipart/form-data; boundary=")
 		return (true);
 	return (false);
 }

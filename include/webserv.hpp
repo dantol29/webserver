@@ -5,6 +5,8 @@
 #include <sstream>
 #include <cstdlib>
 #include <cstring>
+#include <vector>
+#include <map>
 
 template <typename T>
 std::string toString(const T &value)
@@ -13,6 +15,13 @@ std::string toString(const T &value)
 	oss << value;
 	return oss.str();
 }
+
+// for file uploads
+struct File
+{
+	std::map<std::string, std::string> headers;
+	std::vector<std::string> fileContent;
+};
 
 bool startsWith(const std::string &fullString, const std::string &starting);
 std::string readHtml(const std::string &filePath);

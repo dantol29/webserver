@@ -23,11 +23,15 @@ class Parser
 	void parseRequestLine(const char *request, HTTPRequest &req, HTTPResponse &res);
 	void parseHeaders(const char *request, HTTPRequest &req, HTTPResponse &res);
 	void parseBody(const char *request, HTTPRequest &req, HTTPResponse &res);
-	
+	void parseFileBody(const char *request, HTTPRequest &req, HTTPResponse &res);
+
 	// UTILS
+	bool saveFileHeaders(const std::string& headers, HTTPRequest& req, unsigned int& i);
+	bool saveFileData(const std::string& data, HTTPRequest& req, unsigned int& i, bool& isFinish);
+	bool isUploadBoundary(const std::string& data, HTTPRequest &req, unsigned int& i);
+	std::string extractUploadBoundary(std::string line);
 	std::string extractVariables(std::string &requestTarget, bool &isOriginForm);
 	bool saveVariables(std::string &variables, HTTPRequest &req);
-	// void makeHeadersLowCase();
 	bool isValidHost(std::string host);
 	bool isValidContentType(std::string type);
 	bool isOrigForm(std::string &requestTarget, int &queryStart);
@@ -53,6 +57,5 @@ class Parser
 	bool _isChunked;
 	bool _isChunkFinish;
 };
-
 
 #endif
