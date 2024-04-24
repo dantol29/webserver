@@ -3,6 +3,7 @@
 StaticContentHandler::StaticContentHandler()
 {
 }
+
 StaticContentHandler::StaticContentHandler(const std::string &webRoot) : _webRoot(webRoot) {};
 
 StaticContentHandler::~StaticContentHandler()
@@ -51,31 +52,34 @@ void StaticContentHandler::handleRequest(const HTTPRequest &request, HTTPRespons
 {
 	std::string requestTarget = request.getRequestTarget();
 	std::string webRoot = "var/www";
-	std::cout << "path : " << webRoot << std::endl;
+	// std::cout << "path in handleRequest: " << webRoot << std::endl;
 	std::string host = request.getHost();
-	std::string path = webRoot + "/" + host + requestTarget;
+	// std::cout << "host in handleRequest: " << host << std::endl;
+
+	std::string path;
+
+	// for ease of use during deployment
+	// this if/else allows to reach target with tester or browser
+	if (host == "localhost:8080")
+		path = webRoot + requestTarget;
+	else
+		path = webRoot + "/" + host + requestTarget;
+
+	// std::string path = webRoot + "/" + host + requestTarget;
+
 	std::cout << std::endl << "path : " << path << std::endl << std::endl;
 	if (requestTarget == "/" || requestTarget == "")
 		requestTarget = "/index.html";
-	// if (request.getMethod() == "GET" && (request.getRequestTarget() == ""))
-	// {
-	// 	path += "index.html";
-	// 	std::cout << "                            new path : " << path << std::endl;
-	// }
-	// else
-	// {
 	// TODO: consider streaming the file instead of loading it all in memory for large files
 	if (isDirectory(path))
 	{
 		path += "/index.html";
 	}
 	std::cout << "path : " << path << std::endl;
-	// std::ifstream file(path.c_str());
 	std::ifstream file(path.c_str());
 	if (!file)
 	{
 		std::cerr << "Error opening file: " << path << std::endl;
-		// Set response for error scenario, e.g., 404 Not Found
 		response.setStatusCode(404);
 		response.setBody("404 Not Found");
 		return;
@@ -83,23 +87,19 @@ void StaticContentHandler::handleRequest(const HTTPRequest &request, HTTPRespons
 
 	std::string body((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
 
-	// std::string body((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
 	std::cout << "body : " << body << std::endl;
 
-	// response.setStatusCode(200);
+	response.setStatusCode(200);
 	response.setBody(body);
 	response.setHeader("Content-Type", getMimeType(path));
 	response.setHeader("Content-Length", toString(body.length()));
-	response.setStatusCode(200);
 	// TODO ADD MORE HEADER LINE
 	//  response.setHeader("Content-Length: ", std::to_string(body.length()));
 	//  response.setHeader("Connection: ", "close");
 	//  response.setHeader("Server: ", "webserv");
 
-	std::cout << std::endl;
-	std::cout << "_body : " << response.getBody() << std::endl;
+	// std::cout << "_body : " << response.getBody() << std::endl;
 	file.close();
-	// }
 	return;
 }
 

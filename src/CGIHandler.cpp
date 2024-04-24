@@ -11,9 +11,8 @@ CGIHandler::~CGIHandler()
 CGIHandler &CGIHandler::operator=(const CGIHandler &other)
 {
 	if (this != &other)
-	{										// Protect against self-assignment
-		AResponseHandler::operator=(other); // Call the base class assignment operator
-											// Copy or assign other members of CGIHandler if necessary
+	{
+		AResponseHandler::operator=(other);
 	}
 	return *this;
 }
@@ -23,43 +22,29 @@ void CGIHandler::handleRequest(const HTTPRequest &request, HTTPResponse &respons
 	CGIHandler cgiInstance;
 	MetaVariables env;
 	env.HTTPRequestToMetaVars(request, env);
-	std::cout << env;
+	// std::cout << env;
 	std::string cgiOutput = executeCGI(env);
-
-	// HTTPResponse response;
-	// response.setBody(cgiOutput);
-	// response.setIsCGI(true);
+	response.setIsCGI(true);
 	// std::cout << response;
-	return CGIStringToResponse(cgiOutput, response);
+	CGIStringToResponse(cgiOutput, response);
+	return;
 }
 
 void CGIHandler::createArgvForExecve(const MetaVariables &env, std::vector<char *> &argv)
 {
-	// variable.data
-	//		int ret = poll(_FDs.data(), _FDs.size(), -1);
-	std::cout << env;
-	// char **argv = new char *[2];
-
+	// std::cout << env;
 	std::string scriptName = env.getVar("SCRIPT_NAME");
 	std::string pathTranslated = env.getVar("PATH_TRANSLATED");
 	std::string scriptPath = pathTranslated + scriptName;
 
 	if (env.getVar("X_INTERPRETER_PATH") != "")
 	{
-		// argv[0] = new char[env.getVar("X_INTERPRETER_PATH").length() + 1];
 		std::string interpreterVar = env.getVar("X_INTERPRETER_PATH");
 		argv.push_back(const_cast<char *>(interpreterVar.c_str()));
-		// std::strcpy(argv[0], env.getVar("X_INTERPRETER_PATH").c_str());
-		// argv[1] = new char[scriptPath.length() + 1];
-		// std::strcpy(argv[1], scriptPath.c_str());
 		argv.push_back(const_cast<char *>(scriptPath.c_str()));
 	}
 	else
 	{
-		// argv[0] = new char[scriptPath.length() + 1];
-		// std::strcpy(argv[0], scriptPath.c_str());
-		// argv[1] = NULL;
-
 		argv.push_back(const_cast<char *>(scriptPath.c_str()));
 	}
 
@@ -129,11 +114,6 @@ std::string CGIHandler::executeCGI(const MetaVariables &env)
 		execve(argv[0], argv.data(), envp.data());
 
 		perror("execve");
-		// for (int i = 0; argv[i] != NULL; i++)
-		// {
-		// 	delete[] argv[i];
-		// }
-		// delete[] argv;
 		exit(EXIT_FAILURE); // TODO: check if _exit isn't better
 	}
 	else
@@ -151,22 +131,8 @@ std::string CGIHandler::executeCGI(const MetaVariables &env)
 
 		int status;
 		waitpid(pid, &status, 0);
-
-		// for (int i = 0; argv[i] != NULL; i++)
-		// {
-		// 	delete[] argv[i];
-		// }
-		// delete[] argv;
-
 		std::cout << "------------------CGI output prepared-------------------" << std::endl;
 		return cgiOutput;
 	}
-
-	// for (int i = 0; argv[i] != NULL; i++)
-	// {
-	// 	delete[] argv[i];
-	// }
-	// delete[] argv;
-
 	return cgiOutput;
 }

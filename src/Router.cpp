@@ -27,8 +27,7 @@ void Router::routeRequest(const HTTPRequest &request, HTTPResponse &response)
 		StaticContentHandler staticContentInstance;
 		if (!pathIsValid(const_cast<HTTPRequest &>(request), _webRoot))
 		{
-
-			std::cout << "Path does not exist" << std::endl;
+			std::cout << "Path is not valid, calling handleNotFound" << std::endl;
 			staticContentInstance.handleNotFound(response);
 		}
 		else
@@ -104,15 +103,22 @@ void Router::splitTarget(const std::string &target)
 bool Router::pathIsValid(HTTPRequest &request, std::string webRoot)
 {
 	std::string host = request.getHost();
-	std::cout << "Host: " << host << std::endl;
+	// std::cout << "Host in pathIsValid: " << host << std::endl;
 	size_t pos = host.find(":");
 	if (pos != std::string::npos)
 	{
 		host = host.substr(0, pos);
 	}
-	std::cout << "Host (after : trailing) :" << host << std::endl;
+	// std::cout << "Host in pathIsValid (after : trailing) :" << host << std::endl;
 	std::string path = request.getRequestTarget();
-	path = webRoot + "/" + host + path;
+
+	// for ease of use during deployment
+	// this if/else allows to reach target with tester or browser
+	if (host == "localhost")
+		path = webRoot + path;
+	else
+		path = webRoot + "/" + host + path;
+
 	std::cout << std::endl << "Path: " << path << std::endl << std::endl;
 	std::cout << "Path: " << path << std::endl;
 	struct stat buffer;
@@ -128,7 +134,7 @@ bool Router::pathIsValid(HTTPRequest &request, std::string webRoot)
 			path += "/";
 		}
 		path += "index.html";
-		std::cout << "Path: " << path << std::endl;
+		// std::cout << "Path: " << path << std::endl;
 		if (stat(path.c_str(), &buffer) != 0)
 		{
 			// TODO: decide if we should return a custom error for a directory without an index.html
