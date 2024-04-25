@@ -274,7 +274,42 @@ bool Parser::hasMandatoryHeaders(HTTPRequest& req)
 		return (isHost == 1);
 }
 
+// [KEY][=]["][VALUE][""][;][SP][KEY][=]["][VALUE][""][;]
+int Parser::fileHeaderParametrs(const std::string& headers, struct File& file, unsigned int i)
+{
+	std::string key;
+	std::string value;
+	unsigned int start = i;
+	unsigned int oldI = i;
+
+	while (i < headers.length())
+	{
+		if (headers[++i] == '=') // [=]
+		{
+			key = headers.substr(start, i - start); // [KEY]
+			std::cout << "\033[31m" << "Params Key: " << key << "\033[0m" << std::endl;
+			if (headers[++i] != '"') // ["] 
+				return (0);
+			start = ++i; // skip '"'
+			while (i < headers.length() && headers[i] != '"')
+				i++;
+			value = headers.substr(start, i - start); // [VALUE]
+			std::cout << "\033[31m" << "Params Value: " << value << "\033[0m" << std::endl;
+			if (headers[i++] != '"') // ["]
+				return (0);
+			file.headers.insert(std::make_pair(key, value));
+			if (headers[i] == ';') // [;] [SP]
+				i += 2;
+			else
+				return (i);
+			start = i;
+		}
+	}
+	return (oldI);
+}
+
 // [KEY][:][SP][VALUE][;][SP][KEY][:][SP][VALUE][CRLF][CRLF]
+// or [KEY][:][SP][VALUE][;][SP][KEY][=]["][VALUE][""][;]
 bool Parser::saveFileHeaders(const std::string& headers, HTTPRequest& req, unsigned int& i)
 {
 	struct File file;
@@ -282,7 +317,8 @@ bool Parser::saveFileHeaders(const std::string& headers, HTTPRequest& req, unsig
 	std::string value;
 	unsigned int start = 0;
 
-	while (i < headers.length()){
+	while (i < headers.length())
+	{
 		start = i;
 		while (i < headers.length() && headers[i] != ':')
 			i++;
@@ -295,13 +331,19 @@ bool Parser::saveFileHeaders(const std::string& headers, HTTPRequest& req, unsig
 		while (i < headers.length() && headers[i] != ';' && !hasCRLF(headers.c_str(), i, 0))
 			i++;
 		value = headers.substr(start, i - start); // [VALUE]
+		std::cout << "\033[31m" << value << "\033[0m" << std::endl;
 		file.headers.insert(std::make_pair(key, value));
 		if (hasCRLF(headers.c_str(), i, 1)) // [CRLF] [CRLF]
 			break ;
-		if (headers[i] && headers[i++] != ';') // [;]
+		if (headers[i++] != ';') // [;]
 			return (false);
-		if (headers[i] && headers[i++] != ' ') // [SP]
+		if (headers[i++] != ' ') // [SP]
 			return (false);
+		i = fileHeaderParametrs(headers, file, i);
+		if (i == 0)
+			return (false);
+		if (hasCRLF(headers.c_str(), i, 1)) // [CRLF] [CRLF]
+			break ;
 	}
 	if (!hasCRLF(headers.c_str(), i, 1)) // [CRLF] [CRLF]
 		return (false);

@@ -128,6 +128,7 @@ void Server::handleConnection(Connection conn, size_t &i)
 	}
 	parser.parseBody(parser.getBuffer().c_str(), request, response);
 	std::cout << "Reading and parsing complete\n\n" << std::endl;
+	std::cout << request << std::endl;
 
 
 	std::cout << "\033[1;91mRequest: " << response.getStatusCode() << "\033[0m" << std::endl;

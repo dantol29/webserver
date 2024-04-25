@@ -54,6 +54,7 @@ class Parser
 
 	// UTILS
 	bool saveFileHeaders(const std::string& headers, HTTPRequest& req, unsigned int& i);
+	int fileHeaderParametrs(const std::string& headers, struct File& file, unsigned int i);
 	bool saveFileData(const std::string& data, HTTPRequest& req, unsigned int& i, bool& isFinish);
 	bool isUploadBoundary(const std::string& data, HTTPRequest &req, unsigned int& i);
 	std::string extractUploadBoundary(std::string line);

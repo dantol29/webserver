@@ -18,11 +18,6 @@ HTTPResponse Router::routeRequest(const HTTPRequest &request)
 		CGIHandler cgiHandler;
 		return cgiHandler.handleRequest(request);
 	}
-	else if (isDynamicRequest(request))
-	{
-		std::cout << "\033[31mCGI is the only dynamic requests we handle at the moment\033[0m" << std::endl;
-		response.setStatusCode(501, "");
-	}
 	else // it is a static request
 	{
 		StaticContentHandler staticContentInstance;
@@ -37,6 +32,11 @@ HTTPResponse Router::routeRequest(const HTTPRequest &request)
 			return staticContentInstance.handleRequest(request);
 		}
 	}
+	// else if (isDynamicRequest(request))
+	// {
+	// 	std::cout << "\033[31mCGI is the only dynamic requests we handle at the moment\033[0m" << std::endl;
+	// 	response.setStatusCode(501, "");
+	// }
 	return response;
 }
 
