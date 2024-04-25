@@ -5,62 +5,31 @@
 
 Parser::Parser()
 {
-	// Fill me
 	_isChunked = false;
-	_isChunkFinish = false;
 	_headersComplete = false;
 	_bodyComplete = false;
 	_buffer = "";
-	_clientMaxHeadersSize = CLIENT_MAX_HEADERS_SIZE;
+	_headersBuffer = "";
 }
 
 Parser::~Parser()
 {
 }
 
-// Parser::Parser(const char *request)
-// {
-// 	_statusCode = 200;
-// 	if (strlen(request) < 10)
-// 		ft_error(400, "Invalid request-line");
-// 	else
-// 	{
-// 		parseRequestLine(request);
-// 		if (_statusCode == 200)
-// 			parseHeaders(request);
-// 		if (_statusCode == 200 && !_isChunked && _method != "GET")
-// 			parseBody(request);
-// 	}
-// }
-
-// FUNCTIONS FROM THE CORE PARSING FUNCTIONALITIES
 
 bool Parser::preParseHeaders(HTTPResponse &res)
 {
-	std::cout << "\nEntering preParseHeaders" << std::endl;
 	// We read the buffer with readSocket if headersComplete is not true and we write the buffer in the _headersBuffer
 	std::size_t headersEnd = _buffer.find("\r\n\r\n");
 	if (headersEnd != std::string::npos)
 	{
-		// std::string headers;
-		// headers = _buffer.substr(0, headersEnd);
-		// setHeadersBuffer(headers);
-		// setHeadersComplete(true);
 		_headersBuffer = _buffer.substr(0, headersEnd + 4);
 		_headersComplete = true;
 		_buffer = _buffer.substr(headersEnd + 4);
-		_bodyTotalBytesRead = _buffer.length();
-		std::cout << "Exiting preParseHeaders: true #1" << std::endl;
 		return (true);
 	}
-	_headersTotalBytesRead = _buffer.length();
-	if (_headersTotalBytesRead > _clientMaxHeadersSize)
-	{
-		std::cerr << "Headers too large" << std::endl;
-		res.setStatusCode(431);
-		return false;
-	}
-	std::cout << "Exiting preParseHeaders: true #2" << std::endl;
+	if (_buffer.length() > CLIENT_MAX_HEADERS_SIZE)
+		return (res.setStatusCode(431, "Headers too large"), false);
 	return true;
 }
 
@@ -78,16 +47,6 @@ std::string Parser::getBuffer() const
 std::string Parser::getHeadersBuffer() const
 {
 	return (_headersBuffer);
-}
-
-size_t Parser::getBodyTotalBytesRead() const
-{
-	return (_bodyTotalBytesRead);
-}
-
-size_t Parser::getHeadersTotalBytesRead() const
-{
-	return (_headersTotalBytesRead);
 }
 
 bool Parser::getBodyComplete() const
@@ -111,16 +70,6 @@ void Parser::setHeadersBuffer(std::string str)
 	_headersBuffer = str;
 }
 
-void Parser::setBodyTotalBytesRead(size_t value)
-{
-	_bodyTotalBytesRead = value;
-}
-
-void Parser::setHeadersTotalBytesRead(size_t value)
-{
-	_headersTotalBytesRead = value;
-}
-
 void Parser::setBodyComplete(bool value)
 {
 	_bodyComplete = value;
@@ -133,258 +82,158 @@ bool Parser::getIsChunked() const
 	return (_isChunked);
 }
 
-bool Parser::getIsChunkFinish() const
-{
-	return (_isChunkFinish);
-}
-
-// std::string HTTPRequest::getErrorMessage() const
-// {
-// 	return (_errorMessage);
-// }
-
 void Parser::setIsChunked(bool value)
 {
 	_isChunked = value;
 }
 
-// int HTTPRequest::ft_error(int statusCode, std::string message)
-// {
-// 	_errorMessage = message;
-// 	_statusCode = statusCode;
-// 	return (statusCode);
-// }
-
-void Parser::parseRequestLine(const char *request, HTTPRequest &req, HTTPResponse &res)
+void Parser::parseRequestLineAndHeaders(const char *request, HTTPRequest &req, HTTPResponse &res)
 {
-	std::cout << "\nEntering parseRequestLine" << std::endl;
-
-	unsigned int i = 0;
-	bool isOriginForm = false;
-	printStrWithNonPrintables(request, 0);
-
-	// TODO: check if strlen is the best C++ option
-
-	std::string method = extractMethod(request, i);
-	if (method.empty())
-	{
-		std::cerr << "Invalid request-line" << std::endl;
-		std::cerr << "method: " << method << std::endl;
-		// TODO: 501 or 400?
-		return (res.setStatusCode(501));
-	}
-	if (request[i++] != ' ')
-	{
-		std::cerr << "Invalid request-line" << std::endl;
-		return (res.setStatusCode(400));
-	}
-	std::cout << "method: " << method << std::endl;
-	req.setMethod(method);
-
-	std::string requestTarget = extractRequestTarget(request, i);
-	if (requestTarget.empty())
-	{
-		std::cerr << "Invalid request-target" << std::endl;
-		return (res.setStatusCode(414));
-	}
-	if (request[i++] != ' ')
-	{
-		std::cerr << "Invalid request-line" << std::endl;
-		return (res.setStatusCode(400));
-	}
-	req.setRequestTarget(requestTarget);
-
-	// TODO: which variables are we talking about?
-	std::string variables = extractVariables(requestTarget, isOriginForm);
-	if (variables.empty())
-		return (res.setStatusCode(400));
-	if (isOriginForm && !saveVariables(variables, req))
-		return (res.setStatusCode(400));
-
-	std::string protocolVersion = extractProtocolVersion(request, i);
-	if (protocolVersion.empty())
-		return (res.setStatusCode(400));
-	if (!hasCRLF(request, i, 0))
-		return (res.setStatusCode(400));
-	req.setProtocolVersion(protocolVersion);
-	std::cout << "Exiting parseRequestLine" << std::endl;
-}
-
-void Parser::parseRequest(const char *request, HTTPRequest &req, HTTPResponse &res)
-{
-	std::cout << "\nEntering parseRequest" << std::endl;
-	// We will work with a Response object with a status code of 0. If we encounter an error, we will set the status
-	// code to the appropriate value. The code 200 was checked in the constructor after the call of parseRequest. If
-	// the status code is not 200, we would have returned otherwise we would have proceed parsing the headers and after
-	// another similar check parsing the body. _statusCode = 200;
 	if (strlen(request) < 10)
-	{
-		std::cerr << "Invalid request-line" << std::endl;
-		return (res.setStatusCode(400));
-	}
+		return (res.setStatusCode(400, "Invalid request-line"));
 	else
 	{
 		parseRequestLine(request, req, res);
 		if (res.getStatusCode() == 0)
 			parseHeaders(request, req, res);
-		std::cout << "after res.getStatusCode() = " << res.getStatusCode() << std::endl;
-		if (res.getStatusCode() == 0 && !_isChunked && req.getMethod() != "GET")
-			parseBody(request, req, res);
 	}
-	std::cout << "Exiting parseRequest" << std::endl;
 }
-// TODO: probably we will remove this. The parser will always get a chunk of a chunked body and not the whole chunked
-// body, cause the 'core' will read only a chunk of the body at a time
-void Parser::parseChunkedBody(const char *request, HTTPRequest &req, HTTPResponse &res)
+
+void Parser::parseRequestLine(const char *request, HTTPRequest &req, HTTPResponse &res)
 {
-	unsigned int i = 0;
-	int size = 0;
-	std::string line;
 
-	skipHeader(request, i);
-	while (request[i])
-	{
-		size = extractLineLength(request, i);
-		if (size <= 0)
-		{
-			if (size == -1)
-			{
-				std::cerr << "Invalid chunk size" << std::endl;
-				return (res.setStatusCode(400));
-			}
-			break;
-		}
-		line = extractLine(request, i, size);
-		if (line.empty())
-		{
-			std::cerr << "Invalid chunk" << std::endl;
-			return (res.setStatusCode(400));
-		}
-		req.setBody(line);
-	}
+	unsigned int i = 0;
+	bool isOriginForm = false;
+
+	std::string method = extractMethod(request, i);
+	if (method.empty())
+		return (res.setStatusCode(501, "Invalid method"));
+	if (request[i++] != ' ')
+		return (res.setStatusCode(400, "Invalid request-line"));
+
+	std::string requestTarget = extractRequestTarget(request, i);
+	if (requestTarget.empty())
+		return (res.setStatusCode(414, "Invalid request-target"));
+	if (request[i++] != ' ')
+		return (res.setStatusCode(400, "Invalid request-line"));
+
+	std::string variables = extractVariables(requestTarget, isOriginForm);
+	if (variables.empty())
+		return (res.setStatusCode(400, "Invalid variables in request-line"));
+	if (isOriginForm && !saveVariables(variables, req))
+		return (res.setStatusCode(400, "Invalid variables in request-line"));
+
+	std::string protocolVersion = extractProtocolVersion(request, i);
+	if (protocolVersion.empty())
+		return (res.setStatusCode(400, "Invalid protocol version"));
 	if (!hasCRLF(request, i, 0))
-	{
-		std::cerr << "No CRLF after chunked body" << std::endl;
-		return (res.setStatusCode(400));
-	}
-	if (hasCRLF(request, i, 1))
-		_isChunkFinish = true;
+		return (res.setStatusCode(400, "No CRLF at the end of request-line"));
+
+	req.setMethod(method);
+	req.setRequestTarget(requestTarget);
+	req.setProtocolVersion(protocolVersion);
 }
 
+// [KEY][:][SP][VALUE][CRLF][KEY][:][SP][VALUE][CRLF][CRLF]
 void Parser::parseHeaders(const char *request, HTTPRequest &req, HTTPResponse &res)
 {
-	std::cout << "\nEntering parseHeaders" << std::endl;
-	unsigned int i;
+	unsigned int i = 0;
 	std::string key;
 	std::string value;
-	printStrWithNonPrintables(request, 0);
-	i = 0;
-	// TODO: check if we need to skip the request line in the new implementation
+
 	skipRequestLine(request, i);
 	while (request[i])
 	{
-		key = extractHeaderKey(request, i);
-		std::cout << "key: " << key << std::endl;
+		key = extractHeaderKey(request, i); // [KEY]
 		if (key.empty())
-		{
-			std::cerr << "Invalid header key" << std::endl;
-			return (res.setStatusCode(400));
-		}
-		i++; // skip ':'
-		if (request[i++] != ' ')
-		{
-			std::cerr << "Invalid header value" << std::endl;
-			return (res.setStatusCode(400));
-		}
-		value = extractHeaderValue(request, i);
-		std::cout << "value: " << value << std::endl;
+			return (res.setStatusCode(400, "Invalid header key"));
+		if (request[i++] != ':') // [:]
+			return (res.setStatusCode(400, "Invalid header key"));
+		if (request[i++] != ' ') // [SP]
+			return (res.setStatusCode(400, "Invalid header key"));
+
+		value = extractHeaderValue(request, i); // [VALUE]
 		if (value.empty())
-		{
-			std::cerr << "Invalid header value" << std::endl;
-			return (res.setStatusCode(400));
-		}
-		std::cout << "res.getStatusCode() = " << res.getStatusCode() << std::endl;
-		if (!hasCRLF(request, i, 0))
-		{
-			std::cerr << "No CRLF after header" << std::endl;
-			return (res.setStatusCode(400));
-		}
+			return (res.setStatusCode(400, "Invalid header value"));
+		if (!hasCRLF(request, i, 0)) // [CRLF]
+			return (res.setStatusCode(400, "No CRLF after header"));
+		i += 2; // skip [CRLF]
+
 		req.setHeaders(key, value);
-		i += 2;						// skip '\r' and '\n'
-		if (hasCRLF(request, i, 0)) // end of header section
+		if (hasCRLF(request, i, 0)) // end of header section ([CRLF][CRLF])
 			break;
 	}
 	if (!hasCRLF(request, i, 0))
-	{
-		std::cerr << "No CRLF after headers" << std::endl;
-		return (res.setStatusCode(400));
-	}
-	// TODO: can't we do them lower case in the setHeaders method?
-	// setHeaders is now dirctly lowercasing the key
-	// makeHeadersLowCase();
+		return (res.setStatusCode(400, "No CRLF after headers"));
 	if (!hasMandatoryHeaders(req))
-	{
-		std::cerr << "Invalid headers" << std::endl;
-		return (res.setStatusCode(400));
-	}
-	// TODO: body in a GET request is not explicitly forbidden
-	if (req.getMethod() == "GET" && request[i + 2]) // has something after headers
-	{
-		std::cerr << "GET request with body" << std::endl;
-		return (res.setStatusCode(400));
-	}
-	std::cout << "Exiting parseHeaders" << std::endl;
+		return (res.setStatusCode(400, "Invalid headers"));
 }
 
-// TODO: IMO this is pretty confusing
+// [LINE][CRLF][LINE][CRLF][CRLF]
 void Parser::parseBody(const char *request, HTTPRequest &req, HTTPResponse &res)
 {
-	unsigned int end = 400;
 	unsigned int i = 0;
 	unsigned int start = 0;
 	std::string stringRequest(request);
 	std::vector<std::string> body;
 
-	skipHeader(request, i);
+	if (!req.getUploadBoundary().empty())
+		return (parseFileBody(request, req, res));
 	start = i;
-	while (request[i] && end != 200)
+	while (request[i])
 	{
-		if (hasCRLF(request, i, 0))
+		if (hasCRLF(request, i, 0)) // [CRLF]
 		{
-			if (hasCRLF(request, i, 1))
-				end = 200;
-			// body.push_back(stringRequest.substr(start, i - start));
-			req.setBody(stringRequest.substr(start, i - start));
-			i += 2;
+			if (hasCRLF(request, i, 1)) // [CRLF][CRLF]
+				return (req.setBody(stringRequest.substr(start, i - start)));
+			req.setBody(stringRequest.substr(start, i - start)); // [LINE]
+			i += 2; // skip [CRLF]
 			start = i;
 			continue;
 		}
-		else if (!hasCRLF(request, i, 0) && request[i] == '\r')
-		{
-			std::cerr << "Invalid body" << std::endl;
-			return (res.setStatusCode(400));
-		}
 		i++;
 	}
-	if (end == 200 && hasCRLF(request, i, 0) && request[i + 2])
-	{
-		std::cerr << "Invalid body" << std::endl;
-		return (res.setStatusCode(400));
-	}
+	if (!hasCRLF(request, i, 1)) // [CRLF][CRLF]
+		return (res.setStatusCode(400, "Invalid body"));
 }
+
+// [--BOUNDARY][CRLF][HEADERS][CRLF][DATA][CRLF][--BOUNDARY--][CRLF][CRLF]
+void Parser::parseFileBody(const char *request, HTTPRequest &req, HTTPResponse &res)
+{
+	unsigned int i = 0;
+	unsigned int start = 0;
+	bool isFinish = false;
+
+	start = i;
+	while (request[i])
+	{
+		if (start == i && !isUploadBoundary(request, req, i)) // [--BOUNDARY] [CRLF]
+			return (res.setStatusCode(400, "Invalid boundary in the file upload1"));
+		if (!saveFileHeaders(request, req, i)) // [HEADERS] [CRLF]
+			return (res.setStatusCode(400, "Invalid file upload headers"));
+		if (!saveFileData(request, req, i, isFinish)) // [DATA] [--BOUNDARY--]
+			return (res.setStatusCode(400, "Invalid file data"));
+		if (isFinish)
+			return ;
+	}
+	return (res.setStatusCode(400, "Invalid file upload body"));
+}
+
+
+
+
 
 // ----------------UTILS----------------------------
 
-bool Parser::hasMandatoryHeaders(HTTPRequest &req)
-{
-	std::cout << "\nEntering hasMandatoryHeaders" << std::endl;
-	// int isHost = 0;
-	// int isContentLength = 0;
-	// int isContentType = 0;
-	bool isHost = false;
-	bool isContentLength = false;
-	bool isContentType = false;
 
+
+
+bool Parser::hasMandatoryHeaders(HTTPRequest& req)
+{
+	_isChunked = false;
+	int isHost = 0;
+	int isContentLength = 0;
+	int isContentType = 0;
 	std::multimap<std::string, std::string> headers = req.getHeaders();
 	std::multimap<std::string, std::string>::iterator it;
 
@@ -394,63 +243,127 @@ bool Parser::hasMandatoryHeaders(HTTPRequest &req)
 		{
 			if (!isValidHost(it->second))
 				return (false);
-			isHost = true;
-			// isHost++;
+			isHost++;
 		}
 		else if (it->first == "content-length")
 		{
-			std::cout << "checking content-length" << std::endl;
-			// if (!isNumber(it->second) || req.getMethod() != "POST")
 			if (!isNumber(it->second))
-			{
-				std::cerr << "Invalid content-length" << std::endl;
-				std::cerr << "it->second: " << it->second << std::endl;
 				return (false);
-			}
-			req.setHasContentLengthHeader(true);
-			// req.setContentLength(std::stoi(it->second));
-			std::istringstream iss(it->second);
-			int contentLength;
-
-			iss >> contentLength;
-			if (iss.fail())
-			{
-				std::cerr << "conversion failed" << std::endl;
-				return (false);
-			}
-			std::cout << "contentLength: " << contentLength << std::endl;
-			req.setContentLength(contentLength);
-			isContentLength = true;
-			// isContentLength++;
+			isContentLength++;
 		}
 		else if (it->first == "content-type")
 		{
-			std::cout << "checking content-type" << std::endl;
-			std::cout << "method: " << req.getMethod() << std::endl;
-			if (!isValidContentType(it->second) || req.getMethod() != "POST")
-			{
-				std::cerr << "Invalid content-type" << std::endl;
+			if (!isValidContentType(it->second))
 				return (false);
-			}
-			isContentType = true;
-			// isContentType++;
+			if (it->second.substr(0, 30) == "multipart/form-data; boundary=")
+				req.setUploadBoundary(extractUploadBoundary(it->second));
+			isContentType++;
 		}
 		else if (it->first == "transfer-encoding")
 		{
-			if (it->second != "chunked" || req.getMethod() != "POST")
+			if (it->second != "chunked")
 				return (false);
-			setIsChunked(true);
+			_isChunked = true;
 		}
 	}
-	if (_isChunked && isContentLength)
-		return (false);
-	if (req.getMethod() == "POST" || req.getMethod() == "DELETE")
-		return (isHost && isContentLength && isContentType);
-	// return (isHost == 1 && isContentLength == 1 && isContentType == 1);
+	if (req.getMethod() == "POST" || req.getMethod()== "DELETE")
+		return (isHost == 1 && isContentLength == 1 && isContentType == 1);
 	else
-		return (isHost);
-	// return (isHost == 1);
+		return (isHost == 1);
 }
+
+// [KEY][:][SP][VALUE][;][SP][KEY][:][SP][VALUE][CRLF][CRLF]
+bool Parser::saveFileHeaders(const std::string& headers, HTTPRequest& req, unsigned int& i)
+{
+	struct File file;
+	std::string key;
+	std::string value;
+	unsigned int start = 0;
+
+	while (i < headers.length()){
+		start = i;
+		while (i < headers.length() && headers[i] != ':')
+			i++;
+		key = headers.substr(start, i - start); // [KEY]
+		if (headers[i++] != ':') // [:]
+			return (false);
+		if (headers[i++] != ' ') // [SP]
+			return (false);
+		start = i;
+		while (i < headers.length() && headers[i] != ';' && !hasCRLF(headers.c_str(), i, 0))
+			i++;
+		value = headers.substr(start, i - start); // [VALUE]
+		file.headers.insert(std::make_pair(key, value));
+		if (hasCRLF(headers.c_str(), i, 1)) // [CRLF] [CRLF]
+			break ;
+		if (headers[i] && headers[i++] != ';') // [;]
+			return (false);
+		if (headers[i] && headers[i++] != ' ') // [SP]
+			return (false);
+	}
+	if (!hasCRLF(headers.c_str(), i, 1)) // [CRLF] [CRLF]
+		return (false);
+	i += 4; // skip [CRLF] [CRLF]
+	req.setFiles(file);
+	return (true);
+}
+
+// [DATA][CRLF][DATA[CRLF][BOUNDARY]
+bool Parser::saveFileData(const std::string& data, HTTPRequest& req, unsigned int& i, bool& isFinish)
+{
+	std::vector<std::string> tmpArray;
+	unsigned int start = 0;
+
+	while (i < data.length()){
+		start = i;
+		while (i < data.length() && !hasCRLF(data.c_str(), i, 0))
+			i++;
+		if (!hasCRLF(data.c_str(), i, 0)) // [CRLF]
+			return (false);
+		if (data.substr(start, i - start) == "--" + req.getUploadBoundary() + "--"){ // [BOUNDARY--]
+			isFinish = true;
+			break ;
+		}
+		if (data.substr(start, i - start) == "--" + req.getUploadBoundary()) // [BOUNDARY]
+			break ;
+		tmpArray.push_back(data.substr(start, i - start)); // [DATA]
+		i += 2; // skip [CRLF]
+	}
+	req.setFileContent(tmpArray);
+	i += 2; // skip [CRLF]
+	return (true);
+}
+
+std::string Parser::extractUploadBoundary(std::string line)
+{
+	unsigned int start = 0;
+
+	for (unsigned int i = 0; i < line.length(); ++i){
+		if (line[i] == '='){
+			start = ++i;
+			while (i < line.length())
+				i++;
+			return (line.substr(start, i - start));
+		}
+	}
+	return ("");
+}
+
+bool Parser::isUploadBoundary(const std::string& data, HTTPRequest &req, unsigned int& i)
+{
+	unsigned int start = i;
+
+	while (i < data.length() && !hasCRLF(data.c_str(), i, 0))
+		i++;
+	if (!hasCRLF(data.c_str(), i, 0))
+		return (false);
+	if (data.substr(start, i - start) != "--" + req.getUploadBoundary()) // [BOUNDARY]
+		return (false);
+	i += 2; // [CRLF]
+	return (true);
+}
+
+
 
 bool Parser::saveVariables(std::string &variables, HTTPRequest &req)
 {
@@ -527,7 +440,6 @@ std::string Parser::extractVariables(std::string &requestTarget, bool &isOriginF
 		return ("/");
 	isOriginForm = isOrigForm(requestTarget, queryStart);
 	if (isOriginForm)
-		// return (requestTarget.substr(queryStart + 1); // better version
 		return (requestTarget.substr(queryStart + 1, strlen(requestTarget.c_str()) - queryStart));
 	return (requestTarget);
 }
@@ -548,7 +460,6 @@ std::string Parser::extractProtocolVersion(const char *request, unsigned int &i)
 
 std::string Parser::extractMethod(const char *request, unsigned int &i)
 {
-	std::cout << "Entering extractMethod" << std::endl;
 	std::string method;
 	std::string string_request(request);
 
@@ -556,13 +467,7 @@ std::string Parser::extractMethod(const char *request, unsigned int &i)
 		i++;
 	method = string_request.substr(0, i);
 	if (method == "GET" || method == "POST" || method == "DELETE")
-	{
-		std::cout << "Exiting extractMethod with method: " << method << std::endl;
 		return (method);
-	}
-	std::cout << "Exiting extractMethod with "
-				 ""
-			  << std::endl;
 	return ("");
 }
 
@@ -637,14 +542,9 @@ bool Parser::isOrigForm(std::string &requestTarget, int &queryStart)
 
 bool Parser::isValidContentType(std::string type)
 {
-	std::cout << "Entering isValidContentType" << std::endl;
-	std::cout << "type: " << type << std::endl;
-	if (type == "text/plain" || type == "text/html")
-	{
-		std::cout << "Exiting isValidContentType: true!" << std::endl;
+	if (type == "text/plain" || type == "text/html" || \
+	type.substr(0, 30) == "multipart/form-data; boundary=")
 		return (true);
-	}
-	std::cout << "Exiting isValidContentType: false!" << std::endl;
 	return (false);
 }
 

@@ -17,57 +17,48 @@ class Parser
   public:
 	~Parser();
 	Parser();
-	void parseRequest(const char *request, HTTPRequest &req, HTTPResponse &res);
-	void parseHeaders(const char *request, HTTPRequest &req, HTTPResponse &res);
-	void parseRequestLine(const char *request, HTTPRequest &req, HTTPResponse &res);
-	// GETTERS FROM THE CORE PARSING FUNCTIONALITIES
 	bool preParseHeaders(HTTPResponse &res);
+	void parseRequestLineAndHeaders(const char *request, HTTPRequest &req, HTTPResponse &res);
+	void parseBody(const char *request, HTTPRequest &req, HTTPResponse &res);
+	
+	// GETTERS FROM THE CORE PARSING FUNCTIONALITIES
 	bool getHeadersComplete() const;
 	std::string getBuffer() const;
 	std::string getHeadersBuffer() const;
-	size_t getBodyTotalBytesRead() const;
-	size_t getHeadersTotalBytesRead() const;
 	bool getBodyComplete() const;
 
 	// SETTERS FROM THE CORE PARSING FUNCTIONALITIES
 	void setHeadersComplete(bool value);
 	void setBuffer(std::string str);
 	void setHeadersBuffer(std::string str);
-	void setBodyTotalBytesRead(size_t value);
-	void setHeadersTotalBytesRead(size_t value);
 	void setBodyComplete(bool value);
 
+	// CHUNKED REQUEST
 	bool getIsChunked() const;
-	bool getIsChunkFinish() const;
+	void setIsChunked(bool value);
 
   private:
-	// CHUNKED REQUESTS
-	void setIsChunked(bool a);
-	// Is this function necessary? I think we don't use it
-	void parseChunkedBody(const char *request, HTTPRequest &req, HTTPResponse &res);
-
-	void parseBody(const char *request, HTTPRequest &req, HTTPResponse &res);
-	int ft_error(int statusCode, std::string message);
-
-	// VARIABLES
-	bool _isChunked;
-	bool _isChunkFinish;
-
 	// VARIABLES FROM THE CORE PARSING FUNCTIONALITY
 	std::string _buffer;
-	// we could also eventually use the _headers from the HTTPRequest class, but it's a multimap
 	std::string _headersBuffer;
 	bool _headersComplete;
 	bool _bodyComplete;
-	// ATM not using it. in readBody we just read the size of the _buffer that at the moemnt is the body
-	size_t _bodyTotalBytesRead;
-	size_t _headersTotalBytesRead;
-	size_t _clientMaxHeadersSize;
+
+	// CHUNKED REQUEST
+	bool _isChunked;
+
+	// PARSING INTERNAL FUNC
+	void parseRequestLine(const char *request, HTTPRequest &req, HTTPResponse &res);
+	void parseHeaders(const char *request, HTTPRequest &req, HTTPResponse &res);
+	void parseFileBody(const char *request, HTTPRequest &req, HTTPResponse &res);
 
 	// UTILS
+	bool saveFileHeaders(const std::string& headers, HTTPRequest& req, unsigned int& i);
+	bool saveFileData(const std::string& data, HTTPRequest& req, unsigned int& i, bool& isFinish);
+	bool isUploadBoundary(const std::string& data, HTTPRequest &req, unsigned int& i);
+	std::string extractUploadBoundary(std::string line);
 	std::string extractVariables(std::string &requestTarget, bool &isOriginForm);
 	bool saveVariables(std::string &variables, HTTPRequest &req);
-	// void makeHeadersLowCase();
 	bool isValidHost(std::string host);
 	bool isValidContentType(std::string type);
 	bool isOrigForm(std::string &requestTarget, int &queryStart);

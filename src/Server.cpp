@@ -99,50 +99,36 @@ void Server::handleConnection(Connection conn, size_t &i)
 	if (!parser.getHeadersComplete())
 	{
 		if (!conn.readSocket(parser))
-		{
-			std::cout << "Error reading headers" << std::endl;
-			closeClientConnection(conn, i);
-			return;
-		}
+			return (std::cout << "Error reading headers" << std::endl, closeClientConnection(conn, i));
 		if (!parser.preParseHeaders(response))
 		{
-			std::cout << "Error pre-parsing headers" << std::endl;
 			send(conn.getPollFd().fd, response.objToString().c_str(), response.objToString().size(), 0);
-			closeClientConnection(conn, i);
-			return;
+			return (std::cout << "Error pre-parsing headers" << std::endl, closeClientConnection(conn, i));
 		}
 	}
 	if (!parser.getHeadersComplete())
 	{
 		std::cout << "Headers incomplete, exiting handleConnection." << std::endl;
-		return;
+		return ;
 	}
-	parser.parseRequestLine(parser.getHeadersBuffer().c_str(), request, response);
-	parser.parseHeaders(parser.getHeadersBuffer().c_str(), request, response);
+	parser.parseRequestLineAndHeaders(parser.getHeadersBuffer().c_str(), request, response);
+	if (response.getStatusCode() != 0)
+		std::cout << "Error: " <<  response.getStatusCode() << std::endl;
 	if (parser.getIsChunked())
 	{
 		std::cout << "Chunked body" << std::endl;
 		if (!conn.readChunkedBody(parser))
-		{
-			closeClientConnection(conn, i);
-			return;
-		}
+			return (closeClientConnection(conn, i));
 	}
 	else
 	{
 		std::cout << "Regular body" << std::endl;
 		if (!conn.readBody(parser, request, response))
-		{
-			std::cout << "Error reading body" << std::endl;
-			closeClientConnection(conn, i);
-			return;
-		}
+			return (std::cout << "Error reading body" << std::endl, closeClientConnection(conn, i));
 	}
+	parser.parseBody(parser.getBuffer().c_str(), request, response);
 	std::cout << "Reading and parsing complete\n\n" << std::endl;
 
-	std::string httpRequestString = parser.getHeadersBuffer() + parser.getBuffer();
-	printStrWithNonPrintables(httpRequestString, 0);
-	parser.parseRequest(httpRequestString.c_str(), request, response);
 
 	std::cout << "\033[1;91mRequest: " << response.getStatusCode() << "\033[0m" << std::endl;
 	if (response.getStatusCode() != 0)

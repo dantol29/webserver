@@ -178,14 +178,13 @@ bool Connection::readChunk(size_t chunkSize, std::string &chunkData, HTTPRespons
 		{
 			perror("recv failed in readChunk");
 			// Internal Server Error
-			response.setStatusCode(500);
+			response.setStatusCode(500, "");
 			return false;
 		}
 		else
 		{
 			// bytes read == 0, connection closed prematurely
-			std::cout << "Connection closed while reading chunk" << std::endl;
-			response.setStatusCode(400); // Bad Request
+			response.setStatusCode(400, "Connection closed while reading chunk"); // Bad Request
 			return false;
 		}
 	}
@@ -193,8 +192,7 @@ bool Connection::readChunk(size_t chunkSize, std::string &chunkData, HTTPRespons
 	ssize_t crlfRead = recv(_pollFd.fd, crlf, 2, 0);
 	if (crlfRead < 2)
 	{
-		std::cout << "Connection closed while reading CRLF" << std::endl;
-		response.setStatusCode(400); // Bad Request
+		response.setStatusCode(400, "Connection closed while reading CRLF"); // Bad Request
 		return false;
 	}
 	return true;
@@ -204,9 +202,6 @@ bool Connection::readBody(Parser &parser, HTTPRequest &req, HTTPResponse &res)
 {
 	std::cout << "\nEntering readBody" << std::endl;
 	size_t contentLength = req.getContentLength();
-	// size_t contentLength = getContentLength(parser.getHeadersBuffer());
-	// std::cout << "Content-Length: " << contentLength << std::endl;
-	std::cout << "Content-Length: " << contentLength << std::endl;
 	char buffer[BUFFER_SIZE];
 	// We could also use _bodyTotalBytesRead from the parser
 	size_t bytesRead = parser.getBuffer().size();
@@ -231,14 +226,13 @@ bool Connection::readBody(Parser &parser, HTTPRequest &req, HTTPResponse &res)
 		else if (read < 0)
 		{
 			perror("recv failed");
-			res.setStatusCode(500); // Internal Server Error
+			res.setStatusCode(500, ""); // Internal Server Error
 			return false;
 		}
 		else
 		{
 			std::cout << "read == 0" << std::endl;
-			std::cout << "Connection closed by the client" << std::endl;
-			res.setStatusCode(499); // Client Closed Request
+			res.setStatusCode(499, "Connection closed by the client"); // Client Closed Request
 			return false;
 		}
 	}
