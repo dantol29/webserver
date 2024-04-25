@@ -177,6 +177,8 @@ void Parser::parseBody(const char *request, HTTPRequest &req, HTTPResponse &res)
 	std::string stringRequest(request);
 	std::vector<std::string> body;
 
+	if (req.getMethod() == "GET")
+		return ;
 	if (!req.getUploadBoundary().empty())
 		return (parseFileBody(request, req, res));
 	start = i;
