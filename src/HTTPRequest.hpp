@@ -22,7 +22,7 @@ class HTTPRequest
 	std::multimap<std::string, std::string> getHeaders() const;
 	std::pair<std::string, std::string> getSingleHeader(std::string key) const;
 	std::vector<std::string> getBody() const;
-	std::vector<File> getFiles() const;
+	std::vector<struct File> getFiles() const;
 
 	// SETTERS
 	void setMethod(std::string method);

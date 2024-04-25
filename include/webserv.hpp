@@ -6,6 +6,8 @@
 #include <cstdlib>
 #include <cstring>
 #include <iostream>
+#include <map>
+#include <vector>
 
 template <typename T>
 std::string toString(const T &value)
