@@ -109,27 +109,30 @@ void Server::handleConnection(Connection conn, size_t &i)
 	if (!parser.getHeadersComplete())
 	{
 		std::cout << "Headers incomplete, exiting handleConnection." << std::endl;
-		return ;
+		return;
 	}
 	parser.parseRequestLineAndHeaders(parser.getHeadersBuffer().c_str(), request, response);
 	if (response.getStatusCode() != 0)
-		std::cout << "Error: " <<  response.getStatusCode() << std::endl;
-	if (parser.getIsChunked())
-	{
-		std::cout << "Chunked body" << std::endl;
-		if (!conn.readChunkedBody(parser))
-			return (closeClientConnection(conn, i));
-	}
+		std::cout << "Error: " << response.getStatusCode() << std::endl;
 	else
 	{
-		std::cout << "Regular body" << std::endl;
-		if (!conn.readBody(parser, request, response))
-			return (std::cout << "Error reading body" << std::endl, closeClientConnection(conn, i));
-	}
-	parser.parseBody(parser.getBuffer().c_str(), request, response);
-	std::cout << "Reading and parsing complete\n\n" << std::endl;
-	std::cout << request << std::endl;
 
+		if (parser.getIsChunked())
+		{
+			std::cout << "Chunked body" << std::endl;
+			if (!conn.readChunkedBody(parser))
+				return (closeClientConnection(conn, i));
+		}
+		else
+		{
+			std::cout << "Regular body" << std::endl;
+			if (!conn.readBody(parser, request, response))
+				return (std::cout << "Error reading body" << std::endl, closeClientConnection(conn, i));
+		}
+		parser.parseBody(parser.getBuffer().c_str(), request, response);
+		std::cout << "Reading and parsing complete\n\n" << std::endl;
+		std::cout << request << std::endl;
+	}
 
 	std::cout << "\033[1;91mRequest: " << response.getStatusCode() << "\033[0m" << std::endl;
 	if (response.getStatusCode() != 0)
