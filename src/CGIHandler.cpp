@@ -123,6 +123,10 @@ std::string CGIHandler::executeCGI(const MetaVariables &env)
 		close(pipeFD[1]);
 
 		// iterate through the list and close all sockets
+		for (std::vector<struct pollfd>::iterator it = _FDsRef->begin(); it != _FDsRef->end(); ++it)
+		{
+			close(it->fd);
+		}
 
 		std::vector<char *> envp = env.getForExecve();
 		execve(argv[0], argv, envp.data());

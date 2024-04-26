@@ -9,6 +9,7 @@
 #include <fcntl.h>
 #include <vector>
 #include <cstring>
+#include <poll.h>
 
 class CGIHandler : public AResponseHandler
 {
