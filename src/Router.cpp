@@ -146,3 +146,13 @@ bool Router::pathIsValid(HTTPRequest &request, std::string webRoot)
 	std::cout << "Path is an accesible and readable file" << std::endl;
 	return true;
 }
+
+void Router::setFDsRef(std::vector<struct pollfd> *FDsRef)
+{
+	_FDsRef = FDsRef;
+}
+
+std::vector<struct pollfd> *Router::getFDsRef()
+{
+	return _FDsRef;
+}

@@ -23,6 +23,8 @@ class Router
 	void splitTarget(const std::string &target);
 	bool isDynamicRequest(const HTTPRequest &request);
 	bool pathIsValid(HTTPRequest &request, std::string webRoot);
+	void setFDsRef(std::vector<struct pollfd> *FDsRef);
+	std::vector<struct pollfd> *getFDsRef();
 
   private:
 	Router(const Router &other);
@@ -30,6 +32,7 @@ class Router
 	StaticContentHandler _staticContentHandler;
 	CGIHandler _cgiHandler;
 	std::vector<struct pollfd> *_FDsRef; // Pointer to store reference to server's _FDs vector
+	std::vector<pollfd> *_FDsRef;		 // Change this line
 
 	std::string getFileExtension(const std::string &fileName);
 	bool isCGI(const HTTPRequest &request);
