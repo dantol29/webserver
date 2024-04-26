@@ -25,8 +25,8 @@ void CGIHandler::handleRequest(const HTTPRequest &request, HTTPResponse &respons
 	// std::cout << env;
 	std::string cgiOutput = executeCGI(env);
 	response.setIsCGI(true);
-	// std::cout << response;
 	CGIStringToResponse(cgiOutput, response);
+	// std::cout << response;
 	return;
 }
 
@@ -60,7 +60,7 @@ void CGIHandler::CGIStringToResponse(const std::string &cgiOutput, HTTPResponse 
 	}
 
 	std::string headersPart = cgiOutput.substr(0, headerEndPos);
-	std::string bodyPart = cgiOutput.substr(headerEndPos); // separatorCGIStringToResponse
+	std::string bodyPart = cgiOutput.substr(headerEndPos);
 	std::istringstream headerStream(headersPart);
 	std::string headerLine;
 	while (std::getline(headerStream, headerLine))
