@@ -98,6 +98,17 @@ HTTPResponse CGIHandler::CGIStringToResponse(const std::string &cgiOutput)
 	return response;
 }
 
+void CGIHandler::closeAllSocketFDs()
+{
+	for (std::vector<struct pollfd>::iterator it = _FDsRef->begin(); it != _FDsRef->end(); ++it)
+	{
+		if (it->fd != _pollFd->fd)
+		{
+			close(it->fd);
+		}
+	}
+}
+
 std::string CGIHandler::executeCGI(const MetaVariables &env)
 {
 	std::string cgiOutput = "";
@@ -122,16 +133,7 @@ std::string CGIHandler::executeCGI(const MetaVariables &env)
 		dup2(pipeFD[1], STDOUT_FILENO);
 		close(pipeFD[1]);
 
-		// iterate through the list and close all sockets
-
-		int currentSocketFd = _pollFd->fd; // keep the server socket open
-		for (std::vector<struct pollfd>::iterator it = _FDsRef->begin(); it != _FDsRef->end(); ++it)
-		{
-			if (it->fd != currentSocketFd)
-			{
-				close(it->fd);
-			}
-		}
+		closeAllSocketFDs();
 
 		std::vector<char *> envp = env.getForExecve();
 		execve(argv[0], argv, envp.data());

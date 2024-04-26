@@ -28,6 +28,7 @@ class CGIHandler : public AResponseHandler
   private:
 	CGIHandler(const CGIHandler &other);
 	CGIHandler &operator=(const CGIHandler &other);
+	void closeAllSocketFDs();
 	std::vector<pollfd> *_FDsRef;
 	struct pollfd *_pollFd;
 };
