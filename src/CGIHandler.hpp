@@ -21,9 +21,7 @@ class CGIHandler : public AResponseHandler
 	std::string executeCGI(const MetaVariables &env);
 	HTTPResponse CGIStringToResponse(const std::string &cgiOutput);
 	void setFDsRef(std::vector<struct pollfd> *FDsRef);
-	std::vector<struct pollfd> *getFDsRef();
 	void setPollFd(struct pollfd *pollFd);
-	struct pollfd *getPollFd();
 
   private:
 	CGIHandler(const CGIHandler &other);

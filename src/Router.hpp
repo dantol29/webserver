@@ -24,9 +24,7 @@ class Router
 	bool isDynamicRequest(const HTTPRequest &request);
 	bool pathIsValid(HTTPRequest &request, std::string webRoot);
 	void setFDsRef(std::vector<struct pollfd> *FDsRef);
-	std::vector<struct pollfd> *getFDsRef();
 	void setPollFd(struct pollfd *pollFd);
-	struct pollfd *getPollFd();
 
   private:
 	Router(const Router &other);

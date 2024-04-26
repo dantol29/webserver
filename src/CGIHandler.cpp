@@ -186,17 +186,7 @@ void CGIHandler::setFDsRef(std::vector<struct pollfd> *FDsRef)
 	_FDsRef = FDsRef;
 }
 
-std::vector<struct pollfd> *CGIHandler::getFDsRef()
-{
-	return _FDsRef;
-}
-
 void CGIHandler::setPollFd(struct pollfd *pollFd)
 {
 	_pollFd = pollFd;
-}
-
-struct pollfd *CGIHandler::getPollFd()
-{
-	return _pollFd;
 }
