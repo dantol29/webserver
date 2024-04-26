@@ -1,5 +1,6 @@
 #include "Server.hpp"
 #include "Parser.hpp"
+#include "Connection.hpp"
 
 // Default constructor
 Server::Server()
@@ -64,7 +65,11 @@ void Server::startPollEventLoop()
 						// std::cout << "i != 0" << std::endl;
 						// TODO: only the index is actually needed
 						// handleConnection(_connections[i]);
-						handleConnection(_connections[i], i);
+						handleConnection(_connections[i],
+										 i,
+										 _connections[i].getParser(),
+										 _connections[i].getRequest(),
+										 _connections[i].getResponse());
 						// printFDsVector(_FDs);
 						// print_connectionsVector(_connections);
 						// _FDs.erase(_FDs.begin() + i);
@@ -89,12 +94,14 @@ void Server::startPollEventLoop()
 	}
 }
 
-void Server::handleConnection(Connection conn, size_t &i)
+void Server::handleConnection(Connection &conn, size_t &i, Parser &parser, HTTPRequest &request, HTTPResponse &response)
 {
-	Parser parser;
-	HTTPRequest request;
-	HTTPResponse response;
 	conn.printConnection();
+
+	// Make it light blue
+	std::cout << "\033[1;36m";
+	std::cout << "Entering handleConnection" << std::endl;
+	std::cout << "\033[0m";
 
 	if (!parser.getHeadersComplete())
 	{
@@ -111,7 +118,8 @@ void Server::handleConnection(Connection conn, size_t &i)
 		std::cout << "Headers incomplete, exiting handleConnection." << std::endl;
 		return;
 	}
-	parser.parseRequestLineAndHeaders(parser.getHeadersBuffer().c_str(), request, response);
+	if (parser.getHeadersComplete() && !parser.getHeadersAreParsed())
+		parser.parseRequestLineAndHeaders(parser.getHeadersBuffer().c_str(), request, response);
 	if (response.getStatusCode() != 0)
 		std::cout << "Error: " << response.getStatusCode() << std::endl;
 	else
@@ -125,9 +133,22 @@ void Server::handleConnection(Connection conn, size_t &i)
 		}
 		else
 		{
+			std::cout << "\033[1;33m";
 			std::cout << "Regular body" << std::endl;
-			if (!conn.readBody(parser, request, response))
+			std::cout << "\033[0m";
+			if (parser.getBuffer().size() == request.getContentLength())
+				parser.setBodyComplete(true);
+			else if (request.getMethod() == "GET")
+				std::cout << "GET request, no body to read" << std::endl;
+			else if (!conn.readBody(parser, request, response))
+			{
 				return (std::cout << "Error reading body" << std::endl, closeClientConnection(conn, i));
+			}
+		}
+		if (request.getMethod() != "GET" && !parser.getBodyComplete())
+		{
+			std::cout << "Body still incomplete, exiting handleConnection." << std::endl;
+			return;
 		}
 		if (!request.getUploadBoundary().empty())
 			parser.parseFileBody(parser.getBuffer().c_str(), request, response);

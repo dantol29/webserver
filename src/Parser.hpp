@@ -20,12 +20,13 @@ class Parser
 	bool preParseHeaders(HTTPResponse &res);
 	void parseRequestLineAndHeaders(const char *request, HTTPRequest &req, HTTPResponse &res);
 	void parseFileBody(const char *request, HTTPRequest &req, HTTPResponse &res);
-	
+
 	// GETTERS FROM THE CORE PARSING FUNCTIONALITIES
 	bool getHeadersComplete() const;
 	std::string getBuffer() const;
 	std::string getHeadersBuffer() const;
 	bool getBodyComplete() const;
+	bool getHeadersAreParsed() const;
 
 	// SETTERS FROM THE CORE PARSING FUNCTIONALITIES
 	void setHeadersComplete(bool value);
@@ -43,6 +44,7 @@ class Parser
 	std::string _headersBuffer;
 	bool _headersComplete;
 	bool _bodyComplete;
+	bool _headersAreParsed;
 
 	// CHUNKED REQUEST
 	bool _isChunked;
@@ -52,10 +54,10 @@ class Parser
 	void parseHeaders(const char *request, HTTPRequest &req, HTTPResponse &res);
 
 	// UTILS
-	bool saveFileHeaders(const std::string& headers, HTTPRequest& req, unsigned int& i);
-	int fileHeaderParametrs(const std::string& headers, struct File& file, unsigned int i);
-	bool saveFileData(const std::string& data, HTTPRequest& req, unsigned int& i, bool& isFinish);
-	bool isUploadBoundary(const std::string& data, HTTPRequest &req, unsigned int& i);
+	bool saveFileHeaders(const std::string &headers, HTTPRequest &req, unsigned int &i);
+	int fileHeaderParametrs(const std::string &headers, struct File &file, unsigned int i);
+	bool saveFileData(const std::string &data, HTTPRequest &req, unsigned int &i, bool &isFinish);
+	bool isUploadBoundary(const std::string &data, HTTPRequest &req, unsigned int &i);
 	std::string extractUploadBoundary(std::string line);
 	std::string extractVariables(std::string &requestTarget, bool &isOriginForm);
 	bool saveVariables(std::string &variables, HTTPRequest &req);

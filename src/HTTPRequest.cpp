@@ -24,9 +24,12 @@ std::string HTTPRequest::getHost() const
 
 size_t HTTPRequest::getContentLength() const
 {
+	std::cout << "Content-Length: " << std::endl;
+	std::cout << *this << std::endl;
 	std::multimap<std::string, std::string>::const_iterator it = _headers.find("content-length");
+	std::cout << "Content-Length: " << it->second << std::endl;
 	if (it != _headers.end())
-		return hexToInt(it->second);
+		return strToInt(it->second);
 	return 0;
 }
 
@@ -116,12 +119,12 @@ void HTTPRequest::setUploadBoundary(const std::string &boundary)
 	_uploadBoundary = boundary;
 }
 
-void HTTPRequest::setFiles(struct File& file)
+void HTTPRequest::setFiles(struct File &file)
 {
 	_files.push_back(file);
 }
 
-void HTTPRequest::setFileContent(const std::vector<std::string>& content)
+void HTTPRequest::setFileContent(const std::vector<std::string> &content)
 {
 	_files.back().fileContent = content;
 }
@@ -143,20 +146,19 @@ std::ostream &operator<<(std::ostream &out, const HTTPRequest &obj)
 	for (it = headers.begin(); it != headers.end(); it++)
 		out << "Key: " << it->first << ", Value: " << it->second << std::endl;
 	out << "---------------------End--------------------------" << std::endl;
-	
+
 	out << "---------------------Body-------------------------" << std::endl;
 	std::cout << body << std::endl;
 	out << "---------------------End--------------------------" << std::endl;
-
 
 	out << "---------------------File-Upload------------------" << std::endl;
 
 	for (std::vector<File>::iterator it = files.begin(); it != files.end(); ++it)
 	{
-    	for (std::map<std::string, std::string>::iterator it2 = it->headers.begin(); it2 != it->headers.end(); ++it2)
-        	std::cout << "Key: " << it2->first << ", Value: " << it2->second << std::endl;
-    	for (std::vector<std::string>::iterator it3 = it->fileContent.begin(); it3 != it->fileContent.end(); ++it3)
-        	std::cout << "Data: " << *it3 << std::endl;
+		for (std::map<std::string, std::string>::iterator it2 = it->headers.begin(); it2 != it->headers.end(); ++it2)
+			std::cout << "Key: " << it2->first << ", Value: " << it2->second << std::endl;
+		for (std::vector<std::string>::iterator it3 = it->fileContent.begin(); it3 != it->fileContent.end(); ++it3)
+			std::cout << "Data: " << *it3 << std::endl;
 	}
 	out << "---------------------End--------------------------" << std::endl;
 	return (out);

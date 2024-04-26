@@ -150,3 +150,17 @@ bool isInvalidChar(const unsigned char &c)
 		return (true);
 	return (false);
 }
+
+int strToInt(const std::string &str)
+{
+	std::istringstream iss(str);
+	int num;
+	iss >> num;
+
+	if (iss.fail() || !iss.eof())
+	{
+		std::cerr << "Invalid input: conversion failed." << std::endl;
+		return -1;
+	}
+	return num;
+}

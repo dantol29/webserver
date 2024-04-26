@@ -8,6 +8,7 @@ Parser::Parser()
 	_isChunked = false;
 	_headersComplete = false;
 	_bodyComplete = false;
+	_headersAreParsed = false;
 	_buffer = "";
 	_headersBuffer = "";
 }
@@ -16,7 +17,6 @@ Parser::~Parser()
 {
 }
 
-
 bool Parser::preParseHeaders(HTTPResponse &res)
 {
 	// We read the buffer with readSocket if headersComplete is not true and we write the buffer in the _headersBuffer
@@ -24,8 +24,16 @@ bool Parser::preParseHeaders(HTTPResponse &res)
 	if (headersEnd != std::string::npos)
 	{
 		_headersBuffer = _buffer.substr(0, headersEnd + 4);
+		std::cout << "\033[31m" << "_headersBuffer size " << _headersBuffer.size() << "\033[0m" << std::endl;
+		std::cout << "_headersBuffer:" << std::endl;
+		std::cout << _headersBuffer << std::endl;
 		_headersComplete = true;
+		std::cout << "\033[31m" << "_buffer size " << _buffer.size() << "\033[0m" << std::endl;
+		std::cout << "_headersBuffer size:" << std::endl;
+		std::cout << _headersBuffer.size() << std::endl;
 		_buffer = _buffer.substr(headersEnd + 4);
+		std::cout << _buffer << std::endl;
+		std::cout << "\033[31m" << "_buffer size " << _buffer.size() << "\033[0m" << std::endl;
 		return (true);
 	}
 	if (_buffer.length() > CLIENT_MAX_HEADERS_SIZE)
@@ -85,6 +93,11 @@ bool Parser::getIsChunked() const
 void Parser::setIsChunked(bool value)
 {
 	_isChunked = value;
+}
+
+bool Parser::getHeadersAreParsed() const
+{
+	return (_headersAreParsed);
 }
 
 void Parser::parseRequestLineAndHeaders(const char *request, HTTPRequest &req, HTTPResponse &res)
@@ -167,6 +180,7 @@ void Parser::parseHeaders(const char *request, HTTPRequest &req, HTTPResponse &r
 		return (res.setStatusCode(400, "No CRLF after headers"));
 	if (!hasMandatoryHeaders(req))
 		return (res.setStatusCode(400, "Invalid headers"));
+	_headersAreParsed = true;
 }
 
 // [--BOUNDARY][CRLF][HEADERS][CRLF][DATA][CRLF][--BOUNDARY--]
@@ -186,19 +200,14 @@ void Parser::parseFileBody(const char *request, HTTPRequest &req, HTTPResponse &
 		if (!saveFileData(request, req, i, isFinish)) // [DATA][CRLF][--BOUNDARY--]
 			return (res.setStatusCode(400, "Invalid file data"));
 		if (isFinish)
-			return ;
+			return;
 	}
 	return (res.setStatusCode(400, "Invalid file upload body"));
 }
 
-
-
 // ----------------UTILS----------------------------
 
-
-
-
-bool Parser::hasMandatoryHeaders(HTTPRequest& req)
+bool Parser::hasMandatoryHeaders(HTTPRequest &req)
 {
 	_isChunked = false;
 	int isHost = 0;
@@ -236,14 +245,14 @@ bool Parser::hasMandatoryHeaders(HTTPRequest& req)
 			_isChunked = true;
 		}
 	}
-	if (req.getMethod() == "POST" || req.getMethod()== "DELETE")
+	if (req.getMethod() == "POST" || req.getMethod() == "DELETE")
 		return (isHost == 1 && isContentLength == 1 && isContentType == 1);
 	else
 		return (isHost == 1);
 }
 
 // [KEY][=]["][VALUE][""][;][SP][KEY][=]["][VALUE][""][;]
-int Parser::fileHeaderParametrs(const std::string& headers, struct File& file, unsigned int i)
+int Parser::fileHeaderParametrs(const std::string &headers, struct File &file, unsigned int i)
 {
 	std::string key;
 	std::string value;
@@ -256,7 +265,7 @@ int Parser::fileHeaderParametrs(const std::string& headers, struct File& file, u
 		{
 			key = headers.substr(start, i - start); // [KEY]
 			std::cout << "\033[31m" << "Params Key: " << key << "\033[0m" << std::endl;
-			if (headers[++i] != '"') // ["] 
+			if (headers[++i] != '"') // ["]
 				return (0);
 			start = ++i; // skip '"'
 			while (i < headers.length() && headers[i] != '"')
@@ -278,7 +287,7 @@ int Parser::fileHeaderParametrs(const std::string& headers, struct File& file, u
 
 // [KEY][:][SP][VALUE][;][SP][KEY][:][SP][VALUE][CRLF][CRLF]
 // or [KEY][:][SP][VALUE][;][SP][KEY][=]["][VALUE][""][;]
-bool Parser::saveFileHeaders(const std::string& headers, HTTPRequest& req, unsigned int& i)
+bool Parser::saveFileHeaders(const std::string &headers, HTTPRequest &req, unsigned int &i)
 {
 	struct File file;
 	std::string key;
@@ -291,7 +300,7 @@ bool Parser::saveFileHeaders(const std::string& headers, HTTPRequest& req, unsig
 		while (i < headers.length() && headers[i] != ':')
 			i++;
 		key = headers.substr(start, i - start); // [KEY]
-		if (headers[i++] != ':') // [:]
+		if (headers[i++] != ':')				// [:]
 			return (false);
 		if (headers[i++] != ' ') // [SP]
 			return (false);
@@ -302,7 +311,7 @@ bool Parser::saveFileHeaders(const std::string& headers, HTTPRequest& req, unsig
 		std::cout << "\033[31m" << value << "\033[0m" << std::endl;
 		file.headers.insert(std::make_pair(key, value));
 		if (hasCRLF(headers.c_str(), i, 1)) // [CRLF] [CRLF]
-			break ;
+			break;
 		if (headers[i++] != ';') // [;]
 			return (false);
 		if (headers[i++] != ' ') // [SP]
@@ -311,7 +320,7 @@ bool Parser::saveFileHeaders(const std::string& headers, HTTPRequest& req, unsig
 		if (i == 0)
 			return (false);
 		if (hasCRLF(headers.c_str(), i, 1)) // [CRLF] [CRLF]
-			break ;
+			break;
 	}
 	if (!hasCRLF(headers.c_str(), i, 1)) // [CRLF] [CRLF]
 		return (false);
@@ -321,7 +330,7 @@ bool Parser::saveFileHeaders(const std::string& headers, HTTPRequest& req, unsig
 }
 
 // [DATA][CRLF][BOUNDARY]
-bool Parser::saveFileData(const std::string& data, HTTPRequest& req, unsigned int& i, bool& isFinish)
+bool Parser::saveFileData(const std::string &data, HTTPRequest &req, unsigned int &i, bool &isFinish)
 {
 	std::vector<std::string> tmpArray;
 	unsigned int start = 0;
@@ -332,7 +341,7 @@ bool Parser::saveFileData(const std::string& data, HTTPRequest& req, unsigned in
 	if (!hasCRLF(data.c_str(), i, 0)) // [CRLF]
 		return (false);
 	tmpArray.push_back(data.substr(start, i - start)); // [DATA]
-	i += 2; // skip [CRLF]
+	i += 2;											   // skip [CRLF]
 	start = i;
 	while (i < data.length() && !hasCRLF(data.c_str(), i, 0))
 		i++;
@@ -343,7 +352,7 @@ bool Parser::saveFileData(const std::string& data, HTTPRequest& req, unsigned in
 		isFinish = true;
 	}
 	req.setFileContent(tmpArray);
-	//i += 2; // skip [CRLF]
+	// i += 2; // skip [CRLF]
 	return (true);
 }
 
@@ -351,8 +360,10 @@ std::string Parser::extractUploadBoundary(std::string line)
 {
 	unsigned int start = 0;
 
-	for (unsigned int i = 0; i < line.length(); ++i){
-		if (line[i] == '='){
+	for (unsigned int i = 0; i < line.length(); ++i)
+	{
+		if (line[i] == '=')
+		{
 			start = ++i;
 			while (i < line.length())
 				i++;
@@ -362,7 +373,7 @@ std::string Parser::extractUploadBoundary(std::string line)
 	return ("");
 }
 
-bool Parser::isUploadBoundary(const std::string& data, HTTPRequest &req, unsigned int& i)
+bool Parser::isUploadBoundary(const std::string &data, HTTPRequest &req, unsigned int &i)
 {
 	unsigned int start = i;
 
@@ -375,8 +386,6 @@ bool Parser::isUploadBoundary(const std::string& data, HTTPRequest &req, unsigne
 	i += 2; // [CRLF]
 	return (true);
 }
-
-
 
 bool Parser::saveVariables(std::string &variables, HTTPRequest &req)
 {
@@ -555,8 +564,7 @@ bool Parser::isOrigForm(std::string &requestTarget, int &queryStart)
 
 bool Parser::isValidContentType(std::string type)
 {
-	if (type == "text/plain" || type == "text/html" || \
-	type.substr(0, 30) == "multipart/form-data; boundary=")
+	if (type == "text/plain" || type == "text/html" || type.substr(0, 30) == "multipart/form-data; boundary=")
 		return (true);
 	return (false);
 }

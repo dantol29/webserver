@@ -15,8 +15,10 @@ class Server; // Forward declaration for circular dependency
 class Connection
 {
   private:
-	struct pollfd _pollFd;
+	Parser _parser;
+	HTTPRequest _request;
 	HTTPResponse _response;
+	struct pollfd _pollFd;
 
 	// Additional client state can be managed here
 
@@ -33,11 +35,14 @@ class Connection
 	bool readBody(Parser &parser, HTTPRequest &req, HTTPResponse &res);
 
 	/* Getters */
+	Parser &getParser();
+	HTTPRequest &getRequest();
+	HTTPResponse &getResponse();
 	struct pollfd getPollFd() const;
 	bool getBodyComplete() const;
-	HTTPResponse &getResponse();
 	std::string getChunkData() const;
 	/* Setters */
+
 	void setHeadersComplete(bool headersComplete);
 	void setBodyComplete(bool bodyComplete);
 	void setHeaders(const std::string &headers);

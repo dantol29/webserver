@@ -35,5 +35,6 @@ bool isInvalidChar(const unsigned char &c);
 bool hasCRLF(const char *request, unsigned int &i, int mode);
 bool isVulnerablePath(const std::string &path);
 int checkFile(const char *path);
+int strToInt(const std::string &str);
 
 #endif

@@ -4,6 +4,7 @@
 #include <string>
 #include <map>
 #include <vector>
+#include "webserv.hpp"
 
 class HTTPRequest
 {
@@ -32,13 +33,13 @@ class HTTPRequest
 	void setHeaders(const std::string &key, const std::string &value);
 	void setBody(const std::string &body);
 	void setUploadBoundary(const std::string &boundary);
-	void setFiles(struct File& file);
-	void setFileContent(const std::vector<std::string>& content);
+	void setFiles(struct File &file);
+	void setFileContent(const std::vector<std::string> &content);
 
   private:
 	HTTPRequest(const HTTPRequest &obj);
 	HTTPRequest &operator=(const HTTPRequest &obj);
-	
+
 	// VARIABLES
 	std::string _method;
 	std::string _requestTarget;

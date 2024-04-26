@@ -1,13 +1,16 @@
 #include "Connection.hpp"
 
 Connection::Connection(struct pollfd &pollFd, Server &server)
+
 {
 	(void)server;
 	_pollFd.fd = pollFd.fd;
 	_pollFd.events = POLLIN;
 	_pollFd.revents = 0;
 	// TODO: should I initialize the _response here?
-	_response = HTTPResponse();
+	//_response = HTTPResponse();
+	//_request = HTTPRequest();
+	//_parser = Parser();
 	std::cout << "Connection created" << std::endl;
 	std::cout << "pollFd.fd: " << _pollFd.fd << std::endl;
 	std::cout << "pollFd.events: " << _pollFd.events << std::endl;
@@ -56,7 +59,15 @@ HTTPResponse &Connection::getResponse()
 {
 	return _response;
 }
+HTTPRequest &Connection::getRequest()
+{
+	return _request;
+}
 
+Parser &Connection::getParser()
+{
+	return _parser;
+}
 // Attempts to read HTTP request headers from the client connection into _headersBuffer on the Parser.
 bool Connection::readSocket(Parser &parser)
 {
@@ -205,6 +216,7 @@ bool Connection::readBody(Parser &parser, HTTPRequest &req, HTTPResponse &res)
 	char buffer[BUFFER_SIZE];
 	// We could also use _bodyTotalBytesRead from the parser
 	size_t bytesRead = parser.getBuffer().size();
+	std::cout << "contentLength: " << contentLength << std::endl;
 	std::cout << "bytesRead: " << bytesRead << std::endl;
 	if (bytesRead < contentLength)
 	{
@@ -239,7 +251,6 @@ bool Connection::readBody(Parser &parser, HTTPRequest &req, HTTPResponse &res)
 	else
 		parser.setBodyComplete(true);
 	std::cout << "Exiting readBody" << std::endl;
-	parser.setBodyComplete(true);
 	return true;
 }
 

@@ -16,6 +16,7 @@
 #include "server_utils.hpp"
 #include "Connection.hpp"
 #include "webserv.hpp"
+#include "Parser.hpp"
 
 class Connection; // Forward declaration for circular dependency
 
@@ -63,7 +64,7 @@ class Server
 	/* for startPollEventLoop */
 	void addServerSocketPollFdToVectors();
 	void acceptNewConnection();
-	void handleConnection(Connection conn, size_t &i);
+	void handleConnection(Connection &conn, size_t &i, Parser &parser, HTTPRequest &request, HTTPResponse &response);
 	void handleServerSocketError();
 	void handleClientSocketError(int clientFD, size_t &i);
 	void handleSocketTimeoutIfAny();
