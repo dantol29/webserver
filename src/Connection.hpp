@@ -52,6 +52,8 @@ class Connection
 	std::string getBody() const;
 	std::string getChunkData() const;
 	bool getBodyIsChunked() const;
+	struct pollfd &getPollFd();
+
 	/* Setters */
 	void setHeadersComplete(bool headersComplete);
 	void setBodyComplete(bool bodyComplete);

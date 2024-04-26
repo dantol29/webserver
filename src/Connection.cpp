@@ -111,6 +111,11 @@ bool Connection::getBodyIsChunked() const
 	return _bodyIsChunked;
 }
 
+struct pollfd &Connection::getPollFd()
+{
+	return _pollFd;
+}
+
 void Connection::setHeadersComplete(bool headersComplete)
 {
 	_headersComplete = headersComplete;

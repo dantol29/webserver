@@ -31,7 +31,6 @@ class Router
 	Router &operator=(const Router &other);
 	StaticContentHandler _staticContentHandler;
 	CGIHandler _cgiHandler;
-	std::vector<struct pollfd> *_FDsRef; // Pointer to store reference to server's _FDs vector
 	std::vector<pollfd> *_FDsRef;
 	struct pollfd *_pollFd;
 
