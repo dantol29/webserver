@@ -123,9 +123,14 @@ std::string CGIHandler::executeCGI(const MetaVariables &env)
 		close(pipeFD[1]);
 
 		// iterate through the list and close all sockets
+
+		int currentSocketFd = _pollFd->fd; // keep the server socket open
 		for (std::vector<struct pollfd>::iterator it = _FDsRef->begin(); it != _FDsRef->end(); ++it)
 		{
-			close(it->fd);
+			if (it->fd != currentSocketFd)
+			{
+				close(it->fd);
+			}
 		}
 
 		std::vector<char *> envp = env.getForExecve();
@@ -182,4 +187,14 @@ void CGIHandler::setFDsRef(std::vector<struct pollfd> *FDsRef)
 std::vector<struct pollfd> *CGIHandler::getFDsRef()
 {
 	return _FDsRef;
+}
+
+void CGIHandler::setPollFd(struct pollfd *pollFd)
+{
+	_pollFd = pollFd;
+}
+
+struct pollfd *CGIHandler::getPollFd()
+{
+	return _pollFd;
 }

@@ -22,11 +22,14 @@ class CGIHandler : public AResponseHandler
 	HTTPResponse CGIStringToResponse(const std::string &cgiOutput);
 	void setFDsRef(std::vector<struct pollfd> *FDsRef);
 	std::vector<struct pollfd> *getFDsRef();
+	void setPollFd(struct pollfd *pollFd);
+	struct pollfd *getPollFd();
 
   private:
 	CGIHandler(const CGIHandler &other);
 	CGIHandler &operator=(const CGIHandler &other);
 	std::vector<pollfd> *_FDsRef;
+	struct pollfd *_pollFd;
 };
 
 #endif

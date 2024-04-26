@@ -157,3 +157,13 @@ std::vector<struct pollfd> *Router::getFDsRef()
 {
 	return _FDsRef;
 }
+
+void Router::setPollFd(struct pollfd *pollFd)
+{
+	_pollFd = pollFd;
+}
+
+struct pollfd *Router::getPollFd()
+{
+	return _pollFd;
+}

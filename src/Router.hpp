@@ -25,6 +25,8 @@ class Router
 	bool pathIsValid(HTTPRequest &request, std::string webRoot);
 	void setFDsRef(std::vector<struct pollfd> *FDsRef);
 	std::vector<struct pollfd> *getFDsRef();
+	void setPollFd(struct pollfd *pollFd);
+	struct pollfd *getPollFd();
 
   private:
 	Router(const Router &other);
@@ -33,6 +35,7 @@ class Router
 	CGIHandler _cgiHandler;
 	std::vector<struct pollfd> *_FDsRef; // Pointer to store reference to server's _FDs vector
 	std::vector<pollfd> *_FDsRef;
+	struct pollfd *_pollFd;
 
 	std::string getFileExtension(const std::string &fileName);
 	bool isCGI(const HTTPRequest &request);
