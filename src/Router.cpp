@@ -15,7 +15,8 @@ HTTPResponse Router::routeRequest(const HTTPRequest &request)
 	if (isCGI(request))
 	{
 		CGIHandler cgiHandler;
-
+		cgiHandler.setFDsRef(_FDsRef);
+		cgiHandler.setPollFd(_pollFd);
 		return cgiHandler.handleRequest(request);
 	}
 	else if (isDynamicRequest(request))
