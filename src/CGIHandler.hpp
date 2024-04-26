@@ -19,10 +19,13 @@ class CGIHandler : public AResponseHandler
 	char *const *createArgvForExecve(const MetaVariables &env);
 	std::string executeCGI(const MetaVariables &env);
 	HTTPResponse CGIStringToResponse(const std::string &cgiOutput);
+	void setFDsRef(std::vector<struct pollfd> *FDsRef);
+	std::vector<struct pollfd> *getFDsRef();
 
   private:
 	CGIHandler(const CGIHandler &other);
 	CGIHandler &operator=(const CGIHandler &other);
+	std::vector<pollfd> *_FDsRef;
 };
 
 #endif

@@ -32,7 +32,7 @@ class Router
 	StaticContentHandler _staticContentHandler;
 	CGIHandler _cgiHandler;
 	std::vector<struct pollfd> *_FDsRef; // Pointer to store reference to server's _FDs vector
-	std::vector<pollfd> *_FDsRef;		 // Change this line
+	std::vector<pollfd> *_FDsRef;
 
 	std::string getFileExtension(const std::string &fileName);
 	bool isCGI(const HTTPRequest &request);

@@ -21,6 +21,7 @@ CGIHandler &CGIHandler::operator=(const CGIHandler &other)
 HTTPResponse CGIHandler::handleRequest(const HTTPRequest &request)
 {
 	CGIHandler cgiInstance;
+	cgiInstance.setFDsRef(_FDsRef); // here we set the FDs to close later unused ones
 	MetaVariables env;
 	env.HTTPRequestToMetaVars(request, env);
 	std::cout << env;
@@ -121,6 +122,8 @@ std::string CGIHandler::executeCGI(const MetaVariables &env)
 		dup2(pipeFD[1], STDOUT_FILENO);
 		close(pipeFD[1]);
 
+		// iterate through the list and close all sockets
+
 		std::vector<char *> envp = env.getForExecve();
 		execve(argv[0], argv, envp.data());
 
@@ -165,4 +168,14 @@ std::string CGIHandler::executeCGI(const MetaVariables &env)
 	delete[] argv;
 
 	return cgiOutput;
+}
+
+void CGIHandler::setFDsRef(std::vector<struct pollfd> *FDsRef)
+{
+	_FDsRef = FDsRef;
+}
+
+std::vector<struct pollfd> *CGIHandler::getFDsRef()
+{
+	return _FDsRef;
 }

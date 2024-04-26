@@ -161,11 +161,7 @@ void Server::handleConnection(Connection conn, size_t &i)
 	std::cout << std::endl << "                  DEBUG" << std::endl;
 	std::cout << request.getRequestTarget() << std::endl;
 	Router router;
-
-	//_____________________________
-
-	// here make the reference to server._FDs inside router : 	std::vector<struct pollfd> _FDs;
-
+	router.setFDsRef(&_FDs); // this is the reference to the _FDs vector from server
 	response = router.routeRequest(request);
 	responseString = response.objToString();
 	std::cout << "\033[1;91mResponse: " << responseString << "\033[0m" << std::endl;
