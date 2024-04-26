@@ -129,7 +129,10 @@ void Server::handleConnection(Connection conn, size_t &i)
 			if (!conn.readBody(parser, request, response))
 				return (std::cout << "Error reading body" << std::endl, closeClientConnection(conn, i));
 		}
-		parser.parseBody(parser.getBuffer().c_str(), request, response);
+		if (!request.getUploadBoundary().empty())
+			parser.parseFileBody(parser.getBuffer().c_str(), request, response);
+		else if (request.getMethod() != "GET")
+			request.setBody(parser.getBuffer());
 		std::cout << "Reading and parsing complete\n\n" << std::endl;
 		std::cout << request << std::endl;
 	}

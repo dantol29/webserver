@@ -84,7 +84,7 @@ void printVariablesHeadersBody(const HTTPRequest &obj)
 {
 	std::multimap<std::string, std::string> a = obj.getHeaders();
 	std::multimap<std::string, std::string> b = obj.getQueryString();
-	std::vector<std::string> c = obj.getBody();
+	std::string c = obj.getBody();
 
 	std::multimap<std::string, std::string>::iterator it;
 	std::cout << "Variables: =>" << std::endl;
@@ -98,8 +98,7 @@ void printVariablesHeadersBody(const HTTPRequest &obj)
 		std::cout << "Key: " << it->first << ", Value: " << it->second << std::endl;
 	}
 	std::cout << "Body: =>" << std::endl;
-	for (size_t i = 0; i < c.size(); ++i)
-		std::cout << c[i] << std::endl;
+	std::cout << c << std::endl;
 }
 
 void printFDsVector(const std::vector<pollfd> &fds)

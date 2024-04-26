@@ -169,37 +169,7 @@ void Parser::parseHeaders(const char *request, HTTPRequest &req, HTTPResponse &r
 		return (res.setStatusCode(400, "Invalid headers"));
 }
 
-// [LINE][CRLF][LINE][CRLF][CRLF]
-void Parser::parseBody(const char *request, HTTPRequest &req, HTTPResponse &res)
-{
-	unsigned int i = 0;
-	unsigned int start = 0;
-	std::string stringRequest(request);
-	std::vector<std::string> body;
-
-	if (req.getMethod() == "GET")
-		return ;
-	if (!req.getUploadBoundary().empty())
-		return (parseFileBody(request, req, res));
-	start = i;
-	while (request[i])
-	{
-		if (hasCRLF(request, i, 0)) // [CRLF]
-		{
-			if (hasCRLF(request, i, 1)) // [CRLF][CRLF]
-				return (req.setBody(stringRequest.substr(start, i - start)));
-			req.setBody(stringRequest.substr(start, i - start)); // [LINE]
-			i += 2; // skip [CRLF]
-			start = i;
-			continue;
-		}
-		i++;
-	}
-	if (!hasCRLF(request, i, 1)) // [CRLF][CRLF]
-		return (res.setStatusCode(400, "Invalid body"));
-}
-
-// [--BOUNDARY][CRLF][HEADERS][CRLF][DATA][CRLF][--BOUNDARY--][CRLF][CRLF]
+// [--BOUNDARY][CRLF][HEADERS][CRLF][DATA][CRLF][--BOUNDARY--]
 void Parser::parseFileBody(const char *request, HTTPRequest &req, HTTPResponse &res)
 {
 	unsigned int i = 0;
@@ -213,15 +183,13 @@ void Parser::parseFileBody(const char *request, HTTPRequest &req, HTTPResponse &
 			return (res.setStatusCode(400, "Invalid boundary in the file upload1"));
 		if (!saveFileHeaders(request, req, i)) // [HEADERS] [CRLF]
 			return (res.setStatusCode(400, "Invalid file upload headers"));
-		if (!saveFileData(request, req, i, isFinish)) // [DATA] [--BOUNDARY--]
+		if (!saveFileData(request, req, i, isFinish)) // [DATA][CRLF][--BOUNDARY--]
 			return (res.setStatusCode(400, "Invalid file data"));
 		if (isFinish)
 			return ;
 	}
 	return (res.setStatusCode(400, "Invalid file upload body"));
 }
-
-
 
 
 
@@ -352,29 +320,30 @@ bool Parser::saveFileHeaders(const std::string& headers, HTTPRequest& req, unsig
 	return (true);
 }
 
-// [DATA][CRLF][DATA[CRLF][BOUNDARY]
+// [DATA][CRLF][BOUNDARY]
 bool Parser::saveFileData(const std::string& data, HTTPRequest& req, unsigned int& i, bool& isFinish)
 {
 	std::vector<std::string> tmpArray;
 	unsigned int start = 0;
 
-	while (i < data.length()){
-		start = i;
-		while (i < data.length() && !hasCRLF(data.c_str(), i, 0))
-			i++;
-		if (!hasCRLF(data.c_str(), i, 0)) // [CRLF]
+	start = i;
+	while (i < data.length() && !hasCRLF(data.c_str(), i, 0))
+		i++;
+	if (!hasCRLF(data.c_str(), i, 0)) // [CRLF]
+		return (false);
+	tmpArray.push_back(data.substr(start, i - start)); // [DATA]
+	i += 2; // skip [CRLF]
+	start = i;
+	while (i < data.length() && !hasCRLF(data.c_str(), i, 0))
+		i++;
+	if (data.substr(start, i - start) != "--" + req.getUploadBoundary()) // [BOUNDARY]
+	{
+		if (data.substr(start, i - start) != "--" + req.getUploadBoundary() + "--") // [BOUNDARY--] final
 			return (false);
-		if (data.substr(start, i - start) == "--" + req.getUploadBoundary() + "--"){ // [BOUNDARY--]
-			isFinish = true;
-			break ;
-		}
-		if (data.substr(start, i - start) == "--" + req.getUploadBoundary()) // [BOUNDARY]
-			break ;
-		tmpArray.push_back(data.substr(start, i - start)); // [DATA]
-		i += 2; // skip [CRLF]
+		isFinish = true;
 	}
 	req.setFileContent(tmpArray);
-	i += 2; // skip [CRLF]
+	//i += 2; // skip [CRLF]
 	return (true);
 }
 

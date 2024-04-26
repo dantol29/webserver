@@ -62,7 +62,7 @@ std::pair<std::string, std::string> HTTPRequest::getSingleHeader(std::string key
 	return (std::make_pair("", ""));
 }
 
-std::vector<std::string> HTTPRequest::getBody() const
+std::string HTTPRequest::getBody() const
 {
 	return (_body);
 }
@@ -103,7 +103,7 @@ void HTTPRequest::setHeaders(const std::string &key, const std::string &value)
 
 void HTTPRequest::setBody(const std::string &body)
 {
-	_body.push_back(body);
+	_body = body;
 }
 
 void HTTPRequest::setProtocolVersion(std::string protocolVersion)
@@ -130,7 +130,7 @@ std::ostream &operator<<(std::ostream &out, const HTTPRequest &obj)
 {
 	std::multimap<std::string, std::string> headers = obj.getHeaders();
 	std::multimap<std::string, std::string> queryString = obj.getQueryString();
-	std::vector<std::string> body = obj.getBody();
+	std::string body = obj.getBody();
 	std::vector<File> files = obj.getFiles();
 
 	std::multimap<std::string, std::string>::iterator it;
@@ -145,8 +145,7 @@ std::ostream &operator<<(std::ostream &out, const HTTPRequest &obj)
 	out << "---------------------End--------------------------" << std::endl;
 	
 	out << "---------------------Body-------------------------" << std::endl;
-	for (size_t i = 0; i < body.size(); ++i)
-		out << body[i] << std::endl;
+	std::cout << body << std::endl;
 	out << "---------------------End--------------------------" << std::endl;
 
 

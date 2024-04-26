@@ -21,7 +21,7 @@ class HTTPRequest
 	std::multimap<std::string, std::string> getQueryString() const;
 	std::multimap<std::string, std::string> getHeaders() const;
 	std::pair<std::string, std::string> getSingleHeader(std::string key) const;
-	std::vector<std::string> getBody() const;
+	std::string getBody() const;
 	std::vector<struct File> getFiles() const;
 
 	// SETTERS
@@ -45,7 +45,7 @@ class HTTPRequest
 	std::string _protocolVersion;
 	std::multimap<std::string, std::string> _queryString;
 	std::multimap<std::string, std::string> _headers;
-	std::vector<std::string> _body;
+	std::string _body;
 	std::string _uploadBoundary;
 	std::vector<File> _files;
 };

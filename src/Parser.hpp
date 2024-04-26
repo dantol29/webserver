@@ -19,7 +19,7 @@ class Parser
 	Parser();
 	bool preParseHeaders(HTTPResponse &res);
 	void parseRequestLineAndHeaders(const char *request, HTTPRequest &req, HTTPResponse &res);
-	void parseBody(const char *request, HTTPRequest &req, HTTPResponse &res);
+	void parseFileBody(const char *request, HTTPRequest &req, HTTPResponse &res);
 	
 	// GETTERS FROM THE CORE PARSING FUNCTIONALITIES
 	bool getHeadersComplete() const;
@@ -50,7 +50,6 @@ class Parser
 	// PARSING INTERNAL FUNC
 	void parseRequestLine(const char *request, HTTPRequest &req, HTTPResponse &res);
 	void parseHeaders(const char *request, HTTPRequest &req, HTTPResponse &res);
-	void parseFileBody(const char *request, HTTPRequest &req, HTTPResponse &res);
 
 	// UTILS
 	bool saveFileHeaders(const std::string& headers, HTTPRequest& req, unsigned int& i);
