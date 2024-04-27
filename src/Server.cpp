@@ -131,12 +131,8 @@ void Server::handleConnection(Connection &conn, size_t &i, Parser &parser, HTTPR
 		parser.parseRequestLineAndHeaders(parser.getHeadersBuffer().c_str(), request, response);
 	if (response.getStatusCode() != 0)
 		std::cout << "Error: " << response.getStatusCode() << std::endl;
-	else if (request.getMethod() == "GET")
-	{
-		// TODO; consider the fact that we could potentially have a body in the GET request and in the socket
-		// Should we 'consume' it?
+	if (request.getMethod() == "GET")
 		std::cout << "GET request, no body to read" << std::endl;
-	}
 	else
 	{
 		if (parser.getIsChunked() && !socketHasBeenRead)
@@ -157,9 +153,7 @@ void Server::handleConnection(Connection &conn, size_t &i, Parser &parser, HTTPR
 				parser.setBodyComplete(true);
 			}
 			else if (!socketHasBeenRead && !conn.readBody(parser, request, response))
-			{
 				return (std::cout << "Error reading body" << std::endl, closeClientConnection(conn, i));
-			}
 			// It's not necessary to set socketHasBeenRead to true here, because we will not read the socket again from
 			// here Set it here would also be wrong because of the if condition above
 		}
@@ -172,16 +166,15 @@ void Server::handleConnection(Connection &conn, size_t &i, Parser &parser, HTTPR
 			parser.parseFileBody(parser.getBuffer().c_str(), request, response);
 		else if (request.getMethod() != "GET")
 			request.setBody(parser.getBuffer());
-		std::cout << "Reading and parsing complete\n\n" << std::endl;
 		std::cout << request << std::endl;
 	}
 
 	std::cout << "\033[1;91mRequest: " << response.getStatusCode() << "\033[0m" << std::endl;
-	if (response.getStatusCode() != 0 || request.getMethod() == "GET")
+	if (response.getStatusCode() != 0) // || request.getMethod() == "GET" ?????
 	{
 		response.setErrorResponse(response.getStatusCode());
 		std::string responseString = response.objToString();
-		std::cout << "\033[1;91mResponse: " << responseString << "\033[0m" << std::endl;
+		std::cout << "\033[1;91mResponse(error): " << responseString << "\033[0m" << std::endl;
 		send(conn.getPollFd().fd, responseString.c_str(), responseString.size(), 0);
 		close(conn.getPollFd().fd);
 		_FDs.erase(_FDs.begin() + i);
@@ -191,7 +184,6 @@ void Server::handleConnection(Connection &conn, size_t &i, Parser &parser, HTTPR
 	}
 
 	std::string responseString;
-	std::cout << std::endl << "DEBUG" << std::endl;
 	std::cout << request.getRequestTarget() << std::endl;
 	// TODO: The Router should be a member of the Server class or of the Connection class
 	Router router;
