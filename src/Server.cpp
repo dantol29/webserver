@@ -41,7 +41,7 @@ void Server::startPollEventLoop()
 		// std::cout << "printFDsVector(_FDs); - after polling" << std::endl;
 		// printFDsVector(_FDs);
 		// print_connectionsVector(_connections);
-		std::cout << "poll() returned: " << ret << std::endl;
+		//std::cout << "poll() returned: " << ret << std::endl;
 		if (ret > 0)
 		{
 			for (size_t i = 0; i < _FDs.size(); i++)
@@ -99,7 +99,6 @@ void Server::handleConnection(Connection &conn, size_t &i, Parser &parser, HTTPR
 	bool socketHasBeenRead = false;
 	conn.printConnection();
 
-	// Make it light blue
 	std::cout << "\033[1;36m";
 	std::cout << "Entering handleConnection" << std::endl;
 	std::cout << "\033[0m";
@@ -184,12 +183,12 @@ void Server::handleConnection(Connection &conn, size_t &i, Parser &parser, HTTPR
 	}
 
 	std::string responseString;
-	std::cout << request.getRequestTarget() << std::endl;
+	//std::cout << request.getRequestTarget() << std::endl;
 	// TODO: The Router should be a member of the Server class or of the Connection class
 	Router router;
 	response = router.routeRequest(request);
 	responseString = response.objToString();
-	std::cout << "\033[1;91mResponse: " << responseString << "\033[0m" << std::endl;
+	//std::cout << "\033[1;91mResponse: " << responseString << "\033[0m" << std::endl;
 	// TODO: we should not send here but go through poll first and check for POLLOUT
 	write(conn.getPollFd().fd, responseString.c_str(), responseString.size());
 	close(conn.getPollFd().fd);
@@ -220,8 +219,8 @@ void Server::createServerSocket()
 {
 	if ((_serverFD = socket(AF_INET, SOCK_STREAM, 0)) == 0)
 		perrorAndExit("Failed to create server socket");
-	std::cout << "Server socket created" << std::endl;
-	std::cout << "Server socket file descriptor: " << _serverFD << std::endl;
+	// std::cout << "Server socket created" << std::endl;
+	// std::cout << "Server socket file descriptor: " << _serverFD << std::endl;
 }
 
 void Server::setReuseAddrAndPort()
@@ -231,7 +230,7 @@ void Server::setReuseAddrAndPort()
 		perror("setsockopt SO_REUSEADDR: Protocol not available, continuing without SO_REUSEADDR");
 	if (setsockopt(_serverFD, SOL_SOCKET, SO_REUSEPORT, &opt, sizeof(opt)))
 		perror("setsockopt SO_REUSEPORT: Protocol not available, continuing without SO_REUSEPORT");
-	std::cout << "SO_REUSEADDR and SO_REUSEPORT set" << std::endl;
+	// std::cout << "SO_REUSEADDR and SO_REUSEPORT set" << std::endl;
 }
 
 void Server::bindToPort(int port)
@@ -243,9 +242,9 @@ void Server::bindToPort(int port)
 
 	if (bind(_serverFD, (struct sockaddr *)&_serverAddr, sizeof(_serverAddr)) < 0)
 		perrorAndExit("In bind");
-	std::cout << "Server socket bound to port " << port << std::endl;
-	std::cout << "Server socket address: " << inet_ntoa(_serverAddr.sin_addr) << std::endl;
-	std::cout << "Server socket port: " << ntohs(_serverAddr.sin_port) << std::endl;
+	// std::cout << "Server socket bound to port " << port << std::endl;
+	// std::cout << "Server socket address: " << inet_ntoa(_serverAddr.sin_addr) << std::endl;
+	// std::cout << "Server socket port: " << ntohs(_serverAddr.sin_port) << std::endl;
 }
 
 void Server::listen()
@@ -415,7 +414,7 @@ void Server::checkSocketOptions()
 	}
 	else
 	{
-		std::cout << "SO_REUSEADDR is " << (optval ? "enabled" : "disabled") << std::endl;
+		//std::cout << "SO_REUSEADDR is " << (optval ? "enabled" : "disabled") << std::endl;
 	}
 
 	if (getsockopt(_serverFD, SOL_SOCKET, SO_REUSEPORT, &optval, &optlen) < 0)
@@ -424,6 +423,6 @@ void Server::checkSocketOptions()
 	}
 	else
 	{
-		std::cout << "SO_REUSEPORT is " << (optval ? "enabled" : "disabled") << std::endl;
+		//std::cout << "SO_REUSEPORT is " << (optval ? "enabled" : "disabled") << std::endl;
 	}
 }

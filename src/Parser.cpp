@@ -24,19 +24,19 @@ bool Parser::preParseHeaders(HTTPResponse &res)
 	if (headersEnd != std::string::npos)
 	{
 		_headersBuffer = _buffer.substr(0, headersEnd + 4);
-		std::cout << "\033[31m"
-				  << "_headersBuffer size " << _headersBuffer.size() << "\033[0m" << std::endl;
-		std::cout << "_headersBuffer:" << std::endl;
-		std::cout << _headersBuffer << std::endl;
+		// std::cout << "\033[31m"
+		// 		  << "_headersBuffer size " << _headersBuffer.size() << "\033[0m" << std::endl;
+		//std::cout << "_headersBuffer:" << std::endl;
+		//std::cout << _headersBuffer << std::endl;
 		_headersComplete = true;
-		std::cout << "\033[31m"
-				  << "_buffer size " << _buffer.size() << "\033[0m" << std::endl;
-		std::cout << "_headersBuffer size:" << std::endl;
-		std::cout << _headersBuffer.size() << std::endl;
+		// std::cout << "\033[31m"
+		// 		  << "_buffer size " << _buffer.size() << "\033[0m" << std::endl;
+		// std::cout << "_headersBuffer size:" << std::endl;
+		// std::cout << _headersBuffer.size() << std::endl;
 		_buffer = _buffer.substr(headersEnd + 4);
 		std::cout << _buffer << std::endl;
-		std::cout << "\033[31m"
-				  << "_buffer size " << _buffer.size() << "\033[0m" << std::endl;
+		// std::cout << "\033[31m"
+		// 		  << "_buffer size " << _buffer.size() << "\033[0m" << std::endl;
 		return (true);
 	}
 	if (_buffer.length() > CLIENT_MAX_HEADERS_SIZE)

@@ -105,16 +105,16 @@ void Router::splitTarget(const std::string &target)
 bool Router::pathIsValid(HTTPRequest &request, std::string webRoot)
 {
 	std::string host = request.getHost();
-	std::cout << "Host: " << host << std::endl;
+	//std::cout << "Host: " << host << std::endl;
 	size_t pos = host.find(":");
 	if (pos != std::string::npos)
 	{
 		host = host.substr(0, pos);
 	}
-	std::cout << "Host (after : trailing) :" << host << std::endl;
+	//std::cout << "Host (after : trailing) :" << host << std::endl;
 	std::string path = request.getRequestTarget();
 	path = webRoot + path;
-	std::cout << "Path: " << path << std::endl;
+	//std::cout << "Path: " << path << std::endl;
 	struct stat buffer;
 	if (stat(path.c_str(), &buffer) != 0)
 	{
@@ -122,20 +122,20 @@ bool Router::pathIsValid(HTTPRequest &request, std::string webRoot)
 	}
 	if (S_ISDIR(buffer.st_mode))
 	{
-		std::cout << "Path is a directory" << std::endl;
+		//std::cout << "Path is a directory" << std::endl;
 		if (!path.empty() && path[path.length() - 1] != '/')
 		{
 			path += "/";
 		}
 		path += "index.html";
-		std::cout << "Path: " << path << std::endl;
+		//std::cout << "Path: " << path << std::endl;
 		if (stat(path.c_str(), &buffer) != 0)
 		{
 			// TODO: decide if we should return a custom error for a directory without an index.html
 			return false;
 		}
 	}
-	std::cout << "Path: " << path << " exists" << std::endl;
+	//std::cout << "Path: " << path << " exists" << std::endl;
 
 	std::ifstream file(path.c_str());
 	if (!file.is_open())
@@ -145,6 +145,6 @@ bool Router::pathIsValid(HTTPRequest &request, std::string webRoot)
 	}
 	file.close();
 
-	std::cout << "Path is an accesible and readable file" << std::endl;
+	//std::cout << "Path is an accesible and readable file" << std::endl;
 	return true;
 }

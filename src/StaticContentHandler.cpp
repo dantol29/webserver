@@ -44,7 +44,7 @@ HTTPResponse StaticContentHandler::handleRequest(const HTTPRequest &request)
 	HTTPResponse response;
 	std::string requestTarget = request.getRequestTarget();
 	std::string webRoot = "var/www";
-	std::cout << "path : " << webRoot << std::endl;
+	//std::cout << "path : " << webRoot << std::endl;
 	if (requestTarget == "/" || requestTarget == "")
 		requestTarget = "/index.html";
 	std::string path = webRoot + requestTarget;
@@ -57,12 +57,12 @@ HTTPResponse StaticContentHandler::handleRequest(const HTTPRequest &request)
 	// else
 	// {
 	// TODO: consider streaming the file instead of loading it all in memory for large files
-	std::cout << "path : " << path << std::endl;
+	//std::cout << "path : " << path << std::endl;
 	// std::ifstream file(path.c_str());
 	file.is_open();
 
 	std::string body((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
-	std::cout << "body : " << body << std::endl;
+	//std::cout << "body : " << body << std::endl;
 
 	// response.setStatusCode(200);
 	response.setBody(body);
@@ -75,7 +75,7 @@ HTTPResponse StaticContentHandler::handleRequest(const HTTPRequest &request)
 	//  response.setHeader("Server: ", "webserv");
 
 	std::cout << std::endl;
-	std::cout << "_body : " << response.getBody() << std::endl;
+	//std::cout << "_body : " << response.getBody() << std::endl;
 	file.close();
 	// }
 	return response;
