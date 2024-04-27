@@ -183,6 +183,7 @@ void Server::handleConnection(Connection &conn, size_t &i, Parser &parser, HTTPR
 	response = conn.getResponse();
 	std::cout << std::endl << "DEBUG" << std::endl;
 	std::cout << request.getRequestTarget() << std::endl;
+	// TODO: The Router should be a member of the Server class or of the Connection class
 	Router router;
 	response = router.routeRequest(request);
 	responseString = response.objToString();
