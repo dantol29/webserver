@@ -106,7 +106,7 @@ void Server::handleConnection(Connection &conn, size_t &i, Parser &parser, HTTPR
 
 	if (!parser.getHeadersComplete())
 	{
-		if (!conn.readSocket(parser))
+		if (!conn.readHeaders(parser))
 		{
 			std::cout << "Error reading headers" << std::endl;
 			closeClientConnection(conn, i);

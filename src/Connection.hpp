@@ -28,7 +28,7 @@ class Connection
 	Connection &operator=(const Connection &other); // Copy assignment operator
 	~Connection();
 
-	bool readSocket(Parser &parser);
+	bool readHeaders(Parser &parser);
 	bool readChunkedBody(Parser &parser);
 	bool readChunkSize(std::string &line);
 	bool readChunk(size_t chunkSize, std::string &chunkedData, HTTPResponse &response);
