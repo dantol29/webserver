@@ -89,13 +89,16 @@ bool Connection::readSocket(Parser &parser)
 		perror("recv failed");
 		return false;
 	}
-	else
+	else if (bytesRead == 0)
 	{
 		std::cout << "Connection closed before headers being completely sent" << std::endl;
 		return false;
 	}
-	std::cout << "Exiting readSocket. This will never happen here!" << std::endl;
-	return true;
+	else
+	{
+		std::cout << "Exiting readSocket. This will never happen here!" << std::endl;
+		return true;
+	}
 }
 // About the hexa conversion
 // Convert the hexadecimal string from `chunkSizeLine` to a size_t value.

@@ -96,6 +96,7 @@ void Server::startPollEventLoop()
 
 void Server::handleConnection(Connection &conn, size_t &i, Parser &parser, HTTPRequest &request, HTTPResponse &response)
 {
+	bool socketHasBeenRead = false;
 	conn.printConnection();
 
 	// Make it light blue
@@ -111,6 +112,7 @@ void Server::handleConnection(Connection &conn, size_t &i, Parser &parser, HTTPR
 			closeClientConnection(conn, i);
 			return;
 		}
+		socketHasBeenRead = true;
 		if (!parser.preParseHeaders(response))
 		{
 			// TODO: we should not send here but go through poll first and check for POLLOUT
@@ -137,11 +139,12 @@ void Server::handleConnection(Connection &conn, size_t &i, Parser &parser, HTTPR
 	}
 	else
 	{
-		if (parser.getIsChunked())
+		if (parser.getIsChunked() && !socketHasBeenRead)
 		{
 			std::cout << "Chunked body" << std::endl;
 			if (!conn.readChunkedBody(parser))
 				return (closeClientConnection(conn, i));
+			socketHasBeenRead = true;
 		}
 		else
 		{
@@ -149,11 +152,16 @@ void Server::handleConnection(Connection &conn, size_t &i, Parser &parser, HTTPR
 					  << "Regular body"
 					  << "\033[0m" << std::endl;
 			if (!parser.getBodyComplete() && parser.getBuffer().size() == request.getContentLength())
+			{
+				// TODO: in the new design we will return here and go to the function where the response is built
 				parser.setBodyComplete(true);
-			else if (!conn.readBody(parser, request, response))
+			}
+			else if (!socketHasBeenRead && !conn.readBody(parser, request, response))
 			{
 				return (std::cout << "Error reading body" << std::endl, closeClientConnection(conn, i));
 			}
+			// It's not necessary to set socketHasBeenRead to true here, because we will not read the socket again from
+			// here Set it here would also be wrong because of the if condition above
 		}
 		if (!parser.getBodyComplete())
 		{
