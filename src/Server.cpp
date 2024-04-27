@@ -106,16 +106,23 @@ void Server::handleConnection(Connection &conn, size_t &i, Parser &parser, HTTPR
 	if (!parser.getHeadersComplete())
 	{
 		if (!conn.readSocket(parser))
-			return (std::cout << "Error reading headers" << std::endl, closeClientConnection(conn, i));
+		{
+			std::cout << "Error reading headers" << std::endl;
+			closeClientConnection(conn, i);
+			return;
+		}
 		if (!parser.preParseHeaders(response))
 		{
+			// TODO: we should not send here but go through poll first and check for POLLOUT
 			send(conn.getPollFd().fd, response.objToString().c_str(), response.objToString().size(), 0);
-			return (std::cout << "Error pre-parsing headers" << std::endl, closeClientConnection(conn, i));
+			std::cout << "Error pre-parsing headers" << std::endl;
+			closeClientConnection(conn, i);
+			return;
 		}
 	}
 	if (!parser.getHeadersComplete())
 	{
-		std::cout << "Headers incomplete, exiting handleConnection." << std::endl;
+		std::cout << "Headers incomplete yet, exiting handleConnection." << std::endl;
 		return;
 	}
 	if (parser.getHeadersComplete() && !parser.getHeadersAreParsed())
