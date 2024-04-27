@@ -190,13 +190,13 @@ void Server::handleConnection(Connection &conn, size_t &i, Parser &parser, HTTPR
 			return;
 		}
 		if (!request.getUploadBoundary().empty())
-			parser.parseFileBody(parser.getBuffer().c_str(), request, response);
+			parser.parseFileBody(parser.getBuffer(), request, response);
 		else if (request.getMethod() != "GET")
 			request.setBody(parser.getBuffer());
 	}
 
 	std::cout << "\033[1;91mRequest: " << response.getStatusCode() << "\033[0m" << std::endl;
-	std::cout << request << std::endl;
+	//std::cout << request << std::endl;
 	if (response.getStatusCode() != 0) // || request.getMethod() == "GET" ?????
 	{
 		response.setErrorResponse(response.getStatusCode());

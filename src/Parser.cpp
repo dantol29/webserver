@@ -188,14 +188,14 @@ void Parser::parseHeaders(const char *request, HTTPRequest &req, HTTPResponse &r
 }
 
 // [--BOUNDARY][CRLF][HEADERS][CRLF][DATA][CRLF][--BOUNDARY--]
-void Parser::parseFileBody(const char *request, HTTPRequest &req, HTTPResponse &res)
+void Parser::parseFileBody(const std::string &request, HTTPRequest &req, HTTPResponse &res)
 {
 	unsigned int i = 0;
 	unsigned int start = 0;
 	bool isFinish = false;
 
 	start = i;
-	while (request[i])
+	while (i < request.length())
 	{
 		if (start == i && !isUploadBoundary(request, req, i)) // [--BOUNDARY] [CRLF]
 			return (res.setStatusCode(400, "Invalid boundary in the file upload1"));
@@ -337,22 +337,24 @@ bool Parser::saveFileData(const std::string &data, HTTPRequest &req, unsigned in
 	unsigned int start = 0;
 
 	start = i;
-	while (i < data.length() && !hasCRLF(data.c_str(), i, 0))
+	//std::cout << "Data: " << std::endl;
+	while (i < data.length()) //  && !hasCRLF(data.c_str(), i, 0)
 		i++;
-	if (!hasCRLF(data.c_str(), i, 0)) // [CRLF]
-		return (false);
-	tmpArray = tmpArray + data.substr(start, i - start); // [DATA]
-	i += 2;											   // skip [CRLF]
-	start = i;
-	while (i < data.length() && !hasCRLF(data.c_str(), i, 0))
-		i++;
-	if (data.substr(start, i - start) != "--" + req.getUploadBoundary()) // [BOUNDARY]
-	{
-		if (data.substr(start, i - start) != "--" + req.getUploadBoundary() + "--") // [BOUNDARY--] final
-			return (false);
-		isFinish = true;
-	}
-	req.setFileContent(tmpArray);
+	// if (!hasCRLF(data.c_str(), i, 0)) // [CRLF]
+	// 	return (false);
+	// tmpArray = tmpArray + data.substr(start, i - start); // [DATA]
+	// i += 2;											   // skip [CRLF]
+	// start = i;
+	// while (i < data.length() && !hasCRLF(data.c_str(), i, 0))
+	// 	i++;
+	// if (data.substr(start, i - start) != "--" + req.getUploadBoundary()) // [BOUNDARY]
+	// {
+	// 	if (data.substr(start, i - start) != "--" + req.getUploadBoundary() + "--") // [BOUNDARY--] final
+	// 		return (false);
+	// 	isFinish = true;
+	// }
+	isFinish = true;
+	req.setFileContent(data.substr(start, i - start));
 	// i += 2; // skip [CRLF]
 	return (true);
 }

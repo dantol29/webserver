@@ -19,7 +19,7 @@ class Parser
 	Parser();
 	bool preParseHeaders(HTTPResponse &res);
 	void parseRequestLineAndHeaders(const char *request, HTTPRequest &req, HTTPResponse &res);
-	void parseFileBody(const char *request, HTTPRequest &req, HTTPResponse &res);
+	void parseFileBody(const std::string &request, HTTPRequest &req, HTTPResponse &res);
 
 	// GETTERS FROM THE CORE PARSING FUNCTIONALITIES
 	bool getHeadersComplete() const;

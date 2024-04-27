@@ -231,7 +231,7 @@ bool Connection::readBody(Parser &parser, HTTPRequest &req, HTTPResponse &res)
 			// _body.append(buffer, read);j
 			parser.setBuffer(parser.getBuffer() + std::string(buffer, read));
 			std::cout << "bytesRead: " << parser.getBuffer().size() << std::endl;
-			std::cout << "The 'body; is: " << parser.getBuffer() << std::endl;
+			//std::cout << "The 'body; is: " << parser.getBuffer() << std::endl;
 			bytesRead += read;
 			if (bytesRead == contentLength)
 			{
