@@ -131,11 +131,12 @@ void Server::handleConnection(Connection &conn, size_t &i, Parser &parser, HTTPR
 		std::cout << "Error: " << response.getStatusCode() << std::endl;
 	else if (request.getMethod() == "GET")
 	{
+		// TODO; consider the fact that we could potentially have a body in the GET request and in the socket
+		// Should we 'consume' it?
 		std::cout << "GET request, no body to read" << std::endl;
 	}
 	else
 	{
-
 		if (parser.getIsChunked())
 		{
 			std::cout << "Chunked body" << std::endl;
@@ -147,7 +148,7 @@ void Server::handleConnection(Connection &conn, size_t &i, Parser &parser, HTTPR
 			std::cout << "\033[1;33m"
 					  << "Regular body"
 					  << "\033[0m" << std::endl;
-			if (parser.getBuffer().size() == request.getContentLength())
+			if (!parser.getBodyComplete() && parser.getBuffer().size() == request.getContentLength())
 				parser.setBodyComplete(true);
 			else if (!conn.readBody(parser, request, response))
 			{
