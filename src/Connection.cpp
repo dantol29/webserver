@@ -69,9 +69,9 @@ Parser &Connection::getParser()
 	return _parser;
 }
 // Attempts to read HTTP request headers from the client connection into _headersBuffer on the Parser.
-bool Connection::readSocket(Parser &parser)
+bool Connection::readHeaders(Parser &parser)
 {
-	std::cout << "\nEntering readSocket" << std::endl;
+	std::cout << "\nEntering readHeaders" << std::endl;
 	char buffer[BUFFER_SIZE] = {0};
 	std::cout << "buffers size: " << sizeof(buffer) << std::endl;
 	ssize_t bytesRead = recv(_pollFd.fd, buffer, BUFFER_SIZE, 0);
@@ -81,7 +81,7 @@ bool Connection::readSocket(Parser &parser)
 		parser.setBuffer(parser.getBuffer() + std::string(buffer, bytesRead));
 		std::cout << "The buffer is: " << parser.getBuffer() << std::endl;
 
-		std::cout << "Exiting readSocket" << std::endl;
+		std::cout << "Exiting readHeaders" << std::endl;
 		return true;
 	}
 	else if (bytesRead < 0)
@@ -89,13 +89,16 @@ bool Connection::readSocket(Parser &parser)
 		perror("recv failed");
 		return false;
 	}
-	else
+	else if (bytesRead == 0)
 	{
 		std::cout << "Connection closed before headers being completely sent" << std::endl;
 		return false;
 	}
-	std::cout << "Exiting readSocket. This will never happen here!" << std::endl;
-	return true;
+	else
+	{
+		std::cout << "Exiting readHeaders. This will never happen here!" << std::endl;
+		return true;
+	}
 }
 // About the hexa conversion
 // Convert the hexadecimal string from `chunkSizeLine` to a size_t value.

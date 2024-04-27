@@ -19,21 +19,24 @@ Parser::~Parser()
 
 bool Parser::preParseHeaders(HTTPResponse &res)
 {
-	// We read the buffer with readSocket if headersComplete is not true and we write the buffer in the _headersBuffer
+	// We read the buffer with readHeaders if headersComplete is not true and we write the buffer in the _headersBuffer
 	std::size_t headersEnd = _buffer.find("\r\n\r\n");
 	if (headersEnd != std::string::npos)
 	{
 		_headersBuffer = _buffer.substr(0, headersEnd + 4);
-		std::cout << "\033[31m" << "_headersBuffer size " << _headersBuffer.size() << "\033[0m" << std::endl;
+		std::cout << "\033[31m"
+				  << "_headersBuffer size " << _headersBuffer.size() << "\033[0m" << std::endl;
 		std::cout << "_headersBuffer:" << std::endl;
 		std::cout << _headersBuffer << std::endl;
 		_headersComplete = true;
-		std::cout << "\033[31m" << "_buffer size " << _buffer.size() << "\033[0m" << std::endl;
+		std::cout << "\033[31m"
+				  << "_buffer size " << _buffer.size() << "\033[0m" << std::endl;
 		std::cout << "_headersBuffer size:" << std::endl;
 		std::cout << _headersBuffer.size() << std::endl;
 		_buffer = _buffer.substr(headersEnd + 4);
 		std::cout << _buffer << std::endl;
-		std::cout << "\033[31m" << "_buffer size " << _buffer.size() << "\033[0m" << std::endl;
+		std::cout << "\033[31m"
+				  << "_buffer size " << _buffer.size() << "\033[0m" << std::endl;
 		return (true);
 	}
 	if (_buffer.length() > CLIENT_MAX_HEADERS_SIZE)
@@ -264,14 +267,16 @@ int Parser::fileHeaderParametrs(const std::string &headers, struct File &file, u
 		if (headers[++i] == '=') // [=]
 		{
 			key = headers.substr(start, i - start); // [KEY]
-			std::cout << "\033[31m" << "Params Key: " << key << "\033[0m" << std::endl;
+			std::cout << "\033[31m"
+					  << "Params Key: " << key << "\033[0m" << std::endl;
 			if (headers[++i] != '"') // ["]
 				return (0);
 			start = ++i; // skip '"'
 			while (i < headers.length() && headers[i] != '"')
 				i++;
 			value = headers.substr(start, i - start); // [VALUE]
-			std::cout << "\033[31m" << "Params Value: " << value << "\033[0m" << std::endl;
+			std::cout << "\033[31m"
+					  << "Params Value: " << value << "\033[0m" << std::endl;
 			if (headers[i++] != '"') // ["]
 				return (0);
 			file.headers.insert(std::make_pair(key, value));
