@@ -1,17 +1,20 @@
 #include "Connection.hpp"
 
 Connection::Connection(struct pollfd &pollFd, Server &server)
+
 {
 	(void)server;
 	_pollFd.fd = pollFd.fd;
 	_pollFd.events = POLLIN;
 	_pollFd.revents = 0;
 	// TODO: should I initialize the _response here?
-	_response = HTTPResponse();
-	std::cout << "Connection created" << std::endl;
-	std::cout << "pollFd.fd: " << _pollFd.fd << std::endl;
-	std::cout << "pollFd.events: " << _pollFd.events << std::endl;
-	std::cout << "pollFd.revents: " << _pollFd.revents << std::endl;
+	//_response = HTTPResponse();
+	//_request = HTTPRequest();
+	//_parser = Parser();
+	// std::cout << "Connection created" << std::endl;
+	// std::cout << "pollFd.fd: " << _pollFd.fd << std::endl;
+	// std::cout << "pollFd.events: " << _pollFd.events << std::endl;
+	// std::cout << "pollFd.revents: " << _pollFd.revents << std::endl;
 }
 
 Connection::Connection(const Connection &other)
@@ -56,11 +59,19 @@ HTTPResponse &Connection::getResponse()
 {
 	return _response;
 }
-
-// Attempts to read HTTP request headers from the client connection into _headersBuffer on the Parser.
-bool Connection::readSocket(Parser &parser)
+HTTPRequest &Connection::getRequest()
 {
-	std::cout << "\nEntering readSocket" << std::endl;
+	return _request;
+}
+
+Parser &Connection::getParser()
+{
+	return _parser;
+}
+// Attempts to read HTTP request headers from the client connection into _headersBuffer on the Parser.
+bool Connection::readHeaders(Parser &parser)
+{
+	//std::cout << "\nEntering readHeaders" << std::endl;
 	char buffer[BUFFER_SIZE] = {0};
 	std::cout << "buffers size: " << sizeof(buffer) << std::endl;
 	ssize_t bytesRead = recv(_pollFd.fd, buffer, BUFFER_SIZE, 0);
@@ -68,9 +79,9 @@ bool Connection::readSocket(Parser &parser)
 	if (bytesRead > 0)
 	{
 		parser.setBuffer(parser.getBuffer() + std::string(buffer, bytesRead));
-		std::cout << "The buffer is: " << parser.getBuffer() << std::endl;
+		//std::cout << "The buffer is: " << parser.getBuffer() << std::endl;
 
-		std::cout << "Exiting readSocket" << std::endl;
+		//std::cout << "Exiting readHeaders" << std::endl;
 		return true;
 	}
 	else if (bytesRead < 0)
@@ -78,13 +89,16 @@ bool Connection::readSocket(Parser &parser)
 		perror("recv failed");
 		return false;
 	}
-	else
+	else if (bytesRead == 0)
 	{
 		std::cout << "Connection closed before headers being completely sent" << std::endl;
 		return false;
 	}
-	std::cout << "Exiting readSocket. This will never happen here!" << std::endl;
-	return true;
+	else
+	{
+		std::cout << "Exiting readHeaders. This will never happen here!" << std::endl;
+		return true;
+	}
 }
 // About the hexa conversion
 // Convert the hexadecimal string from `chunkSizeLine` to a size_t value.
@@ -178,14 +192,13 @@ bool Connection::readChunk(size_t chunkSize, std::string &chunkData, HTTPRespons
 		{
 			perror("recv failed in readChunk");
 			// Internal Server Error
-			response.setStatusCode(500);
+			response.setStatusCode(500, "");
 			return false;
 		}
 		else
 		{
 			// bytes read == 0, connection closed prematurely
-			std::cout << "Connection closed while reading chunk" << std::endl;
-			response.setStatusCode(400); // Bad Request
+			response.setStatusCode(400, "Connection closed while reading chunk"); // Bad Request
 			return false;
 		}
 	}
@@ -193,8 +206,7 @@ bool Connection::readChunk(size_t chunkSize, std::string &chunkData, HTTPRespons
 	ssize_t crlfRead = recv(_pollFd.fd, crlf, 2, 0);
 	if (crlfRead < 2)
 	{
-		std::cout << "Connection closed while reading CRLF" << std::endl;
-		response.setStatusCode(400); // Bad Request
+		response.setStatusCode(400, "Connection closed while reading CRLF"); // Bad Request
 		return false;
 	}
 	return true;
@@ -204,12 +216,10 @@ bool Connection::readBody(Parser &parser, HTTPRequest &req, HTTPResponse &res)
 {
 	std::cout << "\nEntering readBody" << std::endl;
 	size_t contentLength = req.getContentLength();
-	// size_t contentLength = getContentLength(parser.getHeadersBuffer());
-	// std::cout << "Content-Length: " << contentLength << std::endl;
-	std::cout << "Content-Length: " << contentLength << std::endl;
 	char buffer[BUFFER_SIZE];
 	// We could also use _bodyTotalBytesRead from the parser
 	size_t bytesRead = parser.getBuffer().size();
+	std::cout << "contentLength: " << contentLength << std::endl;
 	std::cout << "bytesRead: " << bytesRead << std::endl;
 	if (bytesRead < contentLength)
 	{
@@ -220,7 +230,8 @@ bool Connection::readBody(Parser &parser, HTTPRequest &req, HTTPResponse &res)
 			std::cout << "read > 0" << std::endl;
 			// _body.append(buffer, read);j
 			parser.setBuffer(parser.getBuffer() + std::string(buffer, read));
-			std::cout << "The 'body; is: " << parser.getBuffer() << std::endl;
+			std::cout << "bytesRead: " << parser.getBuffer().size() << std::endl;
+			//std::cout << "The 'body; is: " << parser.getBuffer() << std::endl;
 			bytesRead += read;
 			if (bytesRead == contentLength)
 			{
@@ -231,21 +242,19 @@ bool Connection::readBody(Parser &parser, HTTPRequest &req, HTTPResponse &res)
 		else if (read < 0)
 		{
 			perror("recv failed");
-			res.setStatusCode(500); // Internal Server Error
+			res.setStatusCode(500, ""); // Internal Server Error
 			return false;
 		}
 		else
 		{
 			std::cout << "read == 0" << std::endl;
-			std::cout << "Connection closed by the client" << std::endl;
-			res.setStatusCode(499); // Client Closed Request
+			res.setStatusCode(499, "Connection closed by the client"); // Client Closed Request
 			return false;
 		}
 	}
 	else
 		parser.setBodyComplete(true);
 	std::cout << "Exiting readBody" << std::endl;
-	parser.setBodyComplete(true);
 	return true;
 }
 
