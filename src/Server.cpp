@@ -187,6 +187,7 @@ void Server::handleConnection(Connection &conn, size_t &i, Parser &parser, HTTPR
 	response = router.routeRequest(request);
 	responseString = response.objToString();
 	std::cout << "\033[1;91mResponse: " << responseString << "\033[0m" << std::endl;
+	// TODO: we should not send here but go through poll first and check for POLLOUT
 	write(conn.getPollFd().fd, responseString.c_str(), responseString.size());
 	close(conn.getPollFd().fd);
 	_FDs.erase(_FDs.begin() + i);
