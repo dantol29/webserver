@@ -129,6 +129,10 @@ void Server::handleConnection(Connection &conn, size_t &i, Parser &parser, HTTPR
 		parser.parseRequestLineAndHeaders(parser.getHeadersBuffer().c_str(), request, response);
 	if (response.getStatusCode() != 0)
 		std::cout << "Error: " << response.getStatusCode() << std::endl;
+	else if (request.getMethod() == "GET")
+	{
+		std::cout << "GET request, no body to read" << std::endl;
+	}
 	else
 	{
 
@@ -145,14 +149,12 @@ void Server::handleConnection(Connection &conn, size_t &i, Parser &parser, HTTPR
 					  << "\033[0m" << std::endl;
 			if (parser.getBuffer().size() == request.getContentLength())
 				parser.setBodyComplete(true);
-			else if (request.getMethod() == "GET")
-				std::cout << "GET request, no body to read" << std::endl;
 			else if (!conn.readBody(parser, request, response))
 			{
 				return (std::cout << "Error reading body" << std::endl, closeClientConnection(conn, i));
 			}
 		}
-		if (request.getMethod() != "GET" && !parser.getBodyComplete())
+		if (!parser.getBodyComplete())
 		{
 			std::cout << "Body still incomplete, exiting handleConnection." << std::endl;
 			return;
@@ -166,7 +168,7 @@ void Server::handleConnection(Connection &conn, size_t &i, Parser &parser, HTTPR
 	}
 
 	std::cout << "\033[1;91mRequest: " << response.getStatusCode() << "\033[0m" << std::endl;
-	if (response.getStatusCode() != 0)
+	if (response.getStatusCode() != 0 || request.getMethod() == "GET")
 	{
 		response.setErrorResponse(response.getStatusCode());
 		std::string responseString = response.objToString();
