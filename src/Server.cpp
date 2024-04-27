@@ -96,10 +96,11 @@ void Server::startPollEventLoop()
 
 void createFile(HTTPRequest &request)
 {
+	std::vector<File> files = request.getFiles();
 	std::string filename;
-	std::map<std::string, std::string>::iterator it = request.getFiles()[0].headers.find("filename");
+	std::map<std::string, std::string>::iterator it = files.back().headers.find("filename");
 
-	if (it != request.getFiles()[0].headers.end())
+	if (it != files.back().headers.end())
 		filename = it->second;
 	else
 	{
@@ -110,7 +111,7 @@ void createFile(HTTPRequest &request)
 	std::ofstream outfile(filename.c_str());
 	if (outfile.is_open())
 	{
-		outfile << request.getFiles()[0].fileContent;
+		outfile << files.back().fileContent;
 		outfile.close();
 		std::cout << "File created successfully" << std::endl;
 	} 
