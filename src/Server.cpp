@@ -140,9 +140,9 @@ void Server::handleConnection(Connection &conn, size_t &i, Parser &parser, HTTPR
 		}
 		else
 		{
-			std::cout << "\033[1;33m";
-			std::cout << "Regular body" << std::endl;
-			std::cout << "\033[0m";
+			std::cout << "\033[1;33m"
+					  << "Regular body"
+					  << "\033[0m" << std::endl;
 			if (parser.getBuffer().size() == request.getContentLength())
 				parser.setBodyComplete(true);
 			else if (request.getMethod() == "GET")
