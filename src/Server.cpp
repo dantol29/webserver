@@ -94,6 +94,30 @@ void Server::startPollEventLoop()
 	}
 }
 
+void createFile(HTTPRequest &request)
+{
+	std::string filename;
+	std::map<std::string, std::string>::iterator it = request.getFiles()[0].headers.find("filename");
+
+	if (it != request.getFiles()[0].headers.end())
+		filename = it->second;
+	else
+	{
+		std::cout << "Error: file does not have a name" << std::endl;
+		return ;
+	}
+
+	std::ofstream outfile(filename.c_str());
+	if (outfile.is_open())
+	{
+		outfile << request.getFiles()[0].fileContent;
+		outfile.close();
+		std::cout << "File created successfully" << std::endl;
+	} 
+	else
+		std::cout << "Error opening file" << std::endl;
+}
+
 void Server::handleConnection(Connection &conn, size_t &i, Parser &parser, HTTPRequest &request, HTTPResponse &response)
 {
 	bool socketHasBeenRead = false;
@@ -105,6 +129,9 @@ void Server::handleConnection(Connection &conn, size_t &i, Parser &parser, HTTPR
 
 	if (!parser.getHeadersComplete())
 	{
+		std::cout << "\033[1;33m"
+					  << "Reading headers"
+					  << "\033[0m" << std::endl;
 		if (!conn.readHeaders(parser))
 		{
 			std::cout << "Error reading headers" << std::endl;
@@ -144,7 +171,7 @@ void Server::handleConnection(Connection &conn, size_t &i, Parser &parser, HTTPR
 		else
 		{
 			std::cout << "\033[1;33m"
-					  << "Regular body"
+					  << "Reading body"
 					  << "\033[0m" << std::endl;
 			if (!parser.getBodyComplete() && parser.getBuffer().size() == request.getContentLength())
 			{
@@ -165,10 +192,10 @@ void Server::handleConnection(Connection &conn, size_t &i, Parser &parser, HTTPR
 			parser.parseFileBody(parser.getBuffer().c_str(), request, response);
 		else if (request.getMethod() != "GET")
 			request.setBody(parser.getBuffer());
-		std::cout << request << std::endl;
 	}
 
 	std::cout << "\033[1;91mRequest: " << response.getStatusCode() << "\033[0m" << std::endl;
+	std::cout << request << std::endl;
 	if (response.getStatusCode() != 0) // || request.getMethod() == "GET" ?????
 	{
 		response.setErrorResponse(response.getStatusCode());
@@ -181,7 +208,8 @@ void Server::handleConnection(Connection &conn, size_t &i, Parser &parser, HTTPR
 		--i;
 		return;
 	}
-
+	if (!request.getUploadBoundary().empty())
+		createFile(request);;
 	std::string responseString;
 	//std::cout << request.getRequestTarget() << std::endl;
 	// TODO: The Router should be a member of the Server class or of the Connection class

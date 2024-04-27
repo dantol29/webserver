@@ -34,7 +34,7 @@ class HTTPRequest
 	void setBody(const std::string &body);
 	void setUploadBoundary(const std::string &boundary);
 	void setFiles(struct File &file);
-	void setFileContent(const std::vector<std::string> &content);
+	void setFileContent(const std::string &content);
 
   private:
 	HTTPRequest(const HTTPRequest &obj);

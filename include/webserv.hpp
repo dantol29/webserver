@@ -21,7 +21,7 @@ std::string toString(const T &value)
 struct File
 {
 	std::map<std::string, std::string> headers;
-	std::vector<std::string> fileContent;
+	std::string fileContent;
 };
 
 bool startsWith(const std::string &fullString, const std::string &starting);

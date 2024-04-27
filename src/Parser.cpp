@@ -39,6 +39,7 @@ bool Parser::preParseHeaders(HTTPResponse &res)
 		// 		  << "_buffer size " << _buffer.size() << "\033[0m" << std::endl;
 		return (true);
 	}
+	std::cout << "headers are not complete" << std::endl;
 	if (_buffer.length() > CLIENT_MAX_HEADERS_SIZE)
 		return (res.setStatusCode(431, "Headers too large"), false);
 	return true;
@@ -267,16 +268,12 @@ int Parser::fileHeaderParametrs(const std::string &headers, struct File &file, u
 		if (headers[++i] == '=') // [=]
 		{
 			key = headers.substr(start, i - start); // [KEY]
-			std::cout << "\033[31m"
-					  << "Params Key: " << key << "\033[0m" << std::endl;
 			if (headers[++i] != '"') // ["]
 				return (0);
 			start = ++i; // skip '"'
 			while (i < headers.length() && headers[i] != '"')
 				i++;
 			value = headers.substr(start, i - start); // [VALUE]
-			std::cout << "\033[31m"
-					  << "Params Value: " << value << "\033[0m" << std::endl;
 			if (headers[i++] != '"') // ["]
 				return (0);
 			file.headers.insert(std::make_pair(key, value));
@@ -313,7 +310,6 @@ bool Parser::saveFileHeaders(const std::string &headers, HTTPRequest &req, unsig
 		while (i < headers.length() && headers[i] != ';' && !hasCRLF(headers.c_str(), i, 0))
 			i++;
 		value = headers.substr(start, i - start); // [VALUE]
-		std::cout << "\033[31m" << value << "\033[0m" << std::endl;
 		file.headers.insert(std::make_pair(key, value));
 		if (hasCRLF(headers.c_str(), i, 1)) // [CRLF] [CRLF]
 			break;
@@ -337,7 +333,7 @@ bool Parser::saveFileHeaders(const std::string &headers, HTTPRequest &req, unsig
 // [DATA][CRLF][BOUNDARY]
 bool Parser::saveFileData(const std::string &data, HTTPRequest &req, unsigned int &i, bool &isFinish)
 {
-	std::vector<std::string> tmpArray;
+	std::string tmpArray;
 	unsigned int start = 0;
 
 	start = i;
@@ -345,7 +341,7 @@ bool Parser::saveFileData(const std::string &data, HTTPRequest &req, unsigned in
 		i++;
 	if (!hasCRLF(data.c_str(), i, 0)) // [CRLF]
 		return (false);
-	tmpArray.push_back(data.substr(start, i - start)); // [DATA]
+	tmpArray = tmpArray + data.substr(start, i - start); // [DATA]
 	i += 2;											   // skip [CRLF]
 	start = i;
 	while (i < data.length() && !hasCRLF(data.c_str(), i, 0))
