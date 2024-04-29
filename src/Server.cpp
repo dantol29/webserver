@@ -41,7 +41,7 @@ void Server::startPollEventLoop()
 		// std::cout << "printFDsVector(_FDs); - after polling" << std::endl;
 		// printFDsVector(_FDs);
 		// print_connectionsVector(_connections);
-		//std::cout << "poll() returned: " << ret << std::endl;
+		// std::cout << "poll() returned: " << ret << std::endl;
 		if (ret > 0)
 		{
 			for (size_t i = 0; i < _FDs.size(); i++)
@@ -105,7 +105,7 @@ void createFile(HTTPRequest &request)
 	else
 	{
 		std::cout << "Error: file does not have a name" << std::endl;
-		return ;
+		return;
 	}
 
 	std::ofstream outfile(filename.c_str());
@@ -114,7 +114,7 @@ void createFile(HTTPRequest &request)
 		outfile << files.back().fileContent;
 		outfile.close();
 		std::cout << "File created successfully" << std::endl;
-	} 
+	}
 	else
 		std::cout << "Error opening file" << std::endl;
 }
@@ -128,11 +128,13 @@ void Server::handleConnection(Connection &conn, size_t &i, Parser &parser, HTTPR
 	std::cout << "Entering handleConnection" << std::endl;
 	std::cout << "\033[0m";
 
+	// READ ADN PARSE REQUEST
+
 	if (!parser.getHeadersComplete())
 	{
 		std::cout << "\033[1;33m"
-					  << "Reading headers"
-					  << "\033[0m" << std::endl;
+				  << "Reading headers"
+				  << "\033[0m" << std::endl;
 		if (!conn.readHeaders(parser))
 		{
 			std::cout << "Error reading headers" << std::endl;
@@ -195,8 +197,10 @@ void Server::handleConnection(Connection &conn, size_t &i, Parser &parser, HTTPR
 			request.setBody(parser.getBuffer());
 	}
 
+	// BUILD RESPONSE
+
 	std::cout << "\033[1;91mRequest: " << response.getStatusCode() << "\033[0m" << std::endl;
-	//std::cout << request << std::endl;
+	// std::cout << request << std::endl;
 	if (response.getStatusCode() != 0) // || request.getMethod() == "GET" ?????
 	{
 		response.setErrorResponse(response.getStatusCode());
@@ -210,14 +214,18 @@ void Server::handleConnection(Connection &conn, size_t &i, Parser &parser, HTTPR
 		return;
 	}
 	if (!request.getUploadBoundary().empty())
-		createFile(request);;
+		createFile(request);
+	;
 	std::string responseString;
-	//std::cout << request.getRequestTarget() << std::endl;
-	// TODO: The Router should be a member of the Server class or of the Connection class
+	// std::cout << request.getRequestTarget() << std::endl;
+	//  TODO: The Router should be a member of the Server class or of the Connection class
 	Router router;
 	response = router.routeRequest(request);
 	responseString = response.objToString();
-	//std::cout << "\033[1;91mResponse: " << responseString << "\033[0m" << std::endl;
+
+	// std::cout << "\033[1;91mResponse: " << responseString << "\033[0m" << std::endl;
+
+	// SEND RESPONSE
 	// TODO: we should not send here but go through poll first and check for POLLOUT
 	write(conn.getPollFd().fd, responseString.c_str(), responseString.size());
 	close(conn.getPollFd().fd);
@@ -443,7 +451,7 @@ void Server::checkSocketOptions()
 	}
 	else
 	{
-		//std::cout << "SO_REUSEADDR is " << (optval ? "enabled" : "disabled") << std::endl;
+		// std::cout << "SO_REUSEADDR is " << (optval ? "enabled" : "disabled") << std::endl;
 	}
 
 	if (getsockopt(_serverFD, SOL_SOCKET, SO_REUSEPORT, &optval, &optlen) < 0)
@@ -452,6 +460,6 @@ void Server::checkSocketOptions()
 	}
 	else
 	{
-		//std::cout << "SO_REUSEPORT is " << (optval ? "enabled" : "disabled") << std::endl;
+		// std::cout << "SO_REUSEPORT is " << (optval ? "enabled" : "disabled") << std::endl;
 	}
 }

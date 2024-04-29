@@ -30,13 +30,16 @@ class Server
 	void startListening();
 	void startPollEventLoop();
 
-	int getPort() const;
-	void setPort(int port);
-
-	size_t getClientMaxHeadersSize() const;
-	std::string getWebRoot() const;
-	void setWebRoot(const std::string &webRoot);
+	// GETTERS
 	std::string getConfigFilePath() const;
+	int getPort() const;
+	std::string getWebRoot() const;
+	size_t getClientMaxHeadersSize() const;
+
+	// SETTERS
+	void setPort(int port);
+	void setWebRoot(const std::string &webRoot);
+
 	void checkSocketOptions();
 
   private:
@@ -72,11 +75,9 @@ class Server
 	void AlertAdminAndTryToRecover();
 
 	/* for handleConnection */
-	// void closeClientConnection(int clientFD, HTTPResponse &response);
 	void closeClientConnection(Connection &conn, size_t &i);
 
 	/* Not avaiable constructors */
-
 	// Copy constructor
 	Server(const Server &other);
 	// Assignment operator
