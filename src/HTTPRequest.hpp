@@ -4,6 +4,7 @@
 #include <string>
 #include <map>
 #include <vector>
+#include "webserv.hpp"
 
 class HTTPRequest
 {
@@ -13,13 +14,17 @@ class HTTPRequest
 
 	// GETTERS
 	std::string getMethod() const;
-	std::string getHost() const;
 	std::string getRequestTarget() const;
 	std::string getProtocolVersion() const;
+	std::string getHost() const;
+	std::string getUploadBoundary() const;
+	size_t getContentLength() const;
 	std::multimap<std::string, std::string> getQueryString() const;
 	std::multimap<std::string, std::string> getHeaders() const;
 	std::pair<std::string, std::string> getSingleHeader(std::string key) const;
-	std::vector<std::string> getBody() const;
+	std::string getBody() const;
+	std::vector<struct File> getFiles() const;
+
 	// SETTERS
 	void setMethod(std::string method);
 	void setRequestTarget(std::string requestTarget);
@@ -27,6 +32,9 @@ class HTTPRequest
 	void setQueryString(const std::string &key, const std::string &value);
 	void setHeaders(const std::string &key, const std::string &value);
 	void setBody(const std::string &body);
+	void setUploadBoundary(const std::string &boundary);
+	void setFiles(struct File &file);
+	void setFileContent(const std::string &content);
 
   private:
 	HTTPRequest(const HTTPRequest &obj);
@@ -38,7 +46,9 @@ class HTTPRequest
 	std::string _protocolVersion;
 	std::multimap<std::string, std::string> _queryString;
 	std::multimap<std::string, std::string> _headers;
-	std::vector<std::string> _body;
+	std::string _body;
+	std::string _uploadBoundary;
+	std::vector<File> _files;
 };
 
 std::ostream &operator<<(std::ostream &out, const HTTPRequest &a);

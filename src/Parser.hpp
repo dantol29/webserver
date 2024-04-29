@@ -3,6 +3,8 @@
 
 #include "HTTPRequest.hpp"
 #include "HTTPResponse.hpp"
+#include <iomanip>
+#include <sstream>
 
 #define MAX_URI 200
 
@@ -15,31 +17,50 @@ class Parser
   public:
 	~Parser();
 	Parser();
-	void parseRequest(const char *request, HTTPRequest &req, HTTPResponse &res);
+	bool preParseHeaders(HTTPResponse &res);
+	void parseRequestLineAndHeaders(const char *request, HTTPRequest &req, HTTPResponse &res);
+	void parseFileBody(const std::string &request, HTTPRequest &req, HTTPResponse &res);
+
+	// GETTERS FROM THE CORE PARSING FUNCTIONALITIES
+	bool getHeadersComplete() const;
+	std::string getBuffer() const;
+	std::string getHeadersBuffer() const;
+	bool getBodyComplete() const;
+	bool getHeadersAreParsed() const;
+
+	// SETTERS FROM THE CORE PARSING FUNCTIONALITIES
+	void setHeadersComplete(bool value);
+	void setBuffer(std::string str);
+	void setHeadersBuffer(std::string str);
+	void setBodyComplete(bool value);
+
+	// CHUNKED REQUEST
+	bool getIsChunked() const;
+	void setIsChunked(bool value);
 
   private:
-	// GETTERS
-	bool getIsChunked() const;
-	bool getIsChunkFinish() const;
-	// std::string getErrorMessage() const;
+	// VARIABLES FROM THE CORE PARSING FUNCTIONALITY
+	std::string _buffer;
+	std::string _headersBuffer;
+	bool _headersComplete;
+	bool _bodyComplete;
+	bool _headersAreParsed;
 
-	// CHUNKED REQUESTS
-	void setIsChunked(bool a);
-	// Is this function necessary? I think we don't use it
-	void parseChunkedBody(const char *request, HTTPRequest &req, HTTPResponse &res);
+	// CHUNKED REQUEST
+	bool _isChunked;
+
+	// PARSING INTERNAL FUNC
 	void parseRequestLine(const char *request, HTTPRequest &req, HTTPResponse &res);
 	void parseHeaders(const char *request, HTTPRequest &req, HTTPResponse &res);
-	void parseBody(const char *request, HTTPRequest &req, HTTPResponse &res);
-	int ft_error(int statusCode, std::string message);
-
-	// VARIABLES
-	bool _isChunked;
-	bool _isChunkFinish;
 
 	// UTILS
+	bool saveFileHeaders(const std::string &headers, HTTPRequest &req, unsigned int &i);
+	int fileHeaderParametrs(const std::string &headers, struct File &file, unsigned int i);
+	bool saveFileData(const std::string &data, HTTPRequest &req, unsigned int &i, bool &isFinish);
+	bool isUploadBoundary(const std::string &data, HTTPRequest &req, unsigned int &i);
+	std::string extractUploadBoundary(std::string line);
 	std::string extractVariables(std::string &requestTarget, bool &isOriginForm);
 	bool saveVariables(std::string &variables, HTTPRequest &req);
-	// void makeHeadersLowCase();
 	bool isValidHost(std::string host);
 	bool isValidContentType(std::string type);
 	bool isOrigForm(std::string &requestTarget, int &queryStart);
