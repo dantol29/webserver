@@ -77,7 +77,6 @@ bool	ConfigFile::saveVariable(const std::string& line)
 
 	if (line[i++] != '\t') // [TAB]
 		return (false);
-
 	start = i;
 	while (i < line.length() && line[i] != ' ')
 		i++;
@@ -85,7 +84,6 @@ bool	ConfigFile::saveVariable(const std::string& line)
 	
 	if (line[i++] != ' ' || line[i] == ' ') // [SP]
 		return (false);
-
 	start = i;
 	while (i < line.length() && line[i] != ';')
 		i++;
@@ -93,9 +91,7 @@ bool	ConfigFile::saveVariable(const std::string& line)
 
 	if (line[i++] != ';') // [;]
 		return (false);
-
-	if (line[i] != '\n') // TODO: line[i + 1] != '\0'
-		return (false);
+	// TODO: line[i + 1] != '\0'
 
 	_variables.insert(std::make_pair(key, value));
 	return (true);
@@ -160,8 +156,7 @@ bool	ConfigFile::saveLocationVariable(const std::string& line, std::string& key,
 	if (line[i++] != ';') // [;]
 		return (false);
 
-	if (line[i] != '\n') // TODO: line[i + 1] != '\0'
-		return (false);
+	// TODO: line[i + 1] != '\0'
 	return (true);
 }
 
@@ -172,7 +167,7 @@ bool	ConfigFile::parseLocation(std::string& line, std::ifstream& config){
 
 	var.insert(std::make_pair("path", _tmpPath));
 	while (std::getline(config, line)){
-		if (line == "\t}\n")
+		if (line == "\t}")
 			break ;
 		if (!saveLocationVariable(line, key, value))
 			return (error("Config file: Syntax error"));
@@ -191,11 +186,13 @@ bool	ConfigFile::parseFile(char *file)
 		return (error("Config file: Invalid file"));
 
 	std::getline(config, line);
-	if (line != "server {\n")
+	if (line != "server {")
 		return (error("Config file: Syntax error ( no server { )"));
 
 	while (std::getline(config, line))
 	{
+		if (line.empty())	
+			continue;
 		if (line == "}")
 			return (true);
 		if (isLocation(line))
