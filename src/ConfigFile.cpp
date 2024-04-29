@@ -72,7 +72,7 @@ bool	ConfigFile::saveVariable(const std::string& line)
 {
 	std::string	key;
 	std::string value;
-	int i = 0;
+	unsigned int i = 0;
 	int	start;
 
 	if (line[i++] != '\t') // [TAB]
@@ -104,7 +104,7 @@ bool	ConfigFile::saveVariable(const std::string& line)
 // [TAB][LOCATION][SP][/PATH][SP][{]
 bool	ConfigFile::isLocation(const std::string& line)
 {
-	int i = 0;
+	unsigned int i = 0;
 	int start;
 	
 	if (line[i++] != '\t') // [TAB]
@@ -138,7 +138,7 @@ bool	ConfigFile::isLocation(const std::string& line)
 // [TAB][TAB][KEY][SP][VALUE][;]
 bool	ConfigFile::saveLocationVariable(const std::string& line, std::string& key, std::string& value){
 	std::string stringLine(line);
-	int i = 0;
+	unsigned int i = 0;
 	int	start;
 
 	if (line[i++] != '\t' || line[i++] != '\t') // [TAB][TAB]
