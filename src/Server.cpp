@@ -269,14 +269,11 @@ void Server::handleConnection(Connection &conn, size_t &i, Parser &parser, HTTPR
 			  << "\033[0m" << std::endl;
 	conn.printConnection();
 
-	// READ ADN PARSE REQUEST
 	conn.setHasReadSocket(false);
 	if (!conn.getHasFinishedReading())
 		readFromClient(conn, i, parser, request, response);
 	if (conn.getHasReadSocket() && !conn.getHasFinishedReading())
 		return;
-	// BUILD RESPONSE
-
 	if (!conn.getCanBeClosed() && !conn.getHasDataToSend())
 		buildResponse(conn, i, request, response);
 	if (conn.getHasDataToSend())
