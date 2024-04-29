@@ -89,7 +89,7 @@ bool	ConfigFile::saveVariable(const std::string& line)
 		i++;
 	value = line.substr(start, i - start); // [VALUE]
 
-	if (line[i++] != ';') // [;]
+	if (line[i++] != ';' || i < line.length()) // [;]
 		return (false);
 	// TODO: line[i + 1] != '\0'
 
@@ -125,15 +125,15 @@ bool	ConfigFile::isLocation(const std::string& line)
 	if (line[i++] != ' ') // [SP]
 		return (false);
 
-	if (line[i] != '{') // [{]
+	if (line[i] != '{' || i + 1 < line.length() ) // [{]
 		return (false);
 
 	return (true);
 }
 
 // [TAB][TAB][KEY][SP][VALUE][;]
-bool	ConfigFile::saveLocationVariable(const std::string& line, std::string& key, std::string& value){
-	std::string stringLine(line);
+bool	ConfigFile::saveLocationVariable(const std::string& line, std::string& key, std::string& value)
+{
 	unsigned int i = 0;
 	int	start;
 
@@ -143,7 +143,7 @@ bool	ConfigFile::saveLocationVariable(const std::string& line, std::string& key,
 	start = i;
 	while (i < line.length() && line[i] != ' ')
 		i++;
-	key = stringLine.substr(start, i - start); // [KEY]
+	key = line.substr(start, i - start); // [KEY]
 
 	if (line[i++] != ' ' || line[i] == ' ') // [SP]
 		return (false);
@@ -151,9 +151,9 @@ bool	ConfigFile::saveLocationVariable(const std::string& line, std::string& key,
 	start = i;
 	while (i < line.length() && line[i] != ';')
 		i++;
-	value = stringLine.substr(start, i - start); // [VALUE]
+	value = line.substr(start, i - start); // [VALUE]
 
-	if (line[i++] != ';') // [;]
+	if (line[i] != ';' || i + 1 < line.length()) // [;]
 		return (false);
 
 	// TODO: line[i + 1] != '\0'
@@ -286,9 +286,9 @@ bool	ConfigFile::checkVariablesValue(std::map<std::string, std::string> var)
 	std::map<std::string, std::string>::iterator it;
 	unsigned int	start = 0;
 
-	// ROOT
-	if (!pathExists(var, "root"))
-		return (false);
+	// // ROOT
+	// if (!pathExists(var, "root"))
+	// 	return (false);
 	// ALIAS
 	if (!pathExists(var, "alias"))
 		return (false);
