@@ -7,7 +7,8 @@ Connection::Connection(struct pollfd &pollFd, Server &server)
 	_pollFd.fd = pollFd.fd;
 	_pollFd.events = POLLIN;
 	_pollFd.revents = 0;
-	_isFinishedReading = false;
+	_hasReadSocket = false;
+	_hasFinishedReading = false;
 	_hasDataToSend = false;
 	_canBeClosed = false;
 }
@@ -66,6 +67,11 @@ Parser &Connection::getParser()
 	return _parser;
 }
 
+bool Connection::getHasReadSocket()
+{
+	return _hasReadSocket;
+}
+
 bool Connection::getHasFinishedReading()
 {
 	return _hasFinishedReading;
@@ -79,6 +85,11 @@ bool Connection::getHasDataToSend()
 bool Connection::getCanBeClosed()
 {
 	return _canBeClosed;
+}
+
+void Connection::setHasReadSocket(bool value)
+{
+	_hasReadSocket = value;
 }
 
 void Connection::setHasFinishedReading(bool value)

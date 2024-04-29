@@ -20,6 +20,7 @@ class Connection
 	HTTPResponse _response;
 
 	struct pollfd _pollFd;
+	bool _hasReadSocket;
 	bool _hasFinishedReading;
 	bool _hasDataToSend;
 	bool _canBeClosed;
@@ -43,13 +44,14 @@ class Connection
 	HTTPRequest &getRequest();
 	HTTPResponse &getResponse();
 	struct pollfd getPollFd() const;
+	bool getHasReadSocket();
 	bool getBodyComplete() const;
 	std::string getChunkData() const;
 	bool getHasFinishedReading();
 	bool getHasDataToSend();
 	bool getCanBeClosed();
 	/* Setters */
-
+	void setHasReadSocket(bool value);
 	void setHeadersComplete(bool headersComplete);
 	void setBodyComplete(bool bodyComplete);
 	void setHeaders(const std::string &headers);

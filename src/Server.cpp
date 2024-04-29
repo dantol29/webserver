@@ -119,17 +119,13 @@ void createFile(HTTPRequest &request)
 		std::cout << "Error opening file" << std::endl;
 }
 
-void Server::handleConnection(Connection &conn, size_t &i, Parser &parser, HTTPRequest &request, HTTPResponse &response)
+void Server::readFromClient(Connection &conn, size_t &i, Parser &parser, HTTPRequest &request, HTTPResponse &response)
 {
-	bool socketHasBeenRead = false;
-	conn.printConnection();
-
-	std::cout << "\033[1;36m";
-	std::cout << "Entering handleConnection" << std::endl;
-	std::cout << "\033[0m";
-
-	// READ ADN PARSE REQUEST
-
+	(void)i;
+	std::cout << "\033[1;36m"
+			  << "Entering readFromClient"
+			  << "\033[0m" << std::endl;
+	// TODO: change to _areHeadersCopmplete
 	if (!parser.getHeadersComplete())
 	{
 		std::cout << "\033[1;33m"
@@ -138,22 +134,24 @@ void Server::handleConnection(Connection &conn, size_t &i, Parser &parser, HTTPR
 		if (!conn.readHeaders(parser))
 		{
 			std::cout << "Error reading headers" << std::endl;
-			closeClientConnection(conn, i);
+			conn.setHasFinishedReading(true);
+			conn.setHasDataToSend(false);
+			conn.setCanBeClosed(true);
 			return;
 		}
-		socketHasBeenRead = true;
+		conn.setHasReadSocket(true);
 		if (!parser.preParseHeaders(response))
 		{
-			// TODO: we should not send here but go through poll first and check for POLLOUT
-			send(conn.getPollFd().fd, response.objToString().c_str(), response.objToString().size(), 0);
+			conn.setCanBeClosed(true);
+			conn.setHasFinishedReading(true);
+			conn.setHasDataToSend(true);
 			std::cout << "Error pre-parsing headers" << std::endl;
-			closeClientConnection(conn, i);
 			return;
 		}
 	}
 	if (!parser.getHeadersComplete())
 	{
-		std::cout << "Headers incomplete yet, exiting handleConnection." << std::endl;
+		std::cout << "Headers incomplete yet, exiting readFromClient." << std::endl;
 		return;
 	}
 	if (parser.getHeadersComplete() && !parser.getHeadersAreParsed())
@@ -164,12 +162,18 @@ void Server::handleConnection(Connection &conn, size_t &i, Parser &parser, HTTPR
 		std::cout << "GET request, no body to read" << std::endl;
 	else
 	{
-		if (parser.getIsChunked() && !socketHasBeenRead)
+		if (parser.getIsChunked() && !conn.getHasReadSocket())
 		{
 			std::cout << "Chunked body" << std::endl;
 			if (!conn.readChunkedBody(parser))
-				return (closeClientConnection(conn, i));
-			socketHasBeenRead = true;
+			{
+				conn.setCanBeClosed(true);
+				conn.setHasFinishedReading(true);
+				// hasDataToSend true?
+				// conn.setHasDataToSend(true);
+				return;
+			}
+			conn.setHasReadSocket(true);
 		}
 		else
 		{
@@ -178,60 +182,107 @@ void Server::handleConnection(Connection &conn, size_t &i, Parser &parser, HTTPR
 					  << "\033[0m" << std::endl;
 			if (!parser.getBodyComplete() && parser.getBuffer().size() == request.getContentLength())
 			{
-				// TODO: in the new design we will return here and go to the function where the response is built
+				// TODO: in the new design we will return here and go to the function where the response is
 				parser.setBodyComplete(true);
+				conn.setHasFinishedReading(true);
+				conn.setHasDataToSend(true);
 			}
-			else if (!socketHasBeenRead && !conn.readBody(parser, request, response))
-				return (std::cout << "Error reading body" << std::endl, closeClientConnection(conn, i));
-			// It's not necessary to set socketHasBeenRead to true here, because we will not read the socket again from
-			// here Set it here would also be wrong because of the if condition above
+			else if (!conn.getHasReadSocket() && !conn.readBody(parser, request, response))
+			{
+				std::cout << "Error reading body" << std::endl;
+				conn.setCanBeClosed(true);
+				conn.setHasFinishedReading(true);
+				// Probably hasDataToSend false, because we have an error on reading the body
+				// conn.setHasDataToSend(false);
+				return;
+			}
 		}
 		if (!parser.getBodyComplete())
 		{
-			std::cout << "Body still incomplete, exiting handleConnection." << std::endl;
+			std::cout << "Body still incomplete, exiting readFromClient." << std::endl;
 			return;
 		}
 		if (!request.getUploadBoundary().empty())
 			parser.parseFileBody(parser.getBuffer(), request, response);
 		else if (request.getMethod() != "GET")
+		{
 			request.setBody(parser.getBuffer());
+			conn.setHasFinishedReading(true);
+		}
 	}
+}
 
-	// BUILD RESPONSE
-
-	std::cout << "\033[1;91mRequest: " << response.getStatusCode() << "\033[0m" << std::endl;
-	// std::cout << request << std::endl;
-	if (response.getStatusCode() != 0) // || request.getMethod() == "GET" ?????
+void Server::buildResponse(Connection &conn, size_t &i, HTTPRequest &request, HTTPResponse &response)
+{
+	(void)i;
+	std::cout << "\033[1;36m"
+			  << "Entering buildResponse"
+			  << "\033[0m" << std::endl;
+	std::cout << "\033[1;91mRequest status code: " << response.getStatusCode() << "\033[0m" << std::endl;
+	if (response.getStatusCode() != 0)
 	{
 		response.setErrorResponse(response.getStatusCode());
-		std::string responseString = response.objToString();
-		std::cout << "\033[1;91mResponse(error): " << responseString << "\033[0m" << std::endl;
-		send(conn.getPollFd().fd, responseString.c_str(), responseString.size(), 0);
-		close(conn.getPollFd().fd);
-		_FDs.erase(_FDs.begin() + i);
-		_connections.erase(_connections.begin() + i);
-		--i;
+		conn.setHasDataToSend(true);
 		return;
 	}
 	if (!request.getUploadBoundary().empty())
+	{
 		createFile(request);
-	;
+	}
 	std::string responseString;
 	// std::cout << request.getRequestTarget() << std::endl;
-	//  TODO: The Router should be a member of the Server class or of the Connection class
+	// TODO: The Router should be a member of the Server class or of the Connection class
 	Router router;
 	response = router.routeRequest(request);
 	responseString = response.objToString();
+	conn.setHasDataToSend(true);
+}
 
-	// std::cout << "\033[1;91mResponse: " << responseString << "\033[0m" << std::endl;
+void Server::writeToClient(Connection &conn, size_t &i, HTTPResponse &response)
+{
+	(void)i;
+	send(conn.getPollFd().fd, response.objToString().c_str(), response.objToString().size(), 0);
+	conn.setHasDataToSend(false);
+	// setCanBeClosed(true) would not be the case only if we have a keep-alive connection or a chunked response
+	conn.setCanBeClosed(true);
+}
 
-	// SEND RESPONSE
-	// TODO: we should not send here but go through poll first and check for POLLOUT
-	write(conn.getPollFd().fd, responseString.c_str(), responseString.size());
+void Server::closeClientConnection(Connection &conn, size_t &i)
+{
+	// if (response.getStatusCode() != 0)
+	if (conn.getResponse().getStatusCode() != 0 && conn.getResponse().getStatusCode() != 499)
+	{
+		std::string responseString = conn.getResponse().objToString();
+		send(conn.getPollFd().fd, responseString.c_str(), responseString.size(), 0);
+	}
+	// TODO: should we close it with the Destructor of the Connection class?
 	close(conn.getPollFd().fd);
 	_FDs.erase(_FDs.begin() + i);
 	_connections.erase(_connections.begin() + i);
 	--i;
+}
+
+void Server::handleConnection(Connection &conn, size_t &i, Parser &parser, HTTPRequest &request, HTTPResponse &response)
+{
+	std::cout << "\033[1;36m"
+			  << "Entering handleConnection"
+			  << "\033[0m" << std::endl;
+	conn.printConnection();
+
+	// READ ADN PARSE REQUEST
+	conn.setHasReadSocket(false);
+	if (!conn.getHasFinishedReading())
+		readFromClient(conn, i, parser, request, response);
+	if (conn.getHasReadSocket() && !conn.getHasFinishedReading())
+		return;
+	// BUILD RESPONSE
+
+	if (!conn.getCanBeClosed() && !conn.getHasDataToSend())
+		buildResponse(conn, i, request, response);
+	if (conn.getHasDataToSend())
+		writeToClient(conn, i, response);
+	if (conn.getCanBeClosed())
+		closeClientConnection(conn, i);
 }
 
 /*** Private Methods ***/
@@ -309,7 +360,8 @@ void Server::addServerSocketPollFdToVectors()
 void Server::acceptNewConnection()
 {
 	// TODO: think about naming.
-	// We have 4 different names for kind of the same thing: clientAddress, newSocket, newSocketPoll, newConnection
+	// We have 4 different names for kind of the same thing: clientAddress, newSocket, newSocketPoll,
+	// newConnection
 	struct sockaddr_in clientAddress;
 	socklen_t ClientAddrLen = sizeof(clientAddress);
 	std::cout << "New connection detected" << std::endl;
@@ -402,21 +454,6 @@ void Server::AlertAdminAndTryToRecover()
 }
 
 /* for handleConnection */
-
-void Server::closeClientConnection(Connection &conn, size_t &i)
-{
-	// if (response.getStatusCode() != 0)
-	if (conn.getResponse().getStatusCode() != 0 && conn.getResponse().getStatusCode() != 499)
-	{
-		std::string responseString = conn.getResponse().objToString();
-		send(conn.getPollFd().fd, responseString.c_str(), responseString.size(), 0);
-	}
-	// TODO: should we close it with the Destructor of the Connection class?
-	close(conn.getPollFd().fd);
-	_FDs.erase(_FDs.begin() + i);
-	_connections.erase(_connections.begin() + i);
-	--i;
-}
 
 /* Others */
 
