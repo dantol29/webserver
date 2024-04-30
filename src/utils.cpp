@@ -10,6 +10,30 @@
 #include "webserv.hpp"
 #include <list>
 #include <algorithm>
+#include "Debug.hpp"
+
+void test_debug()
+{
+	Debug::enable(true);
+	Debug::setLevel(Debug::NORMAL);
+
+	// This will be logged
+	Debug::log("This is a NORMAL message.", Debug::NORMAL);
+	// This will not be logged
+	Debug::log("This is a OCF message.", Debug::OCF);
+
+	Debug::setLevel(Debug::OCF);
+	// This will be logged
+	Debug::log("This is a NORMAL message.", Debug::NORMAL);
+	// This will be logged
+	Debug::log("This is a OCF message.", Debug::OCF);
+
+	Debug::enable(false);
+	// This will not be logged
+	Debug::log("This is a NORMAL message.", Debug::NORMAL);
+	// This will not be logged
+	Debug::log("This is a OCF message.", Debug::OCF);
+}
 
 std::string readHtml(const std::string &filePath)
 {
