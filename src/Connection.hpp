@@ -18,7 +18,12 @@ class Connection
 	Parser _parser;
 	HTTPRequest _request;
 	HTTPResponse _response;
+
 	struct pollfd _pollFd;
+	bool _hasReadSocket;
+	bool _hasFinishedReading;
+	bool _hasDataToSend;
+	bool _canBeClosed;
 
 	// Additional client state can be managed here
 
@@ -39,14 +44,21 @@ class Connection
 	HTTPRequest &getRequest();
 	HTTPResponse &getResponse();
 	struct pollfd getPollFd() const;
+	bool getHasReadSocket();
 	bool getBodyComplete() const;
 	std::string getChunkData() const;
+	bool getHasFinishedReading();
+	bool getHasDataToSend();
+	bool getCanBeClosed();
 	/* Setters */
-
+	void setHasReadSocket(bool value);
 	void setHeadersComplete(bool headersComplete);
 	void setBodyComplete(bool bodyComplete);
 	void setHeaders(const std::string &headers);
 	void setChunkData(const std::string &chunkData);
+	void setHasFinishedReading(bool value);
+	void setCanBeClosed(bool value);
+	void setHasDataToSend(bool value);
 	// We will not provide the setter for HTTPResponse as it should be managed by the HTTPResponse class
 	/* Debugging */
 	void printConnection() const;
