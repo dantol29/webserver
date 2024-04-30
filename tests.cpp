@@ -5,11 +5,15 @@
 #include <string.h> // strlen
 #include <sys/wait.h>
 #include <cstring>
+#include <vector>
 #include <poll.h>
 
 #define BUFFER_SIZE 1024
 #define PORT 8080
 #define POLL_TIMOUT 2000
+#define COLOR_GREEN "\033[32m"
+#define COLOR_RED "\033[31m"
+#define COLOR_RESET "\033[0m"
 
 // ADD TO THE MAIN IN WEBSERVER (after read())
 // #include "HTTPRequest.hpp"
@@ -19,6 +23,16 @@
 // ./webserver
 // c++ tests.cpp -o test
 // ./test "test_name"
+
+struct HTTPTest
+{
+	std::string request;
+	std::string expectedResponse;
+
+	HTTPTest(std::string request, std::string expectedResponse) : request(request), expectedResponse(expectedResponse)
+	{
+	}
+};
 
 void evalSendOutput(ssize_t bytesSent, const char *request, int clientSocket)
 {
@@ -74,51 +88,32 @@ bool waitForResponseWitPoll(int socketFd, int timoutMilliseconds)
 	}
 }
 
-void sendData(const char *requests[], sockaddr_in serverAddress)
+void sendData(const std::vector<HTTPTest> &tests, sockaddr_in serverAddress)
 {
-	int numRequests = 0;
-
-	// Count the number of requests
-	while (requests[++numRequests])
+	for (size_t i = 0; i < tests.size(); ++i)
 	{
-	}
-	std::cout << "Number of requests: " << numRequests << std::endl;
-	// Create a socket for each request
-	int clientSockets[numRequests];
-
-	for (int i = 0; i < numRequests; i++)
-	{
+		const auto &test = tests[i];
 		std::cout << "--------------------------------" << std::endl;
 		std::cout << "Processing request #" << i + 1 << std::endl;
-		std::cout << "Request: " << requests[i] << std::endl;
-		// Create a socket
-		// clientSockets[i] = socket(AF_INET, SOCK_STREAM, 0);
-		if ((clientSockets[i] = socket(AF_INET, SOCK_STREAM, 0)) < 0)
+		std::cout << "Request: " << test.request << std::endl;
+		int clientSocket = socket(AF_INET, SOCK_STREAM, 0);
+		if (clientSocket < 0)
 		{
 			std::cerr << "Socket creation failed" << std::endl;
 			continue;
 		}
-		// Connect to the server
-		if (connect(clientSockets[i], (struct sockaddr *)&serverAddress, sizeof(serverAddress)) < 0)
+		if (connect(clientSocket, (struct sockaddr *)&serverAddress, sizeof(serverAddress) < 0))
 		{
 			std::cerr << "Connection failed" << std::endl;
-			close(clientSockets[i]);
+			close(clientSocket);
 			continue;
 		}
-		// Send the request
-		ssize_t bytesSent = send(clientSockets[i], requests[i], strlen(requests[i]), 0);
-		// Evaluate the output of the send function
-		evalSendOutput(bytesSent, requests[i], clientSockets[i]);
-		// Wait and read the response
-		char buffer[BUFFER_SIZE];
-		if (!waitForResponseWitPoll(clientSockets[i], POLL_TIMOUT))
-		{
-			std::cerr << "No response was received" << std::endl;
-		}
-		else
-		{
+		ssize_t bytesSent = send(clientSocket, test.request.c_str(), test.request.size(), 0);
 
-			ssize_t bytesRead = read(clientSockets[i], buffer, BUFFER_SIZE);
+		char buffer[BUFFER_SIZE];
+		if (waitForResponseWitPoll(clientSocket, POLL_TIMOUT))
+		{
+			ssize_t bytesRead = read(clientSocket, buffer, BUFFER_SIZE);
 			if (bytesRead < 0)
 				std::cerr << "Failed to read data." << std::endl;
 			else if (bytesRead == 0)
@@ -126,10 +121,23 @@ void sendData(const char *requests[], sockaddr_in serverAddress)
 			else
 			{
 				buffer[bytesRead] = '\0';
-				std::cout << "Response: " << buffer << std::endl;
+				if (std::string(buffer) == test.expectedResponse)
+				{
+					std::cout << "Response: " << buffer << std::endl;
+					std::cout << COLOR_GREEN "✅ Test Passed" COLOR_RESET << std::endl;
+				}
+				else
+				{
+					std::cerr << "Response: " << buffer << std::endl;
+					std::cerr << COLOR_RED "❌ Test Failed" COLOR_RESET << std::endl;
+				}
 			}
 		}
-		close(clientSockets[i]);
+		else
+		{
+			std::cerr << "No response was received" << std::endl;
+		}
+		close(clientSocket);
 		sleep(1);
 		std::cout << "--------------------------------" << std::endl;
 	}
@@ -137,79 +145,91 @@ void sendData(const char *requests[], sockaddr_in serverAddress)
 
 void simple(sockaddr_in serverAddress)
 {
-	const char *requests[] = {"GET / HTTP/1.1\r\nHost: www.example.com\r\n\r\n",	   // 200 (OK)
-							  "POST / HTTP/1.1\r\nHost: www.example.com\r\n\r\n",	   //  200 (OK)
-							  "GETT / HTTP/1.1\r\nHost: www.example.com\r\n\r\n",	   // 501 (Not Implemented)
-							  "GET /random HTTP/1.1\r\nHost: www.example.com\r\n\r\n", // 400 (Bad Request)
-							  "GET / HTTP/9.9s\r\nHost: www.example.com\r\n\r\n",	   // 400 (Bad Request)
-							  " / HTTP/1.1\r\nHost: www.example.com\r\n\r\n",		   // 400 (Bad Request)
-							  "GET / HTTP/1.1\nHost: www.example.com\r\n\r\n",		   // 400 (Bad Request)
-							  NULL};
-	sendData(requests, serverAddress);
+	std::vector<HTTPTest> tests = {
+		HTTPTest("GET / HTTP/1.1\r\nHost: www.example.com\r\n\r\n", "200"),
+		HTTPTest("POST / HTTP/1.1\r\nHost: www.example.com\r\n\r\n", "200"),
+		HTTPTest("GETT / HTTP/1.1\r\nHost: www.example.com\r\n\r\n", "501"),
+		HTTPTest("GET /random HTTP/1.1\r\nHost: www.example.com\r\n\r\n", "400"),
+		HTTPTest("GET / HTTP/9.9s\r\nHost: www.example.com\r\n\r\n", "400"),
+		HTTPTest(" / HTTP/1.1\r\nHost: www.example.com\r\n\r\n", "400"),
+		HTTPTest("GET / HTTP/1.1\nHost: www.example.com\r\n\r\n", "400"),
+	};
+	sendData(tests, serverAddress);
 }
 
 void query(sockaddr_in serverAddress)
 {
-	const char *requests[] = {
-		"GET /search?q=now&price=low HTTP/1.1\r\nHost: www.example.com\r\n\r\n",  // 200 (OK)
-		"GET /search?q==now&price=low HTTP/1.1\r\nHost: www.example.com\r\n\r\n", //  400 (Bad Request)
-		"GET /search??q=now&price=low HTTP/1.1\r\nHost: www.example.com\r\n\r\n", // 400 (Bad Request)
-		"GET /search?now&price=low HTTP/1.1\r\nHost: www.example.com\r\n\r\n",	  // 400 (Bad Request)
-		"GET /search?q=now&&price=low HTTP/1.1\r\nHost: www.example.com\r\n\r\n", // 400 (Bad Request)
-		"GET /search?q=now&price=low= HTTP/1.1\r\nHost: www.example.com\r\n\r\n", // 400 (Bad Request)
-		"GET /search?=now&price=low HTTP/1.1\r\nHost: www.example.com\r\n\r\n",	  // 400 (Bad Request)
-		"GET /search?&q=now&price=low HTTP/1.1\r\nHost: www.example.com\r\n\r\n", // 400 (Bad Request)
-		NULL};
-	sendData(requests, serverAddress);
+	std::vector<HTTPTest> tests = {
+		HTTPTest("GET /search?q=now&price=low HTTP/1.1\r\nHost: www.example.com\r\n\r\n", "200"),
+		HTTPTest("GET /search?q==now&price=low HTTP/1.1\r\nHost: www.example.com\r\n\r\n", "400"),
+		HTTPTest("GET /search??q=now&price=low HTTP/1.1\r\nHost: www.example.com\r\n\r\n", "400"),
+		HTTPTest("GET /search?now&price=low HTTP/1.1\r\nHost: www.example.com\r\n\r\n", "400"),
+		HTTPTest("GET /search?q=now&&price=low HTTP/1.1\r\nHost: www.example.com\r\n\r\n", "400"),
+		HTTPTest("GET /search?q=now&price=low= HTTP/1.1\r\nHost: www.example.com\r\n\r\n", "400"),
+		HTTPTest("GET /search?=now&price=low HTTP/1.1\r\nHost: www.example.com\r\n\r\n", "400"),
+		HTTPTest("GET /search?&q=now&price=low HTTP/1.1\r\nHost: www.example.com\r\n\r\n", "400"),
+	};
+	sendData(tests, serverAddress);
 }
 
 void headers(sockaddr_in serverAddress)
 {
-	const char *requests[] = {"GET / HTTP/1.1\r\nHost: www.example.com\r\n\r\n",				  // 200 (OK)
-							  "GET / HTTP/1.1\r\nHost: www.example.com\r\nSecond: hello\r\n\r\n", // 200 (OK)
-							  "GET / HTTP/1.1\r\nRandom: www.example.com\r\n\r\n",				  //  400 (Bad Request)
-							  "GET / HTTP/1.1\r\nHost www.example.com\r\n\r\n",					  // 400 (Bad Request)
-							  "GET / HTTP/1.1\r\nHost:: www.example.com\r\n\r\n",				  // 400 (Bad Request)
-							  "GET / HTTP/1.1\r\nHost: www.example.com\r\n\r",					  // 400 (Bad Request)
-							  "GET / HTTP/1.1\r\nHost:www.example.com\r\n\r\n",					  // 400 (Bad Request)
-							  "GET / HTTP/1.1\r\n Host: www.example.com\r\n\r\n",				  // 400 (Bad Request)
-							  "GET /HTTP/1.1\r\nHo st: www.example.com\r\n\r\n",				  // 400 (Bad Request)
-							  "GET / HTTP/1.1\r\nHost: www.example.com\nSecond: hello\r\n\r\n",	  // 400 (Bad Request)
-							  NULL};
-	sendData(requests, serverAddress);
+	std::vector<HTTPTest> tests = {
+		HTTPTest("GET / HTTP/1.1\r\nHost: www.example.com\r\n\r\n", "200"),
+		HTTPTest("GET / HTTP/1.1\r\nHost: www.example.com\r\nSecond: hello\r\n\r\n", "200"),
+		HTTPTest("GET / HTTP/1.1\r\nRandom: www.example.com\r\n\r\n", "400"),
+		HTTPTest("GET / HTTP/1.1\r\nHost www.example.com\r\n\r\n", "400"),
+		HTTPTest("GET / HTTP/1.1\r\nHost:: www.example.com\r\n\r\n", "400"),
+		HTTPTest("GET / HTTP/1.1\r\nHost: www.example.com\r\n\r", "400"),
+		HTTPTest("GET / HTTP/1.1\r\nHost:www.example.com\r\n\r\n", "400"),
+		HTTPTest("GET / HTTP/1.1\r\n Host: www.example.com\r\n\r\n", "400"),
+		HTTPTest("GET /HTTP/1.1\r\nHo st: www.example.com\r\n\r\n", "400"),
+		HTTPTest("GET / HTTP/1.1\r\nHost: www.example.com\nSecond: hello\r\n\r\n", "400"),
+	};
+	sendData(tests, serverAddress);
 }
 
 void body(sockaddr_in serverAddress)
 {
-	const char *requests[] = {
-		"POST / HTTP/1.1\r\nHost: www.example.com\r\nContent-Length: 17\r\nContent-Type: "
-		"text/plain\r\n\r\nThis\r\nis body\r\n\r\n", // 200 (OK)
-		"POST / HTTP/1.1\r\nHost: www.example.com\r\nContent-Length: 17\r\nContent-Type: "
-		"text/plain\r\n\r\nThis\r\nis body\r\n", // 400 (Bad Request) -- - Wrong content length // This case is
-		// complicated: we have an extra linera issue for it!
-		"POST / HTTP/1.1\r\nHost: www.example.com\r\nContent-Length: 16\r\nContent-Type: "
-		"text/plain\r\n\r\nThis\r\nis body\r\n\n", // 400 (Bad Request) - - Improper line
-												   // termination of the body with '\n'
-		"POST / HTTP/1.1\r\nHost: www.example.com\r\nContent-Length: 17\r\nContent-Type: "
-		"text/plain\r\n\rThis\r\nis body\r\n\r\n", // 400 (Bad Request) -- - Malformed headers (misplaced 'r')
-		"POST / HTTP/1.1\r\nHost: www.example.com\r\nContent-Length: 16\r\nContent-Type: "
-		"text/plain\r\n\r\nThis\ris body\r\n\r\n", // 400 (Bad Request) -- - Malformed headers (misplaced 'n') --
-		// TODO : why is this invalid?
-		"POST / HTTP/1.1\r\nHost: www.example.com\r\nContent-Length: 17\r\nContent-Type: "
-		"text/plain\r\n\r\nThis\r\n\r\nis body\r\n\r\n", // 400 (Bad Request) -- - Improper line termination of the
-		// body // with '\r' // TODO: are you sure?
-		"GET / HTTP/1.1\r\nHost: www.example.com\r\nContent-Length: 17\r\nContent-Type: "
-		"text/plain\r\n\r\nThis\r\nis body\r\n\r\n", // 400 (Bad Request) -- - GET request with body
-		"POST / HTTP/1.1\r\nHost: www.example.com\r\nContent-Length: 17\r\n\r\nThis\r\nis "
-		"body\r\n\r\n", // 400 (Bad Request) -- - Missing content type
-		"POST / HTTP/1.1\r\nHost: www.example.com\r\nContent-Type: text/plain\r\n\r\nThis\r\nis "
-		"body\r\n\r\n", // 400 (Bad Request) -- - Missing content length
-		"POST / HTTP/1.1\r\nHost: www.example.com\r\nContent-Length: 17\r\nContent-Type: "
-		"text/notplain\r\n\r\nThis\r\nis body\r\n\r\n", // 400 (Bad Request) -- - Invalid content type
-		"POST / HTTP/1.1\r\nHost: www.example.com\r\nContent-Length: abcd\r\nContent-Type: "
-		"text/plain\r\n\r\nThis\r\nis body\r\n\r\n", // 400 (Bad Request) -- - Invalid content length value
-		NULL};
-	sendData(requests, serverAddress);
+	std::vector<HTTPTest> tests = {
+		HTTPTest("POST / HTTP/1.1\r\nHost: www.example.com\r\nContent-Length: 17\r\nContent-Type: "
+				 "text/plain\r\n\r\nThis\r\nis body\r\n\r\n",
+				 "200"),
+		HTTPTest("POST / HTTP/1.1\r\nHost: www.example.com\r\nContent-Length: 17\r\nContent-Type: "
+				 "text/plain\r\n\r\nThis\r\nis body\r\n",
+				 "400"), // 400 (Bad Request) -- - Wrong content length // This case is
+						 // complicated: we have an extra linera issue for it!}
+		HTTPTest("POST / HTTP/1.1\r\nHost: www.example.com\r\nContent-Length: 16\r\nContent-Type: "
+				 "text/plain\r\n\r\nThis\r\nis body\r\n\n",
+				 "400"), // 400 (Bad Request) - - Improper line termination of the body with '\n'}
+		HTTPTest("POST / HTTP/1.1\r\nHost: www.example.com\r\nContent-Length: 17\r\nContent-Type: "
+				 "text/plain\r\n\rThis\r\nis body\r\n\r\n",
+				 "400"), // 400 (Bad Request) -- - Malformed headers (misplaced 'r')}
+		HTTPTest("POST / HTTP/1.1\r\nHost: www.example.com\r\nContent-Length: 16\r\nContent-Type: "
+				 "text/plain\r\n\r\nThis\ris body\r\n\r\n",
+				 "400"), // 400 (Bad Request) -- - Malformed headers (misplaced 'n') -- // TODO : why is this invalid?}
+		HTTPTest(
+			"POST / HTTP/1.1\r\nHost: www.example.com\r\nContent-Length: 17\r\nContent-Type: "
+			"text/plain\r\n\r\nThis\r\n\r\nis body\r\n\r\n",
+			"400"), // 400 (Bad Request) -- - Improper line termination of the body // with '\r' // TODO: are you sure?}
+		HTTPTest("GET / HTTP/1.1\r\nHost: www.example.com\r\nContent-Length: 17\r\nContent-Type: "
+				 "text/plain\r\n\r\nThis\r\nis body\r\n\r\n",
+				 "400"), // 400 (Bad Request) -- - GET request with body}
+		HTTPTest("POST / HTTP/1.1\r\nHost: www.example.com\r\nContent-Length: 17\r\n\r\nThis\r\nis "
+				 "body\r\n\r\n",
+				 "400"), // 400 (Bad Request) -- - Missing content type}
+		HTTPTest("POST / HTTP/1.1\r\nHost: www.example.com\r\nContent-Type: text/plain\r\n\r\nThis\r\nis "
+				 "body\r\n\r\n",
+				 "400"), // 400 (Bad Request) -- - Missing content length}
+		HTTPTest("POST / HTTP/1.1\r\nHost: www.example.com\r\nContent-Length: 17\r\nContent-Type: "
+				 "text/notplain\r\n\r\nThis\r\nis body\r\n\r\n",
+				 "400"), // 400 (Bad Request) -- - Invalid content type}
+		HTTPTest("POST / HTTP/1.1\r\nHost: www.example.com\r\nContent-Length: abcd\r\nContent-Type: "
+				 "text/plain\r\n\r\nThis\r\nis body\r\n\r\n",
+				 "400"), // 400 (Bad Request) -- - Invalid content length value}
+
+	};
+	sendData(tests, serverAddress);
 }
 
 int main(int argc, char **argv)
@@ -217,9 +237,12 @@ int main(int argc, char **argv)
 
 	if (argc != 2)
 	{
-		std::cout << "At least 1 argument!" << std::endl;
-		return (1);
+		std::cout << "Incorrect usage!\n" << std::endl;
+		std::cout << "Usage: " << argv[0] << " <test_name>" << std::endl;
+		std::cout << "Available test names: query, simple, headers, body" << std::endl;
+		return 1; // Returning 1 to indicate an error condition
 	}
+
 	sockaddr_in serverAddress;
 	serverAddress.sin_family = AF_INET;
 	serverAddress.sin_port = htons(PORT);
