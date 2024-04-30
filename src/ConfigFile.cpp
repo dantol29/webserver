@@ -13,6 +13,10 @@ bool	isValidErrorCode(std::string errorCode);
 int		checkFile(const char *path);
 char	*get_next_line(int fd);
 
+ConfigFile::ConfigFile() : _errorMessage(""), _tmpPath("")
+{
+}
+
 ConfigFile::ConfigFile(const ConfigFile& obj){
 	*this = obj;
 }
@@ -323,7 +327,22 @@ bool	ConfigFile::checkVariablesValue(std::map<std::string, std::string> var){
 	return (true);
 }
 
-ConfigFile::ConfigFile(char *file) : _errorMessage(""), _tmpPath(""){
+/*
+listen 80
+server_name _;
+root /var/www/html;
+*/
+void ConfigFile::createDefaultFile()
+{
+	_variables.insert(std::make_pair("listen", "80"));
+	_variables.insert(std::make_pair("root", "/var/www/html"));
+	_variables.insert(std::make_pair("server_name", "_"));
+}
+
+void ConfigFile::parse(char *file)
+{
+	if (file == NULL)
+		return (createDefaultFile());
 	parseFile(file);
 	checkVariablesKey();
 	checkVariablesValue(_variables);

@@ -8,16 +8,17 @@
 class ConfigFile
 {
 	public:
-		ConfigFile(char *file);
+		ConfigFile();
 		~ConfigFile(){};
+		void parse(char *file);
 		std::string	getErrorMessage() const;
 		std::map<std::string, std::string> getVariables() const;
 		std::pair<std::string, std::string> getVariables(std::string key) const;
 		std::vector<std::map<std::string, std::string> > getLocations() const;
 	private:
-		ConfigFile(){};
 		ConfigFile(const ConfigFile& obj);
 		ConfigFile& operator=(const ConfigFile& obj);
+		void		createDefaultFile();
 		bool		error(std::string message, char *line);
 		bool		parseFile(char *file);
 		bool		parseLocation(char *line, int fd);
