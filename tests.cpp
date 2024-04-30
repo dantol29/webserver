@@ -7,6 +7,8 @@
 #include <cstring>
 #include <vector>
 #include <poll.h>
+#include <sstream>
+#include <regex>
 
 #define BUFFER_SIZE 1024
 #define PORT 8080
@@ -14,6 +16,7 @@
 #define COLOR_GREEN "\033[32m"
 #define COLOR_RED "\033[31m"
 #define COLOR_RESET "\033[0m"
+#define PRINT_RESPONSE 0
 
 // ADD TO THE MAIN IN WEBSERVER (after read())
 // #include "HTTPRequest.hpp"
@@ -33,6 +36,28 @@ struct HTTPTest
 	{
 	}
 };
+
+std::string extractStatusCode(const std::string &response)
+{
+	std::regex statusLineRegex(R"(HTTP/\d+\.\d+\s+(\d+)\s+.*\r\n)");
+	std::smatch matches;
+	if (std::regex_search(response, matches, statusLineRegex) && matches.size() > 1)
+	{
+		return matches[1].str(); // The first sub-match is the status code
+	}
+	else
+	{
+		std::cerr << "Invalid or malformed HTTP response." << std::endl;
+		return "";
+	}
+	std::istringstream responseStream(response);
+	std::string httpVersion;
+	std::string statusCode;
+
+	responseStream >> httpVersion >> statusCode;
+
+	return statusCode;
+}
 
 void evalSendOutput(ssize_t bytesSent, const char *request, int clientSocket)
 {
@@ -102,7 +127,7 @@ void sendData(const std::vector<HTTPTest> &tests, sockaddr_in serverAddress)
 			std::cerr << "Socket creation failed" << std::endl;
 			continue;
 		}
-		if (connect(clientSocket, (struct sockaddr *)&serverAddress, sizeof(serverAddress) < 0))
+		if (connect(clientSocket, (struct sockaddr *)&serverAddress, sizeof(serverAddress)) < 0)
 		{
 			std::cerr << "Connection failed" << std::endl;
 			close(clientSocket);
@@ -121,14 +146,19 @@ void sendData(const std::vector<HTTPTest> &tests, sockaddr_in serverAddress)
 			else
 			{
 				buffer[bytesRead] = '\0';
-				if (std::string(buffer) == test.expectedResponse)
+				std::string statusCode = extractStatusCode(buffer);
+				if (statusCode == test.expectedResponse)
 				{
-					std::cout << "Response: " << buffer << std::endl;
+					if (PRINT_RESPONSE)
+						std::cout << "Response: " << buffer << std::endl;
+					std::cout << "Status code: " << statusCode << std::endl;
 					std::cout << COLOR_GREEN "✅ Test Passed" COLOR_RESET << std::endl;
 				}
 				else
 				{
-					std::cerr << "Response: " << buffer << std::endl;
+					if (PRINT_RESPONSE)
+						std::cout << "Response: " << buffer << std::endl;
+					std::cout << "Status code: " << statusCode << std::endl;
 					std::cerr << COLOR_RED "❌ Test Failed" COLOR_RESET << std::endl;
 				}
 			}
