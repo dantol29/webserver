@@ -35,53 +35,28 @@ void Server::startPollEventLoop()
 	while (1)
 	{
 		std::cout << "++++++++++++++ Waiting for new connection or Polling +++++++++++++++" << std::endl;
-		// std::cout << "printFDsVector(_FDs); - before polling" << std::endl;
-		// printFDsVector(_FDs);
 		int ret = poll(_FDs.data(), _FDs.size(), -1);
-		// std::cout << "printFDsVector(_FDs); - after polling" << std::endl;
-		// printFDsVector(_FDs);
-		// print_connectionsVector(_connections);
-		// std::cout << "poll() returned: " << ret << std::endl;
 		if (ret > 0)
 		{
 			for (size_t i = 0; i < _FDs.size(); i++)
 			{
+				std::cout << (i == 0 ? "Server socket event" : "Client socket event") << std::endl;
 				std::cout << "i: " << i << std::endl;
 				if (_FDs[i].revents & POLLIN)
 				{
-					// std::cout << "POLLIN" << std::endl;
 					if (i == 0)
-					{
-						std::cout << "Server socket event" << std::endl;
-						// std::cout << "i == 0" << std::endl;
-
 						acceptNewConnection();
-						// printFDsVector(_FDs);
-						// print_connectionsVector(_connections);
-					}
 					else
-					{
-						std::cout << "Client socket event" << std::endl;
-						// std::cout << "i != 0" << std::endl;
-						// TODO: only the index is actually needed
-						// handleConnection(_connections[i]);
 						handleConnection(_connections[i],
 										 i,
 										 _connections[i].getParser(),
 										 _connections[i].getRequest(),
 										 _connections[i].getResponse());
-						// printFDsVector(_FDs);
-						// print_connectionsVector(_connections);
-						// _FDs.erase(_FDs.begin() + i);
-						// --i;
-					}
 				}
 				else if (_FDs[i].revents & (POLLERR | POLLHUP | POLLNVAL))
 				{
 					if (i == 0)
-					{
 						handleServerSocketError();
-					}
 					else
 						handleClientSocketError(_FDs[i].fd, i);
 				}
