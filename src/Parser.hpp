@@ -67,6 +67,7 @@ class Parser
 	void skipRequestLine(const char *request, unsigned int &i);
 	void skipHeader(const char *request, unsigned int &i);
 	bool hasMandatoryHeaders(HTTPRequest &obj);
+	std::string extractFileData(const std::string &data, HTTPRequest &req, unsigned int &i);
 	std::string extractValue(std::string &variables, int &i);
 	std::string extractKey(std::string &variables, int &i, int startPos);
 	std::string extractRequestTarget(const char *request, unsigned int &i);

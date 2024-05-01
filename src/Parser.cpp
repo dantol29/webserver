@@ -272,12 +272,14 @@ int Parser::fileHeaderParametrs(const std::string &headers, struct File &file, u
 			key = headers.substr(start, i - start); // [KEY]
 			if (headers[++i] != '"') // ["]
 				return (0);
+
 			start = ++i; // skip '"'
 			while (i < headers.length() && headers[i] != '"')
 				i++;
 			value = headers.substr(start, i - start); // [VALUE]
 			if (headers[i++] != '"') // ["]
 				return (0);
+
 			file.headers.insert(std::make_pair(key, value));
 			if (headers[i] == ';') // [;] [SP]
 				i += 2;
@@ -340,14 +342,38 @@ bool Parser::saveFileHeaders(const std::string &headers, HTTPRequest &req, unsig
 	return (true);
 }
 
-// [DATA][CRLF][BOUNDARY]
+// [DATA][CRLF][BOUNDARY][CRLF]
 bool Parser::saveFileData(const std::string &data, HTTPRequest &req, unsigned int &i, bool &isFinish)
 {
-	File file = req.getFiles().back();
-	std::string tmpArray;
-	std::map<std::string, std::string>::iterator it = file.headers.find("Content-Length");
+	std::string tmp;
+	unsigned int start = 0;
+
+	tmp = extractFileData(data, req, i); // [DATA]
+	if (tmp.empty())
+		return (false);
+	i += 2;	// skip [CRLF]
+
+	// check upload boundary after data
+	start = i;
+	while (i < data.length() && !hasCRLF(data.c_str(), i, 0))
+		i++;
+	if (data.substr(start, i - start) != "--" + req.getUploadBoundary()) // [BOUNDARY]
+	{
+		if (data.substr(start, i - start) != "--" + req.getUploadBoundary() + "--") // [BOUNDARY--] final
+			return (false);
+		isFinish = true;
+	}
+	req.setFileContent(tmp);
+	i += 2; // skip [CRLF]
+	return (true);
+}
+
+std::string Parser::extractFileData(const std::string &data, HTTPRequest &req, unsigned int &i)
+{
 	unsigned int start = 0;
 	unsigned int dataToRead;
+	File file = req.getFiles().back();
+	std::map<std::string, std::string>::iterator it = file.headers.find("Content-Length");
 
 	// if Content-Length is provided
 	if (it != file.headers.end())
@@ -366,24 +392,9 @@ bool Parser::saveFileData(const std::string &data, HTTPRequest &req, unsigned in
 		while (i < data.length() && !hasCRLF(data.c_str(), i, 0))
 			i++;
 	}
-
 	if (!hasCRLF(data.c_str(), i, 0)) // [CRLF]
-		return (false);
-	tmpArray = data.substr(start, i - start); // [DATA]
-	i += 2;	// skip [CRLF]
-
-	start = i;
-	while (i < data.length() && !hasCRLF(data.c_str(), i, 0))
-		i++;
-	if (data.substr(start, i - start) != "--" + req.getUploadBoundary()) // [BOUNDARY]
-	{
-		if (data.substr(start, i - start) != "--" + req.getUploadBoundary() + "--") // [BOUNDARY--] final
-			return (false);
-		isFinish = true;
-	}
-	req.setFileContent(tmpArray);
-	i += 2; // skip [CRLF]
-	return (true);
+		return ("");
+	return (data.substr(start, i - start));
 }
 
 std::string Parser::extractUploadBoundary(std::string line)

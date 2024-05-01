@@ -66,12 +66,12 @@ async def fetch_data(url, headers, message):
 			await print_message(response.status, message)
 
 async def main():
-	# await fetch_data(url, headers_buffer_size, "headers > buffer_size")
-	# await fetch_data(url, headers_8kb, "headers > 8KB")
-	# await chunked_request()
+	await fetch_data(url, headers_buffer_size, "headers > buffer_size")
+	await fetch_data(url, headers_8kb, "headers > 8KB")
+	await chunked_request()
 	await upload_file("a.txt")
+	await upload_multiple_file()
 	# await upload_large_file("large_file.jpg")
-	# await upload_multiple_file()
 
 
 if __name__ == "__main__":
