@@ -42,7 +42,7 @@ void Server::startPollEventLoop()
 			{
 				std::cout << (i == 0 ? "Server socket event" : "Client socket event") << std::endl;
 				std::cout << "i: " << i << std::endl;
-				if (_FDs[i].revents & POLLIN)
+				if (_FDs[i].revents & (POLLIN | POLLOUT))
 				{
 					if (i == 0)
 						acceptNewConnection();
@@ -142,10 +142,10 @@ void Server::readFromClient(Connection &conn, size_t &i, Parser &parser, HTTPReq
 			std::cout << "Chunked body" << std::endl;
 			if (!conn.readChunkedBody(parser))
 			{
+				// Case of error while reading chunked body
 				conn.setCanBeClosed(true);
 				conn.setHasFinishedReading(true);
-				// hasDataToSend true?
-				// conn.setHasDataToSend(true);
+				// It could be that we had data that could be sent even if we have an error cause previous data was read
 				return;
 			}
 			conn.setHasReadSocket(true);
@@ -218,6 +218,7 @@ void Server::writeToClient(Connection &conn, size_t &i, HTTPResponse &response)
 	(void)i;
 	send(conn.getPollFd().fd, response.objToString().c_str(), response.objToString().size(), 0);
 	conn.setHasDataToSend(false);
+	_FDs[i].events = POLLIN;
 	// setCanBeClosed(true) would not be the case only if we have a keep-alive connection or a chunked response
 	conn.setCanBeClosed(true);
 }

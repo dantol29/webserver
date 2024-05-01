@@ -79,6 +79,7 @@ bool Connection::getHasFinishedReading()
 
 bool Connection::getHasDataToSend()
 {
+	_pollFd.events = POLLOUT;
 	return _hasDataToSend;
 }
 
