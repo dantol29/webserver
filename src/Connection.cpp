@@ -10,6 +10,7 @@ Connection::Connection(struct pollfd &pollFd, Server &server)
 	_hasReadSocket = false;
 	_hasFinishedReading = false;
 	_hasDataToSend = false;
+	_hasFinishedSending = false;
 	_canBeClosed = false;
 }
 
@@ -79,8 +80,11 @@ bool Connection::getHasFinishedReading()
 
 bool Connection::getHasDataToSend()
 {
-	_pollFd.events = POLLOUT;
 	return _hasDataToSend;
+}
+bool Connection::getHasFinishedSending()
+{
+	return _hasFinishedSending;
 }
 
 bool Connection::getCanBeClosed()
@@ -100,7 +104,16 @@ void Connection::setHasFinishedReading(bool value)
 
 void Connection::setHasDataToSend(bool value)
 {
+	if (value == true)
+		_pollFd.events = POLLOUT;
 	_hasDataToSend = value;
+}
+
+void Connection::setHasFinishedSending(bool value)
+{
+	if (value == true)
+		_pollFd.events = POLLIN;
+	_hasFinishedSending = value;
 }
 
 void Connection::setCanBeClosed(bool value)
