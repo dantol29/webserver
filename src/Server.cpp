@@ -65,7 +65,7 @@ void Server::startPollEventLoop()
 		else if (ret == 0)
 			handleSocketTimeoutIfAny();
 		else
-			handlePollFailure();
+			handlePollError();
 	}
 }
 
@@ -391,7 +391,7 @@ void Server::handleSocketTimeoutIfAny()
 	// This should never happen with an infinite timeout
 }
 
-void Server::handlePollFailure()
+void Server::handlePollError()
 {
 	// linear issue: https://linear.app/web-serv/issue/WEB-91/implement-adequate-response-on-poll-failure
 	if (errno == EINTR)
@@ -403,7 +403,7 @@ void Server::handlePollFailure()
 	else
 	{
 		// Log the error with as much detail as available.
-		perror("Critical poll error from handlePollFailure()");
+		perror("Critical poll error from handlePollError()");
 
 		// EBADF, EFAULT, EINVAL, ENOMEM indicate more severe issues.
 		// Depending on the nature of your server, you might try to clean up and restart polling,
