@@ -10,7 +10,7 @@ class ConfigFile
 	public:
 		ConfigFile();
 		~ConfigFile(){};
-		void parse(char *file);
+		void parse(const char *file);
 		std::string	getErrorMessage() const;
 		std::map<std::string, std::string> getVariables() const;
 		std::pair<std::string, std::string> getVariables(std::string key) const;
@@ -19,7 +19,7 @@ class ConfigFile
 		ConfigFile(const ConfigFile& obj);
 		ConfigFile& operator=(const ConfigFile& obj);
 		bool		error(std::string message);
-		bool		parseFile(char *file);
+		bool		parseFile(const char *file);
 		bool		parseLocation(std::string& line, std::ifstream& config);
 		bool		saveVariable(const std::string& line);
 		bool		saveLocationVariable(const std::string& line, std::string& key, std::string& value);

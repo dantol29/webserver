@@ -12,6 +12,10 @@
 bool	isVulnerablePath(const std::string& path);
 bool	isValidErrorCode(std::string errorCode);
 
+ConfigFile::ConfigFile() : _errorMessage(""), _tmpPath("")
+{
+}
+
 ConfigFile::ConfigFile(const ConfigFile& obj)
 {
 	*this = obj;
@@ -22,17 +26,6 @@ ConfigFile& ConfigFile::operator=(const ConfigFile& obj)
 	if (this != &obj)
 		*this = obj;
 	return (*this);
-}
-
-ConfigFile::ConfigFile(char *file) : _errorMessage(""), _tmpPath("")
-{
-	parseFile(file);
-	checkVariablesKey();
-	checkVariablesValue(_variables);
-	// check each location variables values
-	for (unsigned int i = 0; i < _locations.size(); ++i){
-		checkVariablesValue(_locations[i]);
-	}
 }
 
 std::string	ConfigFile::getErrorMessage() const
@@ -177,7 +170,7 @@ bool	ConfigFile::parseLocation(std::string& line, std::ifstream& config){
 	return (true);
 }
 
-bool	ConfigFile::parseFile(char *file)
+bool	ConfigFile::parseFile(const char *file)
 {
 	std::string line;
 	std::ifstream config(file);
@@ -347,6 +340,16 @@ bool	ConfigFile::checkVariablesValue(std::map<std::string, std::string> var)
 		return (error("Config file: Invalid index"));
 	}
 	return (true);
+}
+
+void ConfigFile::parse(const char *file)
+{
+	parseFile(file);
+	checkVariablesKey();
+	checkVariablesValue(_variables);
+	// check each location variables values
+	for (unsigned int i = 0; i < _locations.size(); ++i)
+		checkVariablesValue(_locations[i]);
 }
 
 std::ostream& operator<<(std::ostream& out, const ConfigFile& a){
