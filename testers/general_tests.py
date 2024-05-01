@@ -35,11 +35,18 @@ async def print_message(status, message):
 async def upload_multiple_file():
 	async with aiohttp.ClientSession() as session:
 		data = aiohttp.FormData()
-		file_paths = ["a.txt", "b.txt", "c.txt"]
+		file_paths = ["./test_files/a.txt", "./test_files/b.txt", "./test_files/c.txt"]
 		for file_path in file_paths:
 			data.add_field('file',open(file_path, 'rb'), filename=file_path, content_type='text/tab-separated-values')
 		async with session.post(url, data=data) as response:
 			await print_message(response.status, "multiple file upload")
+
+async def upload_large_file(file_name):
+	async with aiohttp.ClientSession() as session:
+		data = aiohttp.FormData()
+		data.add_field('file',open(file_name, 'rb'), filename=file_name, content_type='text/tab-separated-values')
+		async with session.post(url, data=data) as response:
+			await print_message(response.status, "file upload")
 
 async def upload_file(file_name):
 	async with aiohttp.ClientSession() as session:
@@ -62,7 +69,8 @@ async def main():
 	await fetch_data(url, headers_buffer_size, "headers > buffer_size")
 	await fetch_data(url, headers_8kb, "headers > 8KB")
 	await chunked_request()
-	await upload_file("a.txt")
+	await upload_file("./test_files/a.txt")
+	await upload_large_file("./test_files/large_file.jpg")
 	await upload_multiple_file()
 
 
