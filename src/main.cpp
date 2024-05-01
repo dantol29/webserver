@@ -3,14 +3,15 @@
 
 int main(int argc, char **argv)
 {
-	ConfigFile a;
-
-	if (argc > 2)
+	(void)argc;
+	(void)argv;
+	if (argc != 2)
 		return (1);
-	if (argc == 2)
-		a.parse(argv[1]);
-	else
-		a.parse(NULL);
+	ConfigFile a(argv[1]);
+	if (!a.getErrorMessage().empty()){
+		std::cout << a.getErrorMessage() << std::endl;
+		return 0;
+	}
 	std::cout << a << std::endl;
 	Server webserv;
 	webserv.startListening();
