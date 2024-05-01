@@ -217,8 +217,9 @@ void Server::writeToClient(Connection &conn, size_t &i, HTTPResponse &response)
 {
 	(void)i;
 	send(conn.getPollFd().fd, response.objToString().c_str(), response.objToString().size(), 0);
+	// conn.setHasDataToSend(); will not be always false in case of chunked response or keep-alive connection
 	conn.setHasDataToSend(false);
-	_FDs[i].events = POLLIN;
+	conn.setHasFinishedSending(true);
 	// setCanBeClosed(true) would not be the case only if we have a keep-alive connection or a chunked response
 	conn.setCanBeClosed(true);
 }
