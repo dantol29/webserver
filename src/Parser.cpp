@@ -302,26 +302,31 @@ bool Parser::saveFileHeaders(const std::string &headers, HTTPRequest &req, unsig
 		while (i < headers.length() && headers[i] != ':')
 			i++;
 		key = headers.substr(start, i - start); // [KEY]
-		if (headers[i++] != ':')				// [:]
+
+		if (headers[i++] != ':') // [:]
 			return (false);
+
 		if (headers[i++] != ' ') // [SP]
 			return (false);
+
 		start = i;
 		while (i < headers.length() && headers[i] != ';' && !hasCRLF(headers.c_str(), i, 0))
 			i++;
 		value = headers.substr(start, i - start); // [VALUE]
+
 		file.headers.insert(std::make_pair(key, value));
 		if (hasCRLF(headers.c_str(), i, 1)) // [CRLF] [CRLF]
 			break;
-		if (headers[i++] != ';') // [;]
-			return (false);
-		if (headers[i++] != ' ') // [SP]
-			return (false);
-		i = fileHeaderParametrs(headers, file, i);
-		if (i == 0)
-			return (false);
-		if (hasCRLF(headers.c_str(), i, 1)) // [CRLF] [CRLF]
-			break;
+
+		// parametrs after header
+		if (headers[i++] == ';' && headers[i++] == ' ') // [;]
+		{
+			i = fileHeaderParametrs(headers, file, i);
+			if (i == 0)
+				return (false);
+			if (hasCRLF(headers.c_str(), i, 1)) // [CRLF] [CRLF]
+				break;
+		}
 	}
 	if (!hasCRLF(headers.c_str(), i, 1)) // [CRLF] [CRLF]
 		return (false);
@@ -337,25 +342,24 @@ bool Parser::saveFileData(const std::string &data, HTTPRequest &req, unsigned in
 	unsigned int start = 0;
 
 	start = i;
-	//std::cout << "Data: " << std::endl;
-	while (i < data.length()) //  && !hasCRLF(data.c_str(), i, 0)
+	while (i < data.length() && !hasCRLF(data.c_str(), i, 0))
 		i++;
-	// if (!hasCRLF(data.c_str(), i, 0)) // [CRLF]
-	// 	return (false);
-	// tmpArray = tmpArray + data.substr(start, i - start); // [DATA]
-	// i += 2;											   // skip [CRLF]
-	// start = i;
-	// while (i < data.length() && !hasCRLF(data.c_str(), i, 0))
-	// 	i++;
-	// if (data.substr(start, i - start) != "--" + req.getUploadBoundary()) // [BOUNDARY]
-	// {
-	// 	if (data.substr(start, i - start) != "--" + req.getUploadBoundary() + "--") // [BOUNDARY--] final
-	// 		return (false);
-	// 	isFinish = true;
-	// }
-	isFinish = true;
-	req.setFileContent(data.substr(start, i - start));
-	// i += 2; // skip [CRLF]
+	if (!hasCRLF(data.c_str(), i, 0)) // [CRLF]
+		return (false);
+	tmpArray = tmpArray + data.substr(start, i - start); // [DATA]
+	i += 2;	// skip [CRLF]
+
+	start = i;
+	while (i < data.length() && !hasCRLF(data.c_str(), i, 0))
+		i++;
+	if (data.substr(start, i - start) != "--" + req.getUploadBoundary()) // [BOUNDARY]
+	{
+		if (data.substr(start, i - start) != "--" + req.getUploadBoundary() + "--") // [BOUNDARY--] final
+			return (false);
+		isFinish = true;
+	}
+	req.setFileContent(tmpArray);
+	i += 2; // skip [CRLF]
 	return (true);
 }
 

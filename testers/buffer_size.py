@@ -23,29 +23,47 @@ headers_chunked = {
     "Transfer-Encoding": "chunked"
 }
 
+
 url = "http://localhost:8080"
 
-async def test_chunked_request():
+async def print_message(status, message):
+	if status == 200:
+		print(GREEN + f"{status} OK " + message + RESET)
+	else:
+		print(RED + f"{status} KO " + message + RESET)
+
+async def upload_multiple_file():
+	async with aiohttp.ClientSession() as session:
+		data = aiohttp.FormData()
+		file_paths = ["a.txt", "b.txt", "c.txt"]
+		for file_path in file_paths:
+			data.add_field('file',open(file_path, 'rb'), filename=file_path, content_type='text/tab-separated-values')
+		async with session.post(url, data=data) as response:
+			await print_message(response.status, "multiple file upload")
+
+async def upload_file(file_name):
+	async with aiohttp.ClientSession() as session:
+		data = aiohttp.FormData()
+		data.add_field('file',open(file_name, 'rb'), filename=file_name, content_type='text/tab-separated-values')
+		async with session.post(url, data=data) as response:
+			await print_message(response.status, "file upload")
+
+async def chunked_request():
 	async with aiohttp.ClientSession() as session:
 		async with session.post(url, headers=headers_chunked, data="A" * (BUFFER_SIZE * 8)) as response:
-			status_code = response.status
-			if status_code == 200:
-				print(GREEN + f"{status_code} OK" + RESET)
-			else:
-				print(RED + f"{status_code} KO" + RESET)
+			await print_message(response.status, "chunked request")
 
 async def fetch_data(url, headers):
 	async with aiohttp.ClientSession() as session:
 		async with session.get(url, headers=headers) as response:
-			if response.status == 200:
-				print(GREEN + f"{response.status} OK: " + RESET)
-			else:
-				print(RED + f"{response.status} KO: " + RESET)
+			await print_message(response.status, "headers")
 
 async def main():
 	await fetch_data(url, headers_buffer_size)
 	await fetch_data(url, headers_8kb)
-	await test_chunked_request()
+	await chunked_request()
+	await upload_file("a.txt")
+	await upload_multiple_file()
 
 
 if __name__ == "__main__":
