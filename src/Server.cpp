@@ -97,26 +97,32 @@ void Server::startPollEventLoop()
 void createFile(HTTPRequest &request)
 {
 	std::vector<File> files = request.getFiles();
-	std::string filename;
-	std::map<std::string, std::string>::iterator it = files.back().headers.find("filename");
+	std::vector<File>::iterator it;
 
-	if (it != files.back().headers.end())
-		filename = it->second;
-	else
+	// check each file
+	for (it = files.begin(); it != files.end(); ++it)
 	{
-		std::cout << "Error: file does not have a name" << std::endl;
-		return ;
+		if (it->headers.find("filename") == it->headers.end())
+		{
+			std::cout << "Error: file does not have a name" << std::endl;
+			return ;
+		}
+
 	}
 
-	std::ofstream outfile(filename.c_str());
-	if (outfile.is_open())
+	// create files
+	for (it = files.begin(); it != files.end(); ++it)
 	{
-		outfile << files.back().fileContent;
-		outfile.close();
-		std::cout << "File created successfully" << std::endl;
-	} 
-	else
-		std::cout << "Error opening file" << std::endl;
+		std::ofstream outfile((it->headers.find("filename"))->second.c_str());
+		if (outfile.is_open())
+		{
+			outfile << it->fileContent;
+			outfile.close();
+			std::cout << "File created successfully" << std::endl;
+		} 
+		else
+			std::cout << "Error opening file" << std::endl;
+	}
 }
 
 void Server::handleConnection(Connection &conn, size_t &i, Parser &parser, HTTPRequest &request, HTTPResponse &response)
@@ -189,6 +195,7 @@ void Server::handleConnection(Connection &conn, size_t &i, Parser &parser, HTTPR
 			std::cout << "Body still incomplete, exiting handleConnection." << std::endl;
 			return;
 		}
+		std::cout << parser.getBuffer() << std::endl;
 		if (!request.getUploadBoundary().empty())
 			parser.parseFileBody(parser.getBuffer(), request, response);
 		else if (request.getMethod() != "GET")
@@ -196,7 +203,7 @@ void Server::handleConnection(Connection &conn, size_t &i, Parser &parser, HTTPR
 	}
 
 	std::cout << "\033[1;91mRequest: " << response.getStatusCode() << "\033[0m" << std::endl;
-	//std::cout << request << std::endl;
+	std::cout << request << std::endl;
 	if (response.getStatusCode() != 0) // || request.getMethod() == "GET" ?????
 	{
 		response.setErrorResponse(response.getStatusCode());
