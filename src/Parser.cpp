@@ -3,6 +3,8 @@
 #include "Server.hpp"
 #include "server_utils.hpp"
 
+int strToInt(const std::string &str);
+
 Parser::Parser()
 {
 	_isChunked = false;
@@ -302,7 +304,6 @@ bool Parser::saveFileHeaders(const std::string &headers, HTTPRequest &req, unsig
 		while (i < headers.length() && headers[i] != ':')
 			i++;
 		key = headers.substr(start, i - start); // [KEY]
-
 		if (headers[i++] != ':') // [:]
 			return (false);
 
@@ -319,14 +320,18 @@ bool Parser::saveFileHeaders(const std::string &headers, HTTPRequest &req, unsig
 			break;
 
 		// parametrs after header
-		if (headers[i++] == ';' && headers[i++] == ' ') // [;]
+		if (headers[i] == ';' && headers[i + 1] == ' ') // [;]
 		{
+			i += 2; // skip ; and ' '
 			i = fileHeaderParametrs(headers, file, i);
 			if (i == 0)
 				return (false);
 			if (hasCRLF(headers.c_str(), i, 1)) // [CRLF] [CRLF]
 				break;
 		}
+		if (!hasCRLF(headers.c_str(), i, 0)) // each header ends with \r\n
+			return (false);
+		i += 2; // skip [CRLF]
 	}
 	if (!hasCRLF(headers.c_str(), i, 1)) // [CRLF] [CRLF]
 		return (false);
@@ -338,15 +343,33 @@ bool Parser::saveFileHeaders(const std::string &headers, HTTPRequest &req, unsig
 // [DATA][CRLF][BOUNDARY]
 bool Parser::saveFileData(const std::string &data, HTTPRequest &req, unsigned int &i, bool &isFinish)
 {
+	File file = req.getFiles().back();
 	std::string tmpArray;
+	std::map<std::string, std::string>::iterator it = file.headers.find("Content-Length");
 	unsigned int start = 0;
+	unsigned int dataToRead;
 
-	start = i;
-	while (i < data.length() && !hasCRLF(data.c_str(), i, 0))
-		i++;
+	// if Content-Length is provided
+	if (it != file.headers.end())
+	{
+		dataToRead = strToInt(it->second);
+		start = i;
+		while (i < data.length() && dataToRead > 0)
+		{
+			i++;
+			dataToRead--;
+		}
+	}
+	else
+	{
+		start = i;
+		while (i < data.length() && !hasCRLF(data.c_str(), i, 0))
+			i++;
+	}
+
 	if (!hasCRLF(data.c_str(), i, 0)) // [CRLF]
 		return (false);
-	tmpArray = tmpArray + data.substr(start, i - start); // [DATA]
+	tmpArray = data.substr(start, i - start); // [DATA]
 	i += 2;	// skip [CRLF]
 
 	start = i;

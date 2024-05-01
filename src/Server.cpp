@@ -195,7 +195,7 @@ void Server::handleConnection(Connection &conn, size_t &i, Parser &parser, HTTPR
 			std::cout << "Body still incomplete, exiting handleConnection." << std::endl;
 			return;
 		}
-		std::cout << parser.getBuffer() << std::endl;
+		//std::cout << parser.getBuffer() << std::endl;
 		if (!request.getUploadBoundary().empty())
 			parser.parseFileBody(parser.getBuffer(), request, response);
 		else if (request.getMethod() != "GET")
