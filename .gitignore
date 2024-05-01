@@ -18,6 +18,7 @@
 !**/*.sh
 !**/*.py
 !**/*.json
+!**/*.jpg
 
 # Specific files and directories to include
 !Makefile

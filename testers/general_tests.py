@@ -71,7 +71,7 @@ async def main():
 	await chunked_request()
 	await upload_file("a.txt")
 	await upload_multiple_file()
-	# await upload_large_file("large_file.jpg")
+	await upload_large_file("5mb.jpg")
 
 
 if __name__ == "__main__":
