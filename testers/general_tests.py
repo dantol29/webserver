@@ -53,14 +53,14 @@ async def chunked_request():
 		async with session.post(url, headers=headers_chunked, data="A" * (BUFFER_SIZE * 8)) as response:
 			await print_message(response.status, "chunked request")
 
-async def fetch_data(url, headers):
+async def fetch_data(url, headers, message):
 	async with aiohttp.ClientSession() as session:
 		async with session.get(url, headers=headers) as response:
-			await print_message(response.status, "headers")
+			await print_message(response.status, message)
 
 async def main():
-	await fetch_data(url, headers_buffer_size)
-	await fetch_data(url, headers_8kb)
+	await fetch_data(url, headers_buffer_size, "headers > buffer_size")
+	await fetch_data(url, headers_8kb, "headers > 8KB")
 	await chunked_request()
 	await upload_file("a.txt")
 	await upload_multiple_file()
