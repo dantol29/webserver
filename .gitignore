@@ -19,9 +19,11 @@
 !**/*.py
 !**/*.json
 !**/*.jpg
+!**/*.yml
 
 # Specific files and directories to include
 !Makefile
+!.github/
 !.clang-format
 !.vscode/
 !.cgi-bin/
