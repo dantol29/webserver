@@ -1,44 +1,40 @@
-#include "ConfigFile.hpp"
-#include <iostream>
-#include <cstring>
-#include <list>
-#include <algorithm>
+#include "Config.hpp"
 #include "webserv.hpp"
-#include <unistd.h>
-#include <sys/types.h>
-#include <dirent.h>
+#include <unistd.h> // access
+#include <dirent.h> // opendir
 #include <fstream>
 
-bool	isVulnerablePath(const std::string& path);
-bool	isValidErrorCode(std::string errorCode);
-
-ConfigFile::ConfigFile() : _errorMessage(""), _tmpPath("")
+Config::Config()
 {
 }
 
-ConfigFile::ConfigFile(const ConfigFile& obj)
+Config::~Config()
+{
+}
+
+Config::Config(const Config& obj)
 {
 	*this = obj;
 }
 
-ConfigFile& ConfigFile::operator=(const ConfigFile& obj)
+Config& Config::operator=(const Config& obj)
 {
 	if (this != &obj)
 		*this = obj;
 	return (*this);
 }
 
-std::string	ConfigFile::getErrorMessage() const
+std::string	Config::getErrorMessage() const
 {
 	return (_errorMessage);
 }
 
-std::map<std::string, std::string> ConfigFile::getVariables() const
+std::map<std::string, std::string> Config::getVariables() const
 {
 	return (_variables);
 }
 
-std::pair<std::string, std::string> ConfigFile::getVariables(std::string key) const
+std::pair<std::string, std::string> Config::getVariables(std::string key) const
 {
 	std::multimap<std::string, std::string>::const_iterator it;
 
@@ -49,19 +45,19 @@ std::pair<std::string, std::string> ConfigFile::getVariables(std::string key) co
 	return (std::make_pair("", ""));
 }
 
-std::vector<std::map<std::string, std::string> > ConfigFile::getLocations() const
+std::vector<std::map<std::string, std::string> > Config::getLocations() const
 {
 	return (_locations);
 }
 
-bool	ConfigFile::error(std::string message)
+bool	Config::error(std::string message)
 {
 	_errorMessage = message;
 	return (false);
 }
 
 // [TAB][KEY][SP][VALUE][;]
-bool	ConfigFile::saveVariable(const std::string& line)
+bool	Config::saveVariable(const std::string& line)
 {
 	std::string	key;
 	std::string value;
@@ -91,7 +87,7 @@ bool	ConfigFile::saveVariable(const std::string& line)
 }
 
 // [TAB][LOCATION][SP][/PATH][SP][{]
-bool	ConfigFile::isLocation(const std::string& line)
+bool	Config::isLocation(const std::string& line)
 {
 	unsigned int i = 0;
 	int start;
@@ -125,7 +121,7 @@ bool	ConfigFile::isLocation(const std::string& line)
 }
 
 // [TAB][TAB][KEY][SP][VALUE][;]
-bool	ConfigFile::saveLocationVariable(const std::string& line, std::string& key, std::string& value)
+bool	Config::saveLocationVariable(const std::string& line, std::string& key, std::string& value)
 {
 	unsigned int i = 0;
 	int	start;
@@ -149,11 +145,10 @@ bool	ConfigFile::saveLocationVariable(const std::string& line, std::string& key,
 	if (line[i] != ';' || i + 1 < line.length()) // [;]
 		return (false);
 
-	// TODO: line[i + 1] != '\0'
 	return (true);
 }
 
-bool	ConfigFile::parseLocation(std::string& line, std::ifstream& config){
+bool	Config::parseLocation(std::string& line, std::ifstream& config){
 	std::map<std::string, std::string> var;
 	std::string	key;
 	std::string	value;
@@ -170,7 +165,7 @@ bool	ConfigFile::parseLocation(std::string& line, std::ifstream& config){
 	return (true);
 }
 
-bool	ConfigFile::parseFile(const char *file)
+bool	Config::parseFile(const char *file)
 {
 	std::string line;
 	std::ifstream config(file);
@@ -196,7 +191,7 @@ bool	ConfigFile::parseFile(const char *file)
 	return (error("Config file: Syntax error (server is not enclosed)"));
 }
 
-bool	ConfigFile::checkVariablesKey(){
+bool	Config::checkVariablesKey(){
 	std::string var[] = {"listen", "host", "server_name", "error_page", \
 	"index", "root", "client_max_body_size", "autoindex", "allow_methods", \
 	"alias", "cgi_path", "cgi_ext"};
@@ -217,7 +212,7 @@ bool	ConfigFile::checkVariablesKey(){
 	return (true);
 }
 
-bool	ConfigFile::pathExists(std::map<std::string, std::string> list, std::string variable)
+bool	Config::pathExists(std::map<std::string, std::string> list, std::string variable)
 {
 	std::map<std::string, std::string>::iterator it;
 	unsigned int	start = 0;
@@ -239,7 +234,7 @@ bool	ConfigFile::pathExists(std::map<std::string, std::string> list, std::string
 	return (true);
 }
 
-bool	ConfigFile::checkErrorPage(std::map<std::string, std::string> list)
+bool	Config::checkErrorPage(std::map<std::string, std::string> list)
 {
 	// count1 and count2 to check if both path and number are present
 	int				count1 = 0;
@@ -270,7 +265,7 @@ bool	ConfigFile::checkErrorPage(std::map<std::string, std::string> list)
 }
 
 
-bool	ConfigFile::checkVariablesValue(std::map<std::string, std::string> var)
+bool	Config::checkVariablesValue(std::map<std::string, std::string> var)
 {
 	std::string tmp_meth[] = {"GET", "POST", "DELETE"};
 	std::string tmp_cgi[] = {".py", ".php", ".pl", ".cgi"};
@@ -342,7 +337,7 @@ bool	ConfigFile::checkVariablesValue(std::map<std::string, std::string> var)
 	return (true);
 }
 
-void ConfigFile::parse(const char *file)
+void Config::parse(const char *file)
 {
 	parseFile(file);
 	checkVariablesKey();
@@ -352,7 +347,7 @@ void ConfigFile::parse(const char *file)
 		checkVariablesValue(_locations[i]);
 }
 
-std::ostream& operator<<(std::ostream& out, const ConfigFile& a){
+std::ostream& operator<<(std::ostream& out, const Config& a){
 	if (!a.getErrorMessage().empty()){
 		out << a.getErrorMessage();
 		return (out);

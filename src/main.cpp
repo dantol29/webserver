@@ -1,11 +1,11 @@
 #include "Server.hpp"
-#include "ConfigFile.hpp"
+#include "Config.hpp"
 
-# define CONFIG_FILE_DEFAULT_PATH "./config"
+# define CONFIG_FILE_DEFAULT_PATH "./webserv.conf"
 
 int main(int argc, char **argv)
 {
-	ConfigFile a;
+	Config a;
 
 	if (argc > 2)
 	{

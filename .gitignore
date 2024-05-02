@@ -26,7 +26,7 @@
 !.cgi-bin/
 !docs/
 !tests/
-!config
+!webserv.conf
 !tests/
 !*.test
 
