@@ -7,14 +7,10 @@ Connection::Connection(struct pollfd &pollFd, Server &server)
 	_pollFd.fd = pollFd.fd;
 	_pollFd.events = POLLIN;
 	_pollFd.revents = 0;
-	// TODO: should I initialize the _response here?
-	//_response = HTTPResponse();
-	//_request = HTTPRequest();
-	//_parser = Parser();
-	// std::cout << "Connection created" << std::endl;
-	// std::cout << "pollFd.fd: " << _pollFd.fd << std::endl;
-	// std::cout << "pollFd.events: " << _pollFd.events << std::endl;
-	// std::cout << "pollFd.revents: " << _pollFd.revents << std::endl;
+	_hasReadSocket = false;
+	_hasFinishedReading = false;
+	_hasDataToSend = false;
+	_canBeClosed = false;
 }
 
 Connection::Connection(const Connection &other)
@@ -50,6 +46,8 @@ Connection::~Connection()
 	// }
 }
 
+// GETTERS AND SETTERS
+
 struct pollfd Connection::getPollFd() const
 {
 	return _pollFd;
@@ -68,10 +66,50 @@ Parser &Connection::getParser()
 {
 	return _parser;
 }
+
+bool Connection::getHasReadSocket()
+{
+	return _hasReadSocket;
+}
+
+bool Connection::getHasFinishedReading()
+{
+	return _hasFinishedReading;
+}
+
+bool Connection::getHasDataToSend()
+{
+	return _hasDataToSend;
+}
+
+bool Connection::getCanBeClosed()
+{
+	return _canBeClosed;
+}
+
+void Connection::setHasReadSocket(bool value)
+{
+	_hasReadSocket = value;
+}
+
+void Connection::setHasFinishedReading(bool value)
+{
+	_hasFinishedReading = value;
+}
+
+void Connection::setHasDataToSend(bool value)
+{
+	_hasDataToSend = value;
+}
+
+void Connection::setCanBeClosed(bool value)
+{
+	_canBeClosed = value;
+}
 // Attempts to read HTTP request headers from the client connection into _headersBuffer on the Parser.
 bool Connection::readHeaders(Parser &parser)
 {
-	//std::cout << "\nEntering readHeaders" << std::endl;
+	// std::cout << "\nEntering readHeaders" << std::endl;
 	char buffer[BUFFER_SIZE] = {0};
 	std::cout << "buffers size: " << sizeof(buffer) << std::endl;
 	ssize_t bytesRead = recv(_pollFd.fd, buffer, BUFFER_SIZE, 0);
@@ -79,9 +117,9 @@ bool Connection::readHeaders(Parser &parser)
 	if (bytesRead > 0)
 	{
 		parser.setBuffer(parser.getBuffer() + std::string(buffer, bytesRead));
-		//std::cout << "The buffer is: " << parser.getBuffer() << std::endl;
+		// std::cout << "The buffer is: " << parser.getBuffer() << std::endl;
 
-		//std::cout << "Exiting readHeaders" << std::endl;
+		// std::cout << "Exiting readHeaders" << std::endl;
 		return true;
 	}
 	else if (bytesRead < 0)
@@ -231,7 +269,7 @@ bool Connection::readBody(Parser &parser, HTTPRequest &req, HTTPResponse &res)
 			// _body.append(buffer, read);j
 			parser.setBuffer(parser.getBuffer() + std::string(buffer, read));
 			std::cout << "bytesRead: " << parser.getBuffer().size() << std::endl;
-			//std::cout << "The 'body; is: " << parser.getBuffer() << std::endl;
+			// std::cout << "The 'body; is: " << parser.getBuffer() << std::endl;
 			bytesRead += read;
 			if (bytesRead == contentLength)
 			{
