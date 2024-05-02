@@ -451,8 +451,6 @@ std::string Parser::extractRequestTarget(const char *request, unsigned int &i)
 
 	while (request[i] && request[i] != ' ' && !isInvalidChar(request[i]))
 		i++;
-	if (i > MAX_URI)
-		return ("");
 	requestTarget = string_request.substr(start, i - start);
 	return (requestTarget);
 }
