@@ -18,8 +18,7 @@ SRCS = src/main.cpp \
 	src/server_utils.cpp \
 	src/Server.cpp \
 	src/StaticContentHandler.cpp \
-	src/ConfigFile.cpp \
-	src/get_next_line.cpp
+	src/ConfigFile.cpp
 OBJDIR = obj
 OBJS = $(SRCS:%.cpp=$(OBJDIR)/%.o)
 
