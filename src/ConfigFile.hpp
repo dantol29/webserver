@@ -18,12 +18,12 @@ class ConfigFile
 		ConfigFile(){};
 		ConfigFile(const ConfigFile& obj);
 		ConfigFile& operator=(const ConfigFile& obj);
-		bool		error(std::string message);
+		bool		error(std::string message, char *line);
 		bool		parseFile(char *file);
-		bool		parseLocation(std::string& line, std::ifstream& config);
-		bool		saveVariable(const std::string& line);
-		bool		saveLocationVariable(const std::string& line, std::string& key, std::string& value);
-		bool		isLocation(const std::string& line);
+		bool		parseLocation(char *line, int fd);
+		bool		saveVariable(char *line);
+		bool		saveLocationVariable(char *line, std::string& key, std::string& value);
+		bool		isLocation(char *line);
 		bool		checkVariablesKey();
 		bool		checkVariablesValue(std::map<std::string, std::string> var);
 		bool		checkErrorPage(std::map<std::string, std::string> list);

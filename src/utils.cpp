@@ -107,20 +107,20 @@ bool isVulnerablePath(const std::string &path)
 	return (false);
 }
 
-// int checkFile(const char *path)
-// {
-// 	char buffer[2];
+int checkFile(const char *path)
+{
+	char buffer[2];
 
-// 	int fd = open(path, O_RDONLY);
-// 	if (fd == -1)
-// 		return (-1);
-// 	if (read(fd, buffer, 0) == -1)
-// 	{
-// 		close(fd);
-// 		return (-1);
-// 	}
-// 	return (fd);
-// }
+	int fd = open(path, O_RDONLY);
+	if (fd == -1)
+		return (-1);
+	if (read(fd, buffer, 0) == -1)
+	{
+		close(fd);
+		return (-1);
+	}
+	return (fd);
+}
 
 /*
 The combination of \\r\\n

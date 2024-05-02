@@ -1,6 +1,6 @@
 #!/bin/bash
 
-NAME=.././webserv
+NAME=./webserv
 
 PURPLE='\033[0;35m'
 BLUE='\033[0;34m'
