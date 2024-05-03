@@ -40,18 +40,29 @@ void Server::startPollEventLoop()
 		{
 			for (size_t i = 0; i < _FDs.size(); i++)
 			{
-				std::cout << (i == 0 ? "Server socket event" : "Client socket event") << std::endl;
 				std::cout << "i: " << i << std::endl;
 				if (_FDs[i].revents & (POLLIN | POLLOUT))
 				{
-					if (i == 0)
+					std::cout << "Enters revents" << std::endl;
+					if (i == 0){
+						std::cout << "Server socket event" << std::endl;
 						acceptNewConnection();
-					else
+					}
+					else{
+						std::cout << "Client socket event" << std::endl;
 						handleConnection(_connections[i],
 										 i,
 										 _connections[i].getParser(),
 										 _connections[i].getRequest(),
 										 _connections[i].getResponse());
+					// TODO: clean this dirt!
+					// add comments
+					if (_connections[i].getHasFinishedReading() \
+					&& _connections[i].getHasDataToSend())
+						_FDs[i].events = POLLOUT;
+					printFDsVector(_FDs);
+					print_connectionsVector(_connections);
+					}
 				}
 				else if (_FDs[i].revents & (POLLERR | POLLHUP | POLLNVAL))
 				{
@@ -131,6 +142,15 @@ void Server::readFromClient(Connection &conn, size_t &i, Parser &parser, HTTPReq
 	}
 	if (parser.getHeadersComplete() && !parser.getHeadersAreParsed())
 		parser.parseRequestLineAndHeaders(parser.getHeadersBuffer().c_str(), request, response);
+	
+	
+	std::cout << parser.getHeadersComplete() << " ," <<request.getMethod() << std::endl;
+	if (parser.getHeadersComplete() && request.getMethod() == "GET"){
+		std::cout << "-------------------------Enter what we need" << std::endl;
+		conn.setHasFinishedReading(true);
+	}
+	
+	
 	if (response.getStatusCode() != 0)
 		std::cout << "Error: " << response.getStatusCode() << std::endl;
 	if (request.getMethod() == "GET")
@@ -155,6 +175,7 @@ void Server::readFromClient(Connection &conn, size_t &i, Parser &parser, HTTPReq
 			std::cout << "\033[1;33m"
 					  << "Reading body"
 					  << "\033[0m" << std::endl;
+			// TODO: add comments
 			if (!parser.getBodyComplete() && parser.getBuffer().size() == request.getContentLength())
 			{
 				// TODO: in the new design we will return here and go to the function where the response is
@@ -249,6 +270,7 @@ void Server::handleConnection(Connection &conn, size_t &i, Parser &parser, HTTPR
 	conn.setHasReadSocket(false);
 	if (!conn.getHasFinishedReading())
 		readFromClient(conn, i, parser, request, response);
+	// TODO: add comments to explain
 	if (conn.getHasReadSocket() && !conn.getHasFinishedReading())
 		return;
 	if (!conn.getCanBeClosed() && !conn.getHasDataToSend())
