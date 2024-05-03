@@ -37,3 +37,5 @@
 /secretus/
 /a.out
 **/*.o
+testers/myenv/
+
