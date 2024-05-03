@@ -36,6 +36,12 @@ void Router::routeRequest(const HTTPRequest &request, HTTPResponse &response)
 		}
 	}
 	return;
+	// else if (isDynamicRequest(request))
+	// {
+	// 	std::cout << "\033[31mCGI is the only dynamic requests we handle at the moment\033[0m" << std::endl;
+	// 	response.setStatusCode(501, "");
+	// }
+	return response;
 }
 
 bool Router::isDynamicRequest(const HTTPRequest &request)
@@ -103,13 +109,13 @@ void Router::splitTarget(const std::string &target)
 bool Router::pathIsValid(HTTPRequest &request, std::string webRoot)
 {
 	std::string host = request.getHost();
-	// std::cout << "Host in pathIsValid: " << host << std::endl;
+	// std::cout << "Host: " << host << std::endl;
 	size_t pos = host.find(":");
 	if (pos != std::string::npos)
 	{
 		host = host.substr(0, pos);
 	}
-	// std::cout << "Host in pathIsValid (after : trailing) :" << host << std::endl;
+	// std::cout << "Host (after : trailing) :" << host << std::endl;
 	std::string path = request.getRequestTarget();
 
 	// for ease of use during deployment
@@ -128,7 +134,7 @@ bool Router::pathIsValid(HTTPRequest &request, std::string webRoot)
 	}
 	if (S_ISDIR(buffer.st_mode))
 	{
-		std::cout << "Path is a directory" << std::endl;
+		// std::cout << "Path is a directory" << std::endl;
 		if (!path.empty() && path[path.length() - 1] != '/')
 		{
 			path += "/";
@@ -141,7 +147,7 @@ bool Router::pathIsValid(HTTPRequest &request, std::string webRoot)
 			return false;
 		}
 	}
-	std::cout << "Path: " << path << " exists" << std::endl;
+	// std::cout << "Path: " << path << " exists" << std::endl;
 
 	std::ifstream file(path.c_str());
 	if (!file.is_open())
@@ -151,6 +157,6 @@ bool Router::pathIsValid(HTTPRequest &request, std::string webRoot)
 	}
 	file.close();
 
-	std::cout << "Path is an accesible and readable file" << std::endl;
+	// std::cout << "Path is an accesible and readable file" << std::endl;
 	return true;
 }

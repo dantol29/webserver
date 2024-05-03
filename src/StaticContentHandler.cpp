@@ -93,11 +93,13 @@ void StaticContentHandler::handleRequest(const HTTPRequest &request, HTTPRespons
 	response.setBody(body);
 	response.setHeader("Content-Type", getMimeType(path));
 	response.setHeader("Content-Length", toString(body.length()));
+	response.setStatusCode(200, "");
 	// TODO ADD MORE HEADER LINE
 	//  response.setHeader("Content-Length: ", std::to_string(body.length()));
 	//  response.setHeader("Connection: ", "close");
 	//  response.setHeader("Server: ", "webserv");
 
+	std::cout << std::endl;
 	// std::cout << "_body : " << response.getBody() << std::endl;
 	file.close();
 	return;
@@ -113,6 +115,6 @@ void StaticContentHandler::handleNotFound(HTTPResponse &response)
 	response.setBody(fileContents);
 	response.setHeader("Content-Type", "text/html");
 	response.setHeader("Content-Length", toString(fileContents.length()));
-	response.setStatusCode(404);
+	response.setStatusCode(404, "");
 	return;
 }

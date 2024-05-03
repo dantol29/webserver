@@ -3,7 +3,6 @@
 
 HTTPRequest::HTTPRequest()
 {
-	_contentLength = 0;
 }
 
 HTTPRequest::~HTTPRequest()
@@ -15,15 +14,20 @@ std::string HTTPRequest::getMethod() const
 	return (_method);
 }
 
-// TODO: Check if "Host" should be written in lower case
 std::string HTTPRequest::getHost() const
 {
 	std::multimap<std::string, std::string>::const_iterator it = _headers.find("host");
 	if (it != _headers.end())
-	{
 		return it->second;
-	}
 	return "";
+}
+
+size_t HTTPRequest::getContentLength() const
+{
+	std::multimap<std::string, std::string>::const_iterator it = _headers.find("content-length");
+	if (it != _headers.end())
+		return strToInt(it->second);
+	return 0;
 }
 
 std::string HTTPRequest::getRequestTarget() const
@@ -58,19 +62,19 @@ std::pair<std::string, std::string> HTTPRequest::getSingleHeader(std::string key
 	return (std::make_pair("", ""));
 }
 
-std::vector<std::string> HTTPRequest::getBody() const
+std::string HTTPRequest::getBody() const
 {
 	return (_body);
 }
 
-size_t HTTPRequest::getContentLength() const
+std::string HTTPRequest::getUploadBoundary() const
 {
-	return (_contentLength);
+	return (_uploadBoundary);
 }
 
-bool HTTPRequest::hasContentLengthHeader() const
+std::vector<File> HTTPRequest::getFiles() const
 {
-	return (_hasContentLengthHeader);
+	return (_files);
 }
 
 void HTTPRequest::setMethod(std::string method)
@@ -88,11 +92,6 @@ void HTTPRequest::setQueryString(const std::string &key, const std::string &valu
 	_queryString.insert(std::make_pair(key, value));
 }
 
-// void HTTPRequest::setHeaders(const std::string &key, const std::string &value)
-// {
-// 	_headers.insert(std::make_pair(key, value));
-// }
-
 // This makes the key lowercase and then inserts the original key
 void HTTPRequest::setHeaders(const std::string &key, const std::string &value)
 {
@@ -104,7 +103,7 @@ void HTTPRequest::setHeaders(const std::string &key, const std::string &value)
 
 void HTTPRequest::setBody(const std::string &body)
 {
-	_body.push_back(body);
+	_body = body;
 }
 
 void HTTPRequest::setProtocolVersion(std::string protocolVersion)
@@ -112,38 +111,51 @@ void HTTPRequest::setProtocolVersion(std::string protocolVersion)
 	_protocolVersion = protocolVersion;
 }
 
-void HTTPRequest::setContentLength(size_t contentLength)
+void HTTPRequest::setUploadBoundary(const std::string &boundary)
 {
-	_contentLength = contentLength;
+	_uploadBoundary = boundary;
 }
 
-void HTTPRequest::setHasContentLengthHeader(bool value)
+void HTTPRequest::setFiles(struct File &file)
 {
-	_hasContentLengthHeader = value;
+	_files.push_back(file);
+}
+
+void HTTPRequest::setFileContent(const std::string &content)
+{
+	_files.back().fileContent = content;
 }
 
 std::ostream &operator<<(std::ostream &out, const HTTPRequest &obj)
 {
 	std::multimap<std::string, std::string> headers = obj.getHeaders();
 	std::multimap<std::string, std::string> queryString = obj.getQueryString();
-	std::vector<std::string> body = obj.getBody();
+	std::string body = obj.getBody();
+	std::vector<File> files = obj.getFiles();
 
 	std::multimap<std::string, std::string>::iterator it;
 	out << "---------------------Variables--------------------" << std::endl;
 	for (it = queryString.begin(); it != queryString.end(); it++)
-	{
 		out << "Key: " << it->first << ", Value: " << it->second << std::endl;
-	}
 	out << "---------------------End--------------------------" << std::endl;
+
 	out << "---------------------Headers----------------------" << std::endl;
 	for (it = headers.begin(); it != headers.end(); it++)
-	{
 		out << "Key: " << it->first << ", Value: " << it->second << std::endl;
-	}
 	out << "---------------------End--------------------------" << std::endl;
+
 	out << "---------------------Body-------------------------" << std::endl;
-	for (size_t i = 0; i < body.size(); ++i)
-		out << body[i] << std::endl;
+	std::cout << body << std::endl;
+	out << "---------------------End--------------------------" << std::endl;
+
+	out << "---------------------File-Upload------------------" << std::endl;
+
+	for (std::vector<File>::iterator it = files.begin(); it != files.end(); ++it)
+	{
+		for (std::map<std::string, std::string>::iterator it2 = it->headers.begin(); it2 != it->headers.end(); ++it2)
+			std::cout << "Key: " << it2->first << ", Value: " << it2->second << std::endl;
+		std::cout << "Data: " << it->fileContent << std::endl;
+	}
 	out << "---------------------End--------------------------" << std::endl;
 	return (out);
 }
