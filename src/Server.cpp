@@ -31,56 +31,34 @@ void Server::startListening()
 
 void Server::startPollEventLoop()
 {
-	// below code is copied from         void Server::addServerSocketPollFdToVectors()
-
-	struct pollfd serverPollFd;
-	memset(&serverPollFd, 0, sizeof(serverPollFd));
-	serverPollFd.fd = _serverFD;
-	serverPollFd.events = POLLIN;
-	serverPollFd.revents = 0;
-	_FDs.push_back(&serverPollFd);
-	Connection serverConnection(serverPollFd, *this);
-	_connections.push_back(&serverConnection);
-	// end of        void Server::addServerSocketPollFdToVectors()
-
-	// addServerSocketPollFdToVectors();
+	addServerSocketPollFdToVectors();
 	while (1)
 	{
 		std::cout << "++++++++++++++ Waiting for new connection or Polling +++++++++++++++" << std::endl;
-		std::cout << "     Mark" << std::endl;
-		printFDsVector(_FDs);
-		print_connectionsVector(_connections);
-		int ret = poll(*_FDs.data(), _FDs.size(), -1);
+		int ret = poll(_FDs.data(), _FDs.size(), -1);
 		if (ret > 0)
 		{
-
-			printFDsVector(_FDs);
-			print_connectionsVector(_connections);
 			for (size_t i = 0; i < _FDs.size(); i++)
 			{
 				std::cout << (i == 0 ? "Server socket event" : "Client socket event") << std::endl;
 				std::cout << "i: " << i << std::endl;
-				if (_FDs[i]->revents & (POLLIN | POLLOUT))
+				if (_FDs[i].revents & (POLLIN | POLLOUT))
 				{
 					if (i == 0)
 						acceptNewConnection();
 					else
-						handleConnection(*_connections[i],
+						handleConnection(_connections[i],
 										 i,
-										 _connections[i]->getParser(),
-										 _connections[i]->getRequest(),
-										 _connections[i]->getResponse());
-					_connections[i]->setHasDataToSend(true);
-					printFDsVector(_FDs);
-					print_connectionsVector(_connections);
+										 _connections[i].getParser(),
+										 _connections[i].getRequest(),
+										 _connections[i].getResponse());
 				}
-
-				else if (_FDs[i]->revents & (POLLERR | POLLHUP | POLLNVAL))
+				else if (_FDs[i].revents & (POLLERR | POLLHUP | POLLNVAL))
 				{
 					if (i == 0)
 						handleServerSocketError();
 					else
-						handleClientSocketError(_FDs[i]->fd, i);
+						handleClientSocketError(_FDs[i].fd, i);
 				}
 			}
 		}
@@ -119,11 +97,15 @@ void createFile(HTTPRequest &request)
 void Server::readFromClient(Connection &conn, size_t &i, Parser &parser, HTTPRequest &request, HTTPResponse &response)
 {
 	(void)i;
-	std::cout << "\033[1;36m" << "Entering readFromClient" << "\033[0m" << std::endl;
+	std::cout << "\033[1;36m"
+			  << "Entering readFromClient"
+			  << "\033[0m" << std::endl;
 	// TODO: change to _areHeadersCopmplete
 	if (!parser.getHeadersComplete())
 	{
-		std::cout << "\033[1;33m" << "Reading headers" << "\033[0m" << std::endl;
+		std::cout << "\033[1;33m"
+				  << "Reading headers"
+				  << "\033[0m" << std::endl;
 		if (!conn.readHeaders(parser))
 		{
 			std::cout << "Error reading headers" << std::endl;
@@ -170,7 +152,9 @@ void Server::readFromClient(Connection &conn, size_t &i, Parser &parser, HTTPReq
 		}
 		else
 		{
-			std::cout << "\033[1;33m" << "Reading body" << "\033[0m" << std::endl;
+			std::cout << "\033[1;33m"
+					  << "Reading body"
+					  << "\033[0m" << std::endl;
 			if (!parser.getBodyComplete() && parser.getBuffer().size() == request.getContentLength())
 			{
 				// TODO: in the new design we will return here and go to the function where the response is
@@ -206,7 +190,9 @@ void Server::readFromClient(Connection &conn, size_t &i, Parser &parser, HTTPReq
 void Server::buildResponse(Connection &conn, size_t &i, HTTPRequest &request, HTTPResponse &response)
 {
 	(void)i;
-	std::cout << "\033[1;36m" << "Entering buildResponse" << "\033[0m" << std::endl;
+	std::cout << "\033[1;36m"
+			  << "Entering buildResponse"
+			  << "\033[0m" << std::endl;
 	std::cout << "\033[1;91mRequest status code: " << response.getStatusCode() << "\033[0m" << std::endl;
 	if (response.getStatusCode() != 0)
 	{
@@ -241,7 +227,6 @@ void Server::writeToClient(Connection &conn, size_t &i, HTTPResponse &response)
 void Server::closeClientConnection(Connection &conn, size_t &i)
 {
 	// if (response.getStatusCode() != 0)
-	std::cout << "\033[1;31m" << "Closing connection" << "\033[0m" << std::endl;
 	if (conn.getResponse().getStatusCode() != 0 && conn.getResponse().getStatusCode() != 499)
 	{
 		std::string responseString = conn.getResponse().objToString();
@@ -256,7 +241,9 @@ void Server::closeClientConnection(Connection &conn, size_t &i)
 
 void Server::handleConnection(Connection &conn, size_t &i, Parser &parser, HTTPRequest &request, HTTPResponse &response)
 {
-	std::cout << "\033[1;36m" << "Entering handleConnection" << "\033[0m" << std::endl;
+	std::cout << "\033[1;36m"
+			  << "Entering handleConnection"
+			  << "\033[0m" << std::endl;
 	conn.printConnection();
 
 	conn.setHasReadSocket(false);
@@ -339,9 +326,9 @@ void Server::addServerSocketPollFdToVectors()
 	serverPollFd.fd = _serverFD;
 	serverPollFd.events = POLLIN;
 	serverPollFd.revents = 0;
-	_FDs.push_back(&serverPollFd);
+	_FDs.push_back(serverPollFd);
 	Connection serverConnection(serverPollFd, *this);
-	_connections.push_back(&serverConnection);
+	_connections.push_back(serverConnection);
 }
 
 void Server::acceptNewConnection()
@@ -361,8 +348,8 @@ void Server::acceptNewConnection()
 		newSocketPoll.revents = 0;
 		Connection newConnection(newSocketPoll, *this);
 		/* start together */
-		_FDs.push_back(&newSocketPoll);
-		_connections.push_back(&newConnection);
+		_FDs.push_back(newSocketPoll);
+		_connections.push_back(newConnection);
 		/* end together */
 		char clientIP[INET_ADDRSTRLEN];
 		inet_ntop(AF_INET, &clientAddress.sin_addr, clientIP, INET_ADDRSTRLEN);
