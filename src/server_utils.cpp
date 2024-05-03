@@ -101,28 +101,25 @@ void printVariablesHeadersBody(const HTTPRequest &obj)
 	std::cout << c << std::endl;
 }
 
-void printFDsVector(const std::vector<pollfd> &fds)
+void printFDsVector(const std::vector<pollfd *> &fds)
 {
 	std::cout << "printFDsVector" << std::endl;
 	std::cout << "fds.size(): " << fds.size() << std::endl;
 	std::cout << "_FDs: =>" << std::endl;
 	for (size_t i = 0; i < fds.size(); ++i)
 	{
-		std::cout << "fd: " << fds[i].fd << ", events: " << fds[i].events << ", revents: " << fds[i].revents
+		std::cout << "fd: " << fds[i]->fd << ", events: " << fds[i]->events << ", revents: " << fds[i]->revents
 				  << std::endl;
 	}
 }
 
-void print_connectionsVector(const std::vector<Connection> &connections)
+void print_connectionsVector(const std::vector<Connection *> &connections)
 {
 	std::cout << "print_connectionsVector" << std::endl;
 	std::cout << "connections.size(): " << connections.size() << std::endl;
 	std::cout << "connections: =>" << std::endl;
 	for (size_t i = 0; i < connections.size(); ++i)
 	{
-		std::cout << "fd: " << connections[i].getPollFd().fd << std::endl;
-		std::cout
-			<< "We don't print anymore the header and the body here because they have been moved to the Parser class"
-			<< std::endl;
+		std::cout << "fd: " << connections[i]->getPollFd().fd << std::endl;
 	}
 }

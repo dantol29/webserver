@@ -105,7 +105,12 @@ void Connection::setHasFinishedReading(bool value)
 void Connection::setHasDataToSend(bool value)
 {
 	if (value == true)
+	{
 		_pollFd.events = POLLOUT;
+
+		std::cout << "+-+-+-+-+-Setting POLLOUT" << std::endl;
+		std::cout << "+-+-+-+-+-_pollFd.events: " << _pollFd.events << std::endl;
+	}
 	_hasDataToSend = value;
 }
 
