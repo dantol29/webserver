@@ -52,8 +52,8 @@ class Server
 	std::string _configFilePath;
 	std::string _webRoot;
 	struct sockaddr_in _serverAddr;
-	std::vector<struct pollfd> _FDs;
-	std::vector<Connection> _connections;
+	std::vector<struct pollfd *> _FDs;
+	std::vector<Connection *> _connections;
 
 	/*** Private Methods ***/
 	/* for Constructors */
