@@ -41,7 +41,6 @@ void Router::routeRequest(const HTTPRequest &request, HTTPResponse &response)
 	// 	std::cout << "\033[31mCGI is the only dynamic requests we handle at the moment\033[0m" << std::endl;
 	// 	response.setStatusCode(501, "");
 	// }
-	return response;
 }
 
 bool Router::isDynamicRequest(const HTTPRequest &request)

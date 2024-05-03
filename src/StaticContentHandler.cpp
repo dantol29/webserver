@@ -80,7 +80,7 @@ void StaticContentHandler::handleRequest(const HTTPRequest &request, HTTPRespons
 	if (!file)
 	{
 		std::cerr << "Error opening file: " << path << std::endl;
-		response.setStatusCode(404);
+		response.setStatusCode(404, "Not Found");
 		response.setBody("404 Not Found");
 		return;
 	}
@@ -89,7 +89,7 @@ void StaticContentHandler::handleRequest(const HTTPRequest &request, HTTPRespons
 
 	std::cout << "body : " << body << std::endl;
 
-	response.setStatusCode(200);
+	response.setStatusCode(200, "OK");
 	response.setBody(body);
 	response.setHeader("Content-Type", getMimeType(path));
 	response.setHeader("Content-Length", toString(body.length()));
