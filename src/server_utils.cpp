@@ -121,5 +121,8 @@ void print_connectionsVector(const std::vector<Connection> &connections)
 	for (size_t i = 0; i < connections.size(); ++i)
 	{
 		std::cout << "fd: " << connections[i].getPollFd().fd << std::endl;
+		std::cout
+			<< "We don't print anymore the header and the body here because they have been moved to the Parser class"
+			<< std::endl;
 	}
 }

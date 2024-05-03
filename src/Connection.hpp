@@ -23,7 +23,6 @@ class Connection
 	bool _hasReadSocket;
 	bool _hasFinishedReading;
 	bool _hasDataToSend;
-	bool _hasFinishedSending;
 	bool _canBeClosed;
 
 	// Additional client state can be managed here
@@ -50,7 +49,6 @@ class Connection
 	std::string getChunkData() const;
 	bool getHasFinishedReading();
 	bool getHasDataToSend();
-	bool getHasFinishedSending();
 	bool getCanBeClosed();
 	/* Setters */
 	void setHasReadSocket(bool value);
@@ -61,7 +59,6 @@ class Connection
 	void setHasFinishedReading(bool value);
 	void setCanBeClosed(bool value);
 	void setHasDataToSend(bool value);
-	void setHasFinishedSending(bool value);
 	// We will not provide the setter for HTTPResponse as it should be managed by the HTTPResponse class
 	/* Debugging */
 	void printConnection() const;

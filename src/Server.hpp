@@ -71,7 +71,7 @@ class Server
 	void handleServerSocketError();
 	void handleClientSocketError(int clientFD, size_t &i);
 	void handleSocketTimeoutIfAny();
-	void handlePollError();
+	void handlePollFailure();
 	void AlertAdminAndTryToRecover();
 
 	/* for handleConnection */
