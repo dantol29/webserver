@@ -208,7 +208,6 @@ void Parser::parseFileUpload(const std::string &request, HTTPRequest &req, HTTPR
 	while (i < request.length())
 		i++;
 	data = request.substr(start, i - start);
-	std::cout << "Data: "<< data << std::endl;
 	while (hasFilestoRead)
 	{
 		// get the uploadBoundary
@@ -226,7 +225,6 @@ void Parser::parseFileUpload(const std::string &request, HTTPRequest &req, HTTPR
 			return (res.setStatusCode(400, "Incorrect file data"));
 		// erase saved data
 		data.erase(0, boundaryIndex + ("----" + upBound).size());
-		std::cout << "Data: "<< data << std::endl;
 	}
 }
 
@@ -372,7 +370,6 @@ bool Parser::saveFile(const std::string& data, HTTPRequest &req)
 	while (i < data.length())
 		i++;
 	req.setFileContent(data.substr(start, i - start));
-	//std::cout << req << std::endl;
 	return (true);
 }
 
