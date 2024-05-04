@@ -44,24 +44,25 @@ void Server::startPollEventLoop()
 				if (_FDs[i].revents & (POLLIN | POLLOUT))
 				{
 					std::cout << "Enters revents" << std::endl;
-					if (i == 0){
+					if (i == 0)
+					{
 						std::cout << "Server socket event" << std::endl;
 						acceptNewConnection();
 					}
-					else{
+					else
+					{
 						std::cout << "Client socket event" << std::endl;
 						handleConnection(_connections[i],
 										 i,
 										 _connections[i].getParser(),
 										 _connections[i].getRequest(),
 										 _connections[i].getResponse());
-					// TODO: clean this dirt!
-					// add comments
-					if (_connections[i].getHasFinishedReading() \
-					&& _connections[i].getHasDataToSend())
-						_FDs[i].events = POLLOUT;
-					printFDsVector(_FDs);
-					print_connectionsVector(_connections);
+						// TODO: clean this dirt!
+						// add comments
+						if (_connections[i].getHasFinishedReading() && _connections[i].getHasDataToSend())
+							_FDs[i].events = POLLOUT;
+						printFDsVector(_FDs);
+						print_connectionsVector(_connections);
 					}
 				}
 				else if (_FDs[i].revents & (POLLERR | POLLHUP | POLLNVAL))
@@ -108,15 +109,11 @@ void createFile(HTTPRequest &request)
 void Server::readFromClient(Connection &conn, size_t &i, Parser &parser, HTTPRequest &request, HTTPResponse &response)
 {
 	(void)i;
-	std::cout << "\033[1;36m"
-			  << "Entering readFromClient"
-			  << "\033[0m" << std::endl;
+	std::cout << "\033[1;36m" << "Entering readFromClient" << "\033[0m" << std::endl;
 	// TODO: change to _areHeadersCopmplete
 	if (!parser.getHeadersComplete())
 	{
-		std::cout << "\033[1;33m"
-				  << "Reading headers"
-				  << "\033[0m" << std::endl;
+		std::cout << "\033[1;33m" << "Reading headers" << "\033[0m" << std::endl;
 		if (!conn.readHeaders(parser))
 		{
 			std::cout << "Error reading headers" << std::endl;
@@ -142,15 +139,14 @@ void Server::readFromClient(Connection &conn, size_t &i, Parser &parser, HTTPReq
 	}
 	if (parser.getHeadersComplete() && !parser.getHeadersAreParsed())
 		parser.parseRequestLineAndHeaders(parser.getHeadersBuffer().c_str(), request, response);
-	
-	
-	std::cout << parser.getHeadersComplete() << " ," <<request.getMethod() << std::endl;
-	if (parser.getHeadersComplete() && request.getMethod() == "GET"){
+
+	std::cout << parser.getHeadersComplete() << " ," << request.getMethod() << std::endl;
+	if (parser.getHeadersComplete() && request.getMethod() == "GET")
+	{
 		std::cout << "-------------------------Enter what we need" << std::endl;
 		conn.setHasFinishedReading(true);
 	}
-	
-	
+
 	if (response.getStatusCode() != 0)
 		std::cout << "Error: " << response.getStatusCode() << std::endl;
 	if (request.getMethod() == "GET")
@@ -172,9 +168,8 @@ void Server::readFromClient(Connection &conn, size_t &i, Parser &parser, HTTPReq
 		}
 		else
 		{
-			std::cout << "\033[1;33m"
-					  << "Reading body"
-					  << "\033[0m" << std::endl;
+			std::cout << "\033[1;33m" << "Reading body" << "\033[0m" << std::endl;
+			std::cout << "\033[1;33m" << "Reading body" << "\033[0m" << std::endl;
 			// TODO: add comments
 			if (!parser.getBodyComplete() && parser.getBuffer().size() == request.getContentLength())
 			{
@@ -211,9 +206,7 @@ void Server::readFromClient(Connection &conn, size_t &i, Parser &parser, HTTPReq
 void Server::buildResponse(Connection &conn, size_t &i, HTTPRequest &request, HTTPResponse &response)
 {
 	(void)i;
-	std::cout << "\033[1;36m"
-			  << "Entering buildResponse"
-			  << "\033[0m" << std::endl;
+	std::cout << "\033[1;36m" << "Entering buildResponse" << "\033[0m" << std::endl;
 	std::cout << "\033[1;91mRequest status code: " << response.getStatusCode() << "\033[0m" << std::endl;
 	if (response.getStatusCode() != 0)
 	{
@@ -229,7 +222,7 @@ void Server::buildResponse(Connection &conn, size_t &i, HTTPRequest &request, HT
 	// std::cout << request.getRequestTarget() << std::endl;
 	// TODO: The Router should be a member of the Server class or of the Connection class
 	Router router;
-	response = router.routeRequest(request);
+	router.routeRequest(request, response);
 	responseString = response.objToString();
 	conn.setHasDataToSend(true);
 }
@@ -262,9 +255,7 @@ void Server::closeClientConnection(Connection &conn, size_t &i)
 
 void Server::handleConnection(Connection &conn, size_t &i, Parser &parser, HTTPRequest &request, HTTPResponse &response)
 {
-	std::cout << "\033[1;36m"
-			  << "Entering handleConnection"
-			  << "\033[0m" << std::endl;
+	std::cout << "\033[1;36m" << "Entering handleConnection" << "\033[0m" << std::endl;
 	conn.printConnection();
 
 	conn.setHasReadSocket(false);
