@@ -21,6 +21,7 @@ With curl we can perform not only GET requests but also POST requests.
 
 **wget** is used to download files
 
+
 - `wget http://example.com/somefile.zip`
 
 **telnet** is mentioned in the subject.
