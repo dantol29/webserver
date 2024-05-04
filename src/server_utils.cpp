@@ -103,23 +103,26 @@ void printVariablesHeadersBody(const HTTPRequest &obj)
 
 void printFDsVector(const std::vector<pollfd> &fds)
 {
-	std::cout << "printFDsVector" << std::endl;
-	std::cout << "fds.size(): " << fds.size() << std::endl;
-	std::cout << "_FDs: =>" << std::endl;
+	std::cout << "++++++ _FDs ++++++" << std::endl;
+	std::cout << "_FDs's size: " << fds.size() << std::endl;
 	for (size_t i = 0; i < fds.size(); ++i)
 	{
-		std::cout << "fd: " << fds[i].fd << ", events: " << fds[i].events << ", revents: " << fds[i].revents
+		std::cout << "#" << i << ": "
+				  << "fd: " << fds[i].fd << ", events: " << fds[i].events << ", revents: " << fds[i].revents
 				  << std::endl;
 	}
 }
 
 void print_connectionsVector(const std::vector<Connection> &connections)
 {
-	std::cout << "print_connectionsVector" << std::endl;
+	std::cout << CYAN << "\nprint_connectionsVector" << RESET << std::endl;
 	std::cout << "connections.size(): " << connections.size() << std::endl;
 	std::cout << "connections: =>" << std::endl;
 	for (size_t i = 0; i < connections.size(); ++i)
 	{
+		std::cout << "----------------" << std::endl;
 		std::cout << "fd: " << connections[i].getPollFd().fd << std::endl;
+		connections[i].printConnection();
+		std::cout << "----------------" << std::endl;
 	}
 }

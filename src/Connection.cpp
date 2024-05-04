@@ -19,7 +19,7 @@ Connection::Connection(const Connection &other)
 	_pollFd = other._pollFd;
 	_response = other._response;
 
-	std::cout << "Connection object copied" << std::endl;
+	// std::cout << "Connection object copied" << std::endl;
 }
 
 Connection &Connection::operator=(const Connection &other)
@@ -29,13 +29,13 @@ Connection &Connection::operator=(const Connection &other)
 		_pollFd = other._pollFd;
 		_response = other._response;
 	}
-	std::cout << "Connection object assigned" << std::endl;
+	// std::cout << "Connection object assigned" << std::endl;
 	return *this;
 }
 
 Connection::~Connection()
 {
-	std::cout << "Connection object destroyed" << std::endl;
+	// std::cout << "Connection object destroyed" << std::endl;
 	// Should I close the file descriptor here?
 	// This was causing errors, cause when exiting from scope of the function where the Connection object was creted it
 	// was closing the file descriptor. When we push back the Connection object in the vector of connections we make a
@@ -99,6 +99,10 @@ void Connection::setHasReadSocket(bool value)
 
 void Connection::setHasFinishedReading(bool value)
 {
+	std::cout << RED;
+	std::cout << "Connection fd: " << _pollFd.fd << std::endl;
+	std::cout << "setHasFinishedReading" << std::endl;
+	std::cout << RESET;
 	_hasFinishedReading = value;
 }
 
@@ -314,6 +318,11 @@ bool Connection::readBody(Parser &parser, HTTPRequest &req, HTTPResponse &res)
 
 void Connection::printConnection() const
 {
-	std::cout << "\nprintConnection" << std::endl;
-	std::cout << "Connection: " << _pollFd.fd << std::endl;
+	std::cout << RED << "\nprintConnection" << RESET << std::endl;
+	std::cout << "Connection fd: " << _pollFd.fd << std::endl;
+	std::cout << "hasReadSocket: " << _hasReadSocket << std::endl;
+	std::cout << "hasFinishedReading: " << _hasFinishedReading << std::endl;
+	std::cout << "hasDataToSend: " << _hasDataToSend << std::endl;
+	std::cout << "hasFinishedSending: " << _hasFinishedSending << std::endl;
+	std::cout << "canBeClosed: " << _canBeClosed << std::endl;
 }

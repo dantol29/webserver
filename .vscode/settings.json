@@ -88,6 +88,11 @@
     "ranges": "cpp",
     "span": "cpp",
     "cinttypes": "cpp",
-    "execution": "cpp"
+    "execution": "cpp",
+    "condition_variable": "cpp",
+    "csignal": "cpp",
+    "queue": "cpp",
+    "regex": "cpp",
+    "set": "cpp"
   }
 }

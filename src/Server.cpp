@@ -32,36 +32,58 @@ void Server::startListening()
 void Server::startPollEventLoop()
 {
 	addServerSocketPollFdToVectors();
+	int pollCounter = 0;
 	while (1)
 	{
-		std::cout << "++++++++++++++ Waiting for new connection or Polling +++++++++++++++" << std::endl;
+
+		std::cout << YELLOW << "\n\n++++++++++++++ Printing _FDs right before polling +++++++++++++++" << RESET
+				  << std::endl;
+		printFDsVector(_FDs);
+		print_connectionsVector(_connections);
+		std::cout << CYAN << "++++++++++++++ #" << pollCounter
+				  << " Waiting for new connection or Polling +++++++++++++++" << RESET << std::endl;
 		int ret = poll(_FDs.data(), _FDs.size(), -1);
+		++pollCounter;
+		std::cout << "\nPoll event detected" << std::endl;
+		std::cout << YELLOW << "++++++++++++++ Printing _FDs right after polling +++++++++++++++" << RESET << std::endl;
+		printFDsVector(_FDs);
+		print_connectionsVector(_connections);
+		std::cout << YELLOW << "++++++++++++++ ++++++++++++++++++++++ +++++++++++++++" << RESET << std::endl;
+		std::cout << "ret: " << ret << std::endl;
 		if (ret > 0)
 		{
-			for (size_t i = 0; i < _FDs.size(); i++)
+			size_t originalSize = _FDs.size();
+			std::cout << "originalSize: " << originalSize << std::endl;
+			//  i < originalSize && i < _FDs.size() means that we will iterate over the _FDs vector for max the origianl
+			//  size of _FDs before starting the loop. If new fds are added during the loop, they will not be considered
+			//  in the loop. But if _FDs become smaller during the loop then we want to use the actual size of _FDs and
+			//  not the orginal one (which is bigger).
+			for (size_t i = 0; i < originalSize && i < _FDs.size(); i++)
 			{
-				std::cout << "i: " << i << std::endl;
+				std::cout << "for loop" << std::endl;
+				std::cout << "i = " << i << " // _FD.size() " << _FDs.size() << std::endl;
+				std::cout << "#" << i << " revents: " << _FDs.data()->revents << std::endl;
 				if (_FDs[i].revents & (POLLIN | POLLOUT))
 				{
-					std::cout << "Enters revents" << std::endl;
-					if (i == 0){
+					if (i == 0)
+					{
 						std::cout << "Server socket event" << std::endl;
 						acceptNewConnection();
 					}
-					else{
+					else
+					{
 						std::cout << "Client socket event" << std::endl;
 						handleConnection(_connections[i],
 										 i,
 										 _connections[i].getParser(),
 										 _connections[i].getRequest(),
 										 _connections[i].getResponse());
-					// TODO: clean this dirt!
-					// add comments
-					if (_connections[i].getHasFinishedReading() \
-					&& _connections[i].getHasDataToSend())
-						_FDs[i].events = POLLOUT;
-					printFDsVector(_FDs);
-					print_connectionsVector(_connections);
+						// TODO: clean this dirt!
+						// add comments
+						if (_connections[i].getHasFinishedReading() && _connections[i].getHasDataToSend())
+							_FDs[i].events = POLLOUT;
+						printFDsVector(_FDs);
+						print_connectionsVector(_connections);
 					}
 				}
 				else if (_FDs[i].revents & (POLLERR | POLLHUP | POLLNVAL))
@@ -142,15 +164,14 @@ void Server::readFromClient(Connection &conn, size_t &i, Parser &parser, HTTPReq
 	}
 	if (parser.getHeadersComplete() && !parser.getHeadersAreParsed())
 		parser.parseRequestLineAndHeaders(parser.getHeadersBuffer().c_str(), request, response);
-	
-	
-	std::cout << parser.getHeadersComplete() << " ," <<request.getMethod() << std::endl;
-	if (parser.getHeadersComplete() && request.getMethod() == "GET"){
+
+	std::cout << parser.getHeadersComplete() << " ," << request.getMethod() << std::endl;
+	if (parser.getHeadersComplete() && request.getMethod() == "GET")
+	{
 		std::cout << "-------------------------Enter what we need" << std::endl;
 		conn.setHasFinishedReading(true);
 	}
-	
-	
+
 	if (response.getStatusCode() != 0)
 		std::cout << "Error: " << response.getStatusCode() << std::endl;
 	if (request.getMethod() == "GET")
@@ -237,7 +258,19 @@ void Server::buildResponse(Connection &conn, size_t &i, HTTPRequest &request, HT
 void Server::writeToClient(Connection &conn, size_t &i, HTTPResponse &response)
 {
 	(void)i;
-	send(conn.getPollFd().fd, response.objToString().c_str(), response.objToString().size(), 0);
+	std::cout << "\033[1;36m"
+			  << "Entering writeToClient"
+			  << "\033[0m" << std::endl;
+	std::cout << "Response: " << response.objToString() << std::endl;
+	// send(conn.getPollFd().fd, response.objToString().c_str(), response.objToString().size(), 0);
+	if (send(conn.getPollFd().fd, response.objToString().c_str(), response.objToString().size(), 0) < 0)
+	{
+		perror("send failed");
+		conn.setCanBeClosed(true);
+		conn.setHasFinishedSending(true);
+		return;
+	}
+	std::cout << "Response sent" << std::endl;
 	// conn.setHasDataToSend(); will not be always false in case of chunked response or keep-alive connection
 	conn.setHasDataToSend(false);
 	conn.setHasFinishedSending(true);
@@ -247,16 +280,39 @@ void Server::writeToClient(Connection &conn, size_t &i, HTTPResponse &response)
 
 void Server::closeClientConnection(Connection &conn, size_t &i)
 {
+
+	std::cout << "\033[1;36m"
+			  << "Entering closeClientConnection"
+			  << "\033[0m" << std::endl;
 	// if (response.getStatusCode() != 0)
-	if (conn.getResponse().getStatusCode() != 0 && conn.getResponse().getStatusCode() != 499)
-	{
-		std::string responseString = conn.getResponse().objToString();
-		send(conn.getPollFd().fd, responseString.c_str(), responseString.size(), 0);
-	}
+	// if (conn.getResponse().getStatusCode() != 0 && conn.getResponse().getStatusCode() != 499)
+	// {
+	// 	std::string responseString = conn.getResponse().objToString();
+	// 	send(conn.getPollFd().fd, responseString.c_str(), responseString.size(), 0);
+	// }
 	// TODO: should we close it with the Destructor of the Connection class?
-	close(conn.getPollFd().fd);
+	std::cout << RED << "Connection fd: " << conn.getPollFd().fd << RESET << std::endl;
+	std::cout << "i = " << i << std::endl;
+	std::cout << "size of _FDs: " << _FDs.size() << std::endl;
+	std::cout << "_FDs" << std::endl;
+	printFDsVector(_FDs);
+	std::cout << "size of _connections: " << _connections.size() << std::endl;
+	std::cout << "_connections" << std::endl;
+	std::cout << "Inside closeClientConnection START - before closing end erasing" << std::endl;
+	print_connectionsVector(_connections);
+	std::cout << "Inside closeClientConnection STOP" << std::endl;
+	// close(conn.getPollFd().fd);
+	if (close(conn.getPollFd().fd) < 0)
+		perror("close failed");
+	std::cout << " Connection closed: FD: " << conn.getPollFd().fd << std::endl;
+	std::cout << "after close" << std::endl;
 	_FDs.erase(_FDs.begin() + i);
+	std::cout << "after erase _FDs" << std::endl;
 	_connections.erase(_connections.begin() + i);
+	std::cout << "after erase _connections" << std::endl;
+	std::cout << "Inside closeClientConnection START - before exiting" << std::endl;
+	print_connectionsVector(_connections);
+	std::cout << "Inside closeClientConnection STOP - before exiting" << std::endl;
 	--i;
 }
 
@@ -268,17 +324,25 @@ void Server::handleConnection(Connection &conn, size_t &i, Parser &parser, HTTPR
 	conn.printConnection();
 
 	conn.setHasReadSocket(false);
+	std::cout << "after conn.setHasReadSocket(false);" << std::endl;
+
 	if (!conn.getHasFinishedReading())
 		readFromClient(conn, i, parser, request, response);
 	// TODO: add comments to explain
+	// std::cout << "Print request" << std::endl;
+	// std::cout << request << std::endl;
+	std::cout << "after readFromClient" << std::endl;
 	if (conn.getHasReadSocket() && !conn.getHasFinishedReading())
 		return;
 	if (!conn.getCanBeClosed() && !conn.getHasDataToSend())
 		buildResponse(conn, i, request, response);
+	std::cout << "after buildResponse" << std::endl;
 	if (conn.getHasDataToSend())
 		writeToClient(conn, i, response);
+	std::cout << "after writeToClient" << std::endl;
 	if (conn.getCanBeClosed())
 		closeClientConnection(conn, i);
+	std::cout << "after closeClientConnection" << std::endl;
 }
 
 /*** Private Methods ***/
@@ -376,6 +440,13 @@ void Server::acceptNewConnection()
 		char clientIP[INET_ADDRSTRLEN];
 		inet_ntop(AF_INET, &clientAddress.sin_addr, clientIP, INET_ADDRSTRLEN);
 		std::cout << "New connection from " << clientIP << std::endl;
+		// std::cout << "New connection file descriptor: " << newSocket << std::endl;
+		// std::cout << "New connection _hasReadSocket: " << newConnection.getHasReadSocket() << std::endl;
+		// std::cout << "New connection _hasFinishedReading: " << newConnection.getHasFinishedReading() << std::endl;
+		// std::cout << "New connection _hasDataToSend: " << newConnection.getHasDataToSend() << std::endl;
+		// std::cout << "New connection _hasFinishedSending: " << newConnection.getHasFinishedSending() << std::endl;
+		// std::cout << "New connection _canBeClosed: " << newConnection.getCanBeClosed() << std::endl;
+		newConnection.printConnection();
 	}
 	else
 	{
