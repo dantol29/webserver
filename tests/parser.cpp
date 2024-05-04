@@ -23,10 +23,6 @@
 // HTTPRequest obj(buffer);
 // std::cout << obj.getStatusCode() << std::endl;
 
-// ./webserver
-// c++ tests.cpp -o test
-// ./test "test_name"
-
 struct HTTPTest
 {
 	std::string request;
