@@ -35,53 +35,40 @@ void Server::startPollEventLoop()
 	while (1)
 	{
 		std::cout << "++++++++++++++ Waiting for new connection or Polling +++++++++++++++" << std::endl;
-		// std::cout << "printFDsVector(_FDs); - before polling" << std::endl;
-		// printFDsVector(_FDs);
 		int ret = poll(_FDs.data(), _FDs.size(), -1);
-		// std::cout << "printFDsVector(_FDs); - after polling" << std::endl;
-		// printFDsVector(_FDs);
-		// print_connectionsVector(_connections);
-		// std::cout << "poll() returned: " << ret << std::endl;
 		if (ret > 0)
 		{
 			for (size_t i = 0; i < _FDs.size(); i++)
 			{
 				std::cout << "i: " << i << std::endl;
-				if (_FDs[i].revents & POLLIN)
+				if (_FDs[i].revents & (POLLIN | POLLOUT))
 				{
-					// std::cout << "POLLIN" << std::endl;
+					std::cout << "Enters revents" << std::endl;
 					if (i == 0)
 					{
 						std::cout << "Server socket event" << std::endl;
-						// std::cout << "i == 0" << std::endl;
-
 						acceptNewConnection();
-						// printFDsVector(_FDs);
-						// print_connectionsVector(_connections);
 					}
 					else
 					{
 						std::cout << "Client socket event" << std::endl;
-						// std::cout << "i != 0" << std::endl;
-						// TODO: only the index is actually needed
-						// handleConnection(_connections[i]);
 						handleConnection(_connections[i],
 										 i,
 										 _connections[i].getParser(),
 										 _connections[i].getRequest(),
 										 _connections[i].getResponse());
-						// printFDsVector(_FDs);
-						// print_connectionsVector(_connections);
-						// _FDs.erase(_FDs.begin() + i);
-						// --i;
+						// TODO: clean this dirt!
+						// add comments
+						if (_connections[i].getHasFinishedReading() && _connections[i].getHasDataToSend())
+							_FDs[i].events = POLLOUT;
+						printFDsVector(_FDs);
+						print_connectionsVector(_connections);
 					}
 				}
 				else if (_FDs[i].revents & (POLLERR | POLLHUP | POLLNVAL))
 				{
 					if (i == 0)
-					{
 						handleServerSocketError();
-					}
 					else
 						handleClientSocketError(_FDs[i].fd, i);
 				}
@@ -90,7 +77,7 @@ void Server::startPollEventLoop()
 		else if (ret == 0)
 			handleSocketTimeoutIfAny();
 		else
-			handlePollFailure();
+			handlePollError();
 	}
 }
 
@@ -152,6 +139,14 @@ void Server::readFromClient(Connection &conn, size_t &i, Parser &parser, HTTPReq
 	}
 	if (parser.getHeadersComplete() && !parser.getHeadersAreParsed())
 		parser.parseRequestLineAndHeaders(parser.getHeadersBuffer().c_str(), request, response);
+
+	std::cout << parser.getHeadersComplete() << " ," << request.getMethod() << std::endl;
+	if (parser.getHeadersComplete() && request.getMethod() == "GET")
+	{
+		std::cout << "-------------------------Enter what we need" << std::endl;
+		conn.setHasFinishedReading(true);
+	}
+
 	if (response.getStatusCode() != 0)
 		std::cout << "Error: " << response.getStatusCode() << std::endl;
 	if (request.getMethod() == "GET")
@@ -163,10 +158,10 @@ void Server::readFromClient(Connection &conn, size_t &i, Parser &parser, HTTPReq
 			std::cout << "Chunked body" << std::endl;
 			if (!conn.readChunkedBody(parser))
 			{
+				// Case of error while reading chunked body
 				conn.setCanBeClosed(true);
 				conn.setHasFinishedReading(true);
-				// hasDataToSend true?
-				// conn.setHasDataToSend(true);
+				// It could be that we had data that could be sent even if we have an error cause previous data was read
 				return;
 			}
 			conn.setHasReadSocket(true);
@@ -174,6 +169,8 @@ void Server::readFromClient(Connection &conn, size_t &i, Parser &parser, HTTPReq
 		else
 		{
 			std::cout << "\033[1;33m" << "Reading body" << "\033[0m" << std::endl;
+			std::cout << "\033[1;33m" << "Reading body" << "\033[0m" << std::endl;
+			// TODO: add comments
 			if (!parser.getBodyComplete() && parser.getBuffer().size() == request.getContentLength())
 			{
 				// TODO: in the new design we will return here and go to the function where the response is
@@ -234,7 +231,9 @@ void Server::writeToClient(Connection &conn, size_t &i, HTTPResponse &response)
 {
 	(void)i;
 	send(conn.getPollFd().fd, response.objToString().c_str(), response.objToString().size(), 0);
+	// conn.setHasDataToSend(); will not be always false in case of chunked response or keep-alive connection
 	conn.setHasDataToSend(false);
+	conn.setHasFinishedSending(true);
 	// setCanBeClosed(true) would not be the case only if we have a keep-alive connection or a chunked response
 	conn.setCanBeClosed(true);
 }
@@ -262,6 +261,7 @@ void Server::handleConnection(Connection &conn, size_t &i, Parser &parser, HTTPR
 	conn.setHasReadSocket(false);
 	if (!conn.getHasFinishedReading())
 		readFromClient(conn, i, parser, request, response);
+	// TODO: add comments to explain
 	if (conn.getHasReadSocket() && !conn.getHasFinishedReading())
 		return;
 	if (!conn.getCanBeClosed() && !conn.getHasDataToSend())
@@ -406,7 +406,7 @@ void Server::handleSocketTimeoutIfAny()
 	// This should never happen with an infinite timeout
 }
 
-void Server::handlePollFailure()
+void Server::handlePollError()
 {
 	// linear issue: https://linear.app/web-serv/issue/WEB-91/implement-adequate-response-on-poll-failure
 	if (errno == EINTR)
@@ -418,7 +418,7 @@ void Server::handlePollFailure()
 	else
 	{
 		// Log the error with as much detail as available.
-		perror("Critical poll error from handlePollFailure()");
+		perror("Critical poll error from handlePollError()");
 
 		// EBADF, EFAULT, EINVAL, ENOMEM indicate more severe issues.
 		// Depending on the nature of your server, you might try to clean up and restart polling,
