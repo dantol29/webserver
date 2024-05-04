@@ -52,7 +52,7 @@ class Parser
 	// PARSING INTERNAL FUNC
 	void parseRequestLine(const char *request, HTTPRequest &req, HTTPResponse &res);
 	void parseHeaders(const char *request, HTTPRequest &req, HTTPResponse &res);
-
+	bool saveFiles(const std::string& data, HTTPRequest &req);
 	// UTILS
 	bool saveFileHeaders(const std::string &headers, HTTPRequest &req, unsigned int &i);
 	int fileHeaderParametrs(const std::string &headers, struct File &file, unsigned int i);

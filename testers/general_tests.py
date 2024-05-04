@@ -9,17 +9,17 @@ RESET = '\033[0m'
 BUFFER_SIZE = 1024
 
 headers_buffer_size = {
-	"Host": "example.com",
+	"Host": "www.example.com",
     "X-Custom-Header": "A" * (BUFFER_SIZE + 1)
 }
 
 headers_8kb = {
-	"Host": "example.com",
+	"Host": "www.example.com",
     "X-Custom-Header": "A" * (BUFFER_SIZE * 8)
 }
 
 headers_chunked = {
-    "Host": "example.com",
+    "Host": "www.example.com",
     "Transfer-Encoding": "chunked"
 }
 
@@ -66,12 +66,12 @@ async def fetch_data(url, headers, message):
 			await print_message(response.status, message)
 
 async def main():
-	await fetch_data(url, headers_buffer_size, "headers > buffer_size")
-	await fetch_data(url, headers_8kb, "headers > 8KB")
-	await chunked_request()
-	await upload_file("a.txt")
+	# await fetch_data(url, headers_buffer_size, "headers > buffer_size")
+	# await fetch_data(url, headers_8kb, "headers > 8KB")
+	# await chunked_request()
+	# await upload_file("a.txt")
 	await upload_multiple_file()
-	await upload_large_file("5mb.jpg")
+	# await upload_large_file("5mb.jpg")
 
 
 if __name__ == "__main__":
