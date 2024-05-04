@@ -102,10 +102,7 @@ void CGIHandler::closeAllSocketFDs()
 {
 	for (std::vector<struct pollfd>::iterator it = _FDsRef->begin(); it != _FDsRef->end(); ++it)
 	{
-		if (it->fd != _pollFd->fd)
-		{
-			close(it->fd);
-		}
+		close(it->fd);
 	}
 }
 
