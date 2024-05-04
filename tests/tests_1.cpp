@@ -165,27 +165,17 @@ void query(sockaddr_in serverAddress)
 
 void headers(sockaddr_in serverAddress)
 {
-	const char *requests[] = {
-		"GET / HTTP/1.1\r\nHost: www.example.com\r\n\r\n", // 200 (OK)
-														   //   "GET / HTTP/1.1\r\nHost: www.example.com\r\nSecond:
-														   //   hello\r\n\r\n", // 200 (OK) "GET / HTTP/1.1\r\nRandom:
-														   //   www.example.com\r\n\r\n",				  //  400 (Bad
-														   //   Request) "GET / HTTP/1.1\r\nHost
-														   //   www.example.com\r\n\r\n",					  // 400
-														   //   (Bad Request) "GET / HTTP/1.1\r\nHost::
-														   //   www.example.com\r\n\r\n",				  // 400 (Bad
-														   //   Request) "GET / HTTP/1.1\r\nHost:
-														   //   www.example.com\r\n\r",					  // 400 (Bad
-														   //   Request) "GET /
-														   //   HTTP/1.1\r\nHost:www.example.com\r\n\r\n",
-														   //   // 400 (Bad Request) "GET / HTTP/1.1\r\n Host:
-														   //   www.example.com\r\n\r\n",				  // 400 (Bad
-														   //   Request) "GET /HTTP/1.1\r\nHo st:
-														   //   www.example.com\r\n\r\n",				  // 400 (Bad
-														   //   Request) "GET / HTTP/1.1\r\nHost:
-														   //   www.example.com\nSecond: hello\r\n\r\n",	  // 400
-														   //   (Bad Request)
-		NULL};
+	const char *requests[] = {"GET / HTTP/1.1\r\nHost: www.example.com\r\n\r\n",				  // 200 (OK)
+							  "GET / HTTP/1.1\r\nHost: www.example.com\r\nSecond: hello\r\n\r\n", // 200 (OK)
+							  "GET / HTTP/1.1\r\nRandom: www.example.com\r\n\r\n",				  //  400 (Bad Request)
+							  "GET / HTTP/1.1\r\nHost www.example.com\r\n\r\n",					  // 400 (Bad Request)
+							  "GET / HTTP/1.1\r\nHost:: www.example.com\r\n\r\n",				  // 400 (Bad Request)
+							  "GET / HTTP/1.1\r\nHost: www.example.com\r\n\r",					  // 400 (Bad Request)
+							  "GET / HTTP/1.1\r\nHost:www.example.com\r\n\r\n",					  // 400 (Bad Request)
+							  "GET / HTTP/1.1\r\n Host: www.example.com\r\n\r\n",				  // 400 (Bad Request)
+							  "GET /HTTP/1.1\r\nHo st: www.example.com\r\n\r\n",				  // 400 (Bad Request)
+							  "GET / HTTP/1.1\r\nHost: www.example.com\nSecond: hello\r\n\r\n",	  // 400 (Bad Request)
+							  NULL};
 	sendData(requests, serverAddress);
 }
 
