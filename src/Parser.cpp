@@ -337,9 +337,11 @@ bool Parser::saveFileHeaders(const std::string &headers, HTTPRequest &req, unsig
 			return (false);
 		i += 2; // skip [CRLF]
 	}
-	if (!hasCRLF(headers.c_str(), i, 1)) // [CRLF] [CRLF]
-		return (false);
-	i += 4; // skip [CRLF] [CRLF]
+	std::cout << "aaaaaaaaaaaaa" << std::endl;
+	// if (!hasCRLF(headers.c_str(), i, 1)) // [CRLF] [CRLF]
+	// 	return (false);
+	i += 2;
+	// i += 4; // skip [CRLF] [CRLF]
 	req.setFiles(file);
 	return (true);
 }
@@ -349,8 +351,10 @@ bool Parser::saveFiles(const std::string& data, HTTPRequest &req)
 	unsigned int start;
 	unsigned int i = 0;
 	
+	std::cout << "start: "<< data << std::endl;
 	if (!saveFileHeaders(data, req, i))
 		return (false);
+	i += 2;
 	
 	start = i;
 	while (i < data.length())
@@ -363,29 +367,28 @@ bool Parser::saveFiles(const std::string& data, HTTPRequest &req)
 bool Parser::saveFileData(const std::string &request, HTTPRequest &req, unsigned int &i, bool &isFinish)
 {
 	std::string data;
-	unsigned int start = 0;
-	unsigned int boundaryIndex = 0;
+	size_t boundaryIndex = 0;
 	std::string upBound = req.getUploadBoundary();
 
 	// Check the very first uplod boundary
 	isUploadBoundary(request, req, i);
+	i += 2; // skip CRLF
 	// read ALL data
 	data = extractFileData(request, req, i);
 
-	int a = 0;
-	while (a < 2)
+	while (1)
 	{
 		// get the uploadBoundary
 		boundaryIndex = data.find("--" + upBound);
-		std::cout << "Boundary: " << boundaryIndex << std::endl;
+		// if final upload boundary == end of request
+		if (boundaryIndex == std::string::npos && \
+		data.find("--" + upBound + "--") != std::string::npos)
+			break ;
 		// get the file (headers + body + boundary + CRLF) and save
-		if(!saveFiles(data.substr(start, boundaryIndex + ("----" + upBound).size()), req))
-			return (std::cout << "FUUUUUUCK\n", false);
+		if(!saveFiles(data.substr(0, boundaryIndex - 2), req))
+			return (std::cout << "error in saveFiles\n", false);
 		// erase saved data
 		data.erase(0, boundaryIndex + ("----" + upBound).size());
-		// move on
-		start = boundaryIndex + ("----" + upBound).size();
-		a++;
 	}
 	// std::cout << tmp.substr(boundaryIndex) << std::endl;
 	// // check upload boundary after data
