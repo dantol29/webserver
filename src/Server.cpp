@@ -59,9 +59,12 @@ void Server::startPollEventLoop()
 										 _connections[i].getResponse());
 					// TODO: clean this dirt!
 					// add comments
-					if (_connections[i].getHasFinishedReading() \
-					&& _connections[i].getHasDataToSend())
-						_FDs[i].events = POLLOUT;
+
+					// it is NOT CORRECT because we do i-- in closeConnection
+					// if (_connections[i].getHasFinishedReading() \
+					// && _connections[i].getHasDataToSend())
+					//_FDs[i].events = POLLOUT;
+					
 					std::cout << "After: " << _FDs.size() << std::endl;
 					std::cout << "After: " << _connections.size() << std::endl;
 					// printFDsVector(_FDs);
@@ -268,13 +271,12 @@ void Server::closeClientConnection(Connection &conn, size_t &i)
 
 void Server::handleConnection(Connection &conn, size_t &i, Parser &parser, HTTPRequest &request, HTTPResponse &response)
 {
-	std::cout << "\033[1;36m"
-			  << "Entering handleConnection"
-			  << "\033[0m" << std::endl;
+	std::cout << "\033[1;36m" << "Entering handleConnection" << "\033[0m" << std::endl;
 	//conn.printConnection();
 
-	conn.setHasReadSocket(false);
-	if (!conn.getHasReadSocket() || !conn.getHasFinishedReading())
+	// Why is it TRUE when I refresh a page?????
+	std::cout << "Has finished reading: " << conn.getHasFinishedReading() << std::endl;
+	if (!conn.getHasFinishedReading())
 		readFromClient(conn, i, parser, request, response);
 	// TODO: add comments to explain
 	if (conn.getHasReadSocket() && !conn.getHasFinishedReading())
