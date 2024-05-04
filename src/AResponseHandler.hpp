@@ -13,7 +13,7 @@ class AResponseHandler
 	virtual ~AResponseHandler();
 	AResponseHandler(const AResponseHandler &other);
 	AResponseHandler &operator=(const AResponseHandler &other);
-	virtual HTTPResponse handleRequest(const HTTPRequest &request) = 0;
+	virtual void handleRequest(const HTTPRequest &request, HTTPResponse &response) = 0;
 };
 
 #endif
