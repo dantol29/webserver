@@ -50,6 +50,8 @@ void Server::startPollEventLoop()
 					}
 					else{
 						std::cout << "Client socket event" << std::endl;
+						std::cout << "Before: "<< _FDs.size() << std::endl;
+						std::cout << "Before: " << _connections.size() << std::endl;
 						handleConnection(_connections[i],
 										 i,
 										 _connections[i].getParser(),
@@ -60,6 +62,8 @@ void Server::startPollEventLoop()
 					if (_connections[i].getHasFinishedReading() \
 					&& _connections[i].getHasDataToSend())
 						_FDs[i].events = POLLOUT;
+					std::cout << "After: " << _FDs.size() << std::endl;
+					std::cout << "After: " << _connections.size() << std::endl;
 					// printFDsVector(_FDs);
 					// print_connectionsVector(_connections);
 					}
@@ -270,13 +274,13 @@ void Server::handleConnection(Connection &conn, size_t &i, Parser &parser, HTTPR
 	//conn.printConnection();
 
 	conn.setHasReadSocket(false);
-	if (!conn.getHasFinishedReading())
+	if (!conn.getHasReadSocket() || !conn.getHasFinishedReading())
 		readFromClient(conn, i, parser, request, response);
 	// TODO: add comments to explain
 	if (conn.getHasReadSocket() && !conn.getHasFinishedReading())
 		return;
-	if (!conn.getCanBeClosed() && !conn.getHasDataToSend())
-		buildResponse(conn, i, request, response);
+	//if (!conn.getCanBeClosed() && !conn.getHasDataToSend())
+	buildResponse(conn, i, request, response);
 	if (conn.getHasDataToSend())
 		writeToClient(conn, i, response);
 	if (conn.getCanBeClosed())
