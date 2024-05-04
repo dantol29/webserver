@@ -59,10 +59,10 @@ void Server::startPollEventLoop()
 										 _connections[i].getResponse());
 						// TODO: clean this dirt!
 						// add comments
-						if (_connections[i].getHasFinishedReading() && _connections[i].getHasDataToSend())
-							_FDs[i].events = POLLOUT;
-						printFDsVector(_FDs);
-						print_connectionsVector(_connections);
+						// if (_connections[i].getHasFinishedReading() && _connections[i].getHasDataToSend())
+						// 	_FDs[i].events = POLLOUT;
+						// printFDsVector(_FDs);
+						// print_connectionsVector(_connections);
 					}
 				}
 				else if (_FDs[i].revents & (POLLERR | POLLHUP | POLLNVAL))
@@ -175,7 +175,6 @@ void Server::readFromClient(Connection &conn, size_t &i, Parser &parser, HTTPReq
 		else
 		{
 			std::cout << "\033[1;33m" << "Reading body" << "\033[0m" << std::endl;
-			std::cout << "\033[1;33m" << "Reading body" << "\033[0m" << std::endl;
 			// TODO: add comments
 			if (!parser.getBodyComplete() && parser.getBuffer().size() == request.getContentLength())
 			{
@@ -197,6 +196,8 @@ void Server::readFromClient(Connection &conn, size_t &i, Parser &parser, HTTPReq
 		if (!parser.getBodyComplete())
 		{
 			std::cout << "Body still incomplete, exiting readFromClient." << std::endl;
+			conn.setHasFinishedReading(false);
+			conn.setHasReadSocket(true);
 			return;
 		}
 		//std::cout << parser.getBuffer() << std::endl;
@@ -269,8 +270,10 @@ void Server::handleConnection(Connection &conn, size_t &i, Parser &parser, HTTPR
 	if (!conn.getHasFinishedReading())
 		readFromClient(conn, i, parser, request, response);
 	// TODO: add comments to explain
-	if (conn.getHasReadSocket() && !conn.getHasFinishedReading())
+	if (conn.getHasReadSocket() && !conn.getHasFinishedReading()){
+		std::cout << "\033[1;36m" << "return from handleConnection" << "\033[0m" << std::endl;
 		return;
+	}
 	if (!conn.getCanBeClosed() && !conn.getHasDataToSend())
 		buildResponse(conn, i, request, response);
 	if (conn.getHasDataToSend())

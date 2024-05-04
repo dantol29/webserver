@@ -346,54 +346,47 @@ bool Parser::saveFileHeaders(const std::string &headers, HTTPRequest &req, unsig
 bool Parser::saveFileData(const std::string &data, HTTPRequest &req, unsigned int &i, bool &isFinish)
 {
 	std::string tmp;
-	unsigned int start = 0;
+	std::string upBound = req.getUploadBoundary();
 
 	tmp = extractFileData(data, req, i); // [DATA]
-	if (tmp.empty())
-		return (false);
-	i += 2;	// skip [CRLF]
 
 	// check upload boundary after data
-	start = i;
-	while (i < data.length() && !hasCRLF(data.c_str(), i, 0))
-		i++;
-	if (data.substr(start, i - start) != "--" + req.getUploadBoundary()) // [BOUNDARY]
+	//(we have to get the upload boundary from the end of the file)
+	if (tmp.substr(tmp.size() - ("----" + upBound).size()) != "--" + upBound + "\r\n") // [BOUNDARY]
 	{
-		if (data.substr(start, i - start) != "--" + req.getUploadBoundary() + "--") // [BOUNDARY--] final
+		if (tmp.substr(tmp.size() - ("----" + upBound + "--").size()) != "--" + upBound + "--\r\n") // [BOUNDARY--] final
 			return (false);
+		// final upload boundary - end of multipart-from request
+		req.setFileContent(tmp.substr(0, tmp.size() - ("----" + upBound + "--").size()));
 		isFinish = true;
+		return (true);
 	}
-	req.setFileContent(tmp);
-	i += 2; // skip [CRLF]
+	req.setFileContent(tmp.substr(0, tmp.size() - ("----" + upBound).size()));
+	//i += 2; // skip [CRLF]
 	return (true);
 }
 
 std::string Parser::extractFileData(const std::string &data, HTTPRequest &req, unsigned int &i)
 {
-	unsigned int start = 0;
-	unsigned int dataToRead;
-	File file = req.getFiles().back();
-	std::map<std::string, std::string>::iterator it = file.headers.find("Content-Length");
+	unsigned int start = i;
+	(void)req;
+	// unsigned int dataToRead;
+	// File file = req.getFiles().back();
+	// std::map<std::string, std::string>::iterator it = file.headers.find("Content-Length");
 
-	// if Content-Length is provided
-	if (it != file.headers.end())
-	{
-		dataToRead = strToInt(it->second);
-		start = i;
-		while (i < data.length() && dataToRead > 0)
-		{
-			i++;
-			dataToRead--;
-		}
-	}
-	else
-	{
-		start = i;
-		while (i < data.length() && !hasCRLF(data.c_str(), i, 0))
-			i++;
-	}
-	if (!hasCRLF(data.c_str(), i, 0)) // [CRLF]
-		return ("");
+	// // if Content-Length is provided
+	// if (it != file.headers.end())
+	// {
+	// 	dataToRead = strToInt(it->second);
+	// 	while (i < data.length() && dataToRead > 0)
+	// 	{
+	// 		i++;
+	// 		dataToRead--;
+	// 	}
+	// }
+	// else
+	while (i < data.length())
+		i++;
 	return (data.substr(start, i - start));
 }
 
