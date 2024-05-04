@@ -190,27 +190,44 @@ void Parser::parseHeaders(const char *request, HTTPRequest &req, HTTPResponse &r
 }
 
 // [--BOUNDARY][CRLF][HEADERS][CRLF][DATA][CRLF][--BOUNDARY--]
-void Parser::parseFileBody(const std::string &request, HTTPRequest &req, HTTPResponse &res)
+void Parser::parseFileUpload(const std::string &request, HTTPRequest &req, HTTPResponse &res)
 {
-	(void)res;
+	bool hasFilestoRead = true;
 	unsigned int i = 0;
-	// unsigned int start = 0;
-	bool isFinish = false;
-	isUploadBoundary(request, req, i);
-	saveFileData(request, req, i, isFinish);
-	// start = i;
-	// while (i < request.length())
-	// {
-	// 	if (start == i && !isUploadBoundary(request, req, i)) // [--BOUNDARY] [CRLF]
-	// 		return (res.setStatusCode(400, "Invalid boundary in the file upload1"));
-	// 	if (!saveFileHeaders(request, req, i)) // [HEADERS] [CRLF]
-	// 		return (res.setStatusCode(400, "Invalid file upload headers"));
-	//if (!saveFileData(request, req, i, isFinish)) // [DATA][CRLF][--BOUNDARY--]
-		//return (res.setStatusCode(400, "Invalid file data"));
-	// 	if (isFinish)
-	// 		return;
-	// }
-	// return (res.setStatusCode(400, "Invalid file upload body"));
+	unsigned int start = 0;
+	std::string data;
+	size_t boundaryIndex = 0;
+	std::string upBound = req.getUploadBoundary();
+
+	// Check the very first upload boundary
+	if (!isUploadBoundary(request, req, i))
+		return (res.setStatusCode(400, "Incorrect 1 upload boubdary"));
+
+	// read ALL data
+	start = i;
+	while (i < request.length())
+		i++;
+	data = request.substr(start, i - start);
+	std::cout << "Data: "<< data << std::endl;
+	while (hasFilestoRead)
+	{
+		// get the uploadBoundary
+		boundaryIndex = data.find("--" + upBound + "\r\n");
+		// if final upload boundary == end of request
+		if (boundaryIndex == std::string::npos)
+		{
+			boundaryIndex = data.find("--" + upBound + "--");
+			hasFilestoRead = false;
+		}
+		if (boundaryIndex == std::string::npos)
+			return (res.setStatusCode(400, "Incorrect file boundary"));
+		// get the file (headers + body + boundary + CRLF) and save
+		if(!saveFile(data.substr(0, boundaryIndex - 2), req))
+			return (res.setStatusCode(400, "Incorrect file data"));
+		// erase saved data
+		data.erase(0, boundaryIndex + ("----" + upBound).size());
+		std::cout << "Data: "<< data << std::endl;
+	}
 }
 
 // ----------------UTILS----------------------------
@@ -337,21 +354,16 @@ bool Parser::saveFileHeaders(const std::string &headers, HTTPRequest &req, unsig
 			return (false);
 		i += 2; // skip [CRLF]
 	}
-	std::cout << "aaaaaaaaaaaaa" << std::endl;
-	// if (!hasCRLF(headers.c_str(), i, 1)) // [CRLF] [CRLF]
-	// 	return (false);
-	i += 2;
-	// i += 4; // skip [CRLF] [CRLF]
+	i += 2; // skip [CRLF]
 	req.setFiles(file);
 	return (true);
 }
 
-bool Parser::saveFiles(const std::string& data, HTTPRequest &req)
+bool Parser::saveFile(const std::string& data, HTTPRequest &req)
 {
 	unsigned int start;
 	unsigned int i = 0;
 	
-	std::cout << "start: "<< data << std::endl;
 	if (!saveFileHeaders(data, req, i))
 		return (false);
 	i += 2;
@@ -360,75 +372,8 @@ bool Parser::saveFiles(const std::string& data, HTTPRequest &req)
 	while (i < data.length())
 		i++;
 	req.setFileContent(data.substr(start, i - start));
-	std::cout << req << std::endl;
+	//std::cout << req << std::endl;
 	return (true);
-}
-
-bool Parser::saveFileData(const std::string &request, HTTPRequest &req, unsigned int &i, bool &isFinish)
-{
-	std::string data;
-	size_t boundaryIndex = 0;
-	std::string upBound = req.getUploadBoundary();
-
-	// Check the very first uplod boundary
-	isUploadBoundary(request, req, i);
-	i += 2; // skip CRLF
-	// read ALL data
-	data = extractFileData(request, req, i);
-
-	while (1)
-	{
-		// get the uploadBoundary
-		boundaryIndex = data.find("--" + upBound);
-		// if final upload boundary == end of request
-		if (boundaryIndex == std::string::npos && \
-		data.find("--" + upBound + "--") != std::string::npos)
-			break ;
-		// get the file (headers + body + boundary + CRLF) and save
-		if(!saveFiles(data.substr(0, boundaryIndex - 2), req))
-			return (std::cout << "error in saveFiles\n", false);
-		// erase saved data
-		data.erase(0, boundaryIndex + ("----" + upBound).size());
-	}
-	// std::cout << tmp.substr(boundaryIndex) << std::endl;
-	// // check upload boundary after data
-	// //(we have to get the upload boundary from the end of the file)
-	// if (tmp.substr(tmp.size() - ("----" + upBound).size()) != "--" + upBound + "\r\n") // [BOUNDARY]
-	// {
-	// 	if (tmp.substr(tmp.size() - ("----" + upBound + "--").size()) != "--" + upBound + "--\r\n") // [BOUNDARY--] final
-	// 		return (false);
-	// 	// final upload boundary - end of multipart-from request
-	// 	req.setFileContent(tmp.substr(0, tmp.size() - ("----" + upBound + "--").size()));
-	isFinish = true;
-	// 	return (true);
-	// }
-	// req.setFileContent(tmp.substr(0, tmp.size() - ("----" + upBound).size()));
-	// //i += 2; // skip [CRLF]
-	return (true);
-}
-
-std::string Parser::extractFileData(const std::string &data, HTTPRequest &req, unsigned int &i)
-{
-	unsigned int start = i;
-	(void)req;
-	// unsigned int dataToRead;
-	// File file = req.getFiles().back();
-	// std::map<std::string, std::string>::iterator it = file.headers.find("Content-Length");
-
-	// // if Content-Length is provided
-	// if (it != file.headers.end())
-	// {
-	// 	dataToRead = strToInt(it->second);
-	// 	while (i < data.length() && dataToRead > 0)
-	// 	{
-	// 		i++;
-	// 		dataToRead--;
-	// 	}
-	// }
-	// else
-	while (i < data.length())
-		i++;
-	return (data.substr(start, i - start));
 }
 
 std::string Parser::extractUploadBoundary(std::string line)

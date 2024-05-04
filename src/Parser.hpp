@@ -19,7 +19,7 @@ class Parser
 	Parser();
 	bool preParseHeaders(HTTPResponse &res);
 	void parseRequestLineAndHeaders(const char *request, HTTPRequest &req, HTTPResponse &res);
-	void parseFileBody(const std::string &request, HTTPRequest &req, HTTPResponse &res);
+	void parseFileUpload(const std::string &request, HTTPRequest &req, HTTPResponse &res);
 
 	// GETTERS FROM THE CORE PARSING FUNCTIONALITIES
 	bool getHeadersComplete() const;
@@ -52,11 +52,10 @@ class Parser
 	// PARSING INTERNAL FUNC
 	void parseRequestLine(const char *request, HTTPRequest &req, HTTPResponse &res);
 	void parseHeaders(const char *request, HTTPRequest &req, HTTPResponse &res);
-	bool saveFiles(const std::string& data, HTTPRequest &req);
+	bool saveFile(const std::string& data, HTTPRequest &req);
 	// UTILS
 	bool saveFileHeaders(const std::string &headers, HTTPRequest &req, unsigned int &i);
 	int fileHeaderParametrs(const std::string &headers, struct File &file, unsigned int i);
-	bool saveFileData(const std::string &data, HTTPRequest &req, unsigned int &i, bool &isFinish);
 	bool isUploadBoundary(const std::string &data, HTTPRequest &req, unsigned int &i);
 	std::string extractUploadBoundary(std::string line);
 	std::string extractVariables(std::string &requestTarget, bool &isOriginForm);
@@ -67,7 +66,6 @@ class Parser
 	void skipRequestLine(const char *request, unsigned int &i);
 	void skipHeader(const char *request, unsigned int &i);
 	bool hasMandatoryHeaders(HTTPRequest &obj);
-	std::string extractFileData(const std::string &data, HTTPRequest &req, unsigned int &i);
 	std::string extractValue(std::string &variables, int &i);
 	std::string extractKey(std::string &variables, int &i, int startPos);
 	std::string extractRequestTarget(const char *request, unsigned int &i);

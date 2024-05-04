@@ -202,7 +202,7 @@ void Server::readFromClient(Connection &conn, size_t &i, Parser &parser, HTTPReq
 		}
 		//std::cout << parser.getBuffer() << std::endl;
 		if (!request.getUploadBoundary().empty())
-			parser.parseFileBody(parser.getBuffer(), request, response);
+			parser.parseFileUpload(parser.getBuffer(), request, response);
 		else if (request.getMethod() != "GET")
 		{
 			request.setBody(parser.getBuffer());
