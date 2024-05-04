@@ -34,25 +34,25 @@ void Server::startPollEventLoop()
 	addServerSocketPollFdToVectors();
 	while (1)
 	{
-		std::cout << "++++++++++++++ Waiting for new connection or Polling +++++++++++++++" << std::endl;
+		std::cout << "\n++++++++++++++ Waiting for new connection or Polling +++++++++++++++\n" << std::endl;
 		// std::cout << "printFDsVector(_FDs); - before polling" << std::endl;
 		// printFDsVector(_FDs);
 		int ret = poll(_FDs.data(), _FDs.size(), -1);
 		// std::cout << "printFDsVector(_FDs); - after polling" << std::endl;
 		// printFDsVector(_FDs);
 		// print_connectionsVector(_connections);
-		// std::cout << "poll() returned: " << ret << std::endl;
+		std::cout << "Something happened! poll() returned: " << ret << std::endl;
 		if (ret > 0)
 		{
 			for (size_t i = 0; i < _FDs.size(); i++)
 			{
-				std::cout << "i: " << i << std::endl;
+				std::cout << "For loop ... #" << i << std::endl;
 				if (_FDs[i].revents & POLLIN)
 				{
 					// std::cout << "POLLIN" << std::endl;
 					if (i == 0)
 					{
-						std::cout << "Server socket event" << std::endl;
+						std::cout << "Server socket event on Connection #" << i << std::endl;
 						// std::cout << "i == 0" << std::endl;
 
 						acceptNewConnection();
