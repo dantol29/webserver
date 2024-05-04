@@ -281,8 +281,8 @@ void Server::handleConnection(Connection &conn, size_t &i, Parser &parser, HTTPR
 	// TODO: add comments to explain
 	if (conn.getHasReadSocket() && !conn.getHasFinishedReading())
 		return;
-	//if (!conn.getCanBeClosed() && !conn.getHasDataToSend())
-	buildResponse(conn, i, request, response);
+	if (!conn.getCanBeClosed() && !conn.getHasDataToSend())
+		buildResponse(conn, i, request, response);
 	if (conn.getHasDataToSend())
 		writeToClient(conn, i, response);
 	if (conn.getCanBeClosed())
@@ -380,6 +380,8 @@ void Server::acceptNewConnection()
 		/* start together */
 		_FDs.push_back(newSocketPoll);
 		_connections.push_back(newConnection);
+		std::cout << newConnection.getHasFinishedReading() << std::endl;
+		std::cout << _connections.back().getHasFinishedReading() << std::endl;
 		/* end together */
 		char clientIP[INET_ADDRSTRLEN];
 		inet_ntop(AF_INET, &clientAddress.sin_addr, clientIP, INET_ADDRSTRLEN);
