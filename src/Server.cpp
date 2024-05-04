@@ -50,8 +50,6 @@ void Server::startPollEventLoop()
 					}
 					else{
 						std::cout << "Client socket event" << std::endl;
-						std::cout << "Before: "<< _FDs.size() << std::endl;
-						std::cout << "Before: " << _connections.size() << std::endl;
 						handleConnection(_connections[i],
 										 i,
 										 _connections[i].getParser(),
@@ -64,11 +62,6 @@ void Server::startPollEventLoop()
 					// if (_connections[i].getHasFinishedReading() \
 					// && _connections[i].getHasDataToSend())
 					//_FDs[i].events = POLLOUT;
-					
-					std::cout << "After: " << _FDs.size() << std::endl;
-					std::cout << "After: " << _connections.size() << std::endl;
-					// printFDsVector(_FDs);
-					// print_connectionsVector(_connections);
 					}
 				}
 				else if (_FDs[i].revents & (POLLERR | POLLHUP | POLLNVAL))
