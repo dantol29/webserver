@@ -18,7 +18,7 @@ class Router
   public:
 	Router();
 	~Router();
-	HTTPResponse routeRequest(const HTTPRequest &request);
+	void routeRequest(const HTTPRequest &request, HTTPResponse &response);
 
 	void splitTarget(const std::string &target);
 	bool isDynamicRequest(const HTTPRequest &request);

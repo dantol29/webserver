@@ -9,7 +9,7 @@ Router::~Router()
 {
 }
 
-HTTPResponse Router::routeRequest(const HTTPRequest &request)
+void Router::routeRequest(const HTTPRequest &request, HTTPResponse &response)
 {
 	std::string _webRoot = "var/www"; // TODO: get this from the config file
 	if (isCGI(request))
@@ -17,27 +17,32 @@ HTTPResponse Router::routeRequest(const HTTPRequest &request)
 		CGIHandler cgiHandler;
 		cgiHandler.setFDsRef(_FDsRef);
 		cgiHandler.setPollFd(_pollFd);
-		return cgiHandler.handleRequest(request);
+		return cgiHandler.handleRequest(request, response);
 	}
 	else if (isDynamicRequest(request))
 	{
 		std::cout << "\033[31mCGI is the only dynamic requests we handle at the moment\033[0m" << std::endl;
+		response.setErrorResponse(501);
 	}
 	else // it is a static request
 	{
 		StaticContentHandler staticContentInstance;
 		if (!pathIsValid(const_cast<HTTPRequest &>(request), _webRoot))
 		{
-
-			std::cout << "Path does not exist" << std::endl;
-			return staticContentInstance.handleNotFound();
+			std::cout << "Path is not valid, calling handleNotFound" << std::endl;
+			staticContentInstance.handleNotFound(response);
 		}
 		else
 		{
-			return staticContentInstance.handleRequest(request);
+			staticContentInstance.handleRequest(request, response);
 		}
 	}
-	return HTTPResponse();
+	return;
+	// else if (isDynamicRequest(request))
+	// {
+	// 	std::cout << "\033[31mCGI is the only dynamic requests we handle at the moment\033[0m" << std::endl;
+	// 	response.setStatusCode(501, "");
+	// }
 }
 
 bool Router::isDynamicRequest(const HTTPRequest &request)
@@ -105,15 +110,23 @@ void Router::splitTarget(const std::string &target)
 bool Router::pathIsValid(HTTPRequest &request, std::string webRoot)
 {
 	std::string host = request.getHost();
-	std::cout << "Host: " << host << std::endl;
+	// std::cout << "Host: " << host << std::endl;
 	size_t pos = host.find(":");
 	if (pos != std::string::npos)
 	{
 		host = host.substr(0, pos);
 	}
-	std::cout << "Host (after : trailing) :" << host << std::endl;
+	// std::cout << "Host (after : trailing) :" << host << std::endl;
 	std::string path = request.getRequestTarget();
-	path = webRoot + path;
+
+	// for ease of use during deployment
+	// this if/else allows to reach target with tester or browser
+	if (host == "localhost")
+		path = webRoot + path;
+	else
+		path = webRoot + "/" + host + path;
+
+	std::cout << std::endl << "Path: " << path << std::endl << std::endl;
 	std::cout << "Path: " << path << std::endl;
 	struct stat buffer;
 	if (stat(path.c_str(), &buffer) != 0)
@@ -122,20 +135,20 @@ bool Router::pathIsValid(HTTPRequest &request, std::string webRoot)
 	}
 	if (S_ISDIR(buffer.st_mode))
 	{
-		std::cout << "Path is a directory" << std::endl;
+		// std::cout << "Path is a directory" << std::endl;
 		if (!path.empty() && path[path.length() - 1] != '/')
 		{
 			path += "/";
 		}
 		path += "index.html";
-		std::cout << "Path: " << path << std::endl;
+		// std::cout << "Path: " << path << std::endl;
 		if (stat(path.c_str(), &buffer) != 0)
 		{
 			// TODO: decide if we should return a custom error for a directory without an index.html
 			return false;
 		}
 	}
-	std::cout << "Path: " << path << " exists" << std::endl;
+	// std::cout << "Path: " << path << " exists" << std::endl;
 
 	std::ifstream file(path.c_str());
 	if (!file.is_open())
@@ -145,7 +158,7 @@ bool Router::pathIsValid(HTTPRequest &request, std::string webRoot)
 	}
 	file.close();
 
-	std::cout << "Path is an accesible and readable file" << std::endl;
+	// std::cout << "Path is an accesible and readable file" << std::endl;
 	return true;
 }
 

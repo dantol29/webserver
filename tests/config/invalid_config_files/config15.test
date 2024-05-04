@@ -1,7 +1,7 @@
 server {
 	listen 8001;
 
-	location/path {
-
+	location  {
+		root a;
 	}
 }

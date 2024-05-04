@@ -107,20 +107,20 @@ bool isVulnerablePath(const std::string &path)
 	return (false);
 }
 
-int checkFile(const char *path)
-{
-	char buffer[2];
+// int checkFile(const char *path)
+// {
+// 	char buffer[2];
 
-	int fd = open(path, O_RDONLY);
-	if (fd == -1)
-		return (-1);
-	if (read(fd, buffer, 0) == -1)
-	{
-		close(fd);
-		return (-1);
-	}
-	return (fd);
-}
+// 	int fd = open(path, O_RDONLY);
+// 	if (fd == -1)
+// 		return (-1);
+// 	if (read(fd, buffer, 0) == -1)
+// 	{
+// 		close(fd);
+// 		return (-1);
+// 	}
+// 	return (fd);
+// }
 
 /*
 The combination of \\r\\n
@@ -149,4 +149,18 @@ bool isInvalidChar(const unsigned char &c)
 	if ((c <= 31) || c == 127)
 		return (true);
 	return (false);
+}
+
+int strToInt(const std::string &str)
+{
+	std::istringstream iss(str);
+	int num;
+	iss >> num;
+
+	if (iss.fail() || !iss.eof())
+	{
+		std::cerr << "Invalid input: conversion failed." << std::endl;
+		return -1;
+	}
+	return num;
 }

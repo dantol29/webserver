@@ -11,60 +11,49 @@ CGIHandler::~CGIHandler()
 CGIHandler &CGIHandler::operator=(const CGIHandler &other)
 {
 	if (this != &other)
-	{										// Protect against self-assignment
-		AResponseHandler::operator=(other); // Call the base class assignment operator
-											// Copy or assign other members of CGIHandler if necessary
+	{
+		AResponseHandler::operator=(other);
 	}
 	return *this;
 }
 
-HTTPResponse CGIHandler::handleRequest(const HTTPRequest &request)
+void CGIHandler::handleRequest(const HTTPRequest &request, HTTPResponse &response)
 {
 	CGIHandler cgiInstance;
 	cgiInstance.setFDsRef(_FDsRef); // here we set the FDs to close later unused ones
 	MetaVariables env;
 	env.HTTPRequestToMetaVars(request, env);
-	std::cout << env;
+	// std::cout << env;
 	std::string cgiOutput = executeCGI(env);
-
-	// HTTPResponse response;
-	// response.setBody(cgiOutput);
-	// response.setIsCGI(true);
+	response.setIsCGI(true);
+	CGIStringToResponse(cgiOutput, response);
 	// std::cout << response;
-	return CGIStringToResponse(cgiOutput);
+	return;
 }
 
-char *const *CGIHandler::createArgvForExecve(const MetaVariables &env)
+void CGIHandler::createArgvForExecve(const MetaVariables &env, std::vector<char *> &argv)
 {
-	std::cout << env;
-	char **argv = new char *[2];
-
+	// std::cout << env;
 	std::string scriptName = env.getVar("SCRIPT_NAME");
 	std::string pathTranslated = env.getVar("PATH_TRANSLATED");
 	std::string scriptPath = pathTranslated + scriptName;
 
 	if (env.getVar("X_INTERPRETER_PATH") != "")
 	{
-		argv[0] = new char[env.getVar("X_INTERPRETER_PATH").length() + 1];
-		std::strcpy(argv[0], env.getVar("X_INTERPRETER_PATH").c_str());
-		argv[1] = new char[scriptPath.length() + 1];
-		std::strcpy(argv[1], scriptPath.c_str());
-		argv[2] = NULL;
+		std::string interpreterVar = env.getVar("X_INTERPRETER_PATH");
+		argv.push_back(const_cast<char *>(interpreterVar.c_str()));
+		argv.push_back(const_cast<char *>(scriptPath.c_str()));
 	}
 	else
 	{
-		argv[0] = new char[scriptPath.length() + 1];
-		std::strcpy(argv[0], scriptPath.c_str());
-		argv[1] = NULL;
+		argv.push_back(const_cast<char *>(scriptPath.c_str()));
 	}
 
-	return argv;
+	return;
 }
 
-HTTPResponse CGIHandler::CGIStringToResponse(const std::string &cgiOutput)
+void CGIHandler::CGIStringToResponse(const std::string &cgiOutput, HTTPResponse &response)
 {
-	HTTPResponse response;
-
 	std::size_t headerEndPos = cgiOutput.find("\r\n\r\n");
 	if (headerEndPos == std::string::npos)
 	{
@@ -72,8 +61,7 @@ HTTPResponse CGIHandler::CGIStringToResponse(const std::string &cgiOutput)
 	}
 
 	std::string headersPart = cgiOutput.substr(0, headerEndPos);
-	std::string bodyPart = cgiOutput.substr(headerEndPos); // separator
-
+	std::string bodyPart = cgiOutput.substr(headerEndPos);
 	std::istringstream headerStream(headersPart);
 	std::string headerLine;
 	while (std::getline(headerStream, headerLine))
@@ -94,8 +82,8 @@ HTTPResponse CGIHandler::CGIStringToResponse(const std::string &cgiOutput)
 
 	response.setBody(bodyPart);
 	response.setIsCGI(true);
-	response.setStatusCode(200);
-	return response;
+	response.setStatusCode(200, "");
+	return;
 }
 
 void CGIHandler::closeAllSocketFDs()
@@ -109,7 +97,8 @@ void CGIHandler::closeAllSocketFDs()
 std::string CGIHandler::executeCGI(const MetaVariables &env)
 {
 	std::string cgiOutput = "";
-	char *const *argv = createArgvForExecve(env);
+	std::vector<char *> argv;
+	createArgvForExecve(env, argv);
 
 	int pipeFD[2];
 	if (pipe(pipeFD) == -1)
@@ -133,14 +122,9 @@ std::string CGIHandler::executeCGI(const MetaVariables &env)
 		closeAllSocketFDs();
 
 		std::vector<char *> envp = env.getForExecve();
-		execve(argv[0], argv, envp.data());
+		execve(argv[0], argv.data(), envp.data());
 
 		perror("execve");
-		for (int i = 0; argv[i] != NULL; i++)
-		{
-			delete[] argv[i];
-		}
-		delete[] argv;
 		exit(EXIT_FAILURE); // TODO: check if _exit isn't better
 	}
 	else
@@ -158,23 +142,9 @@ std::string CGIHandler::executeCGI(const MetaVariables &env)
 
 		int status;
 		waitpid(pid, &status, 0);
-
-		for (int i = 0; argv[i] != NULL; i++)
-		{
-			delete[] argv[i];
-		}
-		delete[] argv;
-
 		std::cout << "------------------CGI output prepared-------------------" << std::endl;
 		return cgiOutput;
 	}
-
-	for (int i = 0; argv[i] != NULL; i++)
-	{
-		delete[] argv[i];
-	}
-	delete[] argv;
-
 	return cgiOutput;
 }
 

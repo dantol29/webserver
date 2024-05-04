@@ -18,9 +18,11 @@
 !**/*.sh
 !**/*.py
 !**/*.json
+!**/*.yml
 
 # Specific files and directories to include
 !Makefile
+!.github/
 !.clang-format
 !.vscode/
 !.cgi-bin/
@@ -34,3 +36,5 @@
 /secretus/
 /a.out
 **/*.o
+testers/myenv/
+

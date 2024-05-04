@@ -43,16 +43,8 @@ std::vector<char *> MetaVariables::getForExecve() const
 	for (std::map<std::string, std::string>::const_iterator it = metaVars.begin(); it != metaVars.end(); ++it)
 	{
 		std::string env = it->first + "=" + it->second;
-		char *envCStr = new char[env.size() + 1];
-		size_t i;
-		for (i = 0; i < env.size(); ++i)
-		{
-			envCStr[i] = env[i];
-		}
-		envCStr[i] = '\0';
-		result.push_back(envCStr);
+		result.push_back(const_cast<char *>(env.c_str()));
 	}
-	result.push_back(NULL);
 	return result;
 }
 
@@ -105,61 +97,6 @@ bool startsWith(const std::string &str, const std::string &prefix)
 	return true;
 }
 
-// bool MetaVariables::isAuthorityForm(const HTTPRequest &request)
-// {
-// 	std::string method = request.getMethod();
-// 	std::string requestTarget = request.getRequestTarget();
-
-// 	if (method != "CONNECT")
-// 	{
-// 		return false;
-// 	}
-
-// 	if (requestTarget.find("://") != std::string::npos || requestTarget[0] == '/')
-// 	{
-// 		return false;
-// 	}
-// 	return true;
-// }
-
-// void MetaVariables::RequestTargetToMetaVars(HTTPRequest request, MetaVariables &env)
-// {
-// 	std::string requestTarget = request.getRequestTarget();
-
-// 	if (requestTarget.empty())
-// 	{
-// 		std::cout << "Request target is empty" << std::endl;
-// 		return;
-// 	}
-// 	else if (requestTarget[0] == '/')
-// 	{
-// 		std::cout << "Identified Origin-Form request target" << std::endl;
-// 		//
-// 	}
-// 	else if (startsWith(requestTarget, "http"))
-// 	{
-// 		std::cout << "Identified Absolute-Form request target" << std::endl;
-// 		// No direct action for CGI variables
-// 	}
-// 	else if (requestTarget == "*")
-// 	{
-// 		std::cout << "Identified Asterisk-Form request target: " << requestTarget << std::endl;
-// 		env.setVar("REQUEST_METHOD", "OPTIONS");
-// 		std::cout << "REQUEST_METHOD set to OPTIONS" << std::endl;
-// 	}
-// 	else if (isAuthorityForm(request))
-// 	{
-// 		std::cout << "Identified Authority-Form request target" << std::endl;
-// 		// No direct action for CGI variables
-// 	}
-// 	else
-// 	{
-// 		std::cout << "Unrecognized Request Target Form: " << requestTarget << std::endl;
-// 	}
-
-// 	env.setVar("GATEWAY_INTERFACE", "CGI/1.1");
-// }
-
 std::string MetaVariables::formatQueryString(const std::multimap<std::string, std::string> &queryParams) const
 {
 	std::string queryString;
@@ -190,21 +127,21 @@ void MetaVariables::subtractQueryFromPathInfo(std::string &pathInfo, const std::
 
 void MetaVariables::HTTPRequestToMetaVars(const HTTPRequest &request, MetaVariables &env)
 {
-	// env.setVar("X_INTERPRETER_PATH", "/home/lmangall/.brew/bin/python3"); // school computer...
+	// TODO: several metavars have to be set from configfile
+
+	// This line will have the code put the interpreter path as argv[0] to execve
+	//  env.setVar("X_INTERPRETER_PATH", "/home/lmangall/.brew/bin/python3"); // school computer...
 
 	//________General variables
 	// Set the method used for the request (e.g., GET, POST)
 	env.setVar("REQUEST_METHOD", request.getMethod());
 	// Set the protocol version used in the request (e.g., HTTP/1.1)
 	env.setVar("PROTOCOL_VERSION", request.getProtocolVersion());
-	env.setVar("SERVER_PORT", "8080"); //     ---> how to set it programmatically ? from the macro ?
+	env.setVar("SERVER_PORT", "8080");
 
 	//_______Server-related variables
-	// The name and version of the HTTP server (Format: name/version)
 	env.setVar("SERVER_SOFTWARE", "Server_of_people_identifying_as_objects/1.0");
-	// The host name, DNS alias, or IP address of the server
 	env.setVar("SERVER_NAME", "The_objects.com");
-	// The CGI specification revision the server is using (Format: CGI/version)
 	env.setVar("GATEWAY_INTERFACE", "CGI/1.1");
 
 	//_______Path-related variables
@@ -217,26 +154,11 @@ void MetaVariables::HTTPRequestToMetaVars(const HTTPRequest &request, MetaVariab
 	subtractQueryFromPathInfo(pathInfo, queryString);
 
 	env.setVar("PATH_INFO", pathInfo);
-	// most likely append the PATH_INFO to the root directory of the script OR MAYBE use a specific mapping logic
 	// std::string pathTranslated = translatePathToPhysical(scriptVirtualPath, pathInfo); // Implement this function
-	env.setVar("PATH_TRANSLATED", "var/www"); // TEMPORARY
-	// SCRIPT_NAME = URI path to identify CGI script, not just the name of the script
+	env.setVar("PATH_TRANSLATED", "var/www");
 	env.setVar("SCRIPT_NAME", scriptName);
+
 	// The query string from the URL sent by the client
-
-	// The REMOTE_HOST variable contains the fully qualified domain name of
-	// the client sending the request to the server
-	//  env.setVar("REMOTE_HOST", ""); // Might require reverse DNS lookup
-	//  // network address (IP) of the client sending the request to the server.
-	//  env.setVar("REMOTE_ADDR", ""); // Needs to be obtained from the request/connection
-
-	//_______AUTHENTICATION :
-	// // The authentication method used to protect the script
-	// env.setVar("AUTH_TYPE", ""); // Depends on server configuration
-	// // The client's username, if the script is protected and the server supports authentication
-	// env.setVar("REMOTE_USER", ""); // Depends on server and authentication method
-	// // The remote (client's) username from RFC 931 identification; for log purposes only
-	// env.setVar("REMOTE_IDENT", ""); // Requires specific server support
 
 	//_______set the metadata from the headers of the request
 	std::pair<std::string, std::string> contentTypeHeader = request.getSingleHeader("Content-Type");

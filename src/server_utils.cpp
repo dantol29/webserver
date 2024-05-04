@@ -21,40 +21,70 @@ char customToLower(char c)
 	return c;
 }
 
-size_t getContentLength(const std::string &headers)
+void printStrWithNonPrintables(const std::string httpRequest, size_t startPos = 0)
 {
-	std::string lowerHeaders;
-	for (std::string::const_iterator it = headers.begin(); it != headers.end(); ++it)
+	std::cout << "HTTP Request (normal std::cout):" << httpRequest << std::endl;
+	std::cout << "HTTP Request with not printables:" << std::endl;
+	for (size_t i = startPos; i < httpRequest.length(); ++i)
 	{
-		lowerHeaders += customToLower(*it);
-	}
-
-	std::string search = "content-length: ";
-	std::string::size_type pos = lowerHeaders.find(search);
-	if (pos != std::string::npos)
-	{
-		std::string contentLengthLine = headers.substr(pos + search.size());
-		std::string::size_type endPos = contentLengthLine.find("\r\n");
-		std::string contentLengthStr = contentLengthLine.substr(0, endPos);
-
-		// Convert content length string to size_t
-		std::istringstream iss(contentLengthStr);
-		size_t contentLength;
-		if (!(iss >> contentLength))
+		unsigned char c = httpRequest[i];
 		{
-			std::cerr << "Failed to convert content length to size_t\n";
-			return 0; // Or use another way to indicate an error
+			switch (c)
+			{
+			case '\n':
+				std::cout << "\\n";
+				break;
+			case '\r':
+				std::cout << "\\r";
+				break;
+			case '\t':
+				std::cout << "\\t";
+				break;
+			default:
+				if (c >= 32 && c <= 126)
+					std::cout << c;
+				else
+					std::cout << "\\x" << std::hex << std::setw(2) << std::setfill('0') << (int)c << std::dec;
+			}
 		}
-		return contentLength;
 	}
-	return 0;
+	std::cout << std::endl;
 }
+
+// size_t getContentLength(const std::string &headers)
+// {
+// 	std::string lowerHeaders;
+// 	for (std::string::const_iterator it = headers.begin(); it != headers.end(); ++it)
+// 	{
+// 		lowerHeaders += customToLower(*it);
+// 	}
+
+// 	std::string search = "content-length: ";
+// 	std::string::size_type pos = lowerHeaders.find(search);
+// 	if (pos != std::string::npos)
+// 	{
+// 		std::string contentLengthLine = headers.substr(pos + search.size());
+// 		std::string::size_type endPos = contentLengthLine.find("\r\n");
+// 		std::string contentLengthStr = contentLengthLine.substr(0, endPos);
+
+// 		// Convert content length string to size_t
+// 		std::istringstream iss(contentLengthStr);
+// 		size_t contentLength;
+// 		if (!(iss >> contentLength))
+// 		{
+// 			std::cerr << "Failed to convert content length to size_t\n";
+// 			return 0; // Or use another way to indicate an error
+// 		}
+// 		return contentLength;
+// 	}
+// 	return 0;
+// }
 
 void printVariablesHeadersBody(const HTTPRequest &obj)
 {
 	std::multimap<std::string, std::string> a = obj.getHeaders();
 	std::multimap<std::string, std::string> b = obj.getQueryString();
-	std::vector<std::string> c = obj.getBody();
+	std::string c = obj.getBody();
 
 	std::multimap<std::string, std::string>::iterator it;
 	std::cout << "Variables: =>" << std::endl;
@@ -68,8 +98,7 @@ void printVariablesHeadersBody(const HTTPRequest &obj)
 		std::cout << "Key: " << it->first << ", Value: " << it->second << std::endl;
 	}
 	std::cout << "Body: =>" << std::endl;
-	for (size_t i = 0; i < c.size(); ++i)
-		std::cout << c[i] << std::endl;
+	std::cout << c << std::endl;
 }
 
 void printFDsVector(const std::vector<pollfd> &fds)
@@ -91,7 +120,6 @@ void print_connectionsVector(const std::vector<Connection> &connections)
 	std::cout << "connections: =>" << std::endl;
 	for (size_t i = 0; i < connections.size(); ++i)
 	{
-		std::cout << "fd: " << connections[i].getPollFd().fd << ", headers: " << connections[i].getHeaders()
-				  << ", body: " << connections[i].getBody() << std::endl;
+		std::cout << "fd: " << connections[i].getPollFd().fd << std::endl;
 	}
 }

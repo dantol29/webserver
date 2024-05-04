@@ -1,5 +1,6 @@
 #include "Server.hpp"
 #include "Parser.hpp"
+#include "Connection.hpp"
 
 // Default constructor
 Server::Server()
@@ -34,49 +35,40 @@ void Server::startPollEventLoop()
 	while (1)
 	{
 		std::cout << "++++++++++++++ Waiting for new connection or Polling +++++++++++++++" << std::endl;
-		// std::cout << "printFDsVector(_FDs); - before polling" << std::endl;
-		// printFDsVector(_FDs);
 		int ret = poll(_FDs.data(), _FDs.size(), -1);
-		// std::cout << "printFDsVector(_FDs); - after polling" << std::endl;
-		// printFDsVector(_FDs);
-		// print_connectionsVector(_connections);
-		std::cout << "poll() returned: " << ret << std::endl;
 		if (ret > 0)
 		{
 			for (size_t i = 0; i < _FDs.size(); i++)
 			{
 				std::cout << "i: " << i << std::endl;
-				if (_FDs[i].revents & POLLIN)
+				if (_FDs[i].revents & (POLLIN | POLLOUT))
 				{
-					// std::cout << "POLLIN" << std::endl;
+					std::cout << "Enters revents" << std::endl;
 					if (i == 0)
 					{
 						std::cout << "Server socket event" << std::endl;
-						// std::cout << "i == 0" << std::endl;
-
 						acceptNewConnection();
-						// printFDsVector(_FDs);
-						// print_connectionsVector(_connections);
 					}
 					else
 					{
 						std::cout << "Client socket event" << std::endl;
-						// std::cout << "i != 0" << std::endl;
-						// TODO: only the index is actually needed
-						// handleConnection(_connections[i]);
-						handleConnection(_connections[i], i);
-						// printFDsVector(_FDs);
-						// print_connectionsVector(_connections);
-						// _FDs.erase(_FDs.begin() + i);
-						// --i;
+						handleConnection(_connections[i],
+										 i,
+										 _connections[i].getParser(),
+										 _connections[i].getRequest(),
+										 _connections[i].getResponse());
+						// TODO: clean this dirt!
+						// add comments
+						if (_connections[i].getHasFinishedReading() && _connections[i].getHasDataToSend())
+							_FDs[i].events = POLLOUT;
+						printFDsVector(_FDs);
+						print_connectionsVector(_connections);
 					}
 				}
 				else if (_FDs[i].revents & (POLLERR | POLLHUP | POLLNVAL))
 				{
 					if (i == 0)
-					{
 						handleServerSocketError();
-					}
 					else
 						handleClientSocketError(_FDs[i].fd, i);
 				}
@@ -85,92 +77,201 @@ void Server::startPollEventLoop()
 		else if (ret == 0)
 			handleSocketTimeoutIfAny();
 		else
-			handlePollFailure();
+			handlePollError();
 	}
 }
 
-void Server::handleConnection(Connection conn, size_t &i)
+void createFile(HTTPRequest &request)
 {
-	conn.printConnection();
+	std::vector<File> files = request.getFiles();
+	std::string filename;
+	std::map<std::string, std::string>::iterator it = files.back().headers.find("filename");
 
-	if (!conn.readRequestHeadersAndBody())
-	{
-		std::cout << "Error reading headers" << std::endl;
-		// closeClientConnection(clientFD, response);
-		// think if this should be also a method of the Connection class
-		closeClientConnection(conn, i);
-		return;
-	}
-	// Explicit check if headers are complete
-	if (!conn.getHeadersComplete())
-	{
-		std::cout << "Headers incomplete, exiting handleConnection." << std::endl;
-		closeClientConnection(conn, i);
-		return; // Early exit if headers are not complete
-	}
-	std::string body;
-	// isChunked is a 'free' function but it could be a method of the Connection class
-	if (conn.isChunked())
-	{
-		std::cout << "Chunked body" << std::endl;
-		if (!conn.readChunkedBody())
-		{
-			closeClientConnection(conn, i);
-			return;
-		}
-	}
+	if (it != files.back().headers.end())
+		filename = it->second;
 	else
 	{
-		std::cout << "Regular body" << std::endl;
-		if (!conn.readBody())
+		std::cout << "Error: file does not have a name" << std::endl;
+		return;
+	}
+
+	std::ofstream outfile(filename.c_str());
+	if (outfile.is_open())
+	{
+		outfile << files.back().fileContent;
+		outfile.close();
+		std::cout << "File created successfully" << std::endl;
+	}
+	else
+		std::cout << "Error opening file" << std::endl;
+}
+
+void Server::readFromClient(Connection &conn, size_t &i, Parser &parser, HTTPRequest &request, HTTPResponse &response)
+{
+	(void)i;
+	std::cout << "\033[1;36m" << "Entering readFromClient" << "\033[0m" << std::endl;
+	// TODO: change to _areHeadersCopmplete
+	if (!parser.getHeadersComplete())
+	{
+		std::cout << "\033[1;33m" << "Reading headers" << "\033[0m" << std::endl;
+		if (!conn.readHeaders(parser))
 		{
-			std::cout << "Error reading body" << std::endl;
-			closeClientConnection(conn, i);
+			std::cout << "Error reading headers" << std::endl;
+			conn.setHasFinishedReading(true);
+			conn.setHasDataToSend(false);
+			conn.setCanBeClosed(true);
+			return;
+		}
+		conn.setHasReadSocket(true);
+		if (!parser.preParseHeaders(response))
+		{
+			conn.setCanBeClosed(true);
+			conn.setHasFinishedReading(true);
+			conn.setHasDataToSend(true);
+			std::cout << "Error pre-parsing headers" << std::endl;
 			return;
 		}
 	}
+	if (!parser.getHeadersComplete())
+	{
+		std::cout << "Headers incomplete yet, exiting readFromClient." << std::endl;
+		return;
+	}
+	if (parser.getHeadersComplete() && !parser.getHeadersAreParsed())
+		parser.parseRequestLineAndHeaders(parser.getHeadersBuffer().c_str(), request, response);
 
-	// NOTE: end of buffering/parsing part, start of router
+	std::cout << parser.getHeadersComplete() << " ," << request.getMethod() << std::endl;
+	if (parser.getHeadersComplete() && request.getMethod() == "GET")
+	{
+		std::cout << "-------------------------Enter what we need" << std::endl;
+		conn.setHasFinishedReading(true);
+	}
 
-	std::string httpRequestString = conn.getHeaders() + "\r\n\r\n" + conn.getBody();
-	printHTTPRequest(httpRequestString);
-	// We don't use this anymore but we use the Parser!
-	// HTTPRequest request(httpRequestString.c_str());
-	Parser parser;
-	HTTPRequest request;
-	HTTPResponse response;
-	// parser.parseRequestLine(httpRequestString.c_str(), request, response);
-	parser.parseRequest(httpRequestString.c_str(), request, response);
+	if (response.getStatusCode() != 0)
+		std::cout << "Error: " << response.getStatusCode() << std::endl;
+	if (request.getMethod() == "GET")
+		std::cout << "GET request, no body to read" << std::endl;
+	else
+	{
+		if (parser.getIsChunked() && !conn.getHasReadSocket())
+		{
+			std::cout << "Chunked body" << std::endl;
+			if (!conn.readChunkedBody(parser))
+			{
+				// Case of error while reading chunked body
+				conn.setCanBeClosed(true);
+				conn.setHasFinishedReading(true);
+				// It could be that we had data that could be sent even if we have an error cause previous data was read
+				return;
+			}
+			conn.setHasReadSocket(true);
+		}
+		else
+		{
+			std::cout << "\033[1;33m" << "Reading body" << "\033[0m" << std::endl;
+			std::cout << "\033[1;33m" << "Reading body" << "\033[0m" << std::endl;
+			// TODO: add comments
+			if (!parser.getBodyComplete() && parser.getBuffer().size() == request.getContentLength())
+			{
+				// TODO: in the new design we will return here and go to the function where the response is
+				parser.setBodyComplete(true);
+				conn.setHasFinishedReading(true);
+				conn.setHasDataToSend(true);
+			}
+			else if (!conn.getHasReadSocket() && !conn.readBody(parser, request, response))
+			{
+				std::cout << "Error reading body" << std::endl;
+				conn.setCanBeClosed(true);
+				conn.setHasFinishedReading(true);
+				// Probably hasDataToSend false, because we have an error on reading the body
+				// conn.setHasDataToSend(false);
+				return;
+			}
+		}
+		if (!parser.getBodyComplete())
+		{
+			std::cout << "Body still incomplete, exiting readFromClient." << std::endl;
+			return;
+		}
+		if (!request.getUploadBoundary().empty())
+			parser.parseFileBody(parser.getBuffer(), request, response);
+		else if (request.getMethod() != "GET")
+		{
+			request.setBody(parser.getBuffer());
+			conn.setHasFinishedReading(true);
+		}
+	}
+}
 
-	std::cout << "\033[1;91mRequest: " << response.getStatusCode() << "\033[0m" << std::endl;
+void Server::buildResponse(Connection &conn, size_t &i, HTTPRequest &request, HTTPResponse &response)
+{
+	(void)i;
+	std::cout << "\033[1;36m" << "Entering buildResponse" << "\033[0m" << std::endl;
+	std::cout << "\033[1;91mRequest status code: " << response.getStatusCode() << "\033[0m" << std::endl;
 	if (response.getStatusCode() != 0)
 	{
 		response.setErrorResponse(response.getStatusCode());
-		std::string responseString = response.objToString();
-		std::cout << "\033[1;91mResponse: " << responseString << "\033[0m" << std::endl;
-		send(conn.getPollFd().fd, responseString.c_str(), responseString.size(), 0);
-		close(conn.getPollFd().fd);
-		_FDs.erase(_FDs.begin() + i);
-		_connections.erase(_connections.begin() + i);
-		--i;
+		conn.setHasDataToSend(true);
 		return;
 	}
-
+	if (!request.getUploadBoundary().empty())
+	{
+		createFile(request);
+	}
 	std::string responseString;
-	response = conn.getResponse();
-	std::cout << std::endl << "                  DEBUG" << std::endl;
-	std::cout << request.getRequestTarget() << std::endl;
+	// std::cout << request.getRequestTarget() << std::endl;
+	// TODO: The Router should be a member of the Server class or of the Connection class
 	Router router;
 	router.setFDsRef(&_FDs);
 	router.setPollFd(&conn.getPollFd());
-	response = router.routeRequest(request);
+	router.routeRequest(request, response);
 	responseString = response.objToString();
-	std::cout << "\033[1;91mResponse: " << responseString << "\033[0m" << std::endl;
-	write(conn.getPollFd().fd, responseString.c_str(), responseString.size());
+	conn.setHasDataToSend(true);
+}
+
+void Server::writeToClient(Connection &conn, size_t &i, HTTPResponse &response)
+{
+	(void)i;
+	send(conn.getPollFd().fd, response.objToString().c_str(), response.objToString().size(), 0);
+	// conn.setHasDataToSend(); will not be always false in case of chunked response or keep-alive connection
+	conn.setHasDataToSend(false);
+	conn.setHasFinishedSending(true);
+	// setCanBeClosed(true) would not be the case only if we have a keep-alive connection or a chunked response
+	conn.setCanBeClosed(true);
+}
+
+void Server::closeClientConnection(Connection &conn, size_t &i)
+{
+	// if (response.getStatusCode() != 0)
+	if (conn.getResponse().getStatusCode() != 0 && conn.getResponse().getStatusCode() != 499)
+	{
+		std::string responseString = conn.getResponse().objToString();
+		send(conn.getPollFd().fd, responseString.c_str(), responseString.size(), 0);
+	}
+	// TODO: should we close it with the Destructor of the Connection class?
 	close(conn.getPollFd().fd);
 	_FDs.erase(_FDs.begin() + i);
 	_connections.erase(_connections.begin() + i);
 	--i;
+}
+
+void Server::handleConnection(Connection &conn, size_t &i, Parser &parser, HTTPRequest &request, HTTPResponse &response)
+{
+	std::cout << "\033[1;36m" << "Entering handleConnection" << "\033[0m" << std::endl;
+	conn.printConnection();
+
+	conn.setHasReadSocket(false);
+	if (!conn.getHasFinishedReading())
+		readFromClient(conn, i, parser, request, response);
+	// TODO: add comments to explain
+	if (conn.getHasReadSocket() && !conn.getHasFinishedReading())
+		return;
+	if (!conn.getCanBeClosed() && !conn.getHasDataToSend())
+		buildResponse(conn, i, request, response);
+	if (conn.getHasDataToSend())
+		writeToClient(conn, i, response);
+	if (conn.getCanBeClosed())
+		closeClientConnection(conn, i);
 }
 
 /*** Private Methods ***/
@@ -195,8 +296,8 @@ void Server::createServerSocket()
 {
 	if ((_serverFD = socket(AF_INET, SOCK_STREAM, 0)) == 0)
 		perrorAndExit("Failed to create server socket");
-	std::cout << "Server socket created" << std::endl;
-	std::cout << "Server socket file descriptor: " << _serverFD << std::endl;
+	// std::cout << "Server socket created" << std::endl;
+	// std::cout << "Server socket file descriptor: " << _serverFD << std::endl;
 }
 
 void Server::setReuseAddrAndPort()
@@ -206,7 +307,7 @@ void Server::setReuseAddrAndPort()
 		perror("setsockopt SO_REUSEADDR: Protocol not available, continuing without SO_REUSEADDR");
 	if (setsockopt(_serverFD, SOL_SOCKET, SO_REUSEPORT, &opt, sizeof(opt)))
 		perror("setsockopt SO_REUSEPORT: Protocol not available, continuing without SO_REUSEPORT");
-	std::cout << "SO_REUSEADDR and SO_REUSEPORT set" << std::endl;
+	// std::cout << "SO_REUSEADDR and SO_REUSEPORT set" << std::endl;
 }
 
 void Server::bindToPort(int port)
@@ -218,9 +319,9 @@ void Server::bindToPort(int port)
 
 	if (bind(_serverFD, (struct sockaddr *)&_serverAddr, sizeof(_serverAddr)) < 0)
 		perrorAndExit("In bind");
-	std::cout << "Server socket bound to port " << port << std::endl;
-	std::cout << "Server socket address: " << inet_ntoa(_serverAddr.sin_addr) << std::endl;
-	std::cout << "Server socket port: " << ntohs(_serverAddr.sin_port) << std::endl;
+	// std::cout << "Server socket bound to port " << port << std::endl;
+	// std::cout << "Server socket address: " << inet_ntoa(_serverAddr.sin_addr) << std::endl;
+	// std::cout << "Server socket port: " << ntohs(_serverAddr.sin_port) << std::endl;
 }
 
 void Server::listen()
@@ -248,7 +349,8 @@ void Server::addServerSocketPollFdToVectors()
 void Server::acceptNewConnection()
 {
 	// TODO: think about naming.
-	// We have 4 different names for kind of the same thing: clientAddress, newSocket, newSocketPoll, newConnection
+	// We have 4 different names for kind of the same thing: clientAddress, newSocket, newSocketPoll,
+	// newConnection
 	struct sockaddr_in clientAddress;
 	socklen_t ClientAddrLen = sizeof(clientAddress);
 	std::cout << "New connection detected" << std::endl;
@@ -306,7 +408,7 @@ void Server::handleSocketTimeoutIfAny()
 	// This should never happen with an infinite timeout
 }
 
-void Server::handlePollFailure()
+void Server::handlePollError()
 {
 	// linear issue: https://linear.app/web-serv/issue/WEB-91/implement-adequate-response-on-poll-failure
 	if (errno == EINTR)
@@ -318,7 +420,7 @@ void Server::handlePollFailure()
 	else
 	{
 		// Log the error with as much detail as available.
-		perror("Critical poll error from handlePollFailure()");
+		perror("Critical poll error from handlePollError()");
 
 		// EBADF, EFAULT, EINVAL, ENOMEM indicate more severe issues.
 		// Depending on the nature of your server, you might try to clean up and restart polling,
@@ -341,21 +443,6 @@ void Server::AlertAdminAndTryToRecover()
 }
 
 /* for handleConnection */
-
-void Server::closeClientConnection(Connection &conn, size_t &i)
-{
-	// if (response.getStatusCode() != 0)
-	if (conn.getResponse().getStatusCode() != 0)
-	{
-		std::string responseString = conn.getResponse().objToString();
-		send(conn.getPollFd().fd, responseString.c_str(), responseString.size(), 0);
-	}
-	// TODO: should we close it with the Destructor of the Connection class?
-	close(conn.getPollFd().fd);
-	_FDs.erase(_FDs.begin() + i);
-	_connections.erase(_connections.begin() + i);
-	--i;
-}
 
 /* Others */
 
@@ -390,7 +477,7 @@ void Server::checkSocketOptions()
 	}
 	else
 	{
-		std::cout << "SO_REUSEADDR is " << (optval ? "enabled" : "disabled") << std::endl;
+		// std::cout << "SO_REUSEADDR is " << (optval ? "enabled" : "disabled") << std::endl;
 	}
 
 	if (getsockopt(_serverFD, SOL_SOCKET, SO_REUSEPORT, &optval, &optlen) < 0)
@@ -399,6 +486,6 @@ void Server::checkSocketOptions()
 	}
 	else
 	{
-		std::cout << "SO_REUSEPORT is " << (optval ? "enabled" : "disabled") << std::endl;
+		// std::cout << "SO_REUSEPORT is " << (optval ? "enabled" : "disabled") << std::endl;
 	}
 }
