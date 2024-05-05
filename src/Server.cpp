@@ -85,26 +85,32 @@ void Server::startPollEventLoop()
 void createFile(HTTPRequest &request)
 {
 	std::vector<File> files = request.getFiles();
-	std::string filename;
-	std::map<std::string, std::string>::iterator it = files.back().headers.find("filename");
+	std::vector<File>::iterator it;
 
-	if (it != files.back().headers.end())
-		filename = it->second;
-	else
+	// check each file
+	for (it = files.begin(); it != files.end(); ++it)
 	{
-		std::cout << "Error: file does not have a name" << std::endl;
-		return;
+		if (it->headers.find("filename") == it->headers.end())
+		{
+			std::cout << "422 Unprocessable Entity (Error: file does not have a name)" << std::endl;
+			return ;
+		}
+
 	}
 
-	std::ofstream outfile(filename.c_str());
-	if (outfile.is_open())
+	// create files
+	for (it = files.begin(); it != files.end(); ++it)
 	{
-		outfile << files.back().fileContent;
-		outfile.close();
-		std::cout << "File created successfully" << std::endl;
+		std::ofstream outfile((it->headers.find("filename"))->second.c_str());
+		if (outfile.is_open())
+		{
+			outfile << it->fileContent;
+			outfile.close();
+			std::cout << "File created successfully" << std::endl;
+		} 
+		else
+			std::cout << "422 Unprocessable Entity (Error creating a file)" << std::endl;
 	}
-	else
-		std::cout << "Error opening file" << std::endl;
 }
 
 void Server::readFromClient(Connection &conn, size_t &i, Parser &parser, HTTPRequest &request, HTTPResponse &response)
@@ -170,7 +176,6 @@ void Server::readFromClient(Connection &conn, size_t &i, Parser &parser, HTTPReq
 		else
 		{
 			std::cout << "\033[1;33m" << "Reading body" << "\033[0m" << std::endl;
-			std::cout << "\033[1;33m" << "Reading body" << "\033[0m" << std::endl;
 			// TODO: add comments
 			if (!parser.getBodyComplete() && parser.getBuffer().size() == request.getContentLength())
 			{
@@ -192,10 +197,13 @@ void Server::readFromClient(Connection &conn, size_t &i, Parser &parser, HTTPReq
 		if (!parser.getBodyComplete())
 		{
 			std::cout << "Body still incomplete, exiting readFromClient." << std::endl;
+			conn.setHasFinishedReading(false);
+			conn.setHasReadSocket(true);
 			return;
 		}
+		//std::cout << parser.getBuffer() << std::endl;
 		if (!request.getUploadBoundary().empty())
-			parser.parseFileBody(parser.getBuffer(), request, response);
+			parser.parseFileUpload(parser.getBuffer(), request, response);
 		else if (request.getMethod() != "GET")
 		{
 			request.setBody(parser.getBuffer());
@@ -266,8 +274,10 @@ void Server::handleConnection(Connection &conn, size_t &i, Parser &parser, HTTPR
 	if (!conn.getHasFinishedReading())
 		readFromClient(conn, i, parser, request, response);
 	// TODO: add comments to explain
-	if (conn.getHasReadSocket() && !conn.getHasFinishedReading())
+	if (conn.getHasReadSocket() && !conn.getHasFinishedReading()){
+		std::cout << "\033[1;36m" << "return from handleConnection" << "\033[0m" << std::endl;
 		return;
+	}
 	if (!conn.getCanBeClosed() && !conn.getHasDataToSend())
 		buildResponse(conn, i, request, response);
 	if (conn.getHasDataToSend())

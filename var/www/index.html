@@ -32,5 +32,11 @@
 		<br>
 		<input type="submit" value="Upload">
 	</form>
+	<h2>Upload Multiple Files</h2>
+	<form action="upload.php" method="post" enctype="multipart/form-data">
+	  <input type="file" name="files[]" multiple>
+	  <br>
+	  <input type="submit" value="Upload Files">
+	</form>
 </body>
 </html>
