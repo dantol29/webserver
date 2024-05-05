@@ -52,63 +52,6 @@ std::vector<std::string> CGIHandler::createArgvForExecve(const MetaVariables &en
 	return argv;
 }
 
-// void CGIHandler::createArgvForExecve(const MetaVariables &env, std::vector<std::string> &argv)
-// {
-// 	std::string scriptName = env.getVar("SCRIPT_NAME");
-// 	std::string pathTranslated = env.getVar("PATH_TRANSLATED");
-// 	std::string scriptPath = pathTranslated + scriptName;
-
-// 	if (env.getVar("X_INTERPRETER_PATH") != "")
-// 	{
-// 		std::string interpreterVar = env.getVar("X_INTERPRETER_PATH");
-// 		argv.push_back(interpreterVar);
-// 		argv.push_back(scriptPath);
-// 	}
-// 	else
-// 	{
-// 		argv.push_back(scriptPath);
-// 	}
-
-// 	return;
-// }
-
-// void CGIHandler::createArgvForExecve(const MetaVariables &env, std::vector<char *> &argv)
-// {
-
-// 	std::string scriptName = env.getVar("SCRIPT_NAME");
-// 	std::string pathTranslated = env.getVar("PATH_TRANSLATED");
-// 	std::string scriptPath = pathTranslated + scriptName;
-// 	argv.push_back(const_cast<char *>(scriptPath.c_str()));
-// 	argv.push_back(NULL);
-
-// argv.push_back(const_cast<char *>(env.getVar("PATH_TRANSLATED" + env.getVar("SCRIPT_NAME")).c_str()));
-// argv.push_back(NULL);
-
-// std::cout << env;
-// std::string scriptName = env.getVar("SCRIPT_NAME");
-// std::string pathTranslated = env.getVar("PATH_TRANSLATED");
-// std::string scriptPath = pathTranslated + scriptName;
-
-// std::cout << "scriptPath: " << scriptPath << std::endl;
-
-// if (env.getVar("X_INTERPRETER_PATH") != "")
-// {
-// 	std::string interpreterVar = env.getVar("X_INTERPRETER_PATH");
-// 	argv.push_back(const_cast<char *>(interpreterVar.c_str()));
-// 	argv.push_back(const_cast<char *>(scriptPath.c_str()));
-// }
-// else
-// {
-// argv.push_back(const_cast<char *>(scriptPath.c_str()));
-// argv.push_back(NULL);
-// }
-
-// std::cout << "argv[0] in createArgvForExecve : " << argv[0] << std::endl;
-// std::cout << &argv[0] << std::endl;
-
-// return;
-// }
-
 void CGIHandler::CGIStringToResponse(const std::string &cgiOutput, HTTPResponse &response)
 {
 	std::size_t headerEndPos = cgiOutput.find("\r\n\r\n");
@@ -151,18 +94,19 @@ void CGIHandler::closeAllSocketFDs()
 	}
 }
 
-std::vector<char *> convertToCStringArray(const std::vector<std::string> &input)
+// returns vectors of char*, which point to the internal strings of
+// std::vector<std::string>. The memory they point to is  owned by the std::vector<std::string>
+std::vector<char *> CGIHandler::convertToCStringArray(const std::vector<std::string> &input)
 {
 	std::vector<char *> pointers;
-	pointers.reserve(input.size() + 1); // Reserve space for all entries and the terminating NULL
+	pointers.reserve(input.size() + 1);
 
-	// Replace range-based loop with index-based loop for C++98 compatibility
 	for (size_t i = 0; i < input.size(); ++i)
 	{
 		pointers.push_back(const_cast<char *>(input[i].c_str()));
 	}
 
-	pointers.push_back(NULL); // Null-terminate the array
+	pointers.push_back(NULL);
 	return pointers;
 }
 
@@ -219,9 +163,6 @@ std::string CGIHandler::executeCGI(const MetaVariables &env)
 		int status;
 		waitpid(pid, &status, 0);
 		std::cout << "------------------CGI output prepared-------------------" << std::endl;
-
-		std::cout << "cgiOutput" << std::endl;
-		std::cout << cgiOutput << std::endl;
 
 		return cgiOutput;
 	}
