@@ -219,14 +219,12 @@ void Server::buildResponse(Connection &conn, size_t &i, HTTPRequest &request, HT
 	{
 		createFile(request);
 	}
-	// std::string responseString;
 	// std::cout << request.getRequestTarget() << std::endl;
 	// TODO: The Router should be a member of the Server class or of the Connection class
 	Router router;
 	router.setFDsRef(&_FDs);
 	router.setPollFd(&conn.getPollFd());
 	router.routeRequest(request, response);
-	// responseString = response.objToString();
 	conn.setHasDataToSend(true);
 }
 
