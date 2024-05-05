@@ -31,22 +31,17 @@ void CGIHandler::handleRequest(const HTTPRequest &request, HTTPResponse &respons
 	return;
 }
 
-void CGIHandler::createArgvForExecve(const MetaVariables &env,
-									 std::vector<std::string> &argvStorage,
-									 std::vector<char *> &argv)
+void CGIHandler::createArgvForExecve(const MetaVariables &env, std::vector<std::string> &argv)
 {
 	std::string scriptName = env.getVar("SCRIPT_NAME");
 	std::string pathTranslated = env.getVar("PATH_TRANSLATED");
 	std::string scriptPath = pathTranslated + scriptName;
 
-	// Store the full script path in argvStorage
-	argvStorage.push_back(scriptPath);
-
 	// Add a pointer to the stored string's C-string representation
-	argv.push_back(const_cast<char *>(argvStorage.back().c_str()));
+	argv.push_back(const_cast<char *>(argv.back().c_str()));
 
 	// Null-terminate the argv vector as required by execve
-	argv.push_back(NULL);
+	// argv.push_back(NULL);
 }
 
 // void CGIHandler::createArgvForExecve(const MetaVariables &env, std::vector<char *> &argv)
@@ -131,8 +126,8 @@ void CGIHandler::closeAllSocketFDs()
 std::string CGIHandler::executeCGI(const MetaVariables &env)
 {
 	std::string cgiOutput = "";
-	std::vector<char *> argv;
-	std::vector<std::string> argvStorage;
+	// std::vector<char *> argv;
+	std::vector<std::string> argv;
 
 	// std::string scriptName = env.getVar("SCRIPT_NAME");
 	// std::string pathTranslated = env.getVar("PATH_TRANSLATED");
@@ -150,7 +145,7 @@ std::string CGIHandler::executeCGI(const MetaVariables &env)
 	// argv.push_back(const_cast<char *>(env.getVar("PATH_TRANSLATED" + env.getVar("SCRIPT_NAME")).c_str()));
 	// argv.push_back(NULL);
 
-	CGIHandler::createArgvForExecve(env, argvStorage, argv);
+	CGIHandler::createArgvForExecve(env, argv);
 
 	int pipeFD[2];
 	if (pipe(pipeFD) == -1)
@@ -196,8 +191,19 @@ std::string CGIHandler::executeCGI(const MetaVariables &env)
 		// std::vector<char *> argv;
 		// argv.push_back(const_cast<char *>("hello_py.cgi"));
 		// argv.push_back(NULL);
-		std::cout << "argv[0]: " << argv[0] << std::endl;
-		execve(argv[0], argv.data(), const_cast<char *const *>(envp));
+
+		// Step 2: Create a vector of C-string pointers (char*)
+		std::vector<char *> argvPointers;
+		for (size_t i = 0; i < argv.size(); ++i)
+		{
+			argvPointers.push_back(const_cast<char *>(argv[i].c_str()));
+		}
+
+		// Step 3: Append a null pointer to terminate the array
+		argvPointers.push_back(NULL);
+		execve(argvPointers[0], &argvPointers[0], const_cast<char *const *>(envp));
+
+		// execve(argv[0], argv.data(), const_cast<char *const *>(envp));
 		//-------------------------------------------------------------------
 
 		// execve(argv[0], &argv[0], envp);
