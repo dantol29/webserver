@@ -157,24 +157,38 @@ bool	Config::parseFile(const char *file)
 	if (!config.is_open())
 		return (error("Config file: Invalid file"));
 
-	std::getline(config, line);
-	if (line != "server {")
-		return (error("Config file: Syntax error ( no server { )"));
-
-	while (std::getline(config, line))
+	while (1)
 	{
-		if (line.empty())	
-			continue;
-		if (line == "}"){
-			_server.push_back(_tmpServer);
-			return (true);
+		while (std::getline(config, line) && line.empty()); // skip empty lines
+
+		if (config.eof()) // if file end reached
+			break ;
+	
+		if (line != "server {") // start of the server block
+			return (error("Config file: Syntax error ( no server { )"));
+
+		while (std::getline(config, line))
+		{
+			std::cout << (line) << std::endl;
+			if (line.empty()) // empty lines are allowed
+				continue;
+			if (line == "}") // end of server blcok
+			{
+				std::cout << "HEy!" << std::endl;
+				_server.push_back(_tmpServer);
+				break ;
+			}
+			if (isLocation(line)) // start of location block
+				parseLocation(line, config);
+			else if (!saveVariable(line)) // variables outside of location
+				return (error("Config file: Syntax error (invalid var in the root)"));
 		}
-		if (isLocation(line))
-			parseLocation(line, config);
-		else if (!saveVariable(line))
-			return (error("Config file: Syntax error (invalid var in the root)"));
+		_tmpServer.deleteData(); // delete saved data
+
 	}
-	return (error("Config file: Syntax error (server is not enclosed)"));
+	if (_server.size() < 1)
+		return (error("Config file: No valid server blocks"));
+	return (true);
 }
 
 bool	Config::checkVariablesKey(){
@@ -327,11 +341,12 @@ bool	Config::checkVariablesValue(std::map<std::string, std::string> var)
 
 void Config::parse(const char *file)
 {
-	parseFile(file);
+	if (!parseFile(file))
+		return ;
 	checkVariablesKey();
 	checkVariablesValue(_server.begin()->getVariables());
 	// check each location variables values
-	for (unsigned int i = 0; i < _server.begin()->getVariables().size(); ++i)
+	for (unsigned int i = 0; i < _server.begin()->getLocations().size(); ++i)
 		checkVariablesValue(_server.begin()->getLocations()[i]);
 }
 

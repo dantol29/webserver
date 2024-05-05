@@ -21,7 +21,7 @@ int main(int argc, char **argv)
 		std::cout << a.getErrorMessage() << std::endl;
 		return 0;
 	}
-	// std::cout << a << std::endl; // should be in the DEBUG?
+	std::cout << a << std::endl; // should be in the DEBUG?
 	Server webserv;
 	webserv.startListening();
 	webserv.startPollEventLoop();

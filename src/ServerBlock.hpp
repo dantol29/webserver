@@ -7,6 +7,7 @@ class ServerBlock
 {
 	public:
 		ServerBlock();
+		ServerBlock(const ServerBlock& obj);
 		~ServerBlock();
 
 		std::map<std::string, std::string> getVariables() const; // variables outside of locations
@@ -15,8 +16,9 @@ class ServerBlock
 		
 		void addVariable(std::string& key, std::string& value);
 		void addLocation(std::map<std::string, std::string>& var);
+
+		void deleteData();
 	private:
-		ServerBlock(const ServerBlock& obj);
 		ServerBlock& operator=(const ServerBlock& obj);
 
 		std::map<std::string, std::string> _variables;

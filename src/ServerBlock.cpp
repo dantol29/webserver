@@ -10,10 +10,18 @@ ServerBlock::~ServerBlock()
 
 ServerBlock::ServerBlock(const ServerBlock& obj)
 {
+	_locations = obj._locations;
+	_variables = obj._variables;
 }
 
 ServerBlock& ServerBlock::operator=(const ServerBlock& obj)
 {
+	if (this != &obj)
+	{
+		_locations = obj._locations;
+		_variables = obj._variables;
+	}
+	return (*this);
 }
 
 std::map<std::string, std::string> ServerBlock::getVariables() const
@@ -46,4 +54,10 @@ void ServerBlock::addVariable(std::string& key, std::string& value)
 void ServerBlock::addLocation(std::map<std::string, std::string>& var)
 {
 	_locations.push_back(var);
+}
+
+void ServerBlock::deleteData()
+{
+	_locations.clear();
+	_variables.clear();
 }
