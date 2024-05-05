@@ -52,6 +52,8 @@ class Connection
 	bool getHasDataToSend();
 	bool getHasFinishedSending();
 	bool getCanBeClosed();
+	struct pollfd &getPollFd();
+
 	/* Setters */
 	void setHasReadSocket(bool value);
 	void setHeadersComplete(bool headersComplete);

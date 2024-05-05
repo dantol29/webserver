@@ -1,7 +1,8 @@
 #include "Server.hpp"
 #include "Config.hpp"
+#include "webserv.hpp"
 
-# define CONFIG_FILE_DEFAULT_PATH "./webserv.conf"
+#define CONFIG_FILE_DEFAULT_PATH "./webserv.conf"
 
 int main(int argc, char **argv)
 {

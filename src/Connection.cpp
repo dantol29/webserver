@@ -18,6 +18,11 @@ Connection::Connection(const Connection &other)
 {
 	_pollFd = other._pollFd;
 	_response = other._response;
+	_hasReadSocket = other._hasReadSocket;
+	_hasFinishedReading = other._hasFinishedReading;
+	_hasDataToSend = other._hasDataToSend;
+	_hasFinishedSending = other._hasFinishedSending;
+	_canBeClosed = other._canBeClosed;
 
 	std::cout << "Connection object copied" << std::endl;
 }
@@ -85,6 +90,11 @@ bool Connection::getHasDataToSend()
 bool Connection::getHasFinishedSending()
 {
 	return _hasFinishedSending;
+}
+
+struct pollfd &Connection::getPollFd()
+{
+	return _pollFd;
 }
 
 bool Connection::getCanBeClosed()

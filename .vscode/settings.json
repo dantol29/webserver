@@ -89,10 +89,6 @@
 	"span": "cpp",
 	"cinttypes": "cpp",
 	"execution": "cpp",
-	"condition_variable": "cpp",
-	"regex": "cpp",
-	"stop_token": "cpp",
-	"thread": "cpp",
-	"semaphore": "cpp"
+	"regex": "cpp"
 }
 }
