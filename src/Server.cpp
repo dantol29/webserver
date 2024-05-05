@@ -7,10 +7,9 @@ Server::Server()
 	loadDefaultConfig();
 }
 
-Server::Server(const std::string configFilePath) : _configFilePath(configFilePath)
+Server::Server(const Config &config)
 {
-	loadDefaultConfig();
-	loadConfig();
+	_config = config;
 }
 
 Server::~Server()

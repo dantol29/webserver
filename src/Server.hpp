@@ -25,7 +25,7 @@ class Server
 {
   public:
 	Server();
-	Server(const std::string configFilePath);
+	Server(const Config &config);
 	~Server();
 
 	void startListening();
@@ -55,6 +55,7 @@ class Server
 	struct sockaddr_in _serverAddr;
 	std::vector<struct pollfd> _FDs;
 	std::vector<Connection> _connections;
+	Config _config;
 
 	/*** Private Methods ***/
 	/* for Constructors */
