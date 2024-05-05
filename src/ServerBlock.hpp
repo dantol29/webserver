@@ -8,6 +8,8 @@ class ServerBlock
 	public:
 		ServerBlock();
 		ServerBlock(const ServerBlock& obj);
+		ServerBlock(const ServerBlock& obj);
+		ServerBlock& operator=(const ServerBlock& obj);
 		~ServerBlock();
 
 		std::map<std::string, std::string> getVariables() const; // variables outside of locations
@@ -19,7 +21,6 @@ class ServerBlock
 
 		void deleteData();
 	private:
-		ServerBlock& operator=(const ServerBlock& obj);
 		
 		// a list of all accepted variables
 		// ---------------------------------
