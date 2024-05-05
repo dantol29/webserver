@@ -1,0 +1,15 @@
+server {
+	listen 8001;
+
+	location /path {
+		server_name 22;
+	}
+
+
+server {
+	listen 8001;
+
+	location /path {
+		server_name 22;
+	}
+}

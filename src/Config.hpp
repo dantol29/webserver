@@ -4,18 +4,21 @@
 #include <map>
 #include <string>
 #include <vector>
+#include "ServerBlock.hpp"
 
 class Config
 {
 	public:
 		Config();
 		~Config();
-		void parse(const char *file);
+
+		std::vector<ServerBlock> getServerBlocks() const;
 		std::string	getErrorMessage() const;
-		std::map<std::string, std::string> getVariables() const;
-		std::pair<std::string, std::string> getVariables(std::string key) const;
-		std::vector<std::map<std::string, std::string> > getLocations() const;
+
+		void parse(const char *file); // main method
 	private:
+		std::vector<ServerBlock> _server;
+		
 		Config(const Config& obj);
 		Config& operator=(const Config& obj);
 		bool		error(std::string message);
@@ -28,10 +31,11 @@ class Config
 		bool		checkVariablesValue(std::map<std::string, std::string> var);
 		bool		checkErrorPage(std::map<std::string, std::string> list);
 		bool		pathExists(std::map<std::string, std::string> list, std::string variable);
-		std::map<std::string, std::string> _variables;
-		std::vector<std::map<std::string, std::string> > _locations;
+
+		// internal variables for parsing
 		std::string _errorMessage;
 		std::string	_tmpPath;
+		ServerBlock _tmpServer;
 };
 
 std::ostream& operator<<(std::ostream& out, const Config& fixed);

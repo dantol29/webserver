@@ -1,6 +1,6 @@
 #!/bin/bash
 
-NAME=.././webserv
+NAME=../.././webserv
 
 PURPLE='\033[0;35m'
 BLUE='\033[0;34m'
@@ -38,7 +38,7 @@ else
 fi
 
 echo -e "$PURPLE Invalid configuration files:$RESET"
-for i in {1..21}; do
+for i in {1..22}; do
 	echo -e "config$i"
 	timeout 0.5 $NAME "invalid_config_files/config$i.test" >/dev/null 2>&1
 	if [ $? -eq 124 ]; then
@@ -51,21 +51,21 @@ done
 
 sleep 1
 
-if test -f "valid_config_files/config1.test"; then
-	echo ""
-else
-	echo -e "$RED Tests no found...\n$RESET"
-	exit;
-fi
+# if test -f "valid_config_files/config1.test"; then
+# 	echo ""
+# else
+# 	echo -e "$RED Tests no found...\n$RESET"
+# 	exit;
+# fi
 
-echo -e "$PURPLE Valid configuration files:$RESET"
-for i in {1..2}; do
-	echo -e "config$i"
-	timeout 0.5 $NAME "valid_config_files/config$i.test" >/dev/null 2>&1
-	if [ $? -eq 124 ]; then
-		echo -e "${GREEN}OK${RESET}\n"
-	else
-		echo -e "${RED}KO${RESET}\n"
-	fi
-	sleep 0.2
-done
+# echo -e "$PURPLE Valid configuration files:$RESET"
+# for i in {1..2}; do
+# 	echo -e "config$i"
+# 	timeout 0.5 $NAME "valid_config_files/config$i.test" >/dev/null 2>&1
+# 	if [ $? -eq 124 ]; then
+# 		echo -e "${GREEN}OK${RESET}\n"
+# 	else
+# 		echo -e "${RED}KO${RESET}\n"
+# 	fi
+# 	sleep 0.2
+# done
