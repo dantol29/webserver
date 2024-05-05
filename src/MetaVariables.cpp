@@ -37,13 +37,13 @@ std::string MetaVariables::getVar(const std::string &key) const
 	}
 }
 
-std::vector<char *> MetaVariables::getForExecve() const
+std::vector<std::string> MetaVariables::getForExecve() const
 {
-	std::vector<char *> result;
+	std::vector<std::string> result;
 	for (std::map<std::string, std::string>::const_iterator it = metaVars.begin(); it != metaVars.end(); ++it)
 	{
 		std::string env = it->first + "=" + it->second;
-		result.push_back(const_cast<char *>(env.c_str()));
+		result.push_back(env);
 	}
 	return result;
 }
@@ -183,11 +183,8 @@ void MetaVariables::HTTPRequestToMetaVars(const HTTPRequest &request, MetaVariab
 
 MetaVariables::~MetaVariables()
 {
-	std::vector<char *> envp = getForExecve();
-	for (size_t i = 0; i < envp.size(); ++i)
-	{
-		delete[] envp[i];
-	}
+	// Since the function uses std::vector<std::string>, memory management is handled by the standard library.
+	// The vectors are automatically destroyed once the function ends, and their contents are released.
 }
 
 std::ostream &operator<<(std::ostream &out, const MetaVariables &instancePrinted)

@@ -57,13 +57,13 @@ void Server::startPollEventLoop()
 										 _connections[i].getParser(),
 										 _connections[i].getRequest(),
 										 _connections[i].getResponse());
-					// TODO: clean this dirt!
-					// add comments
+						// TODO: clean this dirt!
+						// add comments
 
-					// it is NOT CORRECT because we do i-- in closeConnection
-					// if (_connections[i].getHasFinishedReading() \
+						// it is NOT CORRECT because we do i-- in closeConnection
+						// if (_connections[i].getHasFinishedReading() \
 					// && _connections[i].getHasDataToSend())
-					//_FDs[i].events = POLLOUT;
+						//_FDs[i].events = POLLOUT;
 					}
 				}
 				else if (_FDs[i].revents & (POLLERR | POLLHUP | POLLNVAL))
@@ -227,12 +227,12 @@ void Server::buildResponse(Connection &conn, size_t &i, HTTPRequest &request, HT
 	{
 		createFile(request);
 	}
-	std::string responseString;
 	// std::cout << request.getRequestTarget() << std::endl;
 	// TODO: The Router should be a member of the Server class or of the Connection class
 	Router router;
+	router.setFDsRef(&_FDs);
+	router.setPollFd(&conn.getPollFd());
 	router.routeRequest(request, response);
-	responseString = response.objToString();
 	conn.setHasDataToSend(true);
 }
 
@@ -267,7 +267,7 @@ void Server::closeClientConnection(Connection &conn, size_t &i)
 void Server::handleConnection(Connection &conn, size_t &i, Parser &parser, HTTPRequest &request, HTTPResponse &response)
 {
 	std::cout << "\033[1;36m" << "Entering handleConnection" << "\033[0m" << std::endl;
-	//conn.printConnection();
+	// conn.printConnection();
 
 	// Why is it TRUE when I refresh a page?????
 	std::cout << "Has finished reading: " << conn.getHasFinishedReading() << std::endl;
@@ -280,8 +280,12 @@ void Server::handleConnection(Connection &conn, size_t &i, Parser &parser, HTTPR
 	}
 	if (!conn.getCanBeClosed() && !conn.getHasDataToSend())
 		buildResponse(conn, i, request, response);
+	// std::cout << "Has data to send: " << conn.getHasDataToSend() << std::endl;
+	// std::cout << response << std::endl;
 	if (conn.getHasDataToSend())
 		writeToClient(conn, i, response);
+	// std::cout << "Has finished sending: " << conn.getHasFinishedSending() << std::endl;
+	// std::cout << "Can be closed: " << conn.getCanBeClosed() << std::endl;
 	if (conn.getCanBeClosed())
 		closeClientConnection(conn, i);
 }

@@ -15,7 +15,12 @@ void Router::routeRequest(const HTTPRequest &request, HTTPResponse &response)
 	if (isCGI(request))
 	{
 		CGIHandler cgiHandler;
+		cgiHandler.setFDsRef(_FDsRef);
+		cgiHandler.setPollFd(_pollFd);
+		// cgiHandler.handleRequest(request, response);
 		cgiHandler.handleRequest(request, response);
+		// std::cout << std::endl << std::endl << std::endl << std::endl;
+		// std::cout << response;
 	}
 	else // it is a static request
 	{
@@ -153,4 +158,14 @@ bool Router::pathIsValid(HTTPRequest &request, std::string webRoot)
 
 	// std::cout << "Path is an accesible and readable file" << std::endl;
 	return true;
+}
+
+void Router::setFDsRef(std::vector<struct pollfd> *FDsRef)
+{
+	_FDsRef = FDsRef;
+}
+
+void Router::setPollFd(struct pollfd *pollFd)
+{
+	_pollFd = pollFd;
 }
