@@ -20,14 +20,13 @@ CGIHandler &CGIHandler::operator=(const CGIHandler &other)
 void CGIHandler::handleRequest(const HTTPRequest &request, HTTPResponse &response)
 {
 	CGIHandler cgiInstance;
-	cgiInstance.setFDsRef(_FDsRef); // here we set the FDs to close later unused ones
+	// cgiInstance.setFDsRef(_FDsRef); // here we set the FDs to close later unused ones
 	MetaVariables env;
 	env.HTTPRequestToMetaVars(request, env);
 	// std::cout << env;
 	std::string cgiOutput = executeCGI(env);
-	response.setIsCGI(true);
 	CGIStringToResponse(cgiOutput, response);
-	// std::cout << response;
+	std::cout << response;
 	return;
 }
 
@@ -161,11 +160,12 @@ std::string CGIHandler::executeCGI(const MetaVariables &env)
 		close(pipeFD[0]);
 
 		int status;
-		waitpid(pid, &status, 0);
+		waitpid(pid, &status, WNOHANG);
 		std::cout << "------------------CGI output prepared-------------------" << std::endl;
-
-		return cgiOutput;
 	}
+
+	std::cout << "\n\n\n\nCGI output: " << cgiOutput << std::endl;
+
 	return cgiOutput;
 }
 

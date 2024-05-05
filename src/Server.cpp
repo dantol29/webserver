@@ -59,10 +59,10 @@ void Server::startPollEventLoop()
 										 _connections[i].getResponse());
 						// TODO: clean this dirt!
 						// add comments
-						if (_connections[i].getHasFinishedReading() && _connections[i].getHasDataToSend())
-							_FDs[i].events = POLLOUT;
-						printFDsVector(_FDs);
-						print_connectionsVector(_connections);
+						// if (_connections[i].getHasFinishedReading() && _connections[i].getHasDataToSend())
+						// 	_FDs[i].events = POLLOUT;
+						// printFDsVector(_FDs);
+						// print_connectionsVector(_connections);
 					}
 				}
 				else if (_FDs[i].revents & (POLLERR | POLLHUP | POLLNVAL))
@@ -218,14 +218,14 @@ void Server::buildResponse(Connection &conn, size_t &i, HTTPRequest &request, HT
 	{
 		createFile(request);
 	}
-	std::string responseString;
+	// std::string responseString;
 	// std::cout << request.getRequestTarget() << std::endl;
 	// TODO: The Router should be a member of the Server class or of the Connection class
 	Router router;
 	router.setFDsRef(&_FDs);
 	router.setPollFd(&conn.getPollFd());
 	router.routeRequest(request, response);
-	responseString = response.objToString();
+	// responseString = response.objToString();
 	conn.setHasDataToSend(true);
 }
 
@@ -268,8 +268,12 @@ void Server::handleConnection(Connection &conn, size_t &i, Parser &parser, HTTPR
 		return;
 	if (!conn.getCanBeClosed() && !conn.getHasDataToSend())
 		buildResponse(conn, i, request, response);
+	// std::cout << "Has data to send: " << conn.getHasDataToSend() << std::endl;
+	// std::cout << response << std::endl;
 	if (conn.getHasDataToSend())
 		writeToClient(conn, i, response);
+	// std::cout << "Has finished sending: " << conn.getHasFinishedSending() << std::endl;
+	// std::cout << "Can be closed: " << conn.getCanBeClosed() << std::endl;
 	if (conn.getCanBeClosed())
 		closeClientConnection(conn, i);
 }

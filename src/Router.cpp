@@ -19,6 +19,8 @@ void Router::routeRequest(const HTTPRequest &request, HTTPResponse &response)
 		cgiHandler.setPollFd(_pollFd);
 		// cgiHandler.handleRequest(request, response);
 		cgiHandler.handleRequest(request, response);
+		// std::cout << std::endl << std::endl << std::endl << std::endl;
+		// std::cout << response;
 	}
 	else if (isDynamicRequest(request))
 	{
