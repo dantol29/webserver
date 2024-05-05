@@ -1,0 +1,3 @@
+[submodule "secretus"]
+	path = secretus
+	url = git@github.com:552020/webserv_secretus.git

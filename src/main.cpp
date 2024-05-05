@@ -1,25 +1,27 @@
 #include "Server.hpp"
-#include "ConfigFile.hpp"
+#include "Config.hpp"
+
+# define CONFIG_FILE_DEFAULT_PATH "./webserv.conf"
 
 int main(int argc, char **argv)
 {
-	(void)argc;
-	(void)argv;
+	Config a;
+
 	if (argc > 2)
 	{
-		std::cout << "Usage: ./webserv [<config_file>]" << std::endl;
+		std::cout << "usage: ./webserv [config file]" << std::endl;
 		return (1);
 	}
-	else if (argc == 2)
+	if (argc == 2)
+		a.parse(argv[1]);
+	else
+		a.parse(CONFIG_FILE_DEFAULT_PATH);
+	if (!a.getErrorMessage().empty())
 	{
-		ConfigFile a(argv[1]);
-		if (!a.getErrorMessage().empty())
-		{
-			std::cout << a.getErrorMessage() << std::endl;
-			return 0;
-		}
-		std::cout << a << std::endl;
+		std::cout << a.getErrorMessage() << std::endl;
+		return 0;
 	}
+	// std::cout << a << std::endl; // should be in the DEBUG?
 	Server webserv;
 	webserv.startListening();
 	webserv.startPollEventLoop();
