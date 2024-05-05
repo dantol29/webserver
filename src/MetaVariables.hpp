@@ -37,7 +37,9 @@ class MetaVariables
 	void HTTPRequestToMetaVars(const HTTPRequest &request, MetaVariables &env);
 
 	// convert to execve format
-	std::vector<char *> getForExecve() const;
+	// std::vector<char *> getForExecve() const;
+	std::vector<std::string> getForExecve() const;
+
 	~MetaVariables();
 };
 

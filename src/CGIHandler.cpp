@@ -37,11 +37,18 @@ void CGIHandler::createArgvForExecve(const MetaVariables &env, std::vector<std::
 	std::string pathTranslated = env.getVar("PATH_TRANSLATED");
 	std::string scriptPath = pathTranslated + scriptName;
 
-	// Add a pointer to the stored string's C-string representation
-	argv.push_back(const_cast<char *>(argv.back().c_str()));
+	if (env.getVar("X_INTERPRETER_PATH") != "")
+	{
+		std::string interpreterVar = env.getVar("X_INTERPRETER_PATH");
+		argv.push_back(interpreterVar);
+		argv.push_back(scriptPath);
+	}
+	else
+	{
+		argv.push_back(scriptPath);
+	}
 
-	// Null-terminate the argv vector as required by execve
-	// argv.push_back(NULL);
+	return;
 }
 
 // void CGIHandler::createArgvForExecve(const MetaVariables &env, std::vector<char *> &argv)
@@ -53,32 +60,32 @@ void CGIHandler::createArgvForExecve(const MetaVariables &env, std::vector<std::
 // 	argv.push_back(const_cast<char *>(scriptPath.c_str()));
 // 	argv.push_back(NULL);
 
-// 	// argv.push_back(const_cast<char *>(env.getVar("PATH_TRANSLATED" + env.getVar("SCRIPT_NAME")).c_str()));
-// 	// argv.push_back(NULL);
+// argv.push_back(const_cast<char *>(env.getVar("PATH_TRANSLATED" + env.getVar("SCRIPT_NAME")).c_str()));
+// argv.push_back(NULL);
 
-// 	// std::cout << env;
-// 	// std::string scriptName = env.getVar("SCRIPT_NAME");
-// 	// std::string pathTranslated = env.getVar("PATH_TRANSLATED");
-// 	// std::string scriptPath = pathTranslated + scriptName;
+// std::cout << env;
+// std::string scriptName = env.getVar("SCRIPT_NAME");
+// std::string pathTranslated = env.getVar("PATH_TRANSLATED");
+// std::string scriptPath = pathTranslated + scriptName;
 
-// 	// std::cout << "scriptPath: " << scriptPath << std::endl;
+// std::cout << "scriptPath: " << scriptPath << std::endl;
 
-// 	// if (env.getVar("X_INTERPRETER_PATH") != "")
-// 	// {
-// 	// 	std::string interpreterVar = env.getVar("X_INTERPRETER_PATH");
-// 	// 	argv.push_back(const_cast<char *>(interpreterVar.c_str()));
-// 	// 	argv.push_back(const_cast<char *>(scriptPath.c_str()));
-// 	// }
-// 	// else
-// 	// {
-// 	// argv.push_back(const_cast<char *>(scriptPath.c_str()));
-// 	// argv.push_back(NULL);
-// 	// }
+// if (env.getVar("X_INTERPRETER_PATH") != "")
+// {
+// 	std::string interpreterVar = env.getVar("X_INTERPRETER_PATH");
+// 	argv.push_back(const_cast<char *>(interpreterVar.c_str()));
+// 	argv.push_back(const_cast<char *>(scriptPath.c_str()));
+// }
+// else
+// {
+// argv.push_back(const_cast<char *>(scriptPath.c_str()));
+// argv.push_back(NULL);
+// }
 
-// 	// std::cout << "argv[0] in createArgvForExecve : " << argv[0] << std::endl;
-// 	// std::cout << &argv[0] << std::endl;
+// std::cout << "argv[0] in createArgvForExecve : " << argv[0] << std::endl;
+// std::cout << &argv[0] << std::endl;
 
-// 	// return;
+// return;
 // }
 
 void CGIHandler::CGIStringToResponse(const std::string &cgiOutput, HTTPResponse &response)
@@ -128,6 +135,7 @@ std::string CGIHandler::executeCGI(const MetaVariables &env)
 	std::string cgiOutput = "";
 	// std::vector<char *> argv;
 	std::vector<std::string> argv;
+	std::vector<std::string> envp = env.getForExecve();
 
 	// std::string scriptName = env.getVar("SCRIPT_NAME");
 	// std::string pathTranslated = env.getVar("PATH_TRANSLATED");
@@ -176,32 +184,24 @@ std::string CGIHandler::executeCGI(const MetaVariables &env)
 		// argv[1] = NULL;
 
 		// std::vector<char *> envp = env.getForExecve();
-		// std::cout << "Executing: " << argv[0] << std::endl;
-		// execve(argv[0], argv.data(), envp.data());
 
-		//------------------hardcoded values for testing-------------------
-		(void)env;
-		const char *envp[] = {"CONTENT_LENGTH=0",
-							  "CONTENT_TYPE=text/html",
-							  "GATEWAY_INTERFACE=CGI/1.1",
-							  "PATH_INFO=/hello_py.cgi",
-							  "PATH_TRANSLATED=/var/www/development_site/cgi-bin/hello_py.cgi",
-							  NULL};
-
-		// std::vector<char *> argv;
-		// argv.push_back(const_cast<char *>("hello_py.cgi"));
-		// argv.push_back(NULL);
-
-		// Step 2: Create a vector of C-string pointers (char*)
+		// create a vector of C-string pointers (char*)
 		std::vector<char *> argvPointers;
 		for (size_t i = 0; i < argv.size(); ++i)
 		{
 			argvPointers.push_back(const_cast<char *>(argv[i].c_str()));
 		}
-
-		// Step 3: Append a null pointer to terminate the array
 		argvPointers.push_back(NULL);
-		execve(argvPointers[0], &argvPointers[0], const_cast<char *const *>(envp));
+
+		// create a vector of C-string pointers (char*) for envp
+		std::vector<char *> envpPointers;
+		for (size_t i = 0; i < envp.size(); ++i)
+		{
+			envpPointers.push_back(const_cast<char *>(envp[i].c_str()));
+		}
+		envpPointers.push_back(NULL);
+
+		execve(argvPointers[0], &argvPointers[0], &envpPointers[0]);
 
 		// execve(argv[0], argv.data(), const_cast<char *const *>(envp));
 		//-------------------------------------------------------------------
