@@ -270,6 +270,7 @@ void Server::handleConnection(Connection &conn, size_t &i, Parser &parser, HTTPR
 	// conn.printConnection();
 
 	// Why is it TRUE when I refresh a page?????
+	conn.setHasReadSocket(false);
 	std::cout << "Has finished reading: " << conn.getHasFinishedReading() << std::endl;
 	if (!conn.getHasFinishedReading())
 		readFromClient(conn, i, parser, request, response);

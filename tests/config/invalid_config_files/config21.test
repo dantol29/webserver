@@ -3,6 +3,5 @@ server {
 
 	location /path {
 		random 22;
-		22;
 	}
 }
