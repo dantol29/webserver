@@ -201,7 +201,7 @@ void Parser::parseFileUpload(const std::string &request, HTTPRequest &req, HTTPR
 
 	// Check the very first upload boundary
 	if (!isUploadBoundary(request, req, i))
-		return (res.setStatusCode(400, "Incorrect 1 upload boubdary"));
+		return (res.setStatusCode(400, "Incorrect first upload boubdary"));
 
 	// read ALL data
 	start = i;

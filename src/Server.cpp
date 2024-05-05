@@ -91,7 +91,7 @@ void createFile(HTTPRequest &request)
 	{
 		if (it->headers.find("filename") == it->headers.end())
 		{
-			std::cout << "Error: file does not have a name" << std::endl;
+			std::cout << "422 Unprocessable Entity (Error: file does not have a name)" << std::endl;
 			return ;
 		}
 
@@ -108,7 +108,7 @@ void createFile(HTTPRequest &request)
 			std::cout << "File created successfully" << std::endl;
 		} 
 		else
-			std::cout << "Error opening file" << std::endl;
+			std::cout << "422 Unprocessable Entity (Error creating a file)" << std::endl;
 	}
 }
 
