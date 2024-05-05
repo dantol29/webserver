@@ -2,23 +2,21 @@
 #include "Parser.hpp"
 #include "Connection.hpp"
 
-// Default constructor
 Server::Server()
 {
 	loadDefaultConfig();
 }
-// Constructor with config file path
+
 Server::Server(const std::string configFilePath) : _configFilePath(configFilePath)
 {
 	loadDefaultConfig();
 	loadConfig();
 }
-// Destructor
+
 Server::~Server()
 {
 }
 
-// Start listening
 void Server::startListening()
 {
 
@@ -93,9 +91,8 @@ void createFile(HTTPRequest &request)
 		if (it->headers.find("filename") == it->headers.end())
 		{
 			std::cout << "422 Unprocessable Entity (Error: file does not have a name)" << std::endl;
-			return ;
+			return;
 		}
-
 	}
 
 	// create files
@@ -107,7 +104,7 @@ void createFile(HTTPRequest &request)
 			outfile << it->fileContent;
 			outfile.close();
 			std::cout << "File created successfully" << std::endl;
-		} 
+		}
 		else
 			std::cout << "422 Unprocessable Entity (Error creating a file)" << std::endl;
 	}
@@ -201,7 +198,7 @@ void Server::readFromClient(Connection &conn, size_t &i, Parser &parser, HTTPReq
 			conn.setHasReadSocket(true);
 			return;
 		}
-		//std::cout << parser.getBuffer() << std::endl;
+		// std::cout << parser.getBuffer() << std::endl;
 		if (!request.getUploadBoundary().empty())
 			parser.parseFileUpload(parser.getBuffer(), request, response);
 		else if (request.getMethod() != "GET")
@@ -274,7 +271,8 @@ void Server::handleConnection(Connection &conn, size_t &i, Parser &parser, HTTPR
 	if (!conn.getHasFinishedReading())
 		readFromClient(conn, i, parser, request, response);
 	// TODO: add comments to explain
-	if (conn.getHasReadSocket() && !conn.getHasFinishedReading()){
+	if (conn.getHasReadSocket() && !conn.getHasFinishedReading())
+	{
 		std::cout << "\033[1;36m" << "return from handleConnection" << "\033[0m" << std::endl;
 		return;
 	}

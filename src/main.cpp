@@ -6,7 +6,7 @@
 
 int main(int argc, char **argv)
 {
-	Config a;
+	Config configInstance;
 
 	if (argc > 2)
 	{
@@ -14,16 +14,16 @@ int main(int argc, char **argv)
 		return (1);
 	}
 	if (argc == 2)
-		a.parse(argv[1]);
+		configInstance.parse(argv[1]);
 	else
-		a.parse(CONFIG_FILE_DEFAULT_PATH);
-	if (!a.getErrorMessage().empty())
+		configInstance.parse(CONFIG_FILE_DEFAULT_PATH);
+	if (!configInstance.getErrorMessage().empty())
 	{
-		std::cout << a.getErrorMessage() << std::endl;
+		std::cout << configInstance.getErrorMessage() << std::endl;
 		return 0;
 	}
-	// std::cout << a << std::endl; // should be in the DEBUG?
-	Server webserv;
+	// std::cout << configInstance << std::endl; // should be in the DEBUG?
+	Server webserv(configInstance);
 	webserv.startListening();
 	webserv.startPollEventLoop();
 

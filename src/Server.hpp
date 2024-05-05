@@ -17,6 +17,7 @@
 #include "Connection.hpp"
 #include "webserv.hpp"
 #include "Parser.hpp"
+#include "Config.hpp"
 
 class Connection; // Forward declaration for circular dependency
 
