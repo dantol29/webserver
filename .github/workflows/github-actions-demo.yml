@@ -16,6 +16,8 @@ jobs:
       - name: List files in the repository
         run: |
           ls ${{ github.workspace }}
+      - name: Compile webserv
+        run: make re
       - name: Start webserv in background
         run: ./webserv &
       - name: Run C++ program in tests folder
