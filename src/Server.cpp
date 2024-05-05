@@ -1,6 +1,7 @@
 #include "Server.hpp"
 #include "Parser.hpp"
 #include "Connection.hpp"
+#include <iomanip>
 
 // Default constructor
 Server::Server()
@@ -36,19 +37,30 @@ void Server::startPollEventLoop()
 	while (1)
 	{
 
-		std::cout << YELLOW << "\n\n++++++++++++++ Printing _FDs right before polling +++++++++++++++" << RESET
-				  << std::endl;
+		std::cout << YELLOW
+				  << "\n\n++++++++++++++ PRINTING _FDs and _connections VECTORS BEFORE POLLING START +++++++++++++++"
+				  << RESET << std::endl;
 		printFDsVector(_FDs);
 		print_connectionsVector(_connections);
+		std::cout << YELLOW
+				  << "\n\n++++++++++++++ PRINTING _FDs and _connections VECTORS BEFORE POLLING STOP +++++++++++++++"
+				  << RESET << std::endl;
+		std::cout << std::endl;
 		std::cout << CYAN << "++++++++++++++ #" << pollCounter
 				  << " Waiting for new connection or Polling +++++++++++++++" << RESET << std::endl;
+		std::cout << std::endl;
 		int ret = poll(_FDs.data(), _FDs.size(), -1);
 		++pollCounter;
-		std::cout << "\nPoll event detected" << std::endl;
+		std::cout << ORANGE << BLINKING;
+		std::cout << std::setw(10) << ' ' << "***************************" << std::endl;
+		std::cout << std::setw(10) << ' ' << "*   POLL EVENT DETECTED   *" << std::endl;
+		std::cout << std::setw(10) << ' ' << "***************************" << std::endl;
+		std::cout << RESET;
 		std::cout << YELLOW << "++++++++++++++ Printing _FDs right after polling +++++++++++++++" << RESET << std::endl;
 		printFDsVector(_FDs);
 		print_connectionsVector(_connections);
-		std::cout << YELLOW << "++++++++++++++ ++++++++++++++++++++++ +++++++++++++++" << RESET << std::endl;
+		std::cout << std::setw(10) << ' ' << YELLOW << "++++++++++++++ ++++++++++++++++++++++ +++++++++++++++" << RESET
+				  << std::endl;
 		std::cout << "ret: " << ret << std::endl;
 		if (ret > 0)
 		{
@@ -67,12 +79,20 @@ void Server::startPollEventLoop()
 				{
 					if (i == 0)
 					{
-						std::cout << "Server socket event" << std::endl;
+						std::cout << ORANGE << BLINKING;
+						std::cout << std::setw(10) << ' ' << "***************************" << std::endl;
+						std::cout << std::setw(10) << ' ' << "*   SERVER EVENT   *" << std::endl;
+						std::cout << std::setw(10) << ' ' << "***************************" << std::endl;
+						std::cout << RESET;
 						acceptNewConnection();
 					}
 					else
 					{
-						std::cout << "Client socket event" << std::endl;
+						std::cout << ORANGE << BLINKING;
+						std::cout << std::setw(10) << ' ' << "***************************" << std::endl;
+						std::cout << std::setw(10) << ' ' << "*   CLIENT EVENT   *" << std::endl;
+						std::cout << std::setw(10) << ' ' << "***************************" << std::endl;
+						std::cout << RESET;
 						handleConnection(_connections[i],
 										 i,
 										 _connections[i].getParser(),
@@ -399,7 +419,7 @@ void Server::listen()
 {
 	if (::listen(_serverFD, _maxClients) < 0)
 		perrorAndExit("In listen");
-	std::cout << "Server socket listening on port " << ntohs(_serverAddr.sin_port) << std::endl;
+	std::cout << GREEN << "Server socket listening on port " << ntohs(_serverAddr.sin_port) << RESET << std::endl;
 }
 
 /* startPollEventsLoop */
@@ -412,9 +432,26 @@ void Server::addServerSocketPollFdToVectors()
 	serverPollFd.fd = _serverFD;
 	serverPollFd.events = POLLIN;
 	serverPollFd.revents = 0;
+	std::cout << "pollfd struct for Server socket created" << std::endl;
+	std::cout << std::endl;
+	std::cout << "Printing serverPollFd (struct pollfd) before push_back into _FDs" << std::endl;
+	std::cout << "fd: " << serverPollFd.fd << ", events: " << serverPollFd.events
+			  << ", revents: " << serverPollFd.revents << std::endl;
 	_FDs.push_back(serverPollFd);
+	// NOTE: This copying is handled by the default copy constructor provided by C++ for plain old data (POD) types like
+	// struct pollfd. If we had a custom struct, we would need to implement a copy constructor.
+	std::cout << "Printing serverPollFD (struct pollfd) after push_back into _FDs" << std::endl;
+	std::cout << "fd: " << _FDs.back().fd << ", events: " << _FDs.back().events << ", revents: " << _FDs.back().revents
+			  << std::endl;
 	Connection serverConnection(serverPollFd, *this);
+	serverConnection.setConnectionType(SERVER);
+	std::cout << "Server Connection object created" << std::endl;
+	std::cout << MAGENTA << "Printing serverConnection before push_back" << std::endl << RESET;
+	serverConnection.printConnection();
 	_connections.push_back(serverConnection);
+	std::cout << MAGENTA << "Printing serverConnection after push_back" << RESET << std::endl;
+	_connections.back().printConnection();
+	std::cout << "Server socket pollfd added to vectors" << std::endl;
 }
 
 void Server::acceptNewConnection()
@@ -433,10 +470,27 @@ void Server::acceptNewConnection()
 		newSocketPoll.events = POLLIN;
 		newSocketPoll.revents = 0;
 		Connection newConnection(newSocketPoll, *this);
+		newConnection.setConnectionType(CLIENT);
+		std::cout << PURPLE << "BEFORE PUSH_BACK" << RESET << std::endl;
+		std::cout << "Printing newConnection:" << std::endl;
+		newConnection.printConnection();
+		std::cout << "Printing struct pollfd newSocketPoll:" << std::endl;
+		std::cout << "fd: " << newSocketPoll.fd << ", events: " << newSocketPoll.events
+				  << ", revents: " << newSocketPoll.revents << std::endl;
+
 		/* start together */
 		_FDs.push_back(newSocketPoll);
 		_connections.push_back(newConnection);
 		/* end together */
+		std::cout << PURPLE << "AFTER PUSH_BACK" << RESET << std::endl;
+		std::cout << "Printing last element of _FDs:" << std::endl;
+		std::cout << "fd: " << _FDs.back().fd << ", events: " << _FDs.back().events
+				  << ", revents: " << _FDs.back().revents << std::endl;
+		std::cout << "Printing last element of _connections:" << std::endl;
+		_connections.back().printConnection();
+		std::cout << "Pringing the whole _FDs and _connections vectors after adding new connection" << std::endl;
+		print_connectionsVector(_connections);
+		printFDsVector(_FDs);
 		char clientIP[INET_ADDRSTRLEN];
 		inet_ntop(AF_INET, &clientAddress.sin_addr, clientIP, INET_ADDRSTRLEN);
 		std::cout << "New connection from " << clientIP << std::endl;

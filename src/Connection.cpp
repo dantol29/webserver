@@ -1,9 +1,11 @@
 #include "Connection.hpp"
+#include <iomanip>
 
 Connection::Connection(struct pollfd &pollFd, Server &server)
 
 {
 	(void)server;
+	_connectionType = UNDEFINED;
 	_pollFd.fd = pollFd.fd;
 	_pollFd.events = POLLIN;
 	_pollFd.revents = 0;
@@ -14,13 +16,31 @@ Connection::Connection(struct pollfd &pollFd, Server &server)
 	_canBeClosed = false;
 }
 
+#if USE_CUSTOM_COPY_CONSTRUCTOR
 Connection::Connection(const Connection &other)
 {
 	_pollFd = other._pollFd;
 	_response = other._response;
+	_request = other._request;
+	_parser = other._parser;
 
-	// std::cout << "Connection object copied" << std::endl;
+	_connectionType = other._connectionType;
+
+#if USE_COPY_CONSTRUCTOR_WITH_BOOLS
+	std::cout << "USE_COPY_CONSTRUCTOR_WIT_BOOLS: " << USE_COPY_CONSTRUCTOR_WITH_BOOLS << std::endl;
+	std::cout << "Using copy constructor with bools" << std::endl;
+	_hasReadSocket = other._hasReadSocket;
+	_hasFinishedReading = other._hasFinishedReading;
+	_hasDataToSend = other._hasDataToSend;
+	_hasFinishedSending = other._hasFinishedSending;
+	_canBeClosed = other._canBeClosed;
+#else
+	std::cout << "Using copy constructor without bools" << std::endl;
+#endif
+
+	std::cout << "Connection object copied" << std::endl;
 }
+#endif
 
 Connection &Connection::operator=(const Connection &other)
 {
@@ -28,8 +48,17 @@ Connection &Connection::operator=(const Connection &other)
 	{
 		_pollFd = other._pollFd;
 		_response = other._response;
+		// NEW ADDITION
+		_request = other._request;
+		_parser = other._parser;
+		_connectionType = other._connectionType;
+		_hasReadSocket = other._hasReadSocket;
+		_hasFinishedReading = other._hasFinishedReading;
+		_hasDataToSend = other._hasDataToSend;
+		_hasFinishedSending = other._hasFinishedSending;
+		_canBeClosed = other._canBeClosed;
 	}
-	// std::cout << "Connection object assigned" << std::endl;
+	std::cout << "Connection object assigned" << std::endl;
 	return *this;
 }
 
@@ -68,26 +97,26 @@ Parser &Connection::getParser()
 	return _parser;
 }
 
-bool Connection::getHasReadSocket()
+bool Connection::getHasReadSocket() const
 {
 	return _hasReadSocket;
 }
 
-bool Connection::getHasFinishedReading()
+bool Connection::getHasFinishedReading() const
 {
 	return _hasFinishedReading;
 }
 
-bool Connection::getHasDataToSend()
+bool Connection::getHasDataToSend() const
 {
 	return _hasDataToSend;
 }
-bool Connection::getHasFinishedSending()
+bool Connection::getHasFinishedSending() const
 {
 	return _hasFinishedSending;
 }
 
-bool Connection::getCanBeClosed()
+bool Connection::getCanBeClosed() const
 {
 	return _canBeClosed;
 }
@@ -123,6 +152,11 @@ void Connection::setHasFinishedSending(bool value)
 void Connection::setCanBeClosed(bool value)
 {
 	_canBeClosed = value;
+}
+
+void Connection::setConnectionType(ConnectionType type)
+{
+	_connectionType = type;
 }
 // Attempts to read HTTP request headers from the client connection into _headersBuffer on the Parser.
 bool Connection::readHeaders(Parser &parser)
@@ -318,11 +352,24 @@ bool Connection::readBody(Parser &parser, HTTPRequest &req, HTTPResponse &res)
 
 void Connection::printConnection() const
 {
-	std::cout << RED << "\nprintConnection" << RESET << std::endl;
-	std::cout << "Connection fd: " << _pollFd.fd << std::endl;
-	std::cout << "hasReadSocket: " << _hasReadSocket << std::endl;
-	std::cout << "hasFinishedReading: " << _hasFinishedReading << std::endl;
-	std::cout << "hasDataToSend: " << _hasDataToSend << std::endl;
-	std::cout << "hasFinishedSending: " << _hasFinishedSending << std::endl;
-	std::cout << "canBeClosed: " << _canBeClosed << std::endl;
+	std::cout << CYAN << "CONNECTION # " << _pollFd.fd << " (fd)" << RESET << std::endl;
+
+	std::string connectionType;
+
+	if (_connectionType == SERVER)
+		connectionType = "SERVER";
+	else if (_connectionType == CLIENT)
+		connectionType = "CLIENT";
+	else
+		connectionType = "UNDEFINED";
+
+	// Initial padding of 5 spaces and then the property name, with a fixed width for alignment
+	std::cout << std::setw(5) << ' ' << std::left << std::setw(22) << "type:" << connectionType << std::endl;
+	std::cout << std::setw(5) << ' ' << std::left << std::setw(22) << "hasReadSocket:" << _hasReadSocket << std::endl;
+	std::cout << std::setw(5) << ' ' << std::left << std::setw(22) << "hasFinishedReading:" << _hasFinishedReading
+			  << std::endl;
+	std::cout << std::setw(5) << ' ' << std::left << std::setw(22) << "hasDataToSend:" << _hasDataToSend << std::endl;
+	std::cout << std::setw(5) << ' ' << std::left << std::setw(22) << "hasFinishedSending:" << _hasFinishedSending
+			  << std::endl;
+	std::cout << std::setw(5) << ' ' << std::left << std::setw(22) << "canBeClosed:" << _canBeClosed << std::endl;
 }

@@ -9,6 +9,33 @@ HTTPRequest::~HTTPRequest()
 {
 }
 
+HTTPRequest::HTTPRequest(const HTTPRequest &obj)
+	: _method(obj._method)
+	, _requestTarget(obj._requestTarget)
+	, _protocolVersion(obj._protocolVersion)
+	, _queryString(obj._queryString)
+	, _headers(obj._headers)
+	, _body(obj._body)
+	, _uploadBoundary(obj._uploadBoundary)
+	, _files(obj._files)
+{
+}
+
+HTTPRequest &HTTPRequest::operator=(const HTTPRequest &obj)
+{
+	if (this != &obj)
+	{
+		_method = obj._method;
+		_requestTarget = obj._requestTarget;
+		_protocolVersion = obj._protocolVersion;
+		_queryString = obj._queryString;
+		_headers = obj._headers;
+		_body = obj._body;
+		_uploadBoundary = obj._uploadBoundary;
+		_files = obj._files;
+	}
+	return *this;
+}
 std::string HTTPRequest::getMethod() const
 {
 	return (_method);

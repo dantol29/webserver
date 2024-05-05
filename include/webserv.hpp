@@ -15,6 +15,12 @@
 #define BLUE "\033[1;34m"
 #define MAGENTA "\033[1;35m"
 #define CYAN "\033[1;36m"
+#define WHITE "\033[1;37m"
+#define PURPLE "\033[1;35m"
+#define ORANGE "\033[38;5;208m"
+#define BOLD "\033[1m"
+#define UNDERLINE "\033[4m"
+#define BLINKING "\033[5m"
 #define RESET "\033[0m"
 
 template <typename T>
