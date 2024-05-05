@@ -10,6 +10,8 @@ Server::Server()
 Server::Server(const Config &config)
 {
 	_config = config;
+	// while we don't have a config file
+	loadDefaultConfig();
 }
 
 Server::~Server()
