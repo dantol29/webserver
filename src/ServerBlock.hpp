@@ -8,7 +8,6 @@ class ServerBlock
 	public:
 		ServerBlock();
 		ServerBlock(const ServerBlock& obj);
-		ServerBlock(const ServerBlock& obj);
 		ServerBlock& operator=(const ServerBlock& obj);
 		~ServerBlock();
 
