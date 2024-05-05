@@ -40,9 +40,9 @@ void Server::startPollEventLoop()
 		{
 			for (size_t i = 0; i < _FDs.size(); i++)
 			{
-				std::cout << "i: " << i << std::endl;
 				if (_FDs[i].revents & (POLLIN | POLLOUT))
 				{
+					std::cout << "i: " << i << std::endl;
 					std::cout << "Enters revents" << std::endl;
 					if (i == 0)
 					{
@@ -57,12 +57,13 @@ void Server::startPollEventLoop()
 										 _connections[i].getParser(),
 										 _connections[i].getRequest(),
 										 _connections[i].getResponse());
-						// TODO: clean this dirt!
-						// add comments
-						// if (_connections[i].getHasFinishedReading() && _connections[i].getHasDataToSend())
-						// 	_FDs[i].events = POLLOUT;
-						// printFDsVector(_FDs);
-						// print_connectionsVector(_connections);
+					// TODO: clean this dirt!
+					// add comments
+
+					// it is NOT CORRECT because we do i-- in closeConnection
+					// if (_connections[i].getHasFinishedReading() \
+					// && _connections[i].getHasDataToSend())
+					//_FDs[i].events = POLLOUT;
 					}
 				}
 				else if (_FDs[i].revents & (POLLERR | POLLHUP | POLLNVAL))
@@ -237,6 +238,7 @@ void Server::buildResponse(Connection &conn, size_t &i, HTTPRequest &request, HT
 
 void Server::writeToClient(Connection &conn, size_t &i, HTTPResponse &response)
 {
+	std::cout << "\033[1;36m" << "Entering writeToClient" << "\033[0m" << std::endl;
 	(void)i;
 	send(conn.getPollFd().fd, response.objToString().c_str(), response.objToString().size(), 0);
 	// conn.setHasDataToSend(); will not be always false in case of chunked response or keep-alive connection
@@ -248,12 +250,13 @@ void Server::writeToClient(Connection &conn, size_t &i, HTTPResponse &response)
 
 void Server::closeClientConnection(Connection &conn, size_t &i)
 {
+	std::cout << "\033[1;36m" << "Entering closeClientConnection" << "\033[0m" << std::endl;
 	// if (response.getStatusCode() != 0)
-	if (conn.getResponse().getStatusCode() != 0 && conn.getResponse().getStatusCode() != 499)
-	{
-		std::string responseString = conn.getResponse().objToString();
-		send(conn.getPollFd().fd, responseString.c_str(), responseString.size(), 0);
-	}
+	// if (conn.getResponse().getStatusCode() != 0 && conn.getResponse().getStatusCode() != 499)
+	// {
+	// 	std::string responseString = conn.getResponse().objToString();
+	// 	send(conn.getPollFd().fd, responseString.c_str(), responseString.size(), 0);
+	// }
 	// TODO: should we close it with the Destructor of the Connection class?
 	close(conn.getPollFd().fd);
 	_FDs.erase(_FDs.begin() + i);
@@ -264,9 +267,10 @@ void Server::closeClientConnection(Connection &conn, size_t &i)
 void Server::handleConnection(Connection &conn, size_t &i, Parser &parser, HTTPRequest &request, HTTPResponse &response)
 {
 	std::cout << "\033[1;36m" << "Entering handleConnection" << "\033[0m" << std::endl;
-	conn.printConnection();
+	//conn.printConnection();
 
-	conn.setHasReadSocket(false);
+	// Why is it TRUE when I refresh a page?????
+	std::cout << "Has finished reading: " << conn.getHasFinishedReading() << std::endl;
 	if (!conn.getHasFinishedReading())
 		readFromClient(conn, i, parser, request, response);
 	// TODO: add comments to explain
@@ -373,6 +377,8 @@ void Server::acceptNewConnection()
 		/* start together */
 		_FDs.push_back(newSocketPoll);
 		_connections.push_back(newConnection);
+		std::cout << newConnection.getHasFinishedReading() << std::endl;
+		std::cout << _connections.back().getHasFinishedReading() << std::endl;
 		/* end together */
 		char clientIP[INET_ADDRSTRLEN];
 		inet_ntop(AF_INET, &clientAddress.sin_addr, clientIP, INET_ADDRSTRLEN);
