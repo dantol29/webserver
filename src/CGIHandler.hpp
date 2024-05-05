@@ -15,10 +15,10 @@ class CGIHandler : public AResponseHandler
   public:
 	CGIHandler();
 	virtual ~CGIHandler();
-	HTTPResponse handleRequest(const HTTPRequest &request);
-	char *const *createArgvForExecve(const MetaVariables &env);
+	void handleRequest(const HTTPRequest &request, HTTPResponse &response);
+	void createArgvForExecve(const MetaVariables &env, std::vector<char *> &argv);
 	std::string executeCGI(const MetaVariables &env);
-	HTTPResponse CGIStringToResponse(const std::string &cgiOutput);
+	void CGIStringToResponse(const std::string &cgiOutput, HTTPResponse &response);
 
   private:
 	CGIHandler(const CGIHandler &other);

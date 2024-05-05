@@ -19,10 +19,10 @@ class StaticContentHandler : public AResponseHandler
 	StaticContentHandler();
 	StaticContentHandler(const std::string &webRoot);
 	~StaticContentHandler();
-	HTTPResponse handleRequest(const HTTPRequest &request);
+	void handleRequest(const HTTPRequest &request, HTTPResponse &response);
 
 	// std::string handleNotFound();  or setErrorResponse(int statusCode) from WEB-127
-	HTTPResponse handleNotFound();
+	void handleNotFound(HTTPResponse &response);
 
   private:
 	StaticContentHandler(const StaticContentHandler &other);
