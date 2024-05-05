@@ -26,6 +26,8 @@ struct File
 	std::string fileContent;
 };
 
+void test_debug();
+
 bool startsWith(const std::string &fullString, const std::string &starting);
 std::string readHtml(const std::string &filePath);
 void printHTTPRequest(const std::string httpRequest, size_t startPos = 0);
