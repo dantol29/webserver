@@ -22,5 +22,5 @@ jobs:
         working-directory: tests # Set working directory to 'tests'
         run: |
           c++ parser.cpp -o test_parser  # Compile your C++ program
-          ./test_parser  # Run the compiled program
+          ./test_parser simple # Run the compiled program
       - run: echo "🍏 This job's status is ${{ job.status }}."
