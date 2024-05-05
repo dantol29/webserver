@@ -20,7 +20,13 @@ class ServerBlock
 		void deleteData();
 	private:
 		ServerBlock& operator=(const ServerBlock& obj);
-
+		
+		// a list of all accepted variables
+		// ---------------------------------
+		// listen, host, server_name, error_page,
+		// index, root, client_max_body_size, autoindex, 
+		// allow_methods, alias, cgi_path, cgi_ext
+		// ---------------------------------
 		std::map<std::string, std::string> _variables;
 		std::vector<std::map<std::string, std::string> > _locations;
 
