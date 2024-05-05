@@ -31,31 +31,60 @@ void CGIHandler::handleRequest(const HTTPRequest &request, HTTPResponse &respons
 	return;
 }
 
-void CGIHandler::createArgvForExecve(const MetaVariables &env, std::vector<char *> &argv)
+void CGIHandler::createArgvForExecve(const MetaVariables &env,
+									 std::vector<std::string> &argvStorage,
+									 std::vector<char *> &argv)
 {
-	// std::cout << env;
 	std::string scriptName = env.getVar("SCRIPT_NAME");
 	std::string pathTranslated = env.getVar("PATH_TRANSLATED");
 	std::string scriptPath = pathTranslated + scriptName;
 
-	std::cout << "scriptPath: " << scriptPath << std::endl;
+	// Store the full script path in argvStorage
+	argvStorage.push_back(scriptPath);
 
-	if (env.getVar("X_INTERPRETER_PATH") != "")
-	{
-		std::string interpreterVar = env.getVar("X_INTERPRETER_PATH");
-		argv.push_back(const_cast<char *>(interpreterVar.c_str()));
-		argv.push_back(const_cast<char *>(scriptPath.c_str()));
-	}
-	else
-	{
-		argv.push_back(const_cast<char *>(scriptPath.c_str()));
-	}
+	// Add a pointer to the stored string's C-string representation
+	argv.push_back(const_cast<char *>(argvStorage.back().c_str()));
 
-	std::cout << "argv[0] in createArgvForExecve : " << argv[0] << std::endl;
-	std::cout << &argv[0] << std::endl;
-
-	return;
+	// Null-terminate the argv vector as required by execve
+	argv.push_back(NULL);
 }
+
+// void CGIHandler::createArgvForExecve(const MetaVariables &env, std::vector<char *> &argv)
+// {
+
+// 	std::string scriptName = env.getVar("SCRIPT_NAME");
+// 	std::string pathTranslated = env.getVar("PATH_TRANSLATED");
+// 	std::string scriptPath = pathTranslated + scriptName;
+// 	argv.push_back(const_cast<char *>(scriptPath.c_str()));
+// 	argv.push_back(NULL);
+
+// 	// argv.push_back(const_cast<char *>(env.getVar("PATH_TRANSLATED" + env.getVar("SCRIPT_NAME")).c_str()));
+// 	// argv.push_back(NULL);
+
+// 	// std::cout << env;
+// 	// std::string scriptName = env.getVar("SCRIPT_NAME");
+// 	// std::string pathTranslated = env.getVar("PATH_TRANSLATED");
+// 	// std::string scriptPath = pathTranslated + scriptName;
+
+// 	// std::cout << "scriptPath: " << scriptPath << std::endl;
+
+// 	// if (env.getVar("X_INTERPRETER_PATH") != "")
+// 	// {
+// 	// 	std::string interpreterVar = env.getVar("X_INTERPRETER_PATH");
+// 	// 	argv.push_back(const_cast<char *>(interpreterVar.c_str()));
+// 	// 	argv.push_back(const_cast<char *>(scriptPath.c_str()));
+// 	// }
+// 	// else
+// 	// {
+// 	// argv.push_back(const_cast<char *>(scriptPath.c_str()));
+// 	// argv.push_back(NULL);
+// 	// }
+
+// 	// std::cout << "argv[0] in createArgvForExecve : " << argv[0] << std::endl;
+// 	// std::cout << &argv[0] << std::endl;
+
+// 	// return;
+// }
 
 void CGIHandler::CGIStringToResponse(const std::string &cgiOutput, HTTPResponse &response)
 {
@@ -102,29 +131,26 @@ void CGIHandler::closeAllSocketFDs()
 std::string CGIHandler::executeCGI(const MetaVariables &env)
 {
 	std::string cgiOutput = "";
-	// std::vector<char *> argv;
+	std::vector<char *> argv;
+	std::vector<std::string> argvStorage;
 
-	// argv.push_back(const_cast<char *>("/var/www/development_site/cgi-bin/hello_py.cgi"));
+	// std::string scriptName = env.getVar("SCRIPT_NAME");
+	// std::string pathTranslated = env.getVar("PATH_TRANSLATED");
+	// std::string scriptPath = pathTranslated + scriptName;
+	// argv.push_back(const_cast<char *>(scriptPath.c_str()));
+	// argv.push_back(NULL);
+
+	// // argv.push_back(const_cast<char *>("/var/www/development_site/cgi-bin/hello_py.cgi"));
+	// argv.push_back(const_cast<char *>("hello_py.cgi"));
 	// argv.push_back(NULL);
 
 	// createArgvForExecve(env, argv);
-	// std::cout << "-+-+-+-  1" << std::endl;
 	// std::cout << &argv[0] << std::endl;
 
-	// std::cout << "argv[0]: " << argv[0] << std::endl;
-	// std::cout << "argv.size(): " << argv.size() << std::endl;
-	// hardcode argv[0] to var/www/development_site/cgi-bin/hello_py.cgi
-	// and argv[1] to null
+	// argv.push_back(const_cast<char *>(env.getVar("PATH_TRANSLATED" + env.getVar("SCRIPT_NAME")).c_str()));
+	// argv.push_back(NULL);
 
-	// for (std::vector<char *>::iterator it = argv.begin(); it != argv.end(); ++it)
-	// {
-	// 	std::cout << "\033[35m" << *it << "\033[0m" << std::endl;
-	// }
-	// for (std::vector<char *>::iterator it = argv.begin(); it != argv.end(); ++it)
-	// {
-	// 	std::cout << "\033[35m" << *it << "\033[0m" << std::endl;
-	// }
-	// std::cout << "-+-+-+-  2" << std::endl;
+	CGIHandler::createArgvForExecve(env, argvStorage, argv);
 
 	int pipeFD[2];
 	if (pipe(pipeFD) == -1)
@@ -145,49 +171,65 @@ std::string CGIHandler::executeCGI(const MetaVariables &env)
 		dup2(pipeFD[1], STDOUT_FILENO);
 		close(pipeFD[1]);
 
-		// closeAllSocketFDs();
+		closeAllSocketFDs();
 
 		// std::vector<char *> envp = env.getForExecve();
-
 		// std::cout << "argv[0]: " << argv[0] << std::endl;
 		// execve(argv[0], argv.data(), envp.data());
 
-		char *envp[] = {
-			"CONTENT_LENGTH=0", "CONTENT_TYPE=text/html", "GATEWAY_INTERFACE=CGI/1.1", "PATH_INFO=/hello_py.cgi";
-	};
+		// argv[0] = const_cast<char *>("hello_py.cgi");
+		// argv[1] = NULL;
 
-	std::vector<char *> argv;
-	argv.push_back(const_cast<char *>("hello_py.cgi"));
-	argv.push_back(NULL);
-	std::cout << "argv[0]: " << argv[0] << std::endl;
-	execve(argv[0], &argv[0], envp);
+		// std::vector<char *> envp = env.getForExecve();
+		// std::cout << "Executing: " << argv[0] << std::endl;
+		// execve(argv[0], argv.data(), envp.data());
 
-	perror("execve");
-	exit(EXIT_FAILURE); // TODO: check if _exit isn't better
-}
-else
-{
-	close(pipeFD[1]);
+		//------------------hardcoded values for testing-------------------
+		(void)env;
+		const char *envp[] = {"CONTENT_LENGTH=0",
+							  "CONTENT_TYPE=text/html",
+							  "GATEWAY_INTERFACE=CGI/1.1",
+							  "PATH_INFO=/hello_py.cgi",
+							  "PATH_TRANSLATED=/var/www/development_site/cgi-bin/hello_py.cgi",
+							  NULL};
 
-	char readBuffer[256];
-	ssize_t bytesRead;
-	while ((bytesRead = read(pipeFD[0], readBuffer, sizeof(readBuffer) - 1)) > 0)
-	{
-		readBuffer[bytesRead] = '\0';
-		cgiOutput += readBuffer;
+		// std::vector<char *> argv;
+		// argv.push_back(const_cast<char *>("hello_py.cgi"));
+		// argv.push_back(NULL);
+		std::cout << "argv[0]: " << argv[0] << std::endl;
+		execve(argv[0], argv.data(), const_cast<char *const *>(envp));
+		//-------------------------------------------------------------------
+
+		// execve(argv[0], &argv[0], envp);
+
+		perror("execve");
+
+		// exit(EXIT_FAILURE);
+		// TODO: check if _exit isn't better
 	}
-	close(pipeFD[0]);
+	else
+	{
+		close(pipeFD[1]);
 
-	int status;
-	waitpid(pid, &status, 0);
-	std::cout << "------------------CGI output prepared-------------------" << std::endl;
+		char readBuffer[256];
+		ssize_t bytesRead;
+		while ((bytesRead = read(pipeFD[0], readBuffer, sizeof(readBuffer) - 1)) > 0)
+		{
+			readBuffer[bytesRead] = '\0';
+			cgiOutput += readBuffer;
+		}
+		close(pipeFD[0]);
 
-	std::cout << "cgiOutput" << std::endl;
-	std::cout << cgiOutput << std::endl;
+		int status;
+		waitpid(pid, &status, 0);
+		std::cout << "------------------CGI output prepared-------------------" << std::endl;
 
+		std::cout << "cgiOutput" << std::endl;
+		std::cout << cgiOutput << std::endl;
+
+		return cgiOutput;
+	}
 	return cgiOutput;
-}
-return cgiOutput;
 }
 
 void CGIHandler::setFDsRef(std::vector<struct pollfd> *FDsRef)

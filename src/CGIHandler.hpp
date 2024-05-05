@@ -17,7 +17,9 @@ class CGIHandler : public AResponseHandler
 	CGIHandler();
 	virtual ~CGIHandler();
 	void handleRequest(const HTTPRequest &request, HTTPResponse &response);
-	void createArgvForExecve(const MetaVariables &env, std::vector<char *> &argv);
+	// void createArgvForExecve(const MetaVariables &env, std::vector<char *> &argv);
+	void
+	createArgvForExecve(const MetaVariables &env, std::vector<std::string> &argvStorage, std::vector<char *> &argv);
 	std::string executeCGI(const MetaVariables &env);
 	void CGIStringToResponse(const std::string &cgiOutput, HTTPResponse &response);
 	void setFDsRef(std::vector<struct pollfd> *FDsRef);

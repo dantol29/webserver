@@ -186,7 +186,7 @@ MetaVariables::~MetaVariables()
 	std::vector<char *> envp = getForExecve();
 	for (size_t i = 0; i < envp.size(); ++i)
 	{
-		delete[] envp[i];
+		// delete[] envp[i];
 	}
 }
 
