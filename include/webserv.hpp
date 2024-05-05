@@ -7,7 +7,9 @@
 #include <cstring>
 #include <iostream>
 #include <map>
+#include <list>
 #include <vector>
+#include <algorithm>
 
 template <typename T>
 std::string toString(const T &value)
@@ -34,6 +36,7 @@ bool isNumber(std::string line);
 bool isInvalidChar(const unsigned char &c);
 bool hasCRLF(const char *request, unsigned int &i, int mode);
 bool isVulnerablePath(const std::string &path);
+bool isValidErrorCode(std::string errorCode);
 int checkFile(const char *path);
 int strToInt(const std::string &str);
 

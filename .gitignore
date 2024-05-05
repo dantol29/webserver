@@ -29,7 +29,7 @@
 !.cgi-bin/
 !docs/
 !tests/
-!config
+!webserv.conf
 !tests/
 !*.test
 
@@ -37,5 +37,6 @@
 /secretus/
 /a.out
 **/*.o
+largefile  # so we don't pull and push 100mb file
 testers/myenv/
 
