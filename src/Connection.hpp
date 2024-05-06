@@ -6,7 +6,6 @@
 #include <unistd.h> // For close
 #include "Server.hpp"
 #include "webserv.hpp"
-#include "server_utils.hpp"
 #include "HTTPResponse.hpp" // Assuming existence of HTTPResponse class
 #include "Parser.hpp"		// Assuming existence of Parser class
 

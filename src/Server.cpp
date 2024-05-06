@@ -32,10 +32,16 @@ void Server::startListening()
 void Server::startPollEventLoop()
 {
 	addServerSocketPollFdToVectors();
+	int pollCounter = 0;
 	while (1)
 	{
-		std::cout << "++++++++++++++ Waiting for new connection or Polling +++++++++++++++" << std::endl;
+		printConnections("BEFORE POLL", _FDs, _connections, true);
+		std::cout << CYAN << "++++++++++++++ #" << pollCounter
+				  << " Waiting for new connection or Polling +++++++++++++++" << RESET << std::endl;
 		int ret = poll(_FDs.data(), _FDs.size(), -1);
+		pollCounter++;
+		printFrame("POLL EVENT DETECTED", true);
+		printConnections("AFTER POLL", _FDs, _connections, true);
 		if (ret > 0)
 		{
 			size_t originalSize = _FDs.size();
@@ -50,12 +56,12 @@ void Server::startPollEventLoop()
 					std::cout << "Enters revents" << std::endl;
 					if (i == 0)
 					{
-						std::cout << "Server socket event" << std::endl;
+						printFrame("SERVER SOCKET EVENT", true);
 						acceptNewConnection(_connections[i]);
 					}
 					else
 					{
-						std::cout << "Client socket event" << std::endl;
+						printFrame("CLIENT SOCKET EVENT", true);
 						handleConnection(_connections[i],
 										 i,
 										 _connections[i].getParser(),
@@ -373,12 +379,32 @@ void Server::addServerSocketPollFdToVectors()
 	serverPollFd.fd = _serverFD;
 	serverPollFd.events = POLLIN;
 	serverPollFd.revents = 0;
+	if (VERBOSE)
+	{
+		std::cout << "pollfd struct for Server socket created" << std::endl;
+		std::cout << std::endl;
+		std::cout << "Printing serverPollFd (struct pollfd) before push_back into _FDs" << std::endl;
+		std::cout << "fd: " << serverPollFd.fd << ", events: " << serverPollFd.events
+				  << ", revents: " << serverPollFd.revents << std::endl;
+	}
 	_FDs.push_back(serverPollFd);
 	Connection serverConnection(serverPollFd, *this);
 	serverConnection.setType(SERVER);
 	serverConnection.setServerIp(inet_ntoa(_serverAddr.sin_addr));
 	serverConnection.setServerPort(ntohs(_serverAddr.sin_port));
+	if (VERBOSE)
+	{
+		std::cout << "Server Connection object created" << std::endl;
+		std::cout << MAGENTA << "Printing serverConnection before push_back" << std::endl << RESET;
+		serverConnection.printConnection();
+	}
 	_connections.push_back(serverConnection);
+	if (VERBOSE)
+	{
+		std::cout << MAGENTA << "Printing serverConnection after push_back" << RESET << std::endl;
+		_connections.back().printConnection();
+		std::cout << "Server socket pollfd added to vectors" << std::endl;
+	}
 }
 
 void Server::acceptNewConnection(Connection &conn)
@@ -401,12 +427,34 @@ void Server::acceptNewConnection(Connection &conn)
 		newConnection.setType(CLIENT);
 		newConnection.setServerIp(conn.getServerIp());
 		newConnection.setServerPort(conn.getServerPort());
+		if (VERBOSE)
+		{
+
+			std::cout << PURPLE << "BEFORE PUSH_BACK" << RESET << std::endl;
+			std::cout << "Printing newConnection:" << std::endl;
+			newConnection.printConnection();
+			std::cout << "Printing struct pollfd newSocketPoll:" << std::endl;
+			std::cout << "fd: " << newSocketPoll.fd << ", events: " << newSocketPoll.events
+					  << ", revents: " << newSocketPoll.revents << std::endl;
+		}
 		/* start together */
 		_FDs.push_back(newSocketPoll);
 		_connections.push_back(newConnection);
 		std::cout << newConnection.getHasFinishedReading() << std::endl;
 		std::cout << _connections.back().getHasFinishedReading() << std::endl;
 		/* end together */
+		if (VERBOSE)
+		{
+			std::cout << PURPLE << "AFTER PUSH_BACK" << RESET << std::endl;
+			std::cout << "Printing last element of _FDs:" << std::endl;
+			std::cout << "fd: " << _FDs.back().fd << ", events: " << _FDs.back().events
+					  << ", revents: " << _FDs.back().revents << std::endl;
+			std::cout << "Printing last element of _connections:" << std::endl;
+			_connections.back().printConnection();
+			std::cout << "Pringing the whole _FDs and _connections vectors after adding new connection" << std::endl;
+			print_connectionsVector(_connections);
+			printFDsVector(_FDs);
+		}
 		char clientIP[INET_ADDRSTRLEN];
 		inet_ntop(AF_INET, &clientAddress.sin_addr, clientIP, INET_ADDRSTRLEN);
 		std::cout << "New connection from " << clientIP << std::endl;

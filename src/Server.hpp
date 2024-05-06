@@ -13,10 +13,12 @@
 #include <sstream>
 #include "MetaVariables.hpp"
 #include "HTTPRequest.hpp"
-#include "server_utils.hpp"
 #include "Connection.hpp"
+#include "server_utils.hpp"
 #include "webserv.hpp"
 #include "Parser.hpp"
+
+#define VERBOSE 1
 
 class Connection; // Forward declaration for circular dependency
 
