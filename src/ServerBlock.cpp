@@ -33,7 +33,10 @@ bool ServerBlock::addVariable(std::string key, std::string& value, bool isLocati
 	std::list<std::string> validVar(var, var + sizeof(var) / sizeof(var[0]));
 
 	if (std::find(validVar.begin(), validVar.end(), key) == validVar.end())
+	{
+		std::cout << "Unknown key: "<< key << std::endl;
 		return (false);
+	}
 
 	if (key == "listen")
 		setListen(value, isLocation);
@@ -50,7 +53,7 @@ bool ServerBlock::addVariable(std::string key, std::string& value, bool isLocati
 	else if (key == "autoindex")
 		setAutoIndex(value, isLocation);
 	else if (key == "allow_methods")
-		setAllowedMethods(transformAllowMethods(value), isLocation);
+		setAllowedMethods(transformAllowedMethods(value), isLocation);
 	else if (key == "alias")
 		setAlias(value, isLocation);
 	else if (key == "path" && isLocation)
@@ -137,7 +140,7 @@ void ServerBlock::setListen(std::string& str, bool isLocation)
 		_locations.back()._listen = str;
 }
 
-void ServerBlock::setServerName(std::vector<std::string>& str, bool isLocation)
+void ServerBlock::setServerName(std::vector<std::string> str, bool isLocation)
 {
 	if (!isLocation)
 		_variables._serverName = str;
@@ -153,7 +156,7 @@ void ServerBlock::setErrorPage(std::pair<int, std::string> str, bool isLocation)
 		_locations.back()._errorPage = str;
 }
 
-void ServerBlock::setIndex(std::vector<std::string>& str, bool isLocation)
+void ServerBlock::setIndex(std::vector<std::string> str, bool isLocation)
 {
 	if (!isLocation)
 		_variables._index = str;	
@@ -199,7 +202,7 @@ void ServerBlock::setAutoIndex(std::string& str, bool isLocation)
 		_locations.back()._autoindex = a;
 }
 
-void ServerBlock::setAllowedMethods(std::vector<std::string>& str, bool isLocation)
+void ServerBlock::setAllowedMethods(std::vector<std::string> str, bool isLocation)
 {
 	if (!isLocation)
 		_variables._allowedMethods = str;	
@@ -222,7 +225,7 @@ void ServerBlock::setLocationPath(std::string str)
 	_locations.back()._path = str;
 }
 
-std::vector<std::string>& ServerBlock::transformServerName(std::string& str)
+std::vector<std::string> ServerBlock::transformServerName(std::string& str)
 {
 	std::vector<std::string> newStr;
 	std::stringstream ss(str);
@@ -248,7 +251,7 @@ std::pair<int, std::string> ServerBlock::transformErrorPage(std::string& str)
 	return (std::make_pair(error, path));
 }
 
-std::vector<std::string>& ServerBlock::transformIndex(std::string& str)
+std::vector<std::string> ServerBlock::transformIndex(std::string& str)
 {
 	std::vector<std::string> newStr;
 	std::stringstream ss(str);
@@ -261,7 +264,7 @@ std::vector<std::string>& ServerBlock::transformIndex(std::string& str)
 	return (newStr);
 }
 
-std::vector<std::string>& transformAllowMethods(std::string& str)
+std::vector<std::string> ServerBlock::transformAllowedMethods(std::string& str)
 {
 	std::vector<std::string> newStr;
 	std::stringstream ss(str);

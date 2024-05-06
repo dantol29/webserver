@@ -64,10 +64,8 @@ bool	Config::saveVariable(const std::string& line)
 
 	if (line[i++] != ';' || i < line.length()) // [;]
 		return (false);
-	// TODO: line[i + 1] != '\0'
 
-	_tmpServer.addVariable(key, value, false);
-	return (true);
+	return (_tmpServer.addVariable(key, value, false));
 }
 
 // [TAB][LOCATION][SP][/PATH][SP][{]
@@ -144,7 +142,8 @@ bool	Config::parseLocation(std::string& line, std::ifstream& config)
 			break ;
 		if (!saveLocationVariable(line, key, value))
 			return (error("Config file: Syntax error"));
-		_tmpServer.addVariable(key, value, true);
+		if (!_tmpServer.addVariable(key, value, true))
+			return (false);
 	}
 	return (true);
 }
@@ -284,8 +283,14 @@ bool	Config::pathExists(std::map<std::string, std::string> list, std::string var
 
 void Config::parse(const char *file)
 {
-	if (!parseFile(file))
-		return ;
+	try{
+		if (!parseFile(file))
+			return ;
+	}
+	catch (std::exception error){
+		std::cout << "Exception caught: " << error.what() << std::endl;
+		_errorMessage = "Exception";
+	}
 
 	// for (std::vector<ServerBlock>::iterator it = _server.begin(); it != _server.end(); ++it)
 	// {
