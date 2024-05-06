@@ -11,6 +11,8 @@ class HTTPRequest
   public:
 	HTTPRequest();
 	~HTTPRequest();
+	HTTPRequest(const HTTPRequest &obj);
+	HTTPRequest &operator=(const HTTPRequest &obj);
 
 	// GETTERS
 	std::string getMethod() const;
@@ -37,9 +39,6 @@ class HTTPRequest
 	void setFileContent(const std::string &content);
 
   private:
-	HTTPRequest(const HTTPRequest &obj);
-	HTTPRequest &operator=(const HTTPRequest &obj);
-
 	// VARIABLES
 	std::string _method;
 	std::string _requestTarget;
