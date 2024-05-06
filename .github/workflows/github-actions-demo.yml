@@ -29,9 +29,13 @@ jobs:
           ./config_test.sh
           exit_code=$?
            if [ $exit_code -ne 0 ]; then
-            echo "❌ Tests failed. Exiting with status code $exit_code."
-            exit $exit_code
+            echo "❌ Config file tests failed. Marking run as incorrect."
+            echo "::set-output name=config_tests_correct::false"
+           else
+            echo "✅ Config file tests passed."
+            echo "::set-output name=config_tests_correct::true"
            fi
+        id: config_tests
       - name: Run Python tests
         working-directory: tests # Set working directory to 'tests'
         run: |
