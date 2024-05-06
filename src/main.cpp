@@ -1,7 +1,8 @@
 #include "Server.hpp"
 #include "Config.hpp"
+#include "webserv.hpp"
 
-# define CONFIG_FILE_DEFAULT_PATH "./webserv.conf"
+#define CONFIG_FILE_DEFAULT_PATH "./webserv.conf"
 
 int main(int argc, char **argv)
 {
@@ -21,7 +22,7 @@ int main(int argc, char **argv)
 		std::cout << a.getErrorMessage() << std::endl;
 		return 0;
 	}
-	// std::cout << a << std::endl; // should be in the DEBUG?
+	std::cout << a << std::endl; // should be in the DEBUG?
 	Server webserv;
 	webserv.startListening();
 	webserv.startPollEventLoop();

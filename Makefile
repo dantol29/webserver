@@ -8,6 +8,7 @@ SRCS = src/main.cpp \
 	src/AResponseHandler.cpp \
 	src/Connection.cpp \
 	src/CGIHandler.cpp \
+	src/Debug.cpp \
 	src/MetaVariables.cpp \
 	src/utils.cpp \
 	src/HTTPRequest.cpp \
@@ -17,7 +18,8 @@ SRCS = src/main.cpp \
 	src/server_utils.cpp \
 	src/Server.cpp \
 	src/StaticContentHandler.cpp \
-	src/Config.cpp
+	src/Config.cpp \
+	src/ServerBlock.cpp
 OBJDIR = obj
 OBJS = $(SRCS:%.cpp=$(OBJDIR)/%.o)
 

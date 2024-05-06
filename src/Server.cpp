@@ -38,11 +38,15 @@ void Server::startPollEventLoop()
 		int ret = poll(_FDs.data(), _FDs.size(), -1);
 		if (ret > 0)
 		{
-			for (size_t i = 0; i < _FDs.size(); i++)
+			size_t originalSize = _FDs.size();
+			// if _FDs becomes bigger than originalSize we don't want to loop over the new elements before we finish the
+			// old ones if _FDs becomes smaller than originalSize we don't want to loop over the old elements that are
+			// not in _FDs anymore
+			for (size_t i = 0; i < originalSize && i < _FDs.size(); i++)
 			{
-				std::cout << "i: " << i << std::endl;
 				if (_FDs[i].revents & (POLLIN | POLLOUT))
 				{
+					std::cout << "i: " << i << std::endl;
 					std::cout << "Enters revents" << std::endl;
 					if (i == 0)
 					{
@@ -57,12 +61,8 @@ void Server::startPollEventLoop()
 										 _connections[i].getParser(),
 										 _connections[i].getRequest(),
 										 _connections[i].getResponse());
-						// TODO: clean this dirt!
-						// add comments
 						if (_connections[i].getHasFinishedReading() && _connections[i].getHasDataToSend())
 							_FDs[i].events = POLLOUT;
-						printFDsVector(_FDs);
-						print_connectionsVector(_connections);
 					}
 				}
 				else if (_FDs[i].revents & (POLLERR | POLLHUP | POLLNVAL))
@@ -84,36 +84,45 @@ void Server::startPollEventLoop()
 void createFile(HTTPRequest &request)
 {
 	std::vector<File> files = request.getFiles();
-	std::string filename;
-	std::map<std::string, std::string>::iterator it = files.back().headers.find("filename");
+	std::vector<File>::iterator it;
 
-	if (it != files.back().headers.end())
-		filename = it->second;
-	else
+	// check each file
+	for (it = files.begin(); it != files.end(); ++it)
 	{
-		std::cout << "Error: file does not have a name" << std::endl;
-		return;
+		if (it->headers.find("filename") == it->headers.end())
+		{
+			std::cout << "422 Unprocessable Entity (Error: file does not have a name)" << std::endl;
+			return;
+		}
 	}
 
-	std::ofstream outfile(filename.c_str());
-	if (outfile.is_open())
+	// create files
+	for (it = files.begin(); it != files.end(); ++it)
 	{
-		outfile << files.back().fileContent;
-		outfile.close();
-		std::cout << "File created successfully" << std::endl;
+		std::ofstream outfile((it->headers.find("filename"))->second.c_str());
+		if (outfile.is_open())
+		{
+			outfile << it->fileContent;
+			outfile.close();
+			std::cout << "File created successfully" << std::endl;
+		}
+		else
+			std::cout << "422 Unprocessable Entity (Error creating a file)" << std::endl;
 	}
-	else
-		std::cout << "Error opening file" << std::endl;
 }
 
 void Server::readFromClient(Connection &conn, size_t &i, Parser &parser, HTTPRequest &request, HTTPResponse &response)
 {
 	(void)i;
-	std::cout << "\033[1;36m" << "Entering readFromClient" << "\033[0m" << std::endl;
+	std::cout << "\033[1;36m"
+			  << "Entering readFromClient"
+			  << "\033[0m" << std::endl;
 	// TODO: change to _areHeadersCopmplete
 	if (!parser.getHeadersComplete())
 	{
-		std::cout << "\033[1;33m" << "Reading headers" << "\033[0m" << std::endl;
+		std::cout << "\033[1;33m"
+				  << "Reading headers"
+				  << "\033[0m" << std::endl;
 		if (!conn.readHeaders(parser))
 		{
 			std::cout << "Error reading headers" << std::endl;
@@ -168,8 +177,9 @@ void Server::readFromClient(Connection &conn, size_t &i, Parser &parser, HTTPReq
 		}
 		else
 		{
-			std::cout << "\033[1;33m" << "Reading body" << "\033[0m" << std::endl;
-			std::cout << "\033[1;33m" << "Reading body" << "\033[0m" << std::endl;
+			std::cout << "\033[1;33m"
+					  << "Reading body"
+					  << "\033[0m" << std::endl;
 			// TODO: add comments
 			if (!parser.getBodyComplete() && parser.getBuffer().size() == request.getContentLength())
 			{
@@ -191,10 +201,13 @@ void Server::readFromClient(Connection &conn, size_t &i, Parser &parser, HTTPReq
 		if (!parser.getBodyComplete())
 		{
 			std::cout << "Body still incomplete, exiting readFromClient." << std::endl;
+			conn.setHasFinishedReading(false);
+			conn.setHasReadSocket(true);
 			return;
 		}
+		// std::cout << parser.getBuffer() << std::endl;
 		if (!request.getUploadBoundary().empty())
-			parser.parseFileBody(parser.getBuffer(), request, response);
+			parser.parseFileUpload(parser.getBuffer(), request, response);
 		else if (request.getMethod() != "GET")
 		{
 			request.setBody(parser.getBuffer());
@@ -206,7 +219,9 @@ void Server::readFromClient(Connection &conn, size_t &i, Parser &parser, HTTPReq
 void Server::buildResponse(Connection &conn, size_t &i, HTTPRequest &request, HTTPResponse &response)
 {
 	(void)i;
-	std::cout << "\033[1;36m" << "Entering buildResponse" << "\033[0m" << std::endl;
+	std::cout << "\033[1;36m"
+			  << "Entering buildResponse"
+			  << "\033[0m" << std::endl;
 	std::cout << "\033[1;91mRequest status code: " << response.getStatusCode() << "\033[0m" << std::endl;
 	if (response.getStatusCode() != 0)
 	{
@@ -218,17 +233,20 @@ void Server::buildResponse(Connection &conn, size_t &i, HTTPRequest &request, HT
 	{
 		createFile(request);
 	}
-	std::string responseString;
 	// std::cout << request.getRequestTarget() << std::endl;
 	// TODO: The Router should be a member of the Server class or of the Connection class
 	Router router;
+	router.setFDsRef(&_FDs);
+	router.setPollFd(&conn.getPollFd());
 	router.routeRequest(request, response);
-	responseString = response.objToString();
 	conn.setHasDataToSend(true);
 }
 
 void Server::writeToClient(Connection &conn, size_t &i, HTTPResponse &response)
 {
+	std::cout << "\033[1;36m"
+			  << "Entering writeToClient"
+			  << "\033[0m" << std::endl;
 	(void)i;
 	send(conn.getPollFd().fd, response.objToString().c_str(), response.objToString().size(), 0);
 	// conn.setHasDataToSend(); will not be always false in case of chunked response or keep-alive connection
@@ -240,12 +258,15 @@ void Server::writeToClient(Connection &conn, size_t &i, HTTPResponse &response)
 
 void Server::closeClientConnection(Connection &conn, size_t &i)
 {
+	std::cout << "\033[1;36m"
+			  << "Entering closeClientConnection"
+			  << "\033[0m" << std::endl;
 	// if (response.getStatusCode() != 0)
-	if (conn.getResponse().getStatusCode() != 0 && conn.getResponse().getStatusCode() != 499)
-	{
-		std::string responseString = conn.getResponse().objToString();
-		send(conn.getPollFd().fd, responseString.c_str(), responseString.size(), 0);
-	}
+	// if (conn.getResponse().getStatusCode() != 0 && conn.getResponse().getStatusCode() != 499)
+	// {
+	// 	std::string responseString = conn.getResponse().objToString();
+	// 	send(conn.getPollFd().fd, responseString.c_str(), responseString.size(), 0);
+	// }
 	// TODO: should we close it with the Destructor of the Connection class?
 	close(conn.getPollFd().fd);
 	_FDs.erase(_FDs.begin() + i);
@@ -255,19 +276,32 @@ void Server::closeClientConnection(Connection &conn, size_t &i)
 
 void Server::handleConnection(Connection &conn, size_t &i, Parser &parser, HTTPRequest &request, HTTPResponse &response)
 {
-	std::cout << "\033[1;36m" << "Entering handleConnection" << "\033[0m" << std::endl;
-	conn.printConnection();
+	std::cout << "\033[1;36m"
+			  << "Entering handleConnection"
+			  << "\033[0m" << std::endl;
+	// conn.printConnection();
 
+	// Why is it TRUE when I refresh a page?????
 	conn.setHasReadSocket(false);
+	std::cout << "Has finished reading: " << conn.getHasFinishedReading() << std::endl;
 	if (!conn.getHasFinishedReading())
 		readFromClient(conn, i, parser, request, response);
 	// TODO: add comments to explain
 	if (conn.getHasReadSocket() && !conn.getHasFinishedReading())
+	{
+		std::cout << "\033[1;36m"
+				  << "return from handleConnection"
+				  << "\033[0m" << std::endl;
 		return;
+	}
 	if (!conn.getCanBeClosed() && !conn.getHasDataToSend())
 		buildResponse(conn, i, request, response);
+	// std::cout << "Has data to send: " << conn.getHasDataToSend() << std::endl;
+	// std::cout << response << std::endl;
 	if (conn.getHasDataToSend())
 		writeToClient(conn, i, response);
+	// std::cout << "Has finished sending: " << conn.getHasFinishedSending() << std::endl;
+	// std::cout << "Can be closed: " << conn.getCanBeClosed() << std::endl;
 	if (conn.getCanBeClosed())
 		closeClientConnection(conn, i);
 }
@@ -363,6 +397,8 @@ void Server::acceptNewConnection()
 		/* start together */
 		_FDs.push_back(newSocketPoll);
 		_connections.push_back(newConnection);
+		std::cout << newConnection.getHasFinishedReading() << std::endl;
+		std::cout << _connections.back().getHasFinishedReading() << std::endl;
 		/* end together */
 		char clientIP[INET_ADDRSTRLEN];
 		inet_ntop(AF_INET, &clientAddress.sin_addr, clientIP, INET_ADDRSTRLEN);

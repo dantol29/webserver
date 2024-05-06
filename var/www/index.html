@@ -16,7 +16,7 @@
             <a href="/development_site/cgi-bin/hello_py.cgi">Development Site</a>
             <a href="/perl_site/index.html">Perl Site</a>
             <a href="/php_site/index.html">PHP Site</a>
-            <a href="/python_site/index.html">Python Site</a>
+            <a href="/www.python_site.com/index.html">Python Site</a>
         </div>
     </nav>
     <div class="container">
@@ -31,6 +31,12 @@
 		<input type="file" id="file" name="file">
 		<br>
 		<input type="submit" value="Upload">
+	</form>
+	<h2>Upload Multiple Files</h2>
+	<form action="upload.php" method="post" enctype="multipart/form-data">
+	  <input type="file" name="files[]" multiple>
+	  <br>
+	  <input type="submit" value="Upload Files">
 	</form>
 </body>
 </html>

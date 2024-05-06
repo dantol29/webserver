@@ -18,6 +18,7 @@
 !**/*.sh
 !**/*.py
 !**/*.json
+!**/*.jpg
 !**/*.yml
 
 # Specific files and directories to include
