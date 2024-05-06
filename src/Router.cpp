@@ -14,33 +14,37 @@ void Router::routeRequest(const HTTPRequest &request, HTTPResponse &response)
 	std::string _webRoot = "var/www"; // TODO: get this from the config file
 	if (isCGI(request) && pathIsValid(const_cast<HTTPRequest &>(request), _webRoot))
 	{
+		std::cout << "       4567890'98765446789   request" << std::endl;
+
 		CGIHandler cgiHandler;
 		cgiHandler.setFDsRef(_FDsRef);
 		cgiHandler.setPollFd(_pollFd);
-		// cgiHandler.handleRequest(request, response);
 		cgiHandler.handleRequest(request, response);
 		// std::cout << std::endl << std::endl << std::endl << std::endl;
 		// std::cout << response;
+		return;
 	}
-	else // it is a static request
+	else if (request.getMethod() == "POST")
 	{
-		StaticContentHandler staticContentInstance;
-		if (!pathIsValid(const_cast<HTTPRequest &>(request), _webRoot))
-		{
-			std::cout << "Path is not valid, calling handleNotFound" << std::endl;
-			staticContentInstance.handleNotFound(response);
-		}
-		else
-		{
-			staticContentInstance.handleRequest(request, response);
-		}
+		std::cout << "Router: POST request" << std::endl;
+
+		std::cout << "successfully uploaded file" << std::endl;
+
+		std::cout << "Request target: " << request.getRequestTarget() << std::endl;
+		std::cout << "Request body: " << request.getBody() << std::endl;
+		std::cout << "Request host: " << request.getHost() << std::endl;
 	}
-	return;
-	// else if (isDynamicRequest(request))
-	// {
-	// 	std::cout << "\033[31mCGI is the only dynamic requests we handle at the moment\033[0m" << std::endl;
-	// 	response.setStatusCode(501, "");
-	// }
+	// after a post request we redirect to the same page
+	StaticContentHandler staticContentInstance;
+	if (!pathIsValid(const_cast<HTTPRequest &>(request), _webRoot))
+	{
+		std::cout << "Path is not valid, calling handleNotFound" << std::endl;
+		staticContentInstance.handleNotFound(response);
+	}
+	else
+	{
+		staticContentInstance.handleRequest(request, response);
+	}
 }
 
 bool Router::isDynamicRequest(const HTTPRequest &request)
