@@ -33,7 +33,16 @@ class ServerBlock
 		// GETTERS
 		Variables getVariables() const; // variables outside of locations
 		std::vector<Variables> getLocations() const; // location / {} blocks
-		
+		std::string getListen() const;
+		std::vector<std::string> getServerName() const;
+		std::vector<int, std::string> getErrorPage() const;
+		std::vector<std::string> getIndex() const;
+		std::string getRoot() const;
+		size_t getClientMaxBodySize() const;
+		bool getAutoIndex() const;
+		std::vector<std::string> getAllowedMethods() const;
+		std::string getAlias() const;
+
 		// SETTERS
 		void setListen(std::string& str);
 		void setServerName(std::vector<std::string>& str);
