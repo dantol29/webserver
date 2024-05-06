@@ -20,6 +20,7 @@ struct Variables
 	bool _autoindex;
 	std::vector<std::string> _allowedMethods;
 	std::string _alias;
+	std::string _path; // only for location blocks
 };
 
 class ServerBlock
@@ -29,6 +30,8 @@ class ServerBlock
 		ServerBlock(const ServerBlock& obj);
 		ServerBlock& operator=(const ServerBlock& obj);
 		~ServerBlock();
+
+		bool addVariable(std::string key, std::string& value, bool isLocation);
 
 		// GETTERS
 		Variables getVariables() const; // variables outside of locations
@@ -44,15 +47,16 @@ class ServerBlock
 		std::string getAlias() const;
 
 		// SETTERS
-		void setListen(std::string& str);
-		void setServerName(std::vector<std::string>& str);
-		void setErrorPage(std::vector<int, std::string>& str);
-		void setIndex(std::vector<std::string>& str);
-		void setRoot(std::string& str);
-		void setClientMaxBodySize(size_t& n);
-		void setAutoIndex(bool& a);
-		void setAllowedMethods(std::vector<std::string>& str);
-		void setAlias(std::string& str);
+		void setListen(std::string& str, bool isLocation);
+		void setServerName(std::string& str, bool isLocation);
+		void setErrorPage(std::string& str, bool isLocation);
+		void setIndex(std::string& str, bool isLocation);
+		void setRoot(std::string& str, bool isLocation);
+		void setClientMaxBodySize(std::string& n, bool isLocation);
+		void setAutoIndex(std::string& str, bool isLocation);
+		void setAllowedMethods(std::string& str, bool isLocation);
+		void setAlias(std::string& str, bool isLocation);
+		void setLocationPath(std::string str);
 
 		void deleteData();
 	private:
