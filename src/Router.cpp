@@ -12,7 +12,7 @@ Router::~Router()
 void Router::routeRequest(const HTTPRequest &request, HTTPResponse &response)
 {
 	std::string _webRoot = "var/www"; // TODO: get this from the config file
-	if (isCGI(request))
+	if (isCGI(request) && pathIsValid(const_cast<HTTPRequest &>(request), _webRoot))
 	{
 		CGIHandler cgiHandler;
 		cgiHandler.setFDsRef(_FDsRef);

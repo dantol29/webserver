@@ -4,6 +4,7 @@
 #include <map>
 #include <string>
 #include <vector>
+#include "ServerBlock.hpp"
 
 class Config
 {
@@ -11,16 +12,14 @@ class Config
 	Config();
 	~Config();
 	Config(const Config &obj);
-	void parse(const char *file);
-	std::string getErrorMessage() const;
-	std::map<std::string, std::string> getVariables() const;
-	std::pair<std::string, std::string> getVariables(std::string key) const;
-	// clang-format off
-	std::vector<std::map<std::string, std::string> > getLocations() const;
-	// clang-format on
 	Config &operator=(const Config &obj);
+	std::vector<ServerBlock> getServerBlocks() const;
+	std::string getErrorMessage() const;
 
+	void parse(const char *file); // main method
   private:
+	std::vector<ServerBlock> _server;
+
 	bool error(std::string message);
 	bool parseFile(const char *file);
 	bool parseLocation(std::string &line, std::ifstream &config);
@@ -31,12 +30,11 @@ class Config
 	bool checkVariablesValue(std::map<std::string, std::string> var);
 	bool checkErrorPage(std::map<std::string, std::string> list);
 	bool pathExists(std::map<std::string, std::string> list, std::string variable);
-	std::map<std::string, std::string> _variables;
-	// clang-format off
-	std::vector<std::map<std::string, std::string> > _locations;
-	// clang-format on
+
+	// internal variables for parsing
 	std::string _errorMessage;
 	std::string _tmpPath;
+	ServerBlock _tmpServer;
 };
 
 std::ostream &operator<<(std::ostream &out, const Config &fixed);

@@ -17,50 +17,23 @@ Config::Config(const Config &obj)
 	*this = obj;
 }
 
-// Config& Config::operator=(const Config& obj)
-// {
-// 	if (this != &obj)
-// 		*this = obj;
-// 	return (*this);
-// }
-
 Config &Config::operator=(const Config &obj)
 {
-	if (this != &obj)
-	{
-		_errorMessage = obj._errorMessage;
-		_variables = obj._variables;
-		_locations = obj._locations;
-	}
+	if (this == &obj)
+		return (*this);
+	_server = obj._server;
+	_errorMessage = obj._errorMessage;
 	return (*this);
+}
+
+std::vector<ServerBlock> Config::getServerBlocks() const
+{
+	return (_server);
 }
 
 std::string Config::getErrorMessage() const
 {
 	return (_errorMessage);
-}
-
-std::map<std::string, std::string> Config::getVariables() const
-{
-	return (_variables);
-}
-
-std::pair<std::string, std::string> Config::getVariables(std::string key) const
-{
-	std::multimap<std::string, std::string>::const_iterator it;
-
-	for (it = _variables.begin(); it != _variables.end(); ++it)
-	{
-		if (it->first == key)
-			return (std::make_pair(it->first, it->second));
-	}
-	return (std::make_pair("", ""));
-}
-// clang-format off
-std::vector<std::map<std::string, std::string> > Config::getLocations() const
-// clang-format on
-{
-	return (_locations);
 }
 
 bool Config::error(std::string message)
@@ -95,7 +68,7 @@ bool Config::saveVariable(const std::string &line)
 		return (false);
 	// TODO: line[i + 1] != '\0'
 
-	_variables.insert(std::make_pair(key, value));
+	_tmpServer.addVariable(key, value);
 	return (true);
 }
 
@@ -176,7 +149,7 @@ bool Config::parseLocation(std::string &line, std::ifstream &config)
 			return (error("Config file: Syntax error"));
 		var.insert(std::make_pair(key, value));
 	}
-	_locations.push_back(var);
+	_tmpServer.addLocation(var);
 	return (true);
 }
 
@@ -188,22 +161,36 @@ bool Config::parseFile(const char *file)
 	if (!config.is_open())
 		return (error("Config file: Invalid file"));
 
-	std::getline(config, line);
-	if (line != "server {")
-		return (error("Config file: Syntax error ( no server { )"));
-
-	while (std::getline(config, line))
+	while (!config.eof())
 	{
-		if (line.empty())
-			continue;
-		if (line == "}")
-			return (true);
-		if (isLocation(line))
-			parseLocation(line, config);
-		else if (!saveVariable(line))
-			return (error("Config file: Syntax error (invalid var in the root)"));
+		while (std::getline(config, line) && line.empty())
+			; // skip empty lines
+
+		if (config.eof()) // if file end reached
+			break;
+
+		if (line != "server {") // start of the server block
+			return (error("Config file: Syntax error ( no server { )"));
+
+		while (std::getline(config, line))
+		{
+			if (line.empty()) // empty lines are allowed
+				continue;
+			if (line == "}") // end of server blcok
+			{
+				_server.push_back(_tmpServer);
+				break;
+			}
+			if (isLocation(line)) // start of location block
+				parseLocation(line, config);
+			else if (!saveVariable(line)) // variables outside of location
+				return (error("Config file: Syntax error (invalid var in the root)"));
+		}
+		_tmpServer.deleteData(); // delete saved data
 	}
-	return (error("Config file: Syntax error (server is not enclosed)"));
+	if (_server.size() < 1)
+		return (error("Config file: No valid server blocks"));
+	return (true);
 }
 
 bool Config::checkVariablesKey()
@@ -222,21 +209,32 @@ bool Config::checkVariablesKey()
 						 "cgi_ext"};
 	std::list<std::string> validVar(var, var + sizeof(var) / sizeof(var[0]));
 
-	for (std::map<std::string, std::string>::iterator it = _variables.begin(); it != _variables.end(); ++it)
+	for (std::vector<ServerBlock>::iterator it = _server.begin(); it != _server.end(); ++it)
 	{
-		if (std::find(validVar.begin(), validVar.end(), it->first) == validVar.end())
-			return (error("Config file: Invalid variable"));
-	}
-	for (unsigned int i = 0; i < _locations.size(); ++i)
-	{
-		for (std::map<std::string, std::string>::iterator it = _locations[i].begin(); it != _locations[i].end(); ++it)
+		std::map<std::string, std::string> variables = it->getVariables();
+		// clang-format off
+		std::vector<std::map<std::string, std::string> > locations = it->getLocations();
+		// clang-format on
+		// variables outside of locations
+		for (std::map<std::string, std::string>::iterator it = variables.begin(); it != variables.end(); ++it)
 		{
-			if (it->first == "path")
-				continue;
 			if (std::find(validVar.begin(), validVar.end(), it->first) == validVar.end())
-				return (error("Config file: Invalid variable(in the location)"));
+				return (error("Config file: Invalid variable"));
+		}
+
+		// location variables
+		for (unsigned int i = 0; i < locations.size(); ++i)
+		{
+			for (std::map<std::string, std::string>::iterator it = locations[i].begin(); it != locations[i].end(); ++it)
+			{
+				if (it->first == "path")
+					continue;
+				if (std::find(validVar.begin(), validVar.end(), it->first) == validVar.end())
+					return (error("Config file: Invalid variable(in the location)"));
+			}
 		}
 	}
+
 	return (true);
 }
 
@@ -379,12 +377,23 @@ bool Config::checkVariablesValue(std::map<std::string, std::string> var)
 
 void Config::parse(const char *file)
 {
-	parseFile(file);
-	checkVariablesKey();
-	checkVariablesValue(_variables);
-	// check each location variables values
-	for (unsigned int i = 0; i < _locations.size(); ++i)
-		checkVariablesValue(_locations[i]);
+	if (!parseFile(file))
+		return;
+
+	if (!checkVariablesKey())
+		return;
+
+	for (std::vector<ServerBlock>::iterator it = _server.begin(); it != _server.end(); ++it)
+	{
+		// check variables outside of locations
+		if (!checkVariablesValue(it->getVariables()))
+			return;
+
+		// check each location variables values
+		for (unsigned int i = 0; i < it->getLocations().size(); ++i)
+			if (!checkVariablesValue(it->getLocations()[i]))
+				return;
+	}
 }
 
 std::ostream &operator<<(std::ostream &out, const Config &a)
@@ -394,17 +403,24 @@ std::ostream &operator<<(std::ostream &out, const Config &a)
 		out << a.getErrorMessage();
 		return (out);
 	}
-	std::map<std::string, std::string> var = a.getVariables();
-	// clang-format off
-	std::vector<std::map<std::string, std::string> > loc = a.getLocations();
-	// clang-format on
 
-	for (std::map<std::string, std::string>::iterator it = var.begin(); it != var.end(); ++it)
-		out << "Key: " << it->first << ", Value: " << it->second << std::endl;
-	for (unsigned int i = 0; i < loc.size(); ++i)
+	std::vector<ServerBlock> server = a.getServerBlocks();
+
+	for (std::vector<ServerBlock>::iterator it = server.begin(); it != server.end(); ++it)
 	{
-		for (std::map<std::string, std::string>::iterator it = loc[i].begin(); it != loc[i].end(); it++)
-			out << i << "LKey: " << it->first << ":" << ", LValue: " << it->second << ":" << std::endl;
+		std::map<std::string, std::string> var = it->getVariables();
+		// clang-format off
+		std::vector<std::map<std::string, std::string> > loc = it->getLocations();
+		// clang-format on
+		std::cout << "------------------Server-Block------------------------" << std::endl;
+		for (std::map<std::string, std::string>::iterator it = var.begin(); it != var.end(); ++it)
+			out << "Key: " << it->first << ", Value: " << it->second << std::endl;
+		for (unsigned int i = 0; i < loc.size(); ++i)
+		{
+			for (std::map<std::string, std::string>::iterator it = loc[i].begin(); it != loc[i].end(); it++)
+				out << i << "LKey: " << it->first << ":" << ", LValue: " << it->second << ":" << std::endl;
+		}
 	}
+
 	return (out);
 }

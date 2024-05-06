@@ -37,7 +37,11 @@ void Server::startPollEventLoop()
 		int ret = poll(_FDs.data(), _FDs.size(), -1);
 		if (ret > 0)
 		{
-			for (size_t i = 0; i < _FDs.size(); i++)
+			size_t originalSize = _FDs.size();
+			// if _FDs becomes bigger than originalSize we don't want to loop over the new elements before we finish the
+			// old ones if _FDs becomes smaller than originalSize we don't want to loop over the old elements that are
+			// not in _FDs anymore
+			for (size_t i = 0; i < originalSize && i < _FDs.size(); i++)
 			{
 				if (_FDs[i].revents & (POLLIN | POLLOUT))
 				{
@@ -56,13 +60,8 @@ void Server::startPollEventLoop()
 										 _connections[i].getParser(),
 										 _connections[i].getRequest(),
 										 _connections[i].getResponse());
-						// TODO: clean this dirt!
-						// add comments
-
-						// it is NOT CORRECT because we do i-- in closeConnection
-						// if (_connections[i].getHasFinishedReading() \
-					// && _connections[i].getHasDataToSend())
-						//_FDs[i].events = POLLOUT;
+						if (_connections[i].getHasFinishedReading() && _connections[i].getHasDataToSend())
+							_FDs[i].events = POLLOUT;
 					}
 				}
 				else if (_FDs[i].revents & (POLLERR | POLLHUP | POLLNVAL))
@@ -199,7 +198,7 @@ void Server::readFromClient(Connection &conn, size_t &i, Parser &parser, HTTPReq
 			conn.setHasReadSocket(true);
 			return;
 		}
-		// std::cout << parser.getBuffer() << std::endl;
+		//  std::cout << parser.getBuffer() << std::endl;
 		if (!request.getUploadBoundary().empty())
 			parser.parseFileUpload(parser.getBuffer(), request, response);
 		else if (request.getMethod() != "GET")
@@ -268,6 +267,7 @@ void Server::handleConnection(Connection &conn, size_t &i, Parser &parser, HTTPR
 	// conn.printConnection();
 
 	// Why is it TRUE when I refresh a page?????
+	conn.setHasReadSocket(false);
 	std::cout << "Has finished reading: " << conn.getHasFinishedReading() << std::endl;
 	if (!conn.getHasFinishedReading())
 		readFromClient(conn, i, parser, request, response);
