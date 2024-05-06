@@ -59,5 +59,7 @@ deactivate
 
 - Ensure each script is executable: `chmod +x script_name.sh`
 - Modify the list of packages in `install_packages.sh` as needed for your projects.
+
 ```
 
+```
