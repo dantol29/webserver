@@ -317,8 +317,8 @@ std::ostream& operator<<(std::ostream& out, const Config& a)
 
 	for (std::vector<ServerBlock>::iterator it = server.begin(); it != server.end(); ++it)
 	{
-		Variables var = it->getVariables();
-		std::vector<Variables> loc = it->getLocations();
+		Directives var = it->getVariables();
+		std::vector<Directives> loc = it->getLocations();
 
 		std::cout << "------------------Server-Block------------------------" << std::endl;
 		std::cout << "listen: " << var._listen << std::endl;

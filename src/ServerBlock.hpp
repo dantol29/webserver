@@ -9,7 +9,7 @@
 // 4. index, 5. root, 6. client_max_body_size, 7. autoindex, 
 // 8. allow_methods, 9. alias, (cgi_path, cgi_ext) - optional
 // ---------------------------------
-struct Variables
+struct Directives
 {
 	std::string _listen;
 	std::vector<std::string> _serverName;
@@ -34,8 +34,8 @@ class ServerBlock
 		bool addVariable(std::string key, std::string& value, bool isLocation);
 
 		// GETTERS
-		Variables getVariables() const; // variables outside of locations
-		std::vector<Variables> getLocations() const; // location / {} blocks
+		Directives getVariables() const; // variables outside of locations
+		std::vector<Directives> getLocations() const; // location / {} blocks
 		std::string getListen() const;
 		std::vector<std::string> getServerName() const;
 		std::pair<int, std::string> getErrorPage() const;
@@ -61,8 +61,8 @@ class ServerBlock
 		// clear ServerBlock
 		void deleteData();
 	private:
-		Variables _variables;
-		std::vector<Variables> _locations;
+		Directives _variables;
+		std::vector<Directives> _locations;
 		
 		// TRANSFORMERS
 		std::vector<std::string> transformServerName(std::string& str);

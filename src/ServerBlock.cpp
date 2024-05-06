@@ -77,12 +77,12 @@ void ServerBlock::deleteData()
 	_variables._path.clear();
 }
 
-Variables ServerBlock::getVariables() const
+Directives ServerBlock::getVariables() const
 {
 	return (_variables);
 }
 
-std::vector<Variables> ServerBlock::getLocations() const
+std::vector<Directives> ServerBlock::getLocations() const
 {
 	return (_locations);
 }
@@ -221,7 +221,7 @@ void ServerBlock::setAlias(std::string& str, bool isLocation)
 void ServerBlock::setLocationPath(std::string str)
 {
 	// create a new location block (element in _locations vector)
-	_locations.push_back(Variables());
+	_locations.push_back(Directives());
 	_locations.back()._path = str;
 }
 
