@@ -57,7 +57,7 @@ void GetRequest(const NameUrlPair &nameUrlPair)
 
 	auto start = std::chrono::high_resolution_clock::now();
 
-	std::string request = "GET " + url + " HTTP/1.1\r\nHost: localhost\r\n\r\n";
+	std::string request = "GET " + url + " HTTP/1.1\r\nHost: development_site\r\n\r\n";
 	if (send(sock, request.c_str(), request.length(), 0) < 0)
 	{
 		{
@@ -111,10 +111,10 @@ void GetRequest(const NameUrlPair &nameUrlPair)
 
 int main()
 {
-	std::vector<NameUrlPair> nameUrlPairs = {{"1 - Homepage", "http://localhost:8080"},
-											 {"3 - Homepage 2", "http://localhost:8080"}};
+	std::vector<NameUrlPair> nameUrlPairs = {
+		{"1 - Index", "/index.html"}, {"2 - Largefile", "/largefile"}, {"3 - example ", "/example.html"}};
 
-	std::thread threads[2];
+	std::thread threads[3];
 	for (size_t i = 0; i < nameUrlPairs.size(); ++i)
 	{
 		threads[i] = std::thread(GetRequest, nameUrlPairs[i]);
