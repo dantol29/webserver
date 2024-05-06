@@ -28,11 +28,12 @@ void Router::routeRequest(const HTTPRequest &request, HTTPResponse &response)
 	{
 		std::cout << "Router: POST request" << std::endl;
 
-		std::cout << "successfully uploaded file" << std::endl;
-
-		std::cout << "Request target: " << request.getRequestTarget() << std::endl;
-		std::cout << "Request body: " << request.getBody() << std::endl;
-		std::cout << "Request host: " << request.getHost() << std::endl;
+		UploadHandler uploadHandler;
+		uploadHandler.handleRequest(request, response);
+		// std::cout << "successfully uploaded file" << std::endl;
+		// std::cout << "Request target: " << request.getRequestTarget() << std::endl;
+		// std::cout << "Request body: " << request.getBody() << std::endl;
+		// std::cout << "Request host: " << request.getHost() << std::endl;
 	}
 	// after a post request we redirect to the same page
 	StaticContentHandler staticContentInstance;

@@ -5,6 +5,7 @@
 #include "HTTPResponse.hpp"
 #include "StaticContentHandler.hpp"
 #include "CGIHandler.hpp"
+#include "UploadHandler.hpp"
 #include "sys/stat.h"
 
 struct resourcePath
