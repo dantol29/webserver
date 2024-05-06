@@ -48,21 +48,28 @@ class ServerBlock
 
 		// SETTERS
 		void setListen(std::string& str, bool isLocation);
-		void setServerName(std::string& str, bool isLocation);
-		void setErrorPage(std::string& str, bool isLocation);
-		void setIndex(std::string& str, bool isLocation);
+		void setServerName(std::vector<std::string>& str, bool isLocation);
+		void setErrorPage(std::pair<int, std::string> str, bool isLocation);
+		void setIndex(std::vector<std::string>& str, bool isLocation);
 		void setRoot(std::string& str, bool isLocation);
 		void setClientMaxBodySize(std::string& n, bool isLocation);
 		void setAutoIndex(std::string& str, bool isLocation);
-		void setAllowedMethods(std::string& str, bool isLocation);
+		void setAllowedMethods(std::vector<std::string>& str, bool isLocation);
 		void setAlias(std::string& str, bool isLocation);
 		void setLocationPath(std::string str);
-
+		
+		// clear ServerBlock
 		void deleteData();
 	private:
-		
 		Variables _variables;
 		std::vector<Variables> _locations;
+		
+		// TRANSFORMERS
+		std::vector<std::string>& transformServerName(std::string& str);
+		std::pair<int, std::string> transformErrorPage(std::string& str);
+		std::vector<std::string>& transformIndex(std::string& str);
+		std::vector<std::string>& transformAllowMethods(std::string& str);
+		
 
 };
 

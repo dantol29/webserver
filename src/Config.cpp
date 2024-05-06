@@ -211,37 +211,6 @@ bool	Config::pathExists(std::map<std::string, std::string> list, std::string var
 	return (true);
 }
 
-bool	Config::checkErrorPage(std::map<std::string, std::string> list)
-{
-	// count1 and count2 to check if both path and number are present
-	int				count1 = 0;
-	int				count2 = 0;
-	unsigned int	start = 0;
-	std::map<std::string, std::string>::iterator it;
-
-	it = list.find("error_page");
-	if (it != list.end()){
-		for (unsigned int i = 0; i < it->second.length(); ++i){
-			start = i;
-			while (i < it->second.length() && it->second[i] != ' ')
-				i++;
-			if (access((it->second.substr(start, i - start)).c_str(), F_OK) == 0){
-				if (isVulnerablePath(it->second.substr(start, i - start)))
-					return (error("Config file: Path is vulnerable"));
-				count1++;
-				continue ;
-			}
-			if (!isValidErrorCode(it->second.substr(start, i - start)))
-				return (error("Config file: Invalid error_page"));
-			count2++;
-		}
-		if (count1 == 0 || count1 > 1 || count2 == 0)
-			return (error("Config file: Invalid error_page"));
-	}
-	return (true);
-}
-
-
 // bool	Config::checkVariablesValue(Variables var)
 // {
 // 	std::string tmp_meth[] = {"GET", "POST", "DELETE"};

@@ -38,11 +38,11 @@ bool ServerBlock::addVariable(std::string key, std::string& value, bool isLocati
 	if (key == "listen")
 		setListen(value, isLocation);
 	else if (key == "server_name")
-		setServerName(value, isLocation);
+		setServerName(transformServerName(value), isLocation);
 	else if (key == "error_page")
-		setErrorPage(value, isLocation);
+		setErrorPage(transformErrorPage(value), isLocation);
 	else if (key == "index")
-		setIndex(value, isLocation);
+		setIndex(transformIndex(value), isLocation);
 	else if (key == "root")
 		setRoot(value, isLocation);
 	else if (key == "client_max_body_size")
@@ -50,7 +50,7 @@ bool ServerBlock::addVariable(std::string key, std::string& value, bool isLocati
 	else if (key == "autoindex")
 		setAutoIndex(value, isLocation);
 	else if (key == "allow_methods")
-		setAllowedMethods(value, isLocation);
+		setAllowedMethods(transformAllowMethods(value), isLocation);
 	else if (key == "alias")
 		setAlias(value, isLocation);
 	else if (key == "path" && isLocation)
@@ -64,7 +64,7 @@ void ServerBlock::deleteData()
 	_locations.clear();
 	_variables._listen.clear();
 	_variables._serverName.clear();
-	_variables._errorPage.clear();
+	_variables._errorPage = std::make_pair(0, "");
 	_variables._index.clear();
 	_variables._root.clear();
 	_variables._clientMaxBodySize = 0;
@@ -137,7 +137,7 @@ void ServerBlock::setListen(std::string& str, bool isLocation)
 		_locations.back()._listen = str;
 }
 
-void ServerBlock::setServerName(std::string& str, bool isLocation)
+void ServerBlock::setServerName(std::vector<std::string>& str, bool isLocation)
 {
 	if (!isLocation)
 		_variables._serverName = str;
@@ -145,7 +145,7 @@ void ServerBlock::setServerName(std::string& str, bool isLocation)
 		_locations.back()._serverName = str;
 }
 
-void ServerBlock::setErrorPage(std::string& str, bool isLocation)
+void ServerBlock::setErrorPage(std::pair<int, std::string> str, bool isLocation)
 {
 	if (!isLocation)
 		_variables._errorPage = str;
@@ -153,7 +153,7 @@ void ServerBlock::setErrorPage(std::string& str, bool isLocation)
 		_locations.back()._errorPage = str;
 }
 
-void ServerBlock::setIndex(std::string& str, bool isLocation)
+void ServerBlock::setIndex(std::vector<std::string>& str, bool isLocation)
 {
 	if (!isLocation)
 		_variables._index = str;	
@@ -171,6 +171,11 @@ void ServerBlock::setRoot(std::string& str, bool isLocation)
 
 void ServerBlock::setClientMaxBodySize(std::string& str, bool isLocation)
 {
+	if (strToInt(str) == -1)
+		throw (std::exception());
+
+	size_t n = strToInt(str);
+	
 	if (!isLocation)
 		_variables._clientMaxBodySize = n;	
 	else
@@ -179,13 +184,22 @@ void ServerBlock::setClientMaxBodySize(std::string& str, bool isLocation)
 
 void ServerBlock::setAutoIndex(std::string& str, bool isLocation)
 {
+	bool a;
+
+	if (str == "on")
+		a = true;
+	else if (str == "off")
+		a = false;
+	else
+		throw(std::exception());
+
 	if (!isLocation)
 		_variables._autoindex = a;
 	else
 		_locations.back()._autoindex = a;
 }
 
-void ServerBlock::setAllowedMethods(std::string& str, bool isLocation)
+void ServerBlock::setAllowedMethods(std::vector<std::string>& str, bool isLocation)
 {
 	if (!isLocation)
 		_variables._allowedMethods = str;	
@@ -206,4 +220,63 @@ void ServerBlock::setLocationPath(std::string str)
 	// create a new location block (element in _locations vector)
 	_locations.push_back(Variables());
 	_locations.back()._path = str;
+}
+
+std::vector<std::string>& ServerBlock::transformServerName(std::string& str)
+{
+	std::vector<std::string> newStr;
+	std::stringstream ss(str);
+	std::string name;
+
+	while (std::getline(ss, name, ' '))
+		newStr.push_back(name);
+	if (newStr.empty())
+		newStr.push_back(str);
+	return (newStr);
+}
+
+std::pair<int, std::string> ServerBlock::transformErrorPage(std::string& str)
+{
+	std::string path;
+	int error;
+
+	int index = str.find(' ');
+	error = strToInt(str.substr(0, index));
+	if (!isValidErrorCode(str.substr(0, index)))
+		throw (std::exception());
+	path = str.substr(index + 1);
+	return (std::make_pair(error, path));
+}
+
+std::vector<std::string>& ServerBlock::transformIndex(std::string& str)
+{
+	std::vector<std::string> newStr;
+	std::stringstream ss(str);
+	std::string name;
+
+	while (std::getline(ss, name, ' '))
+		newStr.push_back(name);
+	if (newStr.empty())
+		newStr.push_back(str);
+	return (newStr);
+}
+
+std::vector<std::string>& transformAllowMethods(std::string& str)
+{
+	std::vector<std::string> newStr;
+	std::stringstream ss(str);
+	std::string name;
+
+	while (std::getline(ss, name, ' '))
+		newStr.push_back(name);
+	if (newStr.empty())
+		newStr.push_back(str);
+	
+	for (unsigned int i = 0; i < newStr.size(); ++i)
+	{
+		if (newStr[i] != "GET" && newStr[i] != "POST" \
+		&& newStr[i] != "PUT" && newStr[i] != "DELETE")
+			throw (std::exception());
+	}
+	return (newStr);
 }
