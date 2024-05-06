@@ -30,12 +30,20 @@ class ServerBlock
 		ServerBlock& operator=(const ServerBlock& obj);
 		~ServerBlock();
 
-		std::map<std::string, std::string> getVariables() const; // variables outside of locations
-		std::pair<std::string, std::string> getVariables(std::string key) const;
-		std::vector<std::map<std::string, std::string> > getLocations() const; // location / {} blocks
+		// GETTERS
+		Variables getVariables() const; // variables outside of locations
+		std::vector<Variables> getLocations() const; // location / {} blocks
 		
-		void addVariable(std::string& key, std::string& value);
-		void addLocation(std::map<std::string, std::string>& var);
+		// SETTERS
+		void setListen(std::string& str);
+		void setServerName(std::vector<std::string>& str);
+		void setErrorPage(std::vector<int, std::string>& str);
+		void setIndex(std::vector<std::string>& str);
+		void setRoot(std::string& str);
+		void setClientMaxBodySize(size_t& n);
+		void setAutoIndex(bool& a);
+		void setAllowedMethods(std::vector<std::string>& str);
+		void setAlias(std::string& str);
 
 		void deleteData();
 	private:
