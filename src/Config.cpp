@@ -190,7 +190,7 @@ bool	Config::parseFile(const char *file)
 }
 
 bool	Config::checkVariablesKey(){
-	std::string var[] = {"listen", "host", "server_name", "error_page", \
+	std::string var[] = {"listen", "server_name", "error_page", \
 	"index", "root", "client_max_body_size", "autoindex", "allow_methods", \
 	"alias", "cgi_path", "cgi_ext"};
 	std::list<std::string> validVar(var, var + sizeof(var) / sizeof(var[0]));

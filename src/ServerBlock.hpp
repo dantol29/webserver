@@ -3,6 +3,25 @@
 
 #include "webserv.hpp"
 
+// a list of all accepted variables
+// ---------------------------------
+// 1. listen, 2. server_name, 3. error_page,
+// 4. index, 5. root, 6. client_max_body_size, 7. autoindex, 
+// 8. allow_methods, 9. alias, (cgi_path, cgi_ext) - optional
+// ---------------------------------
+struct Variables
+{
+	std::string _listen;
+	std::vector<std::string> _serverName;
+	std::vector<int, std::string> _errorPage;
+	std::vector<std::string> _index;
+	std::string _root;
+	size_t _clientMaxBodySize;
+	bool _autoindex;
+	std::vector<std::string> _allowedMethods;
+	std::string _alias;
+};
+
 class ServerBlock
 {
 	public:
@@ -21,14 +40,8 @@ class ServerBlock
 		void deleteData();
 	private:
 		
-		// a list of all accepted variables
-		// ---------------------------------
-		// listen, host, server_name, error_page,
-		// index, root, client_max_body_size, autoindex, 
-		// allow_methods, alias, cgi_path, cgi_ext
-		// ---------------------------------
-		std::map<std::string, std::string> _variables;
-		std::vector<std::map<std::string, std::string> > _locations;
+		Variables _variables;
+		std::vector<Variables> _locations;
 
 };
 
