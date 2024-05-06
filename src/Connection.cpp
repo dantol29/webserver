@@ -5,6 +5,9 @@ Connection::Connection(struct pollfd &pollFd, Server &server)
 {
 	(void)server;
 	_pollFd.fd = pollFd.fd;
+	_type = UNDEFINED;
+	_serverIp = "";
+	_serverPort = 0;
 	_pollFd.events = POLLIN;
 	_pollFd.revents = 0;
 	_hasReadSocket = false;
@@ -20,6 +23,9 @@ Connection::Connection(const Connection &other)
 	_response = other._response;
 	_request = other._request;
 	_parser = other._parser;
+	_type = other._type;
+	_serverIp = other._serverIp;
+	_serverPort = other._serverPort;
 	_hasReadSocket = other._hasReadSocket;
 	_hasFinishedReading = other._hasFinishedReading;
 	_hasDataToSend = other._hasDataToSend;
@@ -37,6 +43,9 @@ Connection &Connection::operator=(const Connection &other)
 		_response = other._response;
 		_request = other._request;
 		_parser = other._parser;
+		_type = other._type;
+		_serverIp = other._serverIp;
+		_serverPort = other._serverPort;
 		_hasReadSocket = other._hasReadSocket;
 		_hasFinishedReading = other._hasFinishedReading;
 		_hasDataToSend = other._hasDataToSend;
@@ -63,10 +72,7 @@ Connection::~Connection()
 
 // GETTERS AND SETTERS
 
-struct pollfd Connection::getPollFd() const
-{
-	return _pollFd;
-}
+// GETTERS
 
 HTTPResponse &Connection::getResponse()
 {
@@ -82,23 +88,9 @@ Parser &Connection::getParser()
 	return _parser;
 }
 
-bool Connection::getHasReadSocket()
+struct pollfd Connection::getPollFd() const
 {
-	return _hasReadSocket;
-}
-
-bool Connection::getHasFinishedReading()
-{
-	return _hasFinishedReading;
-}
-
-bool Connection::getHasDataToSend()
-{
-	return _hasDataToSend;
-}
-bool Connection::getHasFinishedSending()
-{
-	return _hasFinishedSending;
+	return _pollFd;
 }
 
 struct pollfd &Connection::getPollFd()
@@ -106,9 +98,60 @@ struct pollfd &Connection::getPollFd()
 	return _pollFd;
 }
 
-bool Connection::getCanBeClosed()
+enum ConnectionType Connection::getType() const
+{
+	return _type;
+}
+
+std::string Connection::getServerIp() const
+{
+	return _serverIp;
+}
+
+unsigned short Connection::getServerPort() const
+{
+	return _serverPort;
+}
+
+bool Connection::getHasReadSocket() const
+{
+	return _hasReadSocket;
+}
+
+bool Connection::getHasFinishedReading() const
+{
+	return _hasFinishedReading;
+}
+
+bool Connection::getHasDataToSend() const
+{
+	return _hasDataToSend;
+}
+bool Connection::getHasFinishedSending() const
+{
+	return _hasFinishedSending;
+}
+
+bool Connection::getCanBeClosed() const
 {
 	return _canBeClosed;
+}
+
+// SETTERS
+
+void Connection::setType(enum ConnectionType type)
+{
+	_type = type;
+}
+
+void Connection::setServerIp(std::string serverIp)
+{
+	_serverIp = serverIp;
+}
+
+void Connection::setServerPort(unsigned short serverPort)
+{
+	_serverPort = serverPort;
 }
 
 void Connection::setHasReadSocket(bool value)
@@ -139,7 +182,7 @@ void Connection::setCanBeClosed(bool value)
 {
 	_canBeClosed = value;
 }
-// Attempts to read HTTP request headers from the client connection into _headersBuffer on the Parser.
+
 bool Connection::readHeaders(Parser &parser)
 {
 	// std::cout << "\nEntering readHeaders" << std::endl;

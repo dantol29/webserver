@@ -10,6 +10,13 @@
 #include "HTTPResponse.hpp" // Assuming existence of HTTPResponse class
 #include "Parser.hpp"		// Assuming existence of Parser class
 
+enum ConnectionType
+{
+	UNDEFINED,
+	CLIENT,
+	SERVER,
+};
+
 class Server; // Forward declaration for circular dependency
 
 class Connection
@@ -20,6 +27,9 @@ class Connection
 	HTTPResponse _response;
 
 	struct pollfd _pollFd;
+	enum ConnectionType _type;
+	std::string _serverIp;
+	unsigned short _serverPort;
 	bool _hasReadSocket;
 	bool _hasFinishedReading;
 	bool _hasDataToSend;
@@ -42,22 +52,27 @@ class Connection
 	Parser &getParser();
 	HTTPRequest &getRequest();
 	HTTPResponse &getResponse();
+
 	struct pollfd getPollFd() const;
-	bool getHasReadSocket();
-	bool getBodyComplete() const;
-	std::string getChunkData() const;
-	bool getHasFinishedReading();
-	bool getHasDataToSend();
-	bool getHasFinishedSending();
-	bool getCanBeClosed();
+
+	enum ConnectionType getType() const;
+	std::string getServerIp() const;
+	unsigned short getServerPort() const;
+
+	bool getHasReadSocket() const;
+	bool getHasFinishedReading() const;
+	bool getHasDataToSend() const;
+	bool getHasFinishedSending() const;
+	bool getCanBeClosed() const;
+
 	struct pollfd &getPollFd();
 
 	/* Setters */
+	void setType(enum ConnectionType type);
+	void setServerIp(std::string serverIp);
+	void setServerPort(unsigned short serverPort);
+
 	void setHasReadSocket(bool value);
-	void setHeadersComplete(bool headersComplete);
-	void setBodyComplete(bool bodyComplete);
-	void setHeaders(const std::string &headers);
-	void setChunkData(const std::string &chunkData);
 	void setHasFinishedReading(bool value);
 	void setCanBeClosed(bool value);
 	void setHasDataToSend(bool value);
