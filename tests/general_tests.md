@@ -45,6 +45,8 @@ Once the environment is activated, run the `install_packages.sh` script to insta
 
 After activation, you can use the virtual environment to run Python scripts or projects that depend on the installed packages. Remember, you need to reactivate the environment in each new shell session.
 
+`python3 general_tests.py`
+
 ## Deactivation
 
 To deactivate the virtual environment and return to your global Python environment, simply run:
