@@ -10,9 +10,46 @@ UploadHandler::~UploadHandler()
 {
 }
 
+void createFile(HTTPRequest &request)
+{
+	std::vector<File> files = request.getFiles();
+	std::vector<File>::iterator it;
+
+	for (it = files.begin(); it != files.end(); ++it)
+	{
+		if (it->headers.find("filename") == it->headers.end())
+		{
+			std::cout << "422 Unprocessable Entity (Error: file does not have a name)" << std::endl;
+			return;
+		}
+	}
+
+	for (it = files.begin(); it != files.end(); ++it)
+	{
+		std::ofstream outfile((it->headers.find("filename"))->second.c_str());
+		if (outfile.is_open())
+		{
+			outfile << it->fileContent;
+			outfile.close();
+			std::cout << "File created successfully" << std::endl;
+		}
+		else
+			std::cout << "422 Unprocessable Entity (Error creating a file)" << std::endl;
+	}
+}
+
 void UploadHandler::handleRequest(const HTTPRequest &request, HTTPResponse &response)
 {
-
+	if (!request.getUploadBoundary().empty())
+	{
+		createFile(const_cast<HTTPRequest &>(request));
+		handleResponse(response, "success");
+	}
+	else
+	{
+		std::cout << "415 Unsupported Media Type" << std::endl;
+		handleResponse(response, "bad_request");
+	}
 	return;
 }
 
@@ -38,9 +75,11 @@ void UploadHandler::handleResponse(HTTPResponse &response, const std::string &co
 	int statusCode;
 	std::string statusDescription;
 
+	// ADD A MESSAGE WITH THE NAME OF THE FILE CREATED
+
 	if (code == "success")
 	{
-		fileContents = readFileContents("errors/200.html");
+		fileContents = readFileContents("errors/200_upload_success.html");
 		statusCode = 200;
 		statusDescription = "OK";
 	}

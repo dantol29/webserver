@@ -86,36 +86,6 @@ void Server::startPollEventLoop()
 	}
 }
 
-void createFile(HTTPRequest &request)
-{
-	std::vector<File> files = request.getFiles();
-	std::vector<File>::iterator it;
-
-	// check each file
-	for (it = files.begin(); it != files.end(); ++it)
-	{
-		if (it->headers.find("filename") == it->headers.end())
-		{
-			std::cout << "422 Unprocessable Entity (Error: file does not have a name)" << std::endl;
-			return;
-		}
-	}
-
-	// create files
-	for (it = files.begin(); it != files.end(); ++it)
-	{
-		std::ofstream outfile((it->headers.find("filename"))->second.c_str());
-		if (outfile.is_open())
-		{
-			outfile << it->fileContent;
-			outfile.close();
-			std::cout << "File created successfully" << std::endl;
-		}
-		else
-			std::cout << "422 Unprocessable Entity (Error creating a file)" << std::endl;
-	}
-}
-
 void Server::readFromClient(Connection &conn, size_t &i, Parser &parser, HTTPRequest &request, HTTPResponse &response)
 {
 	(void)i;
@@ -225,10 +195,6 @@ void Server::buildResponse(Connection &conn, size_t &i, HTTPRequest &request, HT
 		response.setErrorResponse(response.getStatusCode());
 		conn.setHasDataToSend(true);
 		return;
-	}
-	if (!request.getUploadBoundary().empty())
-	{
-		createFile(request);
 	}
 	// std::cout << request.getRequestTarget() << std::endl;
 	// TODO: The Router should be a member of the Server class or of the Connection class
