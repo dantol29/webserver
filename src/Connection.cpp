@@ -18,6 +18,8 @@ Connection::Connection(const Connection &other)
 {
 	_pollFd = other._pollFd;
 	_response = other._response;
+	_request = other._request;
+	_parser = other._parser;
 	_hasReadSocket = other._hasReadSocket;
 	_hasFinishedReading = other._hasFinishedReading;
 	_hasDataToSend = other._hasDataToSend;
@@ -33,6 +35,13 @@ Connection &Connection::operator=(const Connection &other)
 	{
 		_pollFd = other._pollFd;
 		_response = other._response;
+		_request = other._request;
+		_parser = other._parser;
+		_hasReadSocket = other._hasReadSocket;
+		_hasFinishedReading = other._hasFinishedReading;
+		_hasDataToSend = other._hasDataToSend;
+		_hasFinishedSending = other._hasFinishedSending;
+		_canBeClosed = other._canBeClosed;
 	}
 	std::cout << "Connection object assigned" << std::endl;
 	return *this;
