@@ -11,13 +11,22 @@ UploadHandler::~UploadHandler()
 {
 }
 
+#include <filesystem> // Include the header for std::filesystem
+
+// Function to handle file creation based on HTTP request data
 void createFile(HTTPRequest &request)
 {
+	// Directory to store uploaded files
+	const std::string uploadDir = "upload/";
+
+	// Retrieve the list of files from the HTTP request
 	std::vector<File> files = request.getFiles();
 	std::vector<File>::iterator it;
 
+	// First loop to validate that each file has a "filename" header
 	for (it = files.begin(); it != files.end(); ++it)
 	{
+		// Check if the "filename" header is missing
 		if (it->headers.find("filename") == it->headers.end())
 		{
 			std::cout << "422 Unprocessable Entity (Error: file does not have a name)" << std::endl;
@@ -25,17 +34,27 @@ void createFile(HTTPRequest &request)
 		}
 	}
 
+	// Second loop to create files using the information from the headers
 	for (it = files.begin(); it != files.end(); ++it)
 	{
-		std::ofstream outfile((it->headers.find("filename"))->second.c_str());
+		// Construct the full path by prepending the upload directory
+		std::string filePath = uploadDir + (it->headers.find("filename"))->second;
+
+		// Open a file with the name specified in the "filename" header under the upload directory
+		std::ofstream outfile(filePath.c_str());
 		if (outfile.is_open())
 		{
+			// Write the file content from the request into the newly created file
 			outfile << it->fileContent;
+			// Close the file to flush the buffer and release the file handle
 			outfile.close();
-			std::cout << "File created successfully" << std::endl;
+			std::cout << "File created successfully at " << filePath << std::endl;
 		}
 		else
-			std::cout << "422 Unprocessable Entity (Error creating a file)" << std::endl;
+		{
+			// If the file couldn't be opened or created, output an appropriate error message
+			std::cout << "422 Unprocessable Entity (Error creating a file at " << filePath << ")" << std::endl;
+		}
 	}
 }
 
