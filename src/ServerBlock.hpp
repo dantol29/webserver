@@ -13,7 +13,7 @@ struct Variables
 {
 	std::string _listen;
 	std::vector<std::string> _serverName;
-	std::vector<int, std::string> _errorPage;
+	std::pair<int, std::string> _errorPage;
 	std::vector<std::string> _index;
 	std::string _root;
 	size_t _clientMaxBodySize;
@@ -38,7 +38,7 @@ class ServerBlock
 		std::vector<Variables> getLocations() const; // location / {} blocks
 		std::string getListen() const;
 		std::vector<std::string> getServerName() const;
-		std::vector<int, std::string> getErrorPage() const;
+		std::pair<int, std::string> getErrorPage() const;
 		std::vector<std::string> getIndex() const;
 		std::string getRoot() const;
 		size_t getClientMaxBodySize() const;

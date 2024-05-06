@@ -351,14 +351,16 @@ std::ostream& operator<<(std::ostream& out, const Config& a)
 		std::cout << "server_name: ";
 		for (unsigned int i = 0; i < var._serverName.size(); ++i)
 			std::cout << var._serverName[i] << " ";
-		std::cout << "error_page: ";
-		for (unsigned int i = 0; i < var._errorPage.size(); ++i)
-			std::cout << var._errorPage[i].first << " " << var._errorPage[i].second << " ";
-		std::cout << "index: " << var._index << std::endl;
+		std::cout << "error_page: " << var._errorPage.first << " " << var._errorPage.second << std::endl;
+		std::cout << "index: ";
+		for (unsigned int i = 0; i < var._index.size(); ++i)
+			std::cout << var._index[i] << " ";
 		std::cout << "root: " << var._root << std::endl;
 		std::cout << "client_max_body_size: " << var._clientMaxBodySize << std::endl;
 		std::cout << "autoindex: " << var._autoindex << std::endl;
-		std::cout << "allowed_methods: " << var._allowedMethods << std::endl;
+		std::cout << "allowed_methods: ";
+		for (unsigned int i = 0; i < var._allowedMethods.size(); ++i)
+			std::cout << var._allowedMethods[i] << " ";
 		std::cout << "alias: " << var._alias << std::endl;
 
 		for (unsigned int i = 0; i < loc.size(); ++i)
@@ -366,13 +368,18 @@ std::ostream& operator<<(std::ostream& out, const Config& a)
 			std::cout << "------------------Location-Block------------------------" << std::endl;
 			std::cout << "path: " << loc[i]._path << std::endl;
 			std::cout << "listen: " << loc[i]._listen << std::endl;
-			std::cout << "server_name: " << loc[i]._serverName << std::endl;
-			std::cout << "error_page: " << loc[i]._errorPage << std::endl;
-			std::cout << "index: " << loc[i]._index << std::endl;
+			std::cout << "server_name: ";
+			for (unsigned int i = 0; i < loc[i]._serverName.size(); ++i)
+				std::cout << loc[i]._serverName[i] << " ";
+			std::cout << "error_page: " << loc[i]._errorPage.first << " " << loc[i]._errorPage.second << std::endl;	
+			for (unsigned int i = 0; i < loc[i]._index.size(); ++i)
+				std::cout << loc[i]._index[i] << " ";
 			std::cout << "root: " << loc[i]._root << std::endl;
 			std::cout << "client_max_body_size: " << loc[i]._clientMaxBodySize << std::endl;
 			std::cout << "autoindex: " << loc[i]._autoindex << std::endl;
-			std::cout << "allowed_methods: " << loc[i]._allowedMethods << std::endl;
+			std::cout << "allowed_methods: ";
+			for (unsigned int i = 0; i < loc[i]._allowedMethods.size(); ++i)
+				std::cout << loc[i]._allowedMethods[i] << " ";
 			std::cout << "alias: " << loc[i]._alias << std::endl;
 		}
 		std::cout << "------------------END---------------------------------" << std::endl;

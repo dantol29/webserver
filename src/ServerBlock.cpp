@@ -94,7 +94,7 @@ std::vector<std::string> ServerBlock::getServerName() const
 	return (_variables._serverName);
 }
 
-std::vector<int, std::string> ServerBlock::getErrorPage() const
+std::pair<int, std::string> ServerBlock::getErrorPage() const
 {
 	return (_variables._errorPage);
 }
