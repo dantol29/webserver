@@ -27,7 +27,6 @@ class Config
 		bool		saveVariable(const std::string& line);
 		bool		saveLocationVariable(const std::string& line, std::string& key, std::string& value);
 		bool		isLocation(const std::string& line);
-		bool		checkVariablesKey();
 		bool		checkVariablesValue(std::map<std::string, std::string> var);
 		bool		checkErrorPage(std::map<std::string, std::string> list);
 		bool		pathExists(std::map<std::string, std::string> list, std::string variable);
