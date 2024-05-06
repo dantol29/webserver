@@ -23,13 +23,22 @@ jobs:
           python3 -m pip install aiohttp asyncio
       - name: Start webserv in background
         run: ./webserv &
-      - name: Run Python tests in tests folder
+      - name: Run Config file tests
+        working-directory: tests/config
+        run: |
+          ./config_test.sh
+          exit_code=$?
+           if [ $exit_code -ne 0 ]; then
+            echo "❌ Tests failed. Exiting with status code $exit_code."
+            exit $exit_code
+           fi
+      - name: Run Python tests
         working-directory: tests # Set working directory to 'tests'
         run: |
           python3 general_tests.py
-           exit_code=$? # Get the exit code of the previous command
+           exit_code=$?
            if [ $exit_code -ne 0 ]; then
             echo "❌ Tests failed. Exiting with status code $exit_code."
-            exit $exit_code # Exit the job with the same status code as the Python script
+            exit $exit_code
            fi
       - run: echo "🍏 This job's status is ${{ job.status }}."
