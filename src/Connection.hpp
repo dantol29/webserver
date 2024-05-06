@@ -26,12 +26,10 @@ class Connection
 	bool _hasFinishedSending;
 	bool _canBeClosed;
 
-	// Additional client state can be managed here
-
   public:
 	Connection(struct pollfd &pollFd, Server &server);
-	Connection(const Connection &other);			// Copy constructor
-	Connection &operator=(const Connection &other); // Copy assignment operator
+	Connection(const Connection &other);
+	Connection &operator=(const Connection &other);
 	~Connection();
 
 	bool readHeaders(Parser &parser);
@@ -64,7 +62,6 @@ class Connection
 	void setCanBeClosed(bool value);
 	void setHasDataToSend(bool value);
 	void setHasFinishedSending(bool value);
-	// We will not provide the setter for HTTPResponse as it should be managed by the HTTPResponse class
 	/* Debugging */
 	void printConnection() const;
 };
