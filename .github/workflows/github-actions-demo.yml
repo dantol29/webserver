@@ -35,8 +35,8 @@ jobs:
             echo "✅ Config file tests passed."
             echo "::set-output name=config_tests_correct::true"
            fi
-        id: config_tests
       - name: Run Python tests
+        if: always()
         working-directory: tests # Set working directory to 'tests'
         run: |
           python3 general_tests.py
