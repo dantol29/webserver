@@ -38,7 +38,11 @@ void Server::startPollEventLoop()
 		int ret = poll(_FDs.data(), _FDs.size(), -1);
 		if (ret > 0)
 		{
-			for (size_t i = 0; i < _FDs.size(); i++)
+			size_t originalSize = _FDs.size();
+			// if _FDs becomes bigger than originalSize we don't want to loop over the new elements before we finish the
+			// old ones if _FDs becomes smaller than originalSize we don't want to loop over the old elements that are
+			// not in _FDs anymore
+			for (size_t i = 0; i < originalSize && i < _FDs.size(); i++)
 			{
 				if (_FDs[i].revents & (POLLIN | POLLOUT))
 				{
