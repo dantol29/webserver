@@ -287,9 +287,9 @@ void Config::parse(const char *file)
 		if (!parseFile(file))
 			return ;
 	}
-	catch (std::exception error){
-		std::cout << "Exception caught: " << error.what() << std::endl;
-		_errorMessage = "Exception";
+	catch (const char* error){
+		std::cout << "Exception caught: " << std::endl;
+		_errorMessage = error;
 	}
 
 	// for (std::vector<ServerBlock>::iterator it = _server.begin(); it != _server.end(); ++it)
