@@ -243,12 +243,43 @@ void Server::writeToClient(Connection &conn, size_t &i, HTTPResponse &response)
 {
 	std::cout << "\033[1;36m" << "Entering writeToClient" << "\033[0m" << std::endl;
 	(void)i;
-	send(conn.getPollFd().fd, response.objToString().c_str(), response.objToString().size(), 0);
-	// conn.setHasDataToSend(); will not be always false in case of chunked response or keep-alive connection
-	conn.setHasDataToSend(false);
-	conn.setHasFinishedSending(true);
-	// setCanBeClosed(true) would not be the case only if we have a keep-alive connection or a chunked response
-	conn.setCanBeClosed(true);
+	
+	if (conn.getResponseSizeSent() == 0){
+		std::cout << RED << "string" << response.objToString() << RESET << std::endl;
+		conn.setResponseString(response.objToString());
+		conn.setResponseSize(response.objToString().size());
+	}
+
+	if (conn.getResponseSizeSent() == conn.getResponseSize())
+	{
+		std::cout << "Response sent" << std::endl;
+		conn.setHasDataToSend(false);
+		conn.setHasFinishedSending(true);
+		conn.setCanBeClosed(true);
+		return;
+	}
+	if (conn.getResponseString().size() < BUFFER_SIZE)
+	{
+		std::cout << "Sending last part of the response" << std::endl;
+		send(conn.getPollFd().fd, conn.getResponseString().c_str(), conn.getResponseString().size(), 0);
+		conn.setResponseSizeSent(conn.getResponseSizeSent() + conn.getResponseString().size());
+		conn.setResponseString("");
+		return;
+	}
+	std::cout << "Sending part of the response" << std::endl;
+	std::cout << "Response size: " << conn.getResponseString().size() << std::endl;
+	std::cout << "pollfd fd: " << conn.getPollFd().fd << std::endl;
+	std::cout << "string to send: " << conn.getResponseString().c_str() << std::endl;
+	int read = send(conn.getPollFd().fd, conn.getResponseString().c_str(), BUFFER_SIZE, 0);
+	std::cout << "Read: " << read << std::endl;
+	if (read == -1)
+	{
+		perror("send");
+	}
+	std::cout << "Response size sent: " << conn.getResponseSizeSent() << std::endl;
+	conn.setResponseSizeSent(conn.getResponseSizeSent() + BUFFER_SIZE);
+	conn.setResponseString(conn.getResponseString().substr(BUFFER_SIZE));
+	// response.getBody().erase(0, BUFFER_SIZE);
 }
 
 void Server::closeClientConnection(Connection &conn, size_t &i)

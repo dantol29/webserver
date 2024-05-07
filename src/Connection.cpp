@@ -15,6 +15,9 @@ Connection::Connection(struct pollfd &pollFd, Server &server)
 	_hasDataToSend = false;
 	_hasFinishedSending = false;
 	_canBeClosed = false;
+	_responseSize = 0;
+	_responseSizeSent = 0;
+	_responseString = "";
 }
 
 Connection::Connection(const Connection &other)
@@ -33,6 +36,9 @@ Connection::Connection(const Connection &other)
 	_hasDataToSend = other._hasDataToSend;
 	_hasFinishedSending = other._hasFinishedSending;
 	_canBeClosed = other._canBeClosed;
+	_responseSize = other._responseSize;
+	_responseSizeSent = other._responseSizeSent;
+	_responseString = other._responseString;
 
 	std::cout << "Connection object copied" << std::endl;
 }
@@ -53,6 +59,9 @@ Connection &Connection::operator=(const Connection &other)
 		_hasDataToSend = other._hasDataToSend;
 		_hasFinishedSending = other._hasFinishedSending;
 		_canBeClosed = other._canBeClosed;
+		_responseSize = other._responseSize;
+		_responseSizeSent = other._responseSizeSent;
+		_responseString = other._responseString;
 	}
 	std::cout << "Connection object assigned" << std::endl;
 	return *this;
@@ -66,6 +75,15 @@ Connection::~Connection()
 // GETTERS AND SETTERS
 
 // GETTERS
+size_t Connection::getResponseSize() const
+{
+	return _responseSize;
+}
+
+size_t Connection::getResponseSizeSent() const
+{
+	return _responseSizeSent;
+}
 
 HTTPResponse &Connection::getResponse()
 {
@@ -94,6 +112,11 @@ struct pollfd &Connection::getPollFd()
 enum ConnectionType Connection::getType() const
 {
 	return _type;
+}
+
+std::string Connection::getResponseString() const
+{
+	return _responseString;
 }
 
 std::string Connection::getServerIp() const
@@ -132,6 +155,16 @@ bool Connection::getCanBeClosed() const
 
 // SETTERS
 
+void Connection::setResponseSize(size_t responseSize)
+{
+	_responseSize = responseSize;
+}
+
+void Connection::setResponseSizeSent(size_t responseSizeSent)
+{
+	_responseSizeSent = responseSizeSent;
+}
+
 void Connection::setType(enum ConnectionType type)
 {
 	_type = type;
@@ -162,6 +195,11 @@ void Connection::setHasDataToSend(bool value)
 	if (value == true)
 		_pollFd.events = POLLOUT;
 	_hasDataToSend = value;
+}
+
+void Connection::setResponseString(std::string responseString)
+{
+	_responseString = responseString;
 }
 
 void Connection::setHasFinishedSending(bool value)
