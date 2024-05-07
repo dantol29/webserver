@@ -64,10 +64,8 @@ bool	Config::saveVariable(const std::string& line)
 
 	if (line[i++] != ';' || i < line.length()) // [;]
 		return (false);
-	// TODO: line[i + 1] != '\0'
 
-	_tmpServer.addVariable(key, value);
-	return (true);
+	return (_tmpServer.addVariable(key, value, false));
 }
 
 // [TAB][LOCATION][SP][/PATH][SP][{]
@@ -132,20 +130,21 @@ bool	Config::saveLocationVariable(const std::string& line, std::string& key, std
 	return (true);
 }
 
-bool	Config::parseLocation(std::string& line, std::ifstream& config){
-	std::map<std::string, std::string> var;
+bool	Config::parseLocation(std::string& line, std::ifstream& config)
+{
 	std::string	key;
 	std::string	value;
 
-	var.insert(std::make_pair("path", _tmpPath));
-	while (std::getline(config, line)){
+	_tmpServer.addVariable("path", _tmpPath, true);
+	while (std::getline(config, line))
+	{
 		if (line == "\t}")
 			break ;
 		if (!saveLocationVariable(line, key, value))
 			return (error("Config file: Syntax error"));
-		var.insert(std::make_pair(key, value));
+		if (!_tmpServer.addVariable(key, value, true))
+			return (false);
 	}
-	_tmpServer.addLocation(var);
 	return (true);
 }
 
@@ -189,38 +188,6 @@ bool	Config::parseFile(const char *file)
 	return (true);
 }
 
-bool	Config::checkVariablesKey(){
-	std::string var[] = {"listen", "host", "server_name", "error_page", \
-	"index", "root", "client_max_body_size", "autoindex", "allow_methods", \
-	"alias", "cgi_path", "cgi_ext"};
-	std::list<std::string> validVar(var, var + sizeof(var) / sizeof(var[0]));
-
-	for (std::vector<ServerBlock>::iterator it = _server.begin(); it != _server.end(); ++it)
-	{
-		std::map<std::string, std::string> variables = it->getVariables();
-		std::vector<std::map<std::string, std::string> > locations = it->getLocations();
-		
-		// variables outside of locations
-		for (std::map<std::string, std::string>::iterator it = variables.begin(); it != variables.end(); ++it){
-			if (std::find(validVar.begin(), validVar.end(), it->first) == validVar.end())
-				return (error("Config file: Invalid variable"));
-		}
-
-		// location variables
-		for (unsigned int i = 0; i < locations.size(); ++i){
-			for (std::map<std::string, std::string>::iterator it = locations[i].begin(); it != locations[i].end(); ++it){
-				if (it->first == "path")
-					continue;
-				if (std::find(validVar.begin(), validVar.end(), it->first) == validVar.end())
-					return (error("Config file: Invalid variable(in the location)"));
-			}
-		}
-
-	}
-
-	return (true);
-}
-
 bool	Config::pathExists(std::map<std::string, std::string> list, std::string variable)
 {
 	std::map<std::string, std::string>::iterator it;
@@ -243,128 +210,99 @@ bool	Config::pathExists(std::map<std::string, std::string> list, std::string var
 	return (true);
 }
 
-bool	Config::checkErrorPage(std::map<std::string, std::string> list)
-{
-	// count1 and count2 to check if both path and number are present
-	int				count1 = 0;
-	int				count2 = 0;
-	unsigned int	start = 0;
-	std::map<std::string, std::string>::iterator it;
+// bool	Config::checkVariablesValue(Variables var)
+// {
+// 	std::string tmp_meth[] = {"GET", "POST", "DELETE"};
+// 	std::string tmp_cgi[] = {".py", ".php", ".pl", ".cgi"};
+// 	std::list<std::string> methods(tmp_meth, tmp_meth + sizeof(tmp_meth) / sizeof(tmp_meth[0]));
+// 	std::list<std::string> cgi_ext(tmp_cgi, tmp_cgi + sizeof(tmp_cgi) / sizeof(tmp_cgi[0]));
+// 	unsigned int	start = 0;
 
-	it = list.find("error_page");
-	if (it != list.end()){
-		for (unsigned int i = 0; i < it->second.length(); ++i){
-			start = i;
-			while (i < it->second.length() && it->second[i] != ' ')
-				i++;
-			if (access((it->second.substr(start, i - start)).c_str(), F_OK) == 0){
-				if (isVulnerablePath(it->second.substr(start, i - start)))
-					return (error("Config file: Path is vulnerable"));
-				count1++;
-				continue ;
-			}
-			if (!isValidErrorCode(it->second.substr(start, i - start)))
-				return (error("Config file: Invalid error_page"));
-			count2++;
-		}
-		if (count1 == 0 || count1 > 1 || count2 == 0)
-			return (error("Config file: Invalid error_page"));
-	}
-	return (true);
-}
-
-
-bool	Config::checkVariablesValue(std::map<std::string, std::string> var)
-{
-	std::string tmp_meth[] = {"GET", "POST", "DELETE"};
-	std::string tmp_cgi[] = {".py", ".php", ".pl", ".cgi"};
-	std::list<std::string> methods(tmp_meth, tmp_meth + sizeof(tmp_meth) / sizeof(tmp_meth[0]));
-	std::list<std::string> cgi_ext(tmp_cgi, tmp_cgi + sizeof(tmp_cgi) / sizeof(tmp_cgi[0]));
-	std::map<std::string, std::string>::iterator it;
-	unsigned int	start = 0;
-
-	// // ROOT
-	// if (!pathExists(var, "root"))
-	// 	return (false);
-	// ALIAS
-	if (!pathExists(var, "alias"))
-		return (false);
-	// CGI_PATH
-	if (!pathExists(var, "cgi_path"))
-		return (false);
-	// ERROR_PAGE
-	if (!checkErrorPage(var))
-		return (false);
-	// ALLOW_METHODS
-	it = var.find("allow_methods");
-	if (it != var.end()){
-		for (unsigned int i = 0; i < it->second.length(); ++i){
-			start = i;
-			while (i < it->second.length() && it->second[i] != ' ')
-				i++;
-			if (std::find(methods.begin(), methods.end(), it->second.substr(start, i - start)) == methods.end())
-				return (error("Config file: Invalid allow_method"));
-		}
-	}
-	// AUTOINDEX
-	it = var.find("autoindex");
-	if (it != var.end())
-		if (it->second != "on")
-			return (error("Config file: Invalid autoindex"));
-	// CLIENT_MAX_BODY_SIZE
-	it = var.find("client_max_body_size");
-	if (it != var.end()){
-		if (!isNumber(it->second))
-			return (error("Config file: Invalid client_max_body_size"));
-	}
-	// CGI_EXT
-	it = var.find("cgi_ext");
-	if (it != var.end()){
-		for (unsigned int i = 0; i < it->second.length(); ++i){
-			start = i;
-			while (i < it->second.length() && it->second[i] != ' ')
-				i++;
-			if (std::find(cgi_ext.begin(), cgi_ext.end(), it->second.substr(start, i - start)) == cgi_ext.end())
-				return (error("Config file: Invalid cgi_ext"));
-		}
-	}
-	// INDEX
-	it = var.find("index");
-	if (it != var.end()){
-		for (unsigned int i = 0; i < it->second.length(); ++i){
-			start = i;
-			while (i < it->second.length() && it->second[i] != ' ')
-				i++;
-			if (access((it->second.substr(start, i - start)).c_str(), F_OK) == 0){
-				if (isVulnerablePath(it->second.substr(start, i - start)))
-					return (error("Config file: Path is vulnerable"));
-				return (true);
-			}
-		}
-		return (error("Config file: Invalid index"));
-	}
-	return (true);
-}
+// 	// // ROOT
+// 	// if (!pathExists(var, "root"))
+// 	// 	return (false);
+// 	// ALIAS
+// 	if (!pathExists(var, "alias"))
+// 		return (false);
+// 	// CGI_PATH
+// 	if (!pathExists(var, "cgi_path"))
+// 		return (false);
+// 	// ERROR_PAGE
+// 	if (!checkErrorPage(var))
+// 		return (false);
+// 	// ALLOW_METHODS
+// 	it = var.find("allow_methods");
+// 	if (it != var.end()){
+// 		for (unsigned int i = 0; i < it->second.length(); ++i){
+// 			start = i;
+// 			while (i < it->second.length() && it->second[i] != ' ')
+// 				i++;
+// 			if (std::find(methods.begin(), methods.end(), it->second.substr(start, i - start)) == methods.end())
+// 				return (error("Config file: Invalid allow_method"));
+// 		}
+// 	}
+// 	// AUTOINDEX
+// 	it = var.find("autoindex");
+// 	if (it != var.end())
+// 		if (it->second != "on")
+// 			return (error("Config file: Invalid autoindex"));
+// 	// CLIENT_MAX_BODY_SIZE
+// 	it = var.find("client_max_body_size");
+// 	if (it != var.end()){
+// 		if (!isNumber(it->second))
+// 			return (error("Config file: Invalid client_max_body_size"));
+// 	}
+// 	// CGI_EXT
+// 	it = var.find("cgi_ext");
+// 	if (it != var.end()){
+// 		for (unsigned int i = 0; i < it->second.length(); ++i){
+// 			start = i;
+// 			while (i < it->second.length() && it->second[i] != ' ')
+// 				i++;
+// 			if (std::find(cgi_ext.begin(), cgi_ext.end(), it->second.substr(start, i - start)) == cgi_ext.end())
+// 				return (error("Config file: Invalid cgi_ext"));
+// 		}
+// 	}
+// 	// INDEX
+// 	it = var.find("index");
+// 	if (it != var.end()){
+// 		for (unsigned int i = 0; i < it->second.length(); ++i){
+// 			start = i;
+// 			while (i < it->second.length() && it->second[i] != ' ')
+// 				i++;
+// 			if (access((it->second.substr(start, i - start)).c_str(), F_OK) == 0){
+// 				if (isVulnerablePath(it->second.substr(start, i - start)))
+// 					return (error("Config file: Path is vulnerable"));
+// 				return (true);
+// 			}
+// 		}
+// 		return (error("Config file: Invalid index"));
+// 	}
+// 	return (true);
+// }
 
 void Config::parse(const char *file)
 {
-	if (!parseFile(file))
-		return ;
-
-	if (!checkVariablesKey())
-		return ;
-
-	for (std::vector<ServerBlock>::iterator it = _server.begin(); it != _server.end(); ++it)
-	{
-		// check variables outside of locations
-		if (!checkVariablesValue(it->getVariables()))
+	try{
+		if (!parseFile(file))
 			return ;
-
-		// check each location variables values
-		for (unsigned int i = 0; i < it->getLocations().size(); ++i)
-			if (!checkVariablesValue(it->getLocations()[i]))
-				return ;
 	}
+	catch (std::exception error){
+		std::cout << "Exception caught: " << error.what() << std::endl;
+		_errorMessage = "Exception";
+	}
+
+	// for (std::vector<ServerBlock>::iterator it = _server.begin(); it != _server.end(); ++it)
+	// {
+	// 	// check variables outside of locations
+	// 	if (!checkVariablesValue(it->getVariables()))
+	// 		return ;
+
+	// 	// check each location variables values
+	// 	for (unsigned int i = 0; i < it->getLocations().size(); ++i)
+	// 		if (!checkVariablesValue(it->getLocations()[i]))
+	// 			return ;
+	// }
 }
 
 std::ostream& operator<<(std::ostream& out, const Config& a)
@@ -379,16 +317,46 @@ std::ostream& operator<<(std::ostream& out, const Config& a)
 
 	for (std::vector<ServerBlock>::iterator it = server.begin(); it != server.end(); ++it)
 	{
-		std::map<std::string, std::string> var = it->getVariables();
-		std::vector<std::map<std::string, std::string> > loc = it->getLocations();
+		Directives var = it->getVariables();
+		std::vector<Directives> loc = it->getLocations();
 
 		std::cout << "------------------Server-Block------------------------" << std::endl;
-		for (std::map<std::string, std::string>::iterator it = var.begin(); it != var.end(); ++it)
-			out << "Key: " << it->first << ", Value: " << it->second << std::endl;
-		for (unsigned int i = 0; i < loc.size(); ++i){
-		for (std::map<std::string, std::string>::iterator it = loc[i].begin(); it != loc[i].end(); it++)
-			out << i << "LKey: " << it->first << ":" << ", LValue: " << it->second << ":"<< std::endl;
+		std::cout << "listen: " << var._listen << std::endl;
+		std::cout << "server_name: ";
+		for (unsigned int i = 0; i < var._serverName.size(); ++i)
+			std::cout << var._serverName[i] << " ";
+		std::cout << "error_page: " << var._errorPage.first << " " << var._errorPage.second << std::endl;
+		std::cout << "index: ";
+		for (unsigned int i = 0; i < var._index.size(); ++i)
+			std::cout << var._index[i] << " ";
+		std::cout << "root: " << var._root << std::endl;
+		std::cout << "client_max_body_size: " << var._clientMaxBodySize << std::endl;
+		std::cout << "autoindex: " << var._autoindex << std::endl;
+		std::cout << "allowed_methods: ";
+		for (unsigned int i = 0; i < var._allowedMethods.size(); ++i)
+			std::cout << var._allowedMethods[i] << " ";
+		std::cout << "alias: " << var._alias << std::endl;
+
+		for (unsigned int i = 0; i < loc.size(); ++i)
+		{
+			std::cout << "------------------Location-Block------------------------" << std::endl;
+			std::cout << "path: " << loc[i]._path << std::endl;
+			std::cout << "listen: " << loc[i]._listen << std::endl;
+			std::cout << "server_name: ";
+			for (unsigned int i = 0; i < loc[i]._serverName.size(); ++i)
+				std::cout << loc[i]._serverName[i] << " ";
+			std::cout << "error_page: " << loc[i]._errorPage.first << " " << loc[i]._errorPage.second << std::endl;	
+			for (unsigned int i = 0; i < loc[i]._index.size(); ++i)
+				std::cout << loc[i]._index[i] << " ";
+			std::cout << "root: " << loc[i]._root << std::endl;
+			std::cout << "client_max_body_size: " << loc[i]._clientMaxBodySize << std::endl;
+			std::cout << "autoindex: " << loc[i]._autoindex << std::endl;
+			std::cout << "allowed_methods: ";
+			for (unsigned int i = 0; i < loc[i]._allowedMethods.size(); ++i)
+				std::cout << loc[i]._allowedMethods[i] << " ";
+			std::cout << "alias: " << loc[i]._alias << std::endl;
 		}
+		std::cout << "------------------END---------------------------------" << std::endl;
 	}
 
 	return (out);
