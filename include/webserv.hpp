@@ -11,6 +11,8 @@
 #include <vector>
 #include <algorithm>
 
+#define CONFIG_FILE_DEFAULT_PATH "./webserv.conf"
+
 template <typename T>
 std::string toString(const T &value)
 {

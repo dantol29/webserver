@@ -21,14 +21,14 @@ Config &Config::operator=(const Config &obj)
 {
 	if (this == &obj)
 		return (*this);
-	_server = obj._server;
+	_serverBlocks = obj._serverBlocks;
 	_errorMessage = obj._errorMessage;
 	return (*this);
 }
 
 std::vector<ServerBlock> Config::getServerBlocks() const
 {
-	return (_server);
+	return (_serverBlocks);
 }
 
 std::string Config::getErrorMessage() const
@@ -43,7 +43,7 @@ bool Config::error(std::string message)
 }
 
 // [TAB][KEY][SP][VALUE][;]
-bool Config::saveVariable(const std::string &line)
+bool Config::saveDirective(const std::string &line)
 {
 	std::string key;
 	std::string value;
@@ -67,7 +67,7 @@ bool Config::saveVariable(const std::string &line)
 	if (line[i++] != ';' || i < line.length()) // [;]
 		return (false);
 
-	return (_tmpServer.addVariable(key, value, false));
+	return (_tmpServerBlock.addVariable(key, value, false));
 }
 
 // [TAB][LOCATION][SP][/PATH][SP][{]
@@ -105,7 +105,7 @@ bool Config::isLocation(const std::string &line)
 }
 
 // [TAB][TAB][KEY][SP][VALUE][;]
-bool Config::saveLocationVariable(const std::string &line, std::string &key, std::string &value)
+bool Config::saveLocationDirective(const std::string &line, std::string &key, std::string &value)
 {
 	unsigned int i = 0;
 	int start;
@@ -137,24 +137,22 @@ bool	Config::parseLocation(std::string& line, std::ifstream& config)
 	std::string	key;
 	std::string	value;
 
-	_tmpServer.addVariable("path", _tmpPath, true);
+	_tmpServerBlock.addVariable("path", _tmpPath, true);
 	while (std::getline(config, line))
 	{
 		if (line == "\t}")
 			break;
-		if (!saveLocationVariable(line, key, value))
+		if (!saveLocationDirective(line, key, value))
 			return (error("Config file: Syntax error"));
-		if (!_tmpServer.addVariable(key, value, true))
+		if (!_tmpServerBlock.addVariable(key, value, true))
 			return (false);
 	}
 	return (true);
 }
 
-bool Config::parseFile(const char *file)
+bool Config::parse(std::ifstream &config)
 {
 	std::string line;
-	std::ifstream config(file);
-
 	if (!config.is_open())
 		return (error("Config file: Invalid file"));
 
@@ -175,17 +173,17 @@ bool Config::parseFile(const char *file)
 				continue;
 			if (line == "}") // end of server blcok
 			{
-				_server.push_back(_tmpServer);
+				_serverBlocks.push_back(_tmpServerBlock);
 				break;
 			}
 			if (isLocation(line)) // start of location block
 				parseLocation(line, config);
-			else if (!saveVariable(line)) // variables outside of location
+			else if (!saveDirective(line)) // variables outside of location
 				return (error("Config file: Syntax error (invalid var in the root)"));
 		}
-		_tmpServer.deleteData(); // delete saved data
+		_tmpServerBlock.deleteData(); // delete saved data
 	}
-	if (_server.size() < 1)
+	if (_serverBlocks.size() < 1)
 		return (error("Config file: No valid server blocks"));
 	return (true);
 }
@@ -212,101 +210,6 @@ bool Config::pathExists(std::map<std::string, std::string> list, std::string var
 		}
 	}
 	return (true);
-}
-
-// bool	Config::checkVariablesValue(Variables var)
-// {
-// 	std::string tmp_meth[] = {"GET", "POST", "DELETE"};
-// 	std::string tmp_cgi[] = {".py", ".php", ".pl", ".cgi"};
-// 	std::list<std::string> methods(tmp_meth, tmp_meth + sizeof(tmp_meth) / sizeof(tmp_meth[0]));
-// 	std::list<std::string> cgi_ext(tmp_cgi, tmp_cgi + sizeof(tmp_cgi) / sizeof(tmp_cgi[0]));
-// 	unsigned int	start = 0;
-
-// 	// // ROOT
-// 	// if (!pathExists(var, "root"))
-// 	// 	return (false);
-// 	// ALIAS
-// 	if (!pathExists(var, "alias"))
-// 		return (false);
-// 	// CGI_PATH
-// 	if (!pathExists(var, "cgi_path"))
-// 		return (false);
-// 	// ERROR_PAGE
-// 	if (!checkErrorPage(var))
-// 		return (false);
-// 	// ALLOW_METHODS
-// 	it = var.find("allow_methods");
-// 	if (it != var.end()){
-// 		for (unsigned int i = 0; i < it->second.length(); ++i){
-// 			start = i;
-// 			while (i < it->second.length() && it->second[i] != ' ')
-// 				i++;
-// 			if (std::find(methods.begin(), methods.end(), it->second.substr(start, i - start)) == methods.end())
-// 				return (error("Config file: Invalid allow_method"));
-// 		}
-// 	}
-// 	// AUTOINDEX
-// 	it = var.find("autoindex");
-// 	if (it != var.end())
-// 		if (it->second != "on")
-// 			return (error("Config file: Invalid autoindex"));
-// 	// CLIENT_MAX_BODY_SIZE
-// 	it = var.find("client_max_body_size");
-// 	if (it != var.end()){
-// 		if (!isNumber(it->second))
-// 			return (error("Config file: Invalid client_max_body_size"));
-// 	}
-// 	// CGI_EXT
-// 	it = var.find("cgi_ext");
-// 	if (it != var.end()){
-// 		for (unsigned int i = 0; i < it->second.length(); ++i){
-// 			start = i;
-// 			while (i < it->second.length() && it->second[i] != ' ')
-// 				i++;
-// 			if (std::find(cgi_ext.begin(), cgi_ext.end(), it->second.substr(start, i - start)) == cgi_ext.end())
-// 				return (error("Config file: Invalid cgi_ext"));
-// 		}
-// 	}
-// 	// INDEX
-// 	it = var.find("index");
-// 	if (it != var.end()){
-// 		for (unsigned int i = 0; i < it->second.length(); ++i){
-// 			start = i;
-// 			while (i < it->second.length() && it->second[i] != ' ')
-// 				i++;
-// 			if (access((it->second.substr(start, i - start)).c_str(), F_OK) == 0){
-// 				if (isVulnerablePath(it->second.substr(start, i - start)))
-// 					return (error("Config file: Path is vulnerable"));
-// 				return (true);
-// 			}
-// 		}
-// 		return (error("Config file: Invalid index"));
-// 	}
-// 	return (true);
-// }
-
-void Config::parse(const char *file)
-{
-	try{
-		if (!parseFile(file))
-			return ;
-	}
-	catch (const char* error){
-		std::cout << "Exception caught: " << std::endl;
-		_errorMessage = error;
-	}
-
-	// for (std::vector<ServerBlock>::iterator it = _server.begin(); it != _server.end(); ++it)
-	// {
-	// 	// check variables outside of locations
-	// 	if (!checkVariablesValue(it->getVariables()))
-	// 		return ;
-
-	// 	// check each location variables values
-	// 	for (unsigned int i = 0; i < it->getLocations().size(); ++i)
-	// 		if (!checkVariablesValue(it->getLocations()[i]))
-	// 			return ;
-	// }
 }
 
 std::ostream &operator<<(std::ostream &out, const Config &a)
