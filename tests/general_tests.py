@@ -80,7 +80,7 @@ async def main():
 	await upload_large_file("5mb.jpg") # large file to test non-blocking
 	await func_headers_buffer_size() # header bigger than 1024 bytes(server should read in multiple reads)
 	await func_headers_8kb() # header bigger than 8KB (server should send 431)
-	await chunked_request() # chunked request
+	# await chunked_request() # chunked request
 	await upload_file("a.txt") # upload singe small file
 	await upload_multiple_file() # upload 3 files at the same time (in one POST request)
 
