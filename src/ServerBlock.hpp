@@ -13,7 +13,7 @@ struct Directives
 {
 	std::string _listen;
 	std::vector<std::string> _serverName;
-	std::pair<int, std::string> _errorPage;
+	std::vector<std::pair<int, std::string> >_errorPage;
 	std::vector<std::string> _index;
 	std::string _root;
 	size_t _clientMaxBodySize;
@@ -38,7 +38,7 @@ class ServerBlock
 		std::vector<Directives> getLocations() const; // location / {} blocks
 		std::string getListen() const;
 		std::vector<std::string> getServerName() const;
-		std::pair<int, std::string> getErrorPage() const;
+		std::vector<std::pair<int, std::string> > getErrorPage() const;
 		std::vector<std::string> getIndex() const;
 		std::string getRoot() const;
 		size_t getClientMaxBodySize() const;

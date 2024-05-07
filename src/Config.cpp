@@ -254,7 +254,8 @@ std::ostream& operator<<(std::ostream& out, const Config& a)
 		std::cout << "server_name: ";
 		for (unsigned int i = 0; i < var._serverName.size(); ++i)
 			std::cout << var._serverName[i] << " ";
-		std::cout << "error_page: " << var._errorPage.first << " " << var._errorPage.second << std::endl;
+		for (unsigned int i = 0; i < var._errorPage.size(); ++i)
+			std::cout << var._errorPage[i].first << " " << var._errorPage[i].second << std::endl;
 		std::cout << "index: ";
 		for (unsigned int i = 0; i < var._index.size(); ++i)
 			std::cout << var._index[i] << " ";
@@ -274,7 +275,8 @@ std::ostream& operator<<(std::ostream& out, const Config& a)
 			std::cout << "server_name: ";
 			for (unsigned int i = 0; i < loc[i]._serverName.size(); ++i)
 				std::cout << loc[i]._serverName[i] << " ";
-			std::cout << "error_page: " << loc[i]._errorPage.first << " " << loc[i]._errorPage.second << std::endl;	
+			for (unsigned int i = 0; i < loc[i]._errorPage.size(); ++i)
+				std::cout << loc[i]._errorPage[i].first << " " << loc[i]._errorPage[i].second << std::endl;
 			for (unsigned int i = 0; i < loc[i]._index.size(); ++i)
 				std::cout << loc[i]._index[i] << " ";
 			std::cout << "root: " << loc[i]._root << std::endl;

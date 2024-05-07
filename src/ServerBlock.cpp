@@ -67,7 +67,7 @@ void ServerBlock::deleteData()
 	_locations.clear();
 	_variables._listen.clear();
 	_variables._serverName.clear();
-	_variables._errorPage = std::make_pair(0, "");
+	_variables._errorPage.clear();
 	_variables._index.clear();
 	_variables._root.clear();
 	_variables._clientMaxBodySize = 0;
@@ -97,7 +97,7 @@ std::vector<std::string> ServerBlock::getServerName() const
 	return (_variables._serverName);
 }
 
-std::pair<int, std::string> ServerBlock::getErrorPage() const
+std::vector<std::pair<int, std::string> > ServerBlock::getErrorPage() const
 {
 	return (_variables._errorPage);
 }
@@ -151,9 +151,9 @@ void ServerBlock::setServerName(std::vector<std::string> str, bool isLocation)
 void ServerBlock::setErrorPage(std::pair<int, std::string> str, bool isLocation)
 {
 	if (!isLocation)
-		_variables._errorPage = str;
+		_variables._errorPage.push_back(str);
 	else
-		_locations.back()._errorPage = str;
+		_locations.back()._errorPage.push_back(str);
 }
 
 void ServerBlock::setIndex(std::vector<std::string> str, bool isLocation)
@@ -175,7 +175,6 @@ void ServerBlock::setRoot(std::string& str, bool isLocation)
 void ServerBlock::setClientMaxBodySize(std::string& str, bool isLocation)
 {
 	if (strToInt(str) == -1)
-		throw ("Invalid client_max_body_size");
 		throw ("Invalid client_max_body_size");
 
 	size_t n = strToInt(str);
