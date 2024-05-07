@@ -217,9 +217,21 @@ void Config::parse(const char *file)
 			return ;
 	}
 	catch (const char* error){
-		std::cout << "Exception caught: " << error << std::endl;
+		std::cout << "Exception caught: " << std::endl;
 		_errorMessage = error;
 	}
+
+	// for (std::vector<ServerBlock>::iterator it = _server.begin(); it != _server.end(); ++it)
+	// {
+	// 	// check variables outside of locations
+	// 	if (!checkVariablesValue(it->getVariables()))
+	// 		return ;
+
+	// 	// check each location variables values
+	// 	for (unsigned int i = 0; i < it->getLocations().size(); ++i)
+	// 		if (!checkVariablesValue(it->getLocations()[i]))
+	// 			return ;
+	// }
 }
 
 std::ostream& operator<<(std::ostream& out, const Config& a)

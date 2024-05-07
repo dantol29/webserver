@@ -176,6 +176,7 @@ void ServerBlock::setClientMaxBodySize(std::string& str, bool isLocation)
 {
 	if (strToInt(str) == -1)
 		throw ("Invalid client_max_body_size");
+		throw ("Invalid client_max_body_size");
 
 	size_t n = strToInt(str);
 	
