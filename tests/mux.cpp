@@ -117,6 +117,11 @@ int main()
 	std::thread threads[3];
 	for (size_t i = 0; i < nameUrlPairs.size(); ++i)
 	{
+		// Add a delay before starting each thread to ensure sequential access
+		if (i > 0)
+		{
+			std::this_thread::sleep_for(std::chrono::milliseconds(20)); // Adjust the delay as required
+		}
 		threads[i] = std::thread(GetRequest, nameUrlPairs[i]);
 	}
 
