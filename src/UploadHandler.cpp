@@ -13,7 +13,7 @@ UploadHandler::~UploadHandler()
 
 bool UploadHandler::isHarmfulExtension(const std::string &extension)
 {
-	std::cout << RED << "Checking extension: " << extension << RESET << std::endl;
+	std::cout << RED << "+-+- +-+- +-+- +-+- +-+-Checking extension: " << extension << RESET << std::endl;
     const char* executableFilesArr[] = {"exe", "com", "bat", "cmd", "msi", "scr", "pif", "ps1"};
     const char* dynamicLibrariesArr[] = {"dll", "so"};
     const char* scriptsArr[] = {"js", "vbs", "py", "php", "pl", "sh"};
@@ -43,8 +43,11 @@ bool UploadHandler::isHarmfulExtension(const std::string &extension)
 
 // Other possible codes:
 // 413 Payload Too Large, 401 Unauthorized, 403 Forbidden, 500 Internal Server Error
-void UploadHandler::checkFiles(const HTTPRequest &request)
+bool UploadHandler::checkFiles(const HTTPRequest &request)
 {
+						std::cout << RED << "+-+- +-+- +-+- +-+- +-+- checkFiles: " << RESET << std::endl;
+
+	
 	std::vector<File> files = request.getFiles();
 	std::vector<File>::iterator it;
 
@@ -53,7 +56,7 @@ void UploadHandler::checkFiles(const HTTPRequest &request)
 		if (it->headers.find("filename") == it->headers.end())
 		{
 			std::cout << "422 Unprocessable Entity (Error: file does not have a name)" << std::endl;
-			return;
+			return false;
 		}
 	}
 	for (it = files.begin(); it != files.end(); ++it)
@@ -61,7 +64,7 @@ void UploadHandler::checkFiles(const HTTPRequest &request)
 		if (it->fileContent.empty())
 		{
 			std::cout << "422 Unprocessable Entity (Error: file is empty)" << std::endl;
-			return;
+			return false;
 		}
 	}
 	for (it = files.begin(); it != files.end(); ++it)
@@ -73,20 +76,20 @@ void UploadHandler::checkFiles(const HTTPRequest &request)
 		{
 			// TODO: have an html ?
 			std::cout << "415 Unsupported Media Type (Error: file has no extension)" << std::endl;
-			return;
+			return false;
 		}
 		if (isHarmfulExtension(extension))
 		{
 			std::cout << "415 Unsupported Media Type (Error: file has a harmful extension)" << std::endl;
-			return;
+			return false;
 		}
 	}
+	return true;
 }
 
 void createFile(HTTPRequest &request)
 {
 	const std::string uploadDir = "upload/";
-
 	std::vector<File> files = request.getFiles();
 	std::vector<File>::iterator it;
 
@@ -110,7 +113,11 @@ void createFile(HTTPRequest &request)
 
 void UploadHandler::handleRequest(const HTTPRequest &request, HTTPResponse &response)
 {
-	checkFiles(request);
+	if (!checkFiles(request))
+	{
+		handleResponse(response, BAD_REQUEST);
+		return;
+	}
 	if (!request.getUploadBoundary().empty())
 	{
 		createFile(const_cast<HTTPRequest &>(request));

@@ -29,7 +29,7 @@ class UploadHandler : public AResponseHandler
 	void handleResponse(HTTPResponse &response, enum UploadStatus status);
 	std::string readFileContents(const std::string &filePath);
 	bool isHarmfulExtension(const std::string &extension);
-	void checkFiles(const HTTPRequest &request);
+	bool checkFiles(const HTTPRequest &request);
 };
 
 #endif

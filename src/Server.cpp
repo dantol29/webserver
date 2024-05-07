@@ -34,13 +34,13 @@ void Server::startPollEventLoop()
 	int pollCounter = 0;
 	while (1)
 	{
-		printConnections("BEFORE POLL", _FDs, _connections, true);
+		// printConnections("BEFORE POLL", _FDs, _connections, true);
 		std::cout << CYAN << "++++++++++++++ #" << pollCounter
 				  << " Waiting for new connection or Polling +++++++++++++++" << RESET << std::endl;
 		int ret = poll(_FDs.data(), _FDs.size(), -1);
 		pollCounter++;
-		printFrame("POLL EVENT DETECTED", true);
-		printConnections("AFTER POLL", _FDs, _connections, true);
+		// printFrame("POLL EVENT DETECTED", true);
+		// printConnections("AFTER POLL", _FDs, _connections, true);
 		if (ret > 0)
 		{
 			size_t originalSize = _FDs.size();
@@ -55,12 +55,12 @@ void Server::startPollEventLoop()
 					std::cout << "Enters revents" << std::endl;
 					if (i == 0)
 					{
-						printFrame("SERVER SOCKET EVENT", true);
+						// printFrame("SERVER SOCKET EVENT", true);
 						acceptNewConnection(_connections[i]);
 					}
 					else
 					{
-						printFrame("CLIENT SOCKET EVENT", true);
+						// printFrame("CLIENT SOCKET EVENT", true);
 						handleConnection(_connections[i],
 										 i,
 										 _connections[i].getParser(),
