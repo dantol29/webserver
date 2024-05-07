@@ -75,7 +75,7 @@ void UploadHandler::handleRequest(const HTTPRequest &request, HTTPResponse &resp
 
 std::string readFileContents(const std::string &filePath)
 {
-	std::ifstream file(filePath);
+	std::ifstream file(filePath.c_str());
 	if (!file)
 	{
 		std::cerr << "Could not open file: " << filePath << std::endl;
@@ -117,7 +117,7 @@ void UploadHandler::handleResponse(HTTPResponse &response, const std::string &co
 	}
 
 	response.setHeader("Content-Type", "text/html");
-	response.setHeader("Content-Length", std::to_string(fileContents.length()));
+	response.setHeader("Content-Length", toString(fileContents.length()));
 	response.setBody(fileContents);
 	response.setStatusCode(statusCode, statusDescription);
 }

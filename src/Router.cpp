@@ -120,7 +120,10 @@ bool Router::pathIsValid(HTTPRequest &request, std::string webRoot)
 		host = host.substr(0, pos);
 	}
 	// std::cout << "Host (after : trailing) :" << host << std::endl;
-	std::string path = request.getRequestTarget();
+	std::string pathWithQuery = request.getRequestTarget();
+	std::string path = pathWithQuery.substr(0, pathWithQuery.find("?"));
+
+	//                      GET RID OF AN EVENTUAL QUERY STRING
 
 	// for ease of use during deployment
 	// this if/else allows to reach target with tester or browser
