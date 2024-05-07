@@ -11,7 +11,7 @@ Router::~Router()
 
 void Router::routeRequest(const HTTPRequest &request, HTTPResponse &response)
 {
-		std::cout << RED << request << RESET << std::endl;
+	std::cout << RED << request << RESET << std::endl;
 
 	std::string _webRoot = "var/www"; // TODO: get this from the config file
 	if (isCGI(request) && pathIsValid(const_cast<HTTPRequest &>(request), _webRoot))

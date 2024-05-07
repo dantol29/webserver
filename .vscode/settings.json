@@ -1,4 +1,5 @@
 {
+  
   "workbench.colorCustomizations": {
     "activityBar.background": "#28197E",
     "titleBar.activeBackground": "#3924B0",
@@ -98,5 +99,5 @@
     "semaphore": "cpp",
     "codecvt": "cpp",
     "stop_token": "cpp"
-  }
+  },
 }
