@@ -11,30 +11,93 @@ UploadHandler::~UploadHandler()
 {
 }
 
-#include <filesystem> // Include the header for std::filesystem
-
-// Function to handle file creation based on HTTP request data
-void createFile(HTTPRequest &request)
+bool UploadHandler::isHarmfulExtension(const std::string &extension)
 {
-	// Directory to store uploaded files
-	const std::string uploadDir = "upload/";
+	std::vector<std::string> executableFiles;
+	executableFiles.push_back("exe");
+	executableFiles.push_back("com");
+	executableFiles.push_back("bat");
+	executableFiles.push_back("cmd");
+	executableFiles.push_back("msi");
+	executableFiles.push_back("scr");
+	executableFiles.push_back("pif");
+	executableFiles.push_back("ps1");
+	std::vector<std::string> dynamicLibraries;
+	dynamicLibraries.push_back("dll");
+	dynamicLibraries.push_back("so");
+	std::vector<std::string> scripts;
+	scripts.push_back("js");
+	scripts.push_back("vbs");
+	scripts.push_back("py");
+	scripts.push_back("php");
+	scripts.push_back("pl");
+	scripts.push_back("sh");
+	std::vector<std::string> configurationFiles;
+	configurationFiles.push_back("ini");
+	configurationFiles.push_back("inf");
+	configurationFiles.push_back("reg");
 
-	// Retrieve the list of files from the HTTP request
+	std::vector<std::string> harmfulExtensions;
+	harmfulExtensions.insert(harmfulExtensions.end(), executableFiles.begin(), executableFiles.end());
+	harmfulExtensions.insert(harmfulExtensions.end(), dynamicLibraries.begin(), dynamicLibraries.end());
+	harmfulExtensions.insert(harmfulExtensions.end(), scripts.begin(), scripts.end());
+	harmfulExtensions.insert(harmfulExtensions.end(), configurationFiles.begin(), configurationFiles.end());
+
+	if (std::find(harmfulExtensions.begin(), harmfulExtensions.end(), extension) != harmfulExtensions.end())
+	{
+		return true;
+	}
+	return false;
+}
+
+// 415 Unsupported Media
+void UploadHandler::checkFiles(const HTTPRequest &request)
+{
 	std::vector<File> files = request.getFiles();
 	std::vector<File>::iterator it;
 
-	// First loop to validate that each file has a "filename" header
 	for (it = files.begin(); it != files.end(); ++it)
 	{
-		// Check if the "filename" header is missing
 		if (it->headers.find("filename") == it->headers.end())
 		{
 			std::cout << "422 Unprocessable Entity (Error: file does not have a name)" << std::endl;
 			return;
 		}
 	}
+	for (it = files.begin(); it != files.end(); ++it)
+	{
+		if (it->fileContent.empty())
+		{
+			std::cout << "422 Unprocessable Entity (Error: file is empty)" << std::endl;
+			return;
+		}
+	}
+	for (it = files.begin(); it != files.end(); ++it)
+	{
 
-	// Second loop to create files using the information from the headers
+		std::string filename = it->headers.find("filename")->second;
+		std::string extension = filename.substr(filename.find_last_of(".") + 1);
+		if (extension.empty())
+		{
+			// TODO: have an html ?
+			std::cout << "415 Unsupported Media Type (Error: file has no extension)" << std::endl;
+			return;
+		}
+		if (isHarmfulExtension(extension))
+		{
+			std::cout << "415 Unsupported Media Type (Error: file has a harmful extension)" << std::endl;
+			return;
+		}
+	}
+}
+
+void createFile(HTTPRequest &request)
+{
+	const std::string uploadDir = "upload/";
+
+	std::vector<File> files = request.getFiles();
+	std::vector<File>::iterator it;
+
 	for (it = files.begin(); it != files.end(); ++it)
 	{
 		// Construct the full path by prepending the upload directory
@@ -60,6 +123,7 @@ void createFile(HTTPRequest &request)
 
 void UploadHandler::handleRequest(const HTTPRequest &request, HTTPResponse &response)
 {
+	checkFiles(request);
 	if (!request.getUploadBoundary().empty())
 	{
 		createFile(const_cast<HTTPRequest &>(request));
@@ -86,17 +150,13 @@ std::string readFileContents(const std::string &filePath)
 }
 
 // Possible codes:
-// 413 Payload Too Large, 415 Unsupported Media, 401 Unauthorized,
+// 413 Payload Too Large, 401 Unauthorized,
 // 403 Forbidden, 500 Internal Server Error
 void UploadHandler::handleResponse(HTTPResponse &response, const std::string &code)
 {
 	std::string fileContents;
 	int statusCode;
 	std::string statusDescription;
-
-	std::cout << "       Response code: " << code << std::endl;
-
-	// ADD A MESSAGE WITH THE NAME OF THE FILE CREATED
 
 	if (code == "success")
 	{

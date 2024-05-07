@@ -5,6 +5,7 @@
 #include <string>
 #include <iostream>
 #include <sstream>
+#include <filesystem>
 #include "webserv.hpp"
 
 class UploadHandler : public AResponseHandler
@@ -20,6 +21,8 @@ class UploadHandler : public AResponseHandler
 	std::string _webRoot;
 	UploadHandler(const UploadHandler &other);
 	UploadHandler &operator=(const UploadHandler &other);
+	bool isHarmfulExtension(const std::string &extension);
+	void checkFiles(const HTTPRequest &request);
 };
 
 #endif
