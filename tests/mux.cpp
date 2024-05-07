@@ -12,10 +12,8 @@
 // Mutex for cout (otherwise output gets mixed up)
 std::mutex coutMutex;
 
-// Define a pair type for name and URL
 using NameUrlPair = std::pair<std::string, std::string>;
 
-// Function to make a GET request using socket communication
 void GetRequest(const NameUrlPair &nameUrlPair)
 {
 	const std::string &name = nameUrlPair.first;
@@ -117,7 +115,7 @@ int main()
 	std::thread threads[3];
 	for (size_t i = 0; i < nameUrlPairs.size(); ++i)
 	{
-		// Add a delay before starting each thread to ensure sequential access
+		// delay at each thread to ensure sequential access
 		if (i > 0)
 		{
 			std::this_thread::sleep_for(std::chrono::milliseconds(20)); // Adjust the delay as required
@@ -125,7 +123,6 @@ int main()
 		threads[i] = std::thread(GetRequest, nameUrlPairs[i]);
 	}
 
-	// Join threads
 	for (auto &thread : threads)
 	{
 		thread.join();
