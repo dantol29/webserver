@@ -40,3 +40,4 @@
 largefile  # so we don't pull and push 100mb file
 testers/myenv/
 
+tests/tests_venv
