@@ -23,6 +23,8 @@ echo "████████╗███████╗███████�
    ╚═╝   ╚══════╝╚══════╝   ╚═╝   ╚══════╝╚═╝  ╚═╝"
 
 
+is_error=false
+
 if test -f $NAME; then
 	echo ""
 else
@@ -43,13 +45,18 @@ for i in {1..22}; do
 	timeout 0.5 $NAME "invalid_config_files/config$i.test" >/dev/null 2>&1
 	if [ $? -eq 124 ]; then
 		echo -e "${RED}KO${RESET}\n"
+		is_error=true
 	else
 		echo -e "${GREEN}OK${RESET}\n"
 	fi
 	sleep 0.2
 done
 
-sleep 1
+if [ "$is_error" = true ]; then
+    exit 1
+fi
+
+exit 0
 
 # if test -f "valid_config_files/config1.test"; then
 # 	echo ""

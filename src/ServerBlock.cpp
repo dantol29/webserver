@@ -175,7 +175,7 @@ void ServerBlock::setRoot(std::string& str, bool isLocation)
 void ServerBlock::setClientMaxBodySize(std::string& str, bool isLocation)
 {
 	if (strToInt(str) == -1)
-		throw (std::exception());
+		throw ("Invalid client_max_body_size");
 
 	size_t n = strToInt(str);
 	
@@ -194,7 +194,7 @@ void ServerBlock::setAutoIndex(std::string& str, bool isLocation)
 	else if (str == "off")
 		a = false;
 	else
-		throw(std::exception());
+		throw("Invalid autoindex");
 
 	if (!isLocation)
 		_variables._autoindex = a;
@@ -246,7 +246,7 @@ std::pair<int, std::string> ServerBlock::transformErrorPage(std::string& str)
 	int index = str.find(' ');
 	error = strToInt(str.substr(0, index));
 	if (!isValidErrorCode(str.substr(0, index)))
-		throw (std::exception());
+		throw ("Invalid error code");
 	path = str.substr(index + 1);
 	return (std::make_pair(error, path));
 }
@@ -279,7 +279,7 @@ std::vector<std::string> ServerBlock::transformAllowedMethods(std::string& str)
 	{
 		if (newStr[i] != "GET" && newStr[i] != "POST" \
 		&& newStr[i] != "PUT" && newStr[i] != "DELETE")
-			throw (std::exception());
+			throw ("Invalid method");
 	}
 	return (newStr);
 }

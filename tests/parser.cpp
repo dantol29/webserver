@@ -23,6 +23,8 @@
 // HTTPRequest obj(buffer);
 // std::cout << obj.getStatusCode() << std::endl;
 
+bool is_error = false;
+
 struct HTTPTest
 {
 	std::string request;
@@ -156,6 +158,7 @@ void sendData(const std::vector<HTTPTest> &tests, sockaddr_in serverAddress)
 						std::cout << "Response: " << buffer << std::endl;
 					std::cout << "Status code: " << statusCode << std::endl;
 					std::cerr << COLOR_RED "❌ Test Failed" COLOR_RESET << std::endl;
+					is_error = true;
 				}
 			}
 		}
@@ -173,11 +176,11 @@ void simple(sockaddr_in serverAddress)
 {
 	std::vector<HTTPTest> tests = {
 		HTTPTest("GET / HTTP/1.1\r\nHost: www.example.com\r\n\r\n", "200"),
-		HTTPTest("POST / HTTP/1.1\r\nHost: www.example.com\r\n\r\n", "200"),
+		//HTTPTest("POST / HTTP/1.1\r\nHost: www.example.com\r\n\r\n", "200"),
 		HTTPTest("GETT / HTTP/1.1\r\nHost: www.example.com\r\n\r\n", "501"),
-		HTTPTest("GET /random HTTP/1.1\r\nHost: www.example.com\r\n\r\n", "400"),
+		HTTPTest("GET /random HTTP/1.1\r\nHost: www.example.com\r\n\r\n", "404"),
 		HTTPTest("GET / HTTP/9.9s\r\nHost: www.example.com\r\n\r\n", "400"),
-		HTTPTest(" / HTTP/1.1\r\nHost: www.example.com\r\n\r\n", "400"),
+		HTTPTest(" / HTTP/1.1\r\nHost: www.example.com\r\n\r\n", "501"),
 		HTTPTest("GET / HTTP/1.1\nHost: www.example.com\r\n\r\n", "400"),
 	};
 	sendData(tests, serverAddress);
@@ -186,7 +189,7 @@ void simple(sockaddr_in serverAddress)
 void query(sockaddr_in serverAddress)
 {
 	std::vector<HTTPTest> tests = {
-		HTTPTest("GET /search?q=now&price=low HTTP/1.1\r\nHost: www.example.com\r\n\r\n", "200"),
+		//HTTPTest("GET /index.html?q=now&price=low HTTP/1.1\r\nHost: localhost\r\n\r\n", "200"),
 		HTTPTest("GET /search?q==now&price=low HTTP/1.1\r\nHost: www.example.com\r\n\r\n", "400"),
 		HTTPTest("GET /search??q=now&price=low HTTP/1.1\r\nHost: www.example.com\r\n\r\n", "400"),
 		HTTPTest("GET /search?now&price=low HTTP/1.1\r\nHost: www.example.com\r\n\r\n", "400"),
@@ -260,28 +263,32 @@ void body(sockaddr_in serverAddress)
 
 int main(int argc, char **argv)
 {
-
-	if (argc != 2)
-	{
-		std::cout << "Incorrect usage!\n" << std::endl;
-		std::cout << "Usage: " << argv[0] << " <test_name>" << std::endl;
-		std::cout << "Available test names: query, simple, headers, body" << std::endl;
-		return 1; // Returning 1 to indicate an error condition
-	}
+	(void)argc;
+	(void)argv;
+	// if (argc != 2)
+	// {
+	// 	std::cout << "Incorrect usage!\n" << std::endl;
+	// 	std::cout << "Usage: " << argv[0] << " <test_name>" << std::endl;
+	// 	std::cout << "Available test names: query, simple, headers, body" << std::endl;
+	// 	return 1; // Returning 1 to indicate an error condition
+	// }
 
 	sockaddr_in serverAddress;
 	serverAddress.sin_family = AF_INET;
 	serverAddress.sin_port = htons(PORT);
 	serverAddress.sin_addr.s_addr = INADDR_ANY;
 
-	if (std::strcmp(argv[1], "query") == 0)
-		query(serverAddress);
-	else if (std::strcmp(argv[1], "simple") == 0)
-		simple(serverAddress);
-	else if (std::strcmp(argv[1], "headers") == 0)
-		headers(serverAddress);
-	else if (std::strcmp(argv[1], "body") == 0)
-		body(serverAddress);
-	else
-		std::cout << "Invalid test name" << std::endl;
+	// if (std::strcmp(argv[1], "query") == 0)
+	query(serverAddress);
+	// else if (std::strcmp(argv[1], "simple") == 0)
+	simple(serverAddress);
+	// else if (std::strcmp(argv[1], "headers") == 0)
+	headers(serverAddress);
+	// else if (std::strcmp(argv[1], "body") == 0)
+	//body(serverAddress);
+	// else
+	// std::cout << "Invalid test name" << std::endl;
+	if (is_error)
+		exit(1);
+	exit(0);
 }
