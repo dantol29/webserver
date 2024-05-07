@@ -13,35 +13,26 @@ UploadHandler::~UploadHandler()
 
 bool UploadHandler::isHarmfulExtension(const std::string &extension)
 {
-	std::vector<std::string> executableFiles;
-	executableFiles.push_back("exe");
-	executableFiles.push_back("com");
-	executableFiles.push_back("bat");
-	executableFiles.push_back("cmd");
-	executableFiles.push_back("msi");
-	executableFiles.push_back("scr");
-	executableFiles.push_back("pif");
-	executableFiles.push_back("ps1");
-	std::vector<std::string> dynamicLibraries;
-	dynamicLibraries.push_back("dll");
-	dynamicLibraries.push_back("so");
-	std::vector<std::string> scripts;
-	scripts.push_back("js");
-	scripts.push_back("vbs");
-	scripts.push_back("py");
-	scripts.push_back("php");
-	scripts.push_back("pl");
-	scripts.push_back("sh");
-	std::vector<std::string> configurationFiles;
-	configurationFiles.push_back("ini");
-	configurationFiles.push_back("inf");
-	configurationFiles.push_back("reg");
+	std::cout << RED << "Checking extension: " << extension << RESET << std::endl;
+    const char* executableFilesArr[] = {"exe", "com", "bat", "cmd", "msi", "scr", "pif", "ps1"};
+    const char* dynamicLibrariesArr[] = {"dll", "so"};
+    const char* scriptsArr[] = {"js", "vbs", "py", "php", "pl", "sh"};
+    const char* configurationFilesArr[] = {"ini", "inf", "reg"};
 
-	std::vector<std::string> harmfulExtensions;
-	harmfulExtensions.insert(harmfulExtensions.end(), executableFiles.begin(), executableFiles.end());
-	harmfulExtensions.insert(harmfulExtensions.end(), dynamicLibraries.begin(), dynamicLibraries.end());
-	harmfulExtensions.insert(harmfulExtensions.end(), scripts.begin(), scripts.end());
-	harmfulExtensions.insert(harmfulExtensions.end(), configurationFiles.begin(), configurationFiles.end());
+    // Initialize vectors directly from arrays
+    std::vector<std::string> executableFiles(executableFilesArr, executableFilesArr + sizeof(executableFilesArr) / sizeof(executableFilesArr[0]));
+    std::vector<std::string> dynamicLibraries(dynamicLibrariesArr, dynamicLibrariesArr + sizeof(dynamicLibrariesArr) / sizeof(dynamicLibrariesArr[0]));
+    std::vector<std::string> scripts(scriptsArr, scriptsArr + sizeof(scriptsArr) / sizeof(scriptsArr[0]));
+    std::vector<std::string> configurationFiles(configurationFilesArr, configurationFilesArr + sizeof(configurationFilesArr) / sizeof(configurationFilesArr[0]));
+
+    // Combine all vectors into a single vector
+    std::vector<std::string> harmfulExtensions;
+    harmfulExtensions.reserve(executableFiles.size() + dynamicLibraries.size() + scripts.size() + configurationFiles.size());
+
+    harmfulExtensions.insert(harmfulExtensions.end(), executableFiles.begin(), executableFiles.end());
+    harmfulExtensions.insert(harmfulExtensions.end(), dynamicLibraries.begin(), dynamicLibraries.end());
+    harmfulExtensions.insert(harmfulExtensions.end(), scripts.begin(), scripts.end());
+    harmfulExtensions.insert(harmfulExtensions.end(), configurationFiles.begin(), configurationFiles.end());
 
 	if (std::find(harmfulExtensions.begin(), harmfulExtensions.end(), extension) != harmfulExtensions.end())
 	{
@@ -123,16 +114,16 @@ void UploadHandler::handleRequest(const HTTPRequest &request, HTTPResponse &resp
 	if (!request.getUploadBoundary().empty())
 	{
 		createFile(const_cast<HTTPRequest &>(request));
-		handleResponse(response, "success");
+		handleResponse(response, SUCCESS);
 	}
 	else
 	{
 		std::cout << "415 Unsupported Media Type" << std::endl;
-		handleResponse(response, "bad_request");
+		handleResponse(response, BAD_REQUEST);
 	}
 }
 
-std::string readFileContents(const std::string &filePath)
+std::string UploadHandler::readFileContents(const std::string &filePath)
 {
 	std::ifstream file(filePath.c_str());
 	if (!file)
@@ -145,20 +136,21 @@ std::string readFileContents(const std::string &filePath)
 	return buffer.str();
 }
 
-void UploadHandler::handleResponse(HTTPResponse &response, const std::string &code)
+void UploadHandler::handleResponse(HTTPResponse &response, enum UploadStatus status)
 {
 	std::string fileContents;
 	int statusCode;
 	std::string statusDescription;
 
-	if (code == "success")
+
+	if (status == SUCCESS)
 	{
 		std::cout << "Upload: File created successfully" << std::endl;
 		fileContents = readFileContents("html/success/200_upload_success.html");
 		statusCode = 200;
 		statusDescription = "OK";
 	}
-	else if (code == "bad_request")
+	else if (status == BAD_REQUEST)
 	{
 		std::cout << "Upload: Bad request" << std::endl;
 		fileContents = readFileContents("html/errors/400.html");

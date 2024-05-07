@@ -8,6 +8,12 @@
 #include <filesystem>
 #include "webserv.hpp"
 
+enum UploadStatus {
+    SUCCESS,
+    BAD_REQUEST,
+    INTERNAL_SERVER_ERROR,
+};
+
 class UploadHandler : public AResponseHandler
 {
   public:
@@ -20,7 +26,8 @@ class UploadHandler : public AResponseHandler
   private:
 	std::string _webRoot;
 	UploadHandler(const UploadHandler &other);
-	void handleResponse(HTTPResponse &response, const std::string &code);
+	void handleResponse(HTTPResponse &response, enum UploadStatus status);
+	std::string readFileContents(const std::string &filePath);
 	bool isHarmfulExtension(const std::string &extension);
 	void checkFiles(const HTTPRequest &request);
 };
