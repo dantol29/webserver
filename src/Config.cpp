@@ -210,99 +210,16 @@ bool	Config::pathExists(std::map<std::string, std::string> list, std::string var
 	return (true);
 }
 
-// bool	Config::checkVariablesValue(Variables var)
-// {
-// 	std::string tmp_meth[] = {"GET", "POST", "DELETE"};
-// 	std::string tmp_cgi[] = {".py", ".php", ".pl", ".cgi"};
-// 	std::list<std::string> methods(tmp_meth, tmp_meth + sizeof(tmp_meth) / sizeof(tmp_meth[0]));
-// 	std::list<std::string> cgi_ext(tmp_cgi, tmp_cgi + sizeof(tmp_cgi) / sizeof(tmp_cgi[0]));
-// 	unsigned int	start = 0;
-
-// 	// // ROOT
-// 	// if (!pathExists(var, "root"))
-// 	// 	return (false);
-// 	// ALIAS
-// 	if (!pathExists(var, "alias"))
-// 		return (false);
-// 	// CGI_PATH
-// 	if (!pathExists(var, "cgi_path"))
-// 		return (false);
-// 	// ERROR_PAGE
-// 	if (!checkErrorPage(var))
-// 		return (false);
-// 	// ALLOW_METHODS
-// 	it = var.find("allow_methods");
-// 	if (it != var.end()){
-// 		for (unsigned int i = 0; i < it->second.length(); ++i){
-// 			start = i;
-// 			while (i < it->second.length() && it->second[i] != ' ')
-// 				i++;
-// 			if (std::find(methods.begin(), methods.end(), it->second.substr(start, i - start)) == methods.end())
-// 				return (error("Config file: Invalid allow_method"));
-// 		}
-// 	}
-// 	// AUTOINDEX
-// 	it = var.find("autoindex");
-// 	if (it != var.end())
-// 		if (it->second != "on")
-// 			return (error("Config file: Invalid autoindex"));
-// 	// CLIENT_MAX_BODY_SIZE
-// 	it = var.find("client_max_body_size");
-// 	if (it != var.end()){
-// 		if (!isNumber(it->second))
-// 			return (error("Config file: Invalid client_max_body_size"));
-// 	}
-// 	// CGI_EXT
-// 	it = var.find("cgi_ext");
-// 	if (it != var.end()){
-// 		for (unsigned int i = 0; i < it->second.length(); ++i){
-// 			start = i;
-// 			while (i < it->second.length() && it->second[i] != ' ')
-// 				i++;
-// 			if (std::find(cgi_ext.begin(), cgi_ext.end(), it->second.substr(start, i - start)) == cgi_ext.end())
-// 				return (error("Config file: Invalid cgi_ext"));
-// 		}
-// 	}
-// 	// INDEX
-// 	it = var.find("index");
-// 	if (it != var.end()){
-// 		for (unsigned int i = 0; i < it->second.length(); ++i){
-// 			start = i;
-// 			while (i < it->second.length() && it->second[i] != ' ')
-// 				i++;
-// 			if (access((it->second.substr(start, i - start)).c_str(), F_OK) == 0){
-// 				if (isVulnerablePath(it->second.substr(start, i - start)))
-// 					return (error("Config file: Path is vulnerable"));
-// 				return (true);
-// 			}
-// 		}
-// 		return (error("Config file: Invalid index"));
-// 	}
-// 	return (true);
-// }
-
 void Config::parse(const char *file)
 {
 	try{
 		if (!parseFile(file))
 			return ;
 	}
-	catch (std::exception error){
-		std::cout << "Exception caught: " << error.what() << std::endl;
-		_errorMessage = "Exception";
+	catch (const char* error){
+		std::cout << "Exception caught: " << error << std::endl;
+		_errorMessage = error;
 	}
-
-	// for (std::vector<ServerBlock>::iterator it = _server.begin(); it != _server.end(); ++it)
-	// {
-	// 	// check variables outside of locations
-	// 	if (!checkVariablesValue(it->getVariables()))
-	// 		return ;
-
-	// 	// check each location variables values
-	// 	for (unsigned int i = 0; i < it->getLocations().size(); ++i)
-	// 		if (!checkVariablesValue(it->getLocations()[i]))
-	// 			return ;
-	// }
 }
 
 std::ostream& operator<<(std::ostream& out, const Config& a)
