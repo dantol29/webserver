@@ -50,7 +50,8 @@ bool UploadHandler::isHarmfulExtension(const std::string &extension)
 	return false;
 }
 
-// 415 Unsupported Media
+// Other possible codes:
+// 413 Payload Too Large, 401 Unauthorized, 403 Forbidden, 500 Internal Server Error
 void UploadHandler::checkFiles(const HTTPRequest &request)
 {
 	std::vector<File> files = request.getFiles();
@@ -100,22 +101,17 @@ void createFile(HTTPRequest &request)
 
 	for (it = files.begin(); it != files.end(); ++it)
 	{
-		// Construct the full path by prepending the upload directory
 		std::string filePath = uploadDir + (it->headers.find("filename"))->second;
 
-		// Open a file with the name specified in the "filename" header under the upload directory
 		std::ofstream outfile(filePath.c_str());
 		if (outfile.is_open())
 		{
-			// Write the file content from the request into the newly created file
 			outfile << it->fileContent;
-			// Close the file to flush the buffer and release the file handle
 			outfile.close();
 			std::cout << "File created successfully at " << filePath << std::endl;
 		}
 		else
 		{
-			// If the file couldn't be opened or created, output an appropriate error message
 			std::cout << "422 Unprocessable Entity (Error creating a file at " << filePath << ")" << std::endl;
 		}
 	}
@@ -149,9 +145,6 @@ std::string readFileContents(const std::string &filePath)
 	return buffer.str();
 }
 
-// Possible codes:
-// 413 Payload Too Large, 401 Unauthorized,
-// 403 Forbidden, 500 Internal Server Error
 void UploadHandler::handleResponse(HTTPResponse &response, const std::string &code)
 {
 	std::string fileContents;

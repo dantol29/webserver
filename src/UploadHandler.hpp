@@ -13,14 +13,14 @@ class UploadHandler : public AResponseHandler
   public:
 	UploadHandler();
 	UploadHandler(const std::string &webRoot);
-	~UploadHandler();
+	UploadHandler &operator=(const UploadHandler &other);
 	void handleRequest(const HTTPRequest &request, HTTPResponse &response);
-	void handleResponse(HTTPResponse &response, const std::string &code);
+	~UploadHandler();
 
   private:
 	std::string _webRoot;
 	UploadHandler(const UploadHandler &other);
-	UploadHandler &operator=(const UploadHandler &other);
+	void handleResponse(HTTPResponse &response, const std::string &code);
 	bool isHarmfulExtension(const std::string &extension);
 	void checkFiles(const HTTPRequest &request);
 };
