@@ -28,12 +28,12 @@ int main(int argc, char **argv)
 		if (!config.getErrorMessage().empty())
 		{
 			std::cout << config.getErrorMessage() << std::endl;
-			return 0;
+			return 1;
 		}
 	}
 	catch (const char* error){
 		std::cout << "Exception caught: " << error << std::endl;
-		return (1);
+		return 1;
 	}
 	// std::cout << config << std::endl; // should be in the DEBUG?
 	Server webserv(config);

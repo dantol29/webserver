@@ -19,7 +19,7 @@ class Config
 
 	private:
 		std::vector<ServerBlock> _serverBlocks;
-		bool		error(std::string message);
+		bool		setError(std::string message);
 		bool		parseLocation(std::string& line, std::ifstream& config);
 		bool		saveDirective(const std::string& line);
 		bool		saveLocationDirective(const std::string& line, std::string& key, std::string& value);

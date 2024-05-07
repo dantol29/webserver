@@ -31,10 +31,10 @@ class ServerBlock
 	ServerBlock &operator=(const ServerBlock &obj);
 	~ServerBlock();
 
-		bool addVariable(std::string key, std::string& value, bool isLocation);
+		bool addDirective(std::string key, std::string& value, bool isLocation);
 
 		// GETTERS
-		Directives getVariables() const; // variables outside of locations
+		Directives getDirectives() const; // variables outside of locations
 		std::vector<Directives> getLocations() const; // location / {} blocks
 		std::string getListen() const;
 		std::vector<std::string> getServerName() const;
@@ -61,7 +61,7 @@ class ServerBlock
 		// clear ServerBlock
 		void deleteData();
 	private:
-		Directives _variables;
+		Directives _directives;
 		std::vector<Directives> _locations;
 		
 		// TRANSFORMERS

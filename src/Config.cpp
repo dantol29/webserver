@@ -36,7 +36,7 @@ std::string Config::getErrorMessage() const
 	return (_errorMessage);
 }
 
-bool Config::error(std::string message)
+bool Config::setError(std::string message)
 {
 	_errorMessage = message;
 	return (false);
@@ -67,7 +67,7 @@ bool Config::saveDirective(const std::string &line)
 	if (line[i++] != ';' || i < line.length()) // [;]
 		return (false);
 
-	return (_tmpServerBlock.addVariable(key, value, false));
+	return (_tmpServerBlock.addDirective(key, value, false));
 }
 
 // [TAB][LOCATION][SP][/PATH][SP][{]
@@ -137,14 +137,14 @@ bool	Config::parseLocation(std::string& line, std::ifstream& config)
 	std::string	key;
 	std::string	value;
 
-	_tmpServerBlock.addVariable("path", _tmpPath, true);
+	_tmpServerBlock.addDirective("path", _tmpPath, true);
 	while (std::getline(config, line))
 	{
 		if (line == "\t}")
 			break;
 		if (!saveLocationDirective(line, key, value))
-			return (error("Config file: Syntax error"));
-		if (!_tmpServerBlock.addVariable(key, value, true))
+			return (setError("Config file: Syntax error"));
+		if (!_tmpServerBlock.addDirective(key, value, true))
 			return (false);
 	}
 	return (true);
@@ -154,7 +154,7 @@ bool Config::parse(std::ifstream &config)
 {
 	std::string line;
 	if (!config.is_open())
-		return (error("Config file: Invalid file"));
+		return (setError("Config file: Invalid file"));
 
 	while (!config.eof())
 	{
@@ -165,7 +165,7 @@ bool Config::parse(std::ifstream &config)
 			break;
 
 		if (line != "server {") // start of the server block
-			return (error("Config file: Syntax error ( no server { )"));
+			return (setError("Config file: Syntax error ( no server { )"));
 
 		while (std::getline(config, line))
 		{
@@ -179,12 +179,12 @@ bool Config::parse(std::ifstream &config)
 			if (isLocation(line)) // start of location block
 				parseLocation(line, config);
 			else if (!saveDirective(line)) // variables outside of location
-				return (error("Config file: Syntax error (invalid var in the root)"));
+				return (setError("Config file: Syntax error (invalid var in the root)"));
 		}
 		_tmpServerBlock.deleteData(); // delete saved data
 	}
 	if (_serverBlocks.size() < 1)
-		return (error("Config file: No valid server blocks"));
+		return (setError("Config file: No valid server blocks"));
 	return (true);
 }
 
@@ -203,10 +203,10 @@ bool Config::pathExists(std::map<std::string, std::string> list, std::string var
 				i++;
 			DIR *dir = opendir((it->second.substr(start, i - start)).c_str());
 			if (!dir)
-				return (error(("Config file: Invalid " + variable).c_str()));
+				return (setError(("Config file: Invalid " + variable).c_str()));
 			closedir(dir);
 			if (isVulnerablePath(it->second.substr(start, i - start)))
-				return (error("Config file: Path is vulnerable"));
+				return (setError("Config file: Path is vulnerable"));
 		}
 	}
 	return (true);
@@ -224,7 +224,7 @@ std::ostream &operator<<(std::ostream &out, const Config &a)
 
 	for (std::vector<ServerBlock>::iterator it = server.begin(); it != server.end(); ++it)
 	{
-		Directives var = it->getVariables();
+		Directives var = it->getDirectives();
 		std::vector<Directives> loc = it->getLocations();
 
 		std::cout << "------------------Server-Block------------------------" << std::endl;
