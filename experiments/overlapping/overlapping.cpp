@@ -29,7 +29,7 @@ int main()
 	}
 
 	// Forcefully attaching socket to the port 8080 for all IPs
-	if (setsockopt(server_fd_all, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)))
+	if (setsockopt(server_fd_all, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &opt, sizeof(opt)))
 	{
 		perror("setsockopt");
 		exit(EXIT_FAILURE);
@@ -67,7 +67,7 @@ int main()
 	}
 
 	// Forcefully attaching socket to the port 8080 for specific IP
-	if (setsockopt(server_fd_specific, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)))
+	if (setsockopt(server_fd_specific, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &opt, sizeof(opt)))
 	{
 		perror("setsockopt");
 		exit(EXIT_FAILURE);
