@@ -14,14 +14,10 @@ void Router::routeRequest(const HTTPRequest &request, HTTPResponse &response)
 	std::string _webRoot = "var/www"; // TODO: get this from the config file
 	if (isCGI(request) && pathIsValid(const_cast<HTTPRequest &>(request), _webRoot))
 	{
-		std::cout << "       4567890'98765446789   request" << std::endl;
-
 		CGIHandler cgiHandler;
 		cgiHandler.setFDsRef(_FDsRef);
 		cgiHandler.setPollFd(_pollFd);
 		cgiHandler.handleRequest(request, response);
-		// std::cout << std::endl << std::endl << std::endl << std::endl;
-		// std::cout << response;
 		return;
 	}
 	else if (request.getMethod() == "POST")
@@ -30,21 +26,19 @@ void Router::routeRequest(const HTTPRequest &request, HTTPResponse &response)
 
 		UploadHandler uploadHandler;
 		uploadHandler.handleRequest(request, response);
-		// std::cout << "successfully uploaded file" << std::endl;
-		// std::cout << "Request target: " << request.getRequestTarget() << std::endl;
-		// std::cout << "Request body: " << request.getBody() << std::endl;
-		// std::cout << "Request host: " << request.getHost() << std::endl;
-	}
-	// after a post request we redirect to the same page
-	StaticContentHandler staticContentInstance;
-	if (!pathIsValid(const_cast<HTTPRequest &>(request), _webRoot))
-	{
-		std::cout << "Path is not valid, calling handleNotFound" << std::endl;
-		staticContentInstance.handleNotFound(response);
 	}
 	else
 	{
-		staticContentInstance.handleRequest(request, response);
+		StaticContentHandler staticContentInstance;
+		if (!pathIsValid(const_cast<HTTPRequest &>(request), _webRoot))
+		{
+			std::cout << "Path is not valid, calling handleNotFound" << std::endl;
+			staticContentInstance.handleNotFound(response);
+		}
+		else
+		{
+			staticContentInstance.handleRequest(request, response);
+		}
 	}
 }
 
@@ -113,20 +107,14 @@ void Router::splitTarget(const std::string &target)
 bool Router::pathIsValid(HTTPRequest &request, std::string webRoot)
 {
 	std::string host = request.getHost();
-	// std::cout << "Host: " << host << std::endl;
 	size_t pos = host.find(":");
 	if (pos != std::string::npos)
 	{
 		host = host.substr(0, pos);
 	}
-	// std::cout << "Host (after : trailing) :" << host << std::endl;
 	std::string pathWithQuery = request.getRequestTarget();
 	std::string path = pathWithQuery.substr(0, pathWithQuery.find("?"));
 
-	//                      GET RID OF AN EVENTUAL QUERY STRING
-
-	// for ease of use during deployment
-	// this if/else allows to reach target with tester or browser
 	if (host == "localhost")
 		path = webRoot + path;
 	else

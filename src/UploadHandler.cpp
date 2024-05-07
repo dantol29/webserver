@@ -70,7 +70,6 @@ void UploadHandler::handleRequest(const HTTPRequest &request, HTTPResponse &resp
 		std::cout << "415 Unsupported Media Type" << std::endl;
 		handleResponse(response, "bad_request");
 	}
-	return;
 }
 
 std::string readFileContents(const std::string &filePath)
@@ -95,22 +94,27 @@ void UploadHandler::handleResponse(HTTPResponse &response, const std::string &co
 	int statusCode;
 	std::string statusDescription;
 
+	std::cout << "       Response code: " << code << std::endl;
+
 	// ADD A MESSAGE WITH THE NAME OF THE FILE CREATED
 
 	if (code == "success")
 	{
-		fileContents = readFileContents("errors/200_upload_success.html");
+		std::cout << "Upload: File created successfully" << std::endl;
+		fileContents = readFileContents("html/success/200_upload_success.html");
 		statusCode = 200;
 		statusDescription = "OK";
 	}
 	else if (code == "bad_request")
 	{
-		fileContents = readFileContents("errors/400.html");
+		std::cout << "Upload: Bad request" << std::endl;
+		fileContents = readFileContents("html/errors/400.html");
 		statusCode = 400;
 		statusDescription = "Bad Request";
 	}
 	else
 	{
+		std::cout << "Upload: Internal server error" << std::endl;
 		fileContents = "<html><body><h1>Unknown Error</h1></body></html>";
 		statusCode = 500;
 		statusDescription = "Internal Server Error";
