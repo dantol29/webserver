@@ -13,7 +13,6 @@ UploadHandler::~UploadHandler()
 
 bool UploadHandler::isHarmfulExtension(const std::string &extension)
 {
-	std::cout << RED << "+-+- +-+- +-+- +-+- +-+-Checking extension: " << extension << RESET << std::endl;
     const char* executableFilesArr[] = {"exe", "com", "bat", "cmd", "msi", "scr", "pif", "ps1"};
     const char* dynamicLibrariesArr[] = {"dll", "so"};
     const char* scriptsArr[] = {"js", "vbs", "py", "php", "pl", "sh"};
@@ -45,9 +44,6 @@ bool UploadHandler::isHarmfulExtension(const std::string &extension)
 // 413 Payload Too Large, 401 Unauthorized, 403 Forbidden, 500 Internal Server Error
 bool UploadHandler::checkFiles(const HTTPRequest &request)
 {
-						std::cout << RED << "+-+- +-+- +-+- +-+- +-+- checkFiles: " << RESET << std::endl;
-
-	
 	std::vector<File> files = request.getFiles();
 	std::vector<File>::iterator it;
 
