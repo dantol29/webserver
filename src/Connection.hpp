@@ -10,6 +10,13 @@
 #include "HTTPResponse.hpp" // Assuming existence of HTTPResponse class
 #include "Parser.hpp"		// Assuming existence of Parser class
 
+enum ConnectionType
+{
+	UNDEFINED,
+	CLIENT,
+	SERVER,
+};
+
 class Server; // Forward declaration for circular dependency
 
 class Connection
@@ -20,18 +27,19 @@ class Connection
 	HTTPResponse _response;
 
 	struct pollfd _pollFd;
+	enum ConnectionType _type;
+	std::string _serverIp;
+	unsigned short _serverPort;
 	bool _hasReadSocket;
 	bool _hasFinishedReading;
 	bool _hasDataToSend;
 	bool _hasFinishedSending;
 	bool _canBeClosed;
 
-	// Additional client state can be managed here
-
   public:
 	Connection(struct pollfd &pollFd, Server &server);
-	Connection(const Connection &other);			// Copy constructor
-	Connection &operator=(const Connection &other); // Copy assignment operator
+	Connection(const Connection &other);
+	Connection &operator=(const Connection &other);
 	~Connection();
 
 	bool readHeaders(Parser &parser);
@@ -44,27 +52,31 @@ class Connection
 	Parser &getParser();
 	HTTPRequest &getRequest();
 	HTTPResponse &getResponse();
+
 	struct pollfd getPollFd() const;
-	bool getHasReadSocket();
-	bool getBodyComplete() const;
-	std::string getChunkData() const;
-	bool getHasFinishedReading();
-	bool getHasDataToSend();
-	bool getHasFinishedSending();
-	bool getCanBeClosed();
+
+	enum ConnectionType getType() const;
+	std::string getServerIp() const;
+	unsigned short getServerPort() const;
+
+	bool getHasReadSocket() const;
+	bool getHasFinishedReading() const;
+	bool getHasDataToSend() const;
+	bool getHasFinishedSending() const;
+	bool getCanBeClosed() const;
+
 	struct pollfd &getPollFd();
 
 	/* Setters */
+	void setType(enum ConnectionType type);
+	void setServerIp(std::string serverIp);
+	void setServerPort(unsigned short serverPort);
+
 	void setHasReadSocket(bool value);
-	void setHeadersComplete(bool headersComplete);
-	void setBodyComplete(bool bodyComplete);
-	void setHeaders(const std::string &headers);
-	void setChunkData(const std::string &chunkData);
 	void setHasFinishedReading(bool value);
 	void setCanBeClosed(bool value);
 	void setHasDataToSend(bool value);
 	void setHasFinishedSending(bool value);
-	// We will not provide the setter for HTTPResponse as it should be managed by the HTTPResponse class
 	/* Debugging */
 	void printConnection() const;
 };

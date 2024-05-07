@@ -50,7 +50,7 @@ void Server::startPollEventLoop()
 					if (i == 0)
 					{
 						std::cout << "Server socket event" << std::endl;
-						acceptNewConnection();
+						acceptNewConnection(_connections[i]);
 					}
 					else
 					{
@@ -358,10 +358,13 @@ void Server::addServerSocketPollFdToVectors()
 	serverPollFd.revents = 0;
 	_FDs.push_back(serverPollFd);
 	Connection serverConnection(serverPollFd, *this);
+	serverConnection.setType(SERVER);
+	serverConnection.setServerIp(inet_ntoa(_serverAddr.sin_addr));
+	serverConnection.setServerPort(ntohs(_serverAddr.sin_port));
 	_connections.push_back(serverConnection);
 }
 
-void Server::acceptNewConnection()
+void Server::acceptNewConnection(Connection &conn)
 {
 	// TODO: think about naming.
 	// We have 4 different names for kind of the same thing: clientAddress, newSocket, newSocketPoll,
@@ -369,7 +372,8 @@ void Server::acceptNewConnection()
 	struct sockaddr_in clientAddress;
 	socklen_t ClientAddrLen = sizeof(clientAddress);
 	std::cout << "New connection detected" << std::endl;
-	int newSocket = accept(_serverFD, (struct sockaddr *)&clientAddress, (socklen_t *)&ClientAddrLen);
+	// int newSocket = accept(_serverFD, (struct sockaddr *)&clientAddress, (socklen_t *)&ClientAddrLen);
+	int newSocket = accept(conn.getPollFd().fd, (struct sockaddr *)&clientAddress, (socklen_t *)&ClientAddrLen);
 	if (newSocket >= 0)
 	{
 		struct pollfd newSocketPoll;
@@ -377,6 +381,9 @@ void Server::acceptNewConnection()
 		newSocketPoll.events = POLLIN;
 		newSocketPoll.revents = 0;
 		Connection newConnection(newSocketPoll, *this);
+		newConnection.setType(CLIENT);
+		newConnection.setServerIp(conn.getServerIp());
+		newConnection.setServerPort(conn.getServerPort());
 		/* start together */
 		_FDs.push_back(newSocketPoll);
 		_connections.push_back(newConnection);

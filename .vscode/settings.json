@@ -93,6 +93,7 @@
 	"condition_variable": "cpp",
 	"stop_token": "cpp",
 	"thread": "cpp",
-	"semaphore": "cpp"
+	"semaphore": "cpp",
+	"codecvt": "cpp"
 }
 }
