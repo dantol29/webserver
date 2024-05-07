@@ -87,7 +87,7 @@ void StaticContentHandler::handleRequest(const HTTPRequest &request, HTTPRespons
 
 	std::string body((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
 
-	std::cout << "body : " << body << std::endl;
+	// std::cout << "body : " << body << std::endl;
 
 	response.setStatusCode(200, "OK");
 	response.setBody(body);
