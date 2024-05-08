@@ -240,7 +240,7 @@ void Server::buildResponse(Connection &conn, size_t &i, HTTPRequest &request, HT
 	}
 	// std::cout << request.getRequestTarget() << std::endl;
 	// TODO: The Router should be a member of the Server class or of the Connection class
-	Router router;
+	Router router(_config.getServerBlocks());
 	router.setFDsRef(&_FDs);
 	router.setPollFd(&conn.getPollFd());
 	router.routeRequest(request, response);
