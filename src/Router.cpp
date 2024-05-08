@@ -126,7 +126,7 @@ void Router::splitTarget(const std::string &target)
 	}
 }
 
-bool Router::pathIsValid(HTTPRequest &request, std::string webRoot)
+bool Router::pathIsValid(HTTPRequest &request, std::string &webRoot)
 {
 	std::string host = request.getHost();
 	std::cout << "pathIsValid Host: " << host << std::endl;
@@ -137,54 +137,55 @@ bool Router::pathIsValid(HTTPRequest &request, std::string webRoot)
 		host = host.substr(0, pos);
 	}
 	// std::cout << "Host (after : trailing) :" << host << std::endl;
-	std::string path = request.getRequestTarget();
 
 	// for ease of use during deployment
 	// this if/else allows to reach target with tester or browser
-	if (host == "localhost")
-		path = webRoot;
-	//+path;
-	else
-		path = webRoot + "/" + host + path;
+	if (host != "localhost")
+		webRoot = host + webRoot;
 
-	std::cout << std::endl << "pathIsValid Path: " << path << std::endl << std::endl;
-	std::cout << "pathIsValid Path: " << path << std::endl;
+	std::cout << std::endl << "pathIsValid Path: " << webRoot << std::endl << std::endl;
+	std::cout << "pathIsValid Path: " << webRoot << std::endl;
 	struct stat buffer;
-	if (stat(path.c_str(), &buffer) != 0)
+	if (stat(webRoot.c_str(), &buffer) != 0)
 	{
 		std::cout << "+-+-+-+-+- does not exist" << std::endl;
+		request.setPath(webRoot);
 		return false;
 	}
 	if (S_ISDIR(buffer.st_mode))
 	{
 		// std::cout << "Path is a directory" << std::endl;
-		if (!path.empty() && path[path.length() - 1] != '/')
+		if (!webRoot.empty() && webRoot[webRoot.length() - 1] != '/')
 		{
-			path += "/";
+			webRoot += "/";
 		}
 		// IF THIS IS NOT DEFINE IN THE CONFIG FILE, THEN DO WHAT IS BELOW:
-		if (_serverBlock.getIndex() == "")
+		if (_serverBlock.getIndex().empty())
 		{
-			path += "index.html";
+			webRoot += "index.html";
 		}
 		else
 		{
-			std::string index = _serverBlocks[0].getIndex();
-			path += index;
+			std::cout << "Index: " << _serverBlock.getIndex()[0] << std::endl;
+			std::string index = _serverBlock.getIndex()[0];
+			webRoot += index;
+			std::cout << "Path: " << webRoot << std::endl;
 		}
 		// std::cout << "Path: " << path << std::endl;
-		if (stat(path.c_str(), &buffer) != 0)
+		if (stat(webRoot.c_str(), &buffer) != 0)
 		{
+			request.setPath(webRoot);
 			// TODO: decide if we should return a custom error for a directory without an index.html
 			return false;
 		}
+		request.setPath(webRoot);
 	}
 	// std::cout << "Path: " << path << " exists" << std::endl;
 
-	std::ifstream file(path.c_str());
+	std::ifstream file(webRoot.c_str());
 	if (!file.is_open())
 	{
-		std::cout << "Failed to open the file at path: " << path << std::endl;
+		std::cout << "Failed to open the file at path: " << webRoot << std::endl;
 		return false;
 	}
 	file.close();

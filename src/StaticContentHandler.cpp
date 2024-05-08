@@ -56,17 +56,17 @@ void StaticContentHandler::handleRequest(const HTTPRequest &request, HTTPRespons
 	std::string host = request.getHost();
 	// std::cout << "host in handleRequest: " << host << std::endl;
 
-	std::string path;
-
 	// for ease of use during deployment
 	// this if/else allows to reach target with tester or browser
-	if (host == "localhost:8080")
-		path = webRoot + requestTarget;
-	else
-		path = webRoot + "/" + host + requestTarget;
+
+	// if (host == "localhost:8080")
+	// 	path = webRoot + requestTarget;
+	// else
+	// 	path = webRoot + "/" + host + requestTarget;
 
 	// std::string path = webRoot + "/" + host + requestTarget;
 
+	std::string path = request.getPath();
 	std::cout << std::endl << "path : " << path << std::endl << std::endl;
 	if (requestTarget == "/" || requestTarget == "")
 		requestTarget = "/index.html";

@@ -15,6 +15,7 @@ HTTPRequest::HTTPRequest(const HTTPRequest &obj)
 	_body = obj._body;
 	_uploadBoundary = obj._uploadBoundary;
 	_files = obj._files;
+	_path = obj._path;
 }
 
 HTTPRequest &HTTPRequest::operator=(const HTTPRequest &obj)
@@ -29,6 +30,7 @@ HTTPRequest &HTTPRequest::operator=(const HTTPRequest &obj)
 	_body = obj._body;
 	_uploadBoundary = obj._uploadBoundary;
 	_files = obj._files;
+	_path = obj._path;
 	return (*this);
 }
 
@@ -104,6 +106,11 @@ std::vector<File> HTTPRequest::getFiles() const
 	return (_files);
 }
 
+std::string HTTPRequest::getPath() const
+{
+	return (_path);
+}
+
 void HTTPRequest::setMethod(std::string method)
 {
 	_method = method;
@@ -151,6 +158,11 @@ void HTTPRequest::setFiles(struct File &file)
 void HTTPRequest::setFileContent(const std::string &content)
 {
 	_files.back().fileContent = content;
+}
+
+void HTTPRequest::setPath(const std::string &path)
+{
+	this->_path = path;
 }
 
 std::ostream &operator<<(std::ostream &out, const HTTPRequest &obj)
