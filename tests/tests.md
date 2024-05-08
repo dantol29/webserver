@@ -10,6 +10,17 @@ This document outlines the test programs to test our Webserver
 
 ---
 
+## general_tests.py
+
+- To run follow the guide in `general_tests.md`
+- Tests:
+	1. large file upload
+	2. headers bigget than 1KB
+	3. headers bigget than 8KB (431 error)
+	4. chunked requests
+	5. small file upload
+	6. multiple file upload in one request
+
 ## mux_CGI.cpp
 
 ### Testing: non-blocking
