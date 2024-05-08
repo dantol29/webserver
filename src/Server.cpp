@@ -124,7 +124,7 @@ void Server::readFromClient(Connection &conn, size_t &i, Parser &parser, HTTPReq
 		conn.setHasFinishedReading(true);
 
 	if (response.getStatusCode() != 0)
-		Debug::log(response.getStatusMessage(), Debug::NORMAL);
+		Debug::log(toString(response.getStatusCode()), Debug::NORMAL);
 	if (request.getMethod() == "GET")
 		Debug::log("GET request, no body to read", Debug::NORMAL);
 	else
