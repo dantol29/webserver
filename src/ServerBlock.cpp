@@ -24,17 +24,23 @@ ServerBlock &ServerBlock::operator=(const ServerBlock &obj)
 	return (*this);
 }
 
-
-bool ServerBlock::addDirective(std::string key, std::string& value, bool isLocation)
+bool ServerBlock::addDirective(std::string key, std::string &value, bool isLocation)
 {
-	std::string var[] = {"listen", "server_name", "error_page", \
-	"index", "root", "client_max_body_size", "autoindex", "allow_methods", \
-	"alias", "path"};
+	std::string var[] = {"listen",
+						 "server_name",
+						 "error_page",
+						 "index",
+						 "root",
+						 "client_max_body_size",
+						 "autoindex",
+						 "allow_methods",
+						 "alias",
+						 "path"};
 	std::list<std::string> validVar(var, var + sizeof(var) / sizeof(var[0]));
 
 	if (std::find(validVar.begin(), validVar.end(), key) == validVar.end())
 	{
-		std::cout << "Unknown key: "<< key << std::endl;
+		std::cout << "Unknown key: " << key << std::endl;
 		return (false);
 	}
 
@@ -132,7 +138,7 @@ std::string ServerBlock::getAlias() const
 	return (_directives._alias);
 }
 
-void ServerBlock::setListen(std::string& str, bool isLocation)
+void ServerBlock::setListen(std::string &str, bool isLocation)
 {
 	if (!isLocation)
 		_directives._listen = str;
@@ -159,12 +165,12 @@ void ServerBlock::setErrorPage(std::pair<int, std::string> str, bool isLocation)
 void ServerBlock::setIndex(std::vector<std::string> str, bool isLocation)
 {
 	if (!isLocation)
-		_directives._index = str;	
+		_directives._index = str;
 	else
 		_locations.back()._index = str;
 }
 
-void ServerBlock::setRoot(std::string& str, bool isLocation)
+void ServerBlock::setRoot(std::string &str, bool isLocation)
 {
 	if (!isLocation)
 		_directives._root = str;
@@ -172,20 +178,20 @@ void ServerBlock::setRoot(std::string& str, bool isLocation)
 		_locations.back()._root = str;
 }
 
-void ServerBlock::setClientMaxBodySize(std::string& str, bool isLocation)
+void ServerBlock::setClientMaxBodySize(std::string &str, bool isLocation)
 {
 	if (strToInt(str) == -1)
-		throw ("Invalid client_max_body_size");
+		throw("Invalid client_max_body_size");
 
 	size_t n = strToInt(str);
-	
+
 	if (!isLocation)
-		_directives._clientMaxBodySize = n;	
+		_directives._clientMaxBodySize = n;
 	else
 		_locations.back()._clientMaxBodySize = n;
 }
 
-void ServerBlock::setAutoIndex(std::string& str, bool isLocation)
+void ServerBlock::setAutoIndex(std::string &str, bool isLocation)
 {
 	bool a;
 
@@ -205,15 +211,15 @@ void ServerBlock::setAutoIndex(std::string& str, bool isLocation)
 void ServerBlock::setAllowedMethods(std::vector<std::string> str, bool isLocation)
 {
 	if (!isLocation)
-		_directives._allowedMethods = str;	
+		_directives._allowedMethods = str;
 	else
 		_locations.back()._allowedMethods = str;
 }
 
-void ServerBlock::setAlias(std::string& str, bool isLocation)
+void ServerBlock::setAlias(std::string &str, bool isLocation)
 {
 	if (!isLocation)
-		_directives._alias = str;	
+		_directives._alias = str;
 	else
 		_locations.back()._alias = str;
 }
@@ -225,7 +231,7 @@ void ServerBlock::setLocationPath(std::string str)
 	_locations.back()._path = str;
 }
 
-std::vector<std::string> ServerBlock::transformServerName(std::string& str)
+std::vector<std::string> ServerBlock::transformServerName(std::string &str)
 {
 	std::vector<std::string> newStr;
 	std::stringstream ss(str);
@@ -238,7 +244,7 @@ std::vector<std::string> ServerBlock::transformServerName(std::string& str)
 	return (newStr);
 }
 
-std::pair<int, std::string> ServerBlock::transformErrorPage(std::string& str)
+std::pair<int, std::string> ServerBlock::transformErrorPage(std::string &str)
 {
 	std::string path;
 	int error;
@@ -246,12 +252,12 @@ std::pair<int, std::string> ServerBlock::transformErrorPage(std::string& str)
 	int index = str.find(' ');
 	error = strToInt(str.substr(0, index));
 	if (!isValidErrorCode(str.substr(0, index)))
-		throw ("Invalid error code");
+		throw("Invalid error code");
 	path = str.substr(index + 1);
 	return (std::make_pair(error, path));
 }
 
-std::vector<std::string> ServerBlock::transformIndex(std::string& str)
+std::vector<std::string> ServerBlock::transformIndex(std::string &str)
 {
 	std::vector<std::string> newStr;
 	std::stringstream ss(str);
@@ -264,7 +270,7 @@ std::vector<std::string> ServerBlock::transformIndex(std::string& str)
 	return (newStr);
 }
 
-std::vector<std::string> ServerBlock::transformAllowedMethods(std::string& str)
+std::vector<std::string> ServerBlock::transformAllowedMethods(std::string &str)
 {
 	std::vector<std::string> newStr;
 	std::stringstream ss(str);
@@ -274,12 +280,12 @@ std::vector<std::string> ServerBlock::transformAllowedMethods(std::string& str)
 		newStr.push_back(name);
 	if (newStr.empty())
 		newStr.push_back(str);
-	
+
 	for (unsigned int i = 0; i < newStr.size(); ++i)
 	{
-		if (newStr[i] != "GET" && newStr[i] != "POST" \
-		&& newStr[i] != "PUT" && newStr[i] != "DELETE")
-			throw ("Invalid method");
+		if (newStr[i] != "GET" && newStr[i] != "POST" && newStr[i] != "PUT" && newStr[i] != "DELETE" &&
+			newStr[i] != "SALAD")
+			throw("Invalid method");
 	}
 	return (newStr);
 }
