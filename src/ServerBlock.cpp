@@ -8,24 +8,24 @@ ServerBlock::~ServerBlock()
 {
 }
 
-ServerBlock::ServerBlock(const ServerBlock& obj)
+ServerBlock::ServerBlock(const ServerBlock &obj)
 {
 	_locations = obj._locations;
-	_variables = obj._variables;
+	_directives = obj._directives;
 }
 
-ServerBlock& ServerBlock::operator=(const ServerBlock& obj)
+ServerBlock &ServerBlock::operator=(const ServerBlock &obj)
 {
 	if (this != &obj)
 	{
 		_locations = obj._locations;
-		_variables = obj._variables;
+		_directives = obj._directives;
 	}
 	return (*this);
 }
 
 
-bool ServerBlock::addVariable(std::string key, std::string& value, bool isLocation)
+bool ServerBlock::addDirective(std::string key, std::string& value, bool isLocation)
 {
 	std::string var[] = {"listen", "server_name", "error_page", \
 	"index", "root", "client_max_body_size", "autoindex", "allow_methods", \
@@ -65,21 +65,21 @@ bool ServerBlock::addVariable(std::string key, std::string& value, bool isLocati
 void ServerBlock::deleteData()
 {
 	_locations.clear();
-	_variables._listen.clear();
-	_variables._serverName.clear();
-	_variables._errorPage = std::make_pair(0, "");
-	_variables._index.clear();
-	_variables._root.clear();
-	_variables._clientMaxBodySize = 0;
-	_variables._autoindex = false;
-	_variables._allowedMethods.clear();
-	_variables._alias.clear();
-	_variables._path.clear();
+	_directives._listen.clear();
+	_directives._serverName.clear();
+	_directives._errorPage = std::make_pair(0, "");
+	_directives._index.clear();
+	_directives._root.clear();
+	_directives._clientMaxBodySize = 0;
+	_directives._autoindex = false;
+	_directives._allowedMethods.clear();
+	_directives._alias.clear();
+	_directives._path.clear();
 }
 
-Directives ServerBlock::getVariables() const
+Directives ServerBlock::getDirectives() const
 {
-	return (_variables);
+	return (_directives);
 }
 
 std::vector<Directives> ServerBlock::getLocations() const
@@ -89,53 +89,53 @@ std::vector<Directives> ServerBlock::getLocations() const
 
 std::string ServerBlock::getListen() const
 {
-	return (_variables._listen);
+	return (_directives._listen);
 }
 
 std::vector<std::string> ServerBlock::getServerName() const
 {
-	return (_variables._serverName);
+	return (_directives._serverName);
 }
 
 std::pair<int, std::string> ServerBlock::getErrorPage() const
 {
-	return (_variables._errorPage);
+	return (_directives._errorPage);
 }
 
 std::vector<std::string> ServerBlock::getIndex() const
 {
-	return (_variables._index);
+	return (_directives._index);
 }
 
 std::string ServerBlock::getRoot() const
 {
-	return (_variables._root);
+	return (_directives._root);
 }
 
 size_t ServerBlock::getClientMaxBodySize() const
 {
-	return (_variables._clientMaxBodySize);
+	return (_directives._clientMaxBodySize);
 }
 
 bool ServerBlock::getAutoIndex() const
 {
-	return (_variables._autoindex);
+	return (_directives._autoindex);
 }
 
 std::vector<std::string> ServerBlock::getAllowedMethods() const
 {
-	return (_variables._allowedMethods);
+	return (_directives._allowedMethods);
 }
 
 std::string ServerBlock::getAlias() const
 {
-	return (_variables._alias);
+	return (_directives._alias);
 }
 
 void ServerBlock::setListen(std::string& str, bool isLocation)
 {
 	if (!isLocation)
-		_variables._listen = str;
+		_directives._listen = str;
 	else
 		_locations.back()._listen = str;
 }
@@ -143,7 +143,7 @@ void ServerBlock::setListen(std::string& str, bool isLocation)
 void ServerBlock::setServerName(std::vector<std::string> str, bool isLocation)
 {
 	if (!isLocation)
-		_variables._serverName = str;
+		_directives._serverName = str;
 	else
 		_locations.back()._serverName = str;
 }
@@ -151,7 +151,7 @@ void ServerBlock::setServerName(std::vector<std::string> str, bool isLocation)
 void ServerBlock::setErrorPage(std::pair<int, std::string> str, bool isLocation)
 {
 	if (!isLocation)
-		_variables._errorPage = str;
+		_directives._errorPage = str;
 	else
 		_locations.back()._errorPage = str;
 }
@@ -159,7 +159,7 @@ void ServerBlock::setErrorPage(std::pair<int, std::string> str, bool isLocation)
 void ServerBlock::setIndex(std::vector<std::string> str, bool isLocation)
 {
 	if (!isLocation)
-		_variables._index = str;	
+		_directives._index = str;	
 	else
 		_locations.back()._index = str;
 }
@@ -167,7 +167,7 @@ void ServerBlock::setIndex(std::vector<std::string> str, bool isLocation)
 void ServerBlock::setRoot(std::string& str, bool isLocation)
 {
 	if (!isLocation)
-		_variables._root = str;
+		_directives._root = str;
 	else
 		_locations.back()._root = str;
 }
@@ -180,7 +180,7 @@ void ServerBlock::setClientMaxBodySize(std::string& str, bool isLocation)
 	size_t n = strToInt(str);
 	
 	if (!isLocation)
-		_variables._clientMaxBodySize = n;	
+		_directives._clientMaxBodySize = n;	
 	else
 		_locations.back()._clientMaxBodySize = n;
 }
@@ -197,7 +197,7 @@ void ServerBlock::setAutoIndex(std::string& str, bool isLocation)
 		throw("Invalid autoindex");
 
 	if (!isLocation)
-		_variables._autoindex = a;
+		_directives._autoindex = a;
 	else
 		_locations.back()._autoindex = a;
 }
@@ -205,7 +205,7 @@ void ServerBlock::setAutoIndex(std::string& str, bool isLocation)
 void ServerBlock::setAllowedMethods(std::vector<std::string> str, bool isLocation)
 {
 	if (!isLocation)
-		_variables._allowedMethods = str;	
+		_directives._allowedMethods = str;	
 	else
 		_locations.back()._allowedMethods = str;
 }
@@ -213,7 +213,7 @@ void ServerBlock::setAllowedMethods(std::vector<std::string> str, bool isLocatio
 void ServerBlock::setAlias(std::string& str, bool isLocation)
 {
 	if (!isLocation)
-		_variables._alias = str;	
+		_directives._alias = str;	
 	else
 		_locations.back()._alias = str;
 }
