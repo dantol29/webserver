@@ -129,7 +129,8 @@ void Router::splitTarget(const std::string &target)
 bool Router::pathIsValid(HTTPRequest &request, std::string webRoot)
 {
 	std::string host = request.getHost();
-	// std::cout << "Host: " << host << std::endl;
+	std::cout << "pathIsValid Host: " << host << std::endl;
+	std::cout << "pathIsValid WebrRoot: " << webRoot << std::endl;
 	size_t pos = host.find(":");
 	if (pos != std::string::npos)
 	{
@@ -141,15 +142,17 @@ bool Router::pathIsValid(HTTPRequest &request, std::string webRoot)
 	// for ease of use during deployment
 	// this if/else allows to reach target with tester or browser
 	if (host == "localhost")
-		path = webRoot + path;
+		path = webRoot;
+	//+path;
 	else
 		path = webRoot + "/" + host + path;
 
-	std::cout << std::endl << "Path: " << path << std::endl << std::endl;
-	std::cout << "Path: " << path << std::endl;
+	std::cout << std::endl << "pathIsValid Path: " << path << std::endl << std::endl;
+	std::cout << "pathIsValid Path: " << path << std::endl;
 	struct stat buffer;
 	if (stat(path.c_str(), &buffer) != 0)
 	{
+		std::cout << "+-+-+-+-+- does not exist" << std::endl;
 		return false;
 	}
 	if (S_ISDIR(buffer.st_mode))
@@ -159,7 +162,9 @@ bool Router::pathIsValid(HTTPRequest &request, std::string webRoot)
 		{
 			path += "/";
 		}
+		// IF THIS IS NOT DEFINE IN THE CONFIG FILE, THEN DO WHAT IS BELOW:
 		path += "index.html";
+
 		// std::cout << "Path: " << path << std::endl;
 		if (stat(path.c_str(), &buffer) != 0)
 		{
