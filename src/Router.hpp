@@ -5,6 +5,7 @@
 #include "HTTPResponse.hpp"
 #include "StaticContentHandler.hpp"
 #include "CGIHandler.hpp"
+#include "ServerBlock.hpp"
 #include "sys/stat.h"
 
 struct resourcePath
@@ -17,6 +18,7 @@ class Router
 {
   public:
 	Router();
+	Router(std::vector<ServerBlock> serverBlocks);
 	~Router();
 	void routeRequest(const HTTPRequest &request, HTTPResponse &response);
 
@@ -27,6 +29,7 @@ class Router
 	void setPollFd(struct pollfd *pollFd);
 
   private:
+	std::vector<ServerBlock> _serverBlocks;
 	Router(const Router &other);
 	Router &operator=(const Router &other);
 	StaticContentHandler _staticContentHandler;

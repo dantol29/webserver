@@ -93,6 +93,10 @@
     "condition_variable": "cpp",
     "csignal": "cpp",
     "queue": "cpp",
-    "set": "cpp"
+    "set": "cpp",
+    "codecvt": "cpp",
+    "stop_token": "cpp",
+    "thread": "cpp",
+    "semaphore": "cpp"
   }
 }

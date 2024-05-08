@@ -5,6 +5,16 @@ Router::Router()
 {
 }
 
+Router::Router(std::vector<ServerBlock> serverBlocks)
+{
+	_serverBlocks = serverBlocks;
+}
+
+Router::Router(const Router &obj)
+{
+	*this = obj;
+}
+
 Router::~Router()
 {
 }
