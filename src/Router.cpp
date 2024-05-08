@@ -7,7 +7,7 @@ Router::Router()
 
 Router::Router(std::vector<ServerBlock> serverBlocks)
 {
-	_serverBlocks = serverBlocks;
+	_serverBlock = serverBlocks[0];
 }
 
 Router::Router(const Router &obj)
@@ -19,7 +19,7 @@ Router &Router::operator=(const Router &obj)
 {
 	if (this == &obj)
 		return *this;
-	_serverBlocks = obj._serverBlocks;
+	_serverBlock = obj._serverBlock;
 	_FDsRef = obj._FDsRef;
 	_pollFd = obj._pollFd;
 	return *this;
@@ -32,7 +32,7 @@ Router::~Router()
 void Router::routeRequest(const HTTPRequest &request, HTTPResponse &response)
 {
 	// std::string _webRoot = "var/www"; // TODO: get this from the config file
-	std::string _webRoot = _serverBlocks[0].getRoot();
+	std::string _webRoot = _serverBlock.getRoot();
 	if (isCGI(request) && pathIsValid(const_cast<HTTPRequest &>(request), _webRoot))
 	{
 		CGIHandler cgiHandler;
@@ -163,8 +163,15 @@ bool Router::pathIsValid(HTTPRequest &request, std::string webRoot)
 			path += "/";
 		}
 		// IF THIS IS NOT DEFINE IN THE CONFIG FILE, THEN DO WHAT IS BELOW:
-		path += "index.html";
-
+		if (_serverBlock.getIndex() == "")
+		{
+			path += "index.html";
+		}
+		else
+		{
+			std::string index = _serverBlocks[0].getIndex();
+			path += index;
+		}
 		// std::cout << "Path: " << path << std::endl;
 		if (stat(path.c_str(), &buffer) != 0)
 		{

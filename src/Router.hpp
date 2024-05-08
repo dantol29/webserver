@@ -29,7 +29,7 @@ class Router
 	void setPollFd(struct pollfd *pollFd);
 
   private:
-	std::vector<ServerBlock> _serverBlocks;
+	ServerBlock _serverBlock;
 	Router(const Router &other);
 	Router &operator=(const Router &other);
 	StaticContentHandler _staticContentHandler;
