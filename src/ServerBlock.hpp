@@ -47,8 +47,8 @@ class ServerBlock
 		bool getAutoIndex() const;
 		std::vector<std::string> getAllowedMethods() const;
 		std::string getAlias() const;
-		std::vector<std::string> ServerBlock::getCgiExt() const;
-		std::string ServerBlock::getCgiPath() const;
+		std::vector<std::string> getCgiExt() const;
+		std::string getCgiPath() const;
 
 		// SETTERS
 		void setListen(std::string& str, bool isLocation);
