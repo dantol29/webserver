@@ -139,6 +139,7 @@ void Server::readFromClient(Connection &conn, size_t &i, Parser &parser, HTTPReq
 			if (!conn.readChunkedBody(parser))
 			{
 				// Case of error while reading chunked body
+				std::cout << "Error reading chunked body" << std::endl;
 				conn.setCanBeClosed(true);
 				conn.setHasFinishedReading(true);
 				// It could be that we had data that could be sent even if we have an error cause previous data was read
@@ -146,7 +147,7 @@ void Server::readFromClient(Connection &conn, size_t &i, Parser &parser, HTTPReq
 			}
 			conn.setHasReadSocket(true);
 		}
-		else
+		else if (!conn.getHasReadSocket())
 		{
 			std::cout << "\033[1;33m" << "Reading body" << "\033[0m" << std::endl;
 			// TODO: add comments
