@@ -20,7 +20,7 @@ jobs:
         run: make re
       - name: Install Python dependencies
         run: |
-          python3 -m pip install aiohttp asyncio
+          python3 -m pip install aiohttp asyncio aiofiles
       - name: Start webserv in background
         run: ./webserv &
       - name: Run Config file tests
