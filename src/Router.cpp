@@ -8,6 +8,9 @@ Router::Router()
 Router::Router(std::vector<ServerBlock> serverBlocks)
 {
 	_serverBlock = serverBlocks[0];
+	// take the server block that has a server name matching the host in the request header
+	//  if it does not match
+	// answer with 404
 }
 
 Router::Router(const Router &obj)

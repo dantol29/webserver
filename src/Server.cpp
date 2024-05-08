@@ -223,6 +223,9 @@ void Server::readFromClient(Connection &conn, size_t &i, Parser &parser, HTTPReq
 
 void Server::buildResponse(Connection &conn, size_t &i, HTTPRequest &request, HTTPResponse &response)
 {
+	// retrieve the server block which has a server name matching the request host header
+	// check if the listen in the server block is matching port and ip from connection
+
 	(void)i;
 	std::cout << "\033[1;36m"
 			  << "Entering buildResponse"
