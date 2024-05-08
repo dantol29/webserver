@@ -148,32 +148,30 @@ void UploadHandler::handleResponse(HTTPResponse &response, enum UploadStatus sta
 {
 	std::string fileContents;
 	int statusCode;
-	std::string statusDescription;
 
 	if (status == SUCCESS)
 	{
 		std::cout << "Upload: File created successfully" << std::endl;
 		fileContents = readFileContents("html/success/200_upload_success.html");
 		statusCode = 200;
-		statusDescription = "OK";
+		response.setStatusCode(statusCode, "OK");
 	}
 	else if (status == BAD_REQUEST)
 	{
 		std::cout << "Upload: Bad request" << std::endl;
 		fileContents = readFileContents("html/errors/400.html");
 		statusCode = 400;
-		statusDescription = "Bad Request";
+		response.setStatusCode(statusCode, "Bad Request");
 	}
 	else
 	{
 		std::cout << "Upload: Internal server error" << std::endl;
 		fileContents = "<html><body><h1>Unknown Error</h1></body></html>";
 		statusCode = 500;
-		statusDescription = "Internal Server Error";
+		response.setStatusCode(statusCode, "Internal Server Error");
 	}
 
 	response.setHeader("Content-Type", "text/html");
 	response.setHeader("Content-Length", toString(fileContents.length()));
 	response.setBody(fileContents);
-	response.setStatusCode(statusCode, statusDescription);
 }
