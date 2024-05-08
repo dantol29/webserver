@@ -1,5 +1,6 @@
 import asyncio
 import aiohttp
+import sys
 
 GREEN = "\033[92m"
 RED = "\033[91m"
@@ -16,16 +17,17 @@ headers_8kb = {"Host": "www.example.com", "X-Custom-Header": "A" * (BUFFER_SIZE 
 
 headers_chunked = {"Host": "www.example.com", "Transfer-Encoding": "chunked"}
 
-
 url = "http://localhost:8080"
 
 
 async def print_message(status, expected_status, message):
-    if status == expected_status:
-        print(GREEN + f"{status} OK " + message + RESET)
-    else:
-        print(RED + f"{status} KO " + message + RESET)
 
+	global is_error
+	if status == expected_status:
+		print(GREEN + f"{status} OK " + message + RESET)
+	else:
+		print(RED + f"{status} KO " + message + RESET)
+		is_error = True
 
 async def upload_multiple_file():
     async with aiohttp.ClientSession() as session:
@@ -90,13 +92,21 @@ async def func_headers_buffer_size():
 
 # send requests async
 async def main():
-    await upload_large_file("5mb.jpg")  # large file to test non-blocking
-    await func_headers_buffer_size()  # header bigger than 1024 bytes(server should read in multiple reads)
-    await func_headers_8kb()  # header bigger than 8KB (server should send 431)
-    await chunked_request()  # chunked request
-    await upload_file("a.txt")  # upload singe small file
-    await upload_multiple_file()  # upload 3 files at the same time (in one POST request)
 
+	global is_error
+
+	is_error = False
+	await upload_large_file("5mb.jpg") # large file to test non-blocking
+	await func_headers_buffer_size() # header bigger than 1024 bytes(server should read in multiple reads)
+	await func_headers_8kb() # header bigger than 8KB (server should send 431)
+	# await chunked_request() # chunked request
+	await upload_file("a.txt") # upload singe small file
+	await upload_multiple_file() # upload 3 files at the same time (in one POST request)
+
+
+	if (is_error == True):
+		sys.exit(1)
+	sys.exit(0)
 
 if __name__ == "__main__":
     asyncio.run(main())

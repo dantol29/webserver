@@ -32,13 +32,23 @@ void Server::startListening()
 void Server::startPollEventLoop()
 {
 	addServerSocketPollFdToVectors();
+	int pollCounter = 0;
 	while (1)
 	{
-		std::cout << "++++++++++++++ Waiting for new connection or Polling +++++++++++++++" << std::endl;
+		printConnections("BEFORE POLL", _FDs, _connections, true);
+		std::cout << CYAN << "++++++++++++++ #" << pollCounter
+				  << " Waiting for new connection or Polling +++++++++++++++" << RESET << std::endl;
 		int ret = poll(_FDs.data(), _FDs.size(), -1);
+		pollCounter++;
+		printFrame("POLL EVENT DETECTED", true);
+		printConnections("AFTER POLL", _FDs, _connections, true);
 		if (ret > 0)
 		{
-			for (size_t i = 0; i < _FDs.size(); i++)
+			size_t originalSize = _FDs.size();
+			// if _FDs becomes bigger than originalSize we don't want to loop over the new elements before we finish the
+			// old ones if _FDs becomes smaller than originalSize we don't want to loop over the old elements that are
+			// not in _FDs anymore
+			for (size_t i = 0; i < originalSize && i < _FDs.size(); i++)
 			{
 				if (_FDs[i].revents & (POLLIN | POLLOUT))
 				{
@@ -46,24 +56,19 @@ void Server::startPollEventLoop()
 					std::cout << "Enters revents" << std::endl;
 					if (i == 0)
 					{
-						std::cout << "Server socket event" << std::endl;
-						acceptNewConnection();
+						printFrame("SERVER SOCKET EVENT", true);
+						acceptNewConnection(_connections[i]);
 					}
 					else
 					{
-						std::cout << "Client socket event" << std::endl;
+						printFrame("CLIENT SOCKET EVENT", true);
 						handleConnection(_connections[i],
 										 i,
 										 _connections[i].getParser(),
 										 _connections[i].getRequest(),
 										 _connections[i].getResponse());
-						// TODO: clean this dirt!
-						// add comments
-
-						// it is NOT CORRECT because we do i-- in closeConnection
-						// if (_connections[i].getHasFinishedReading() \
-					// && _connections[i].getHasDataToSend())
-						//_FDs[i].events = POLLOUT;
+						if (_connections[i].getHasFinishedReading() && _connections[i].getHasDataToSend())
+							_FDs[i].events = POLLOUT;
 					}
 				}
 				else if (_FDs[i].revents & (POLLERR | POLLHUP | POLLNVAL))
@@ -93,9 +98,8 @@ void createFile(HTTPRequest &request)
 		if (it->headers.find("filename") == it->headers.end())
 		{
 			std::cout << "422 Unprocessable Entity (Error: file does not have a name)" << std::endl;
-			return ;
+			return;
 		}
-
 	}
 
 	// create files
@@ -107,7 +111,7 @@ void createFile(HTTPRequest &request)
 			outfile << it->fileContent;
 			outfile.close();
 			std::cout << "File created successfully" << std::endl;
-		} 
+		}
 		else
 			std::cout << "422 Unprocessable Entity (Error creating a file)" << std::endl;
 	}
@@ -116,11 +120,15 @@ void createFile(HTTPRequest &request)
 void Server::readFromClient(Connection &conn, size_t &i, Parser &parser, HTTPRequest &request, HTTPResponse &response)
 {
 	(void)i;
-	std::cout << "\033[1;36m" << "Entering readFromClient" << "\033[0m" << std::endl;
+	std::cout << "\033[1;36m"
+			  << "Entering readFromClient"
+			  << "\033[0m" << std::endl;
 	// TODO: change to _areHeadersCopmplete
 	if (!parser.getHeadersComplete())
 	{
-		std::cout << "\033[1;33m" << "Reading headers" << "\033[0m" << std::endl;
+		std::cout << "\033[1;33m"
+				  << "Reading headers"
+				  << "\033[0m" << std::endl;
 		if (!conn.readHeaders(parser))
 		{
 			std::cout << "Error reading headers" << std::endl;
@@ -175,7 +183,9 @@ void Server::readFromClient(Connection &conn, size_t &i, Parser &parser, HTTPReq
 		}
 		else
 		{
-			std::cout << "\033[1;33m" << "Reading body" << "\033[0m" << std::endl;
+			std::cout << "\033[1;33m"
+					  << "Reading body"
+					  << "\033[0m" << std::endl;
 			// TODO: add comments
 			if (!parser.getBodyComplete() && parser.getBuffer().size() == request.getContentLength())
 			{
@@ -201,7 +211,7 @@ void Server::readFromClient(Connection &conn, size_t &i, Parser &parser, HTTPReq
 			conn.setHasReadSocket(true);
 			return;
 		}
-		//std::cout << parser.getBuffer() << std::endl;
+		// std::cout << parser.getBuffer() << std::endl;
 		if (!request.getUploadBoundary().empty())
 			parser.parseFileUpload(parser.getBuffer(), request, response);
 		else if (request.getMethod() != "GET")
@@ -215,7 +225,9 @@ void Server::readFromClient(Connection &conn, size_t &i, Parser &parser, HTTPReq
 void Server::buildResponse(Connection &conn, size_t &i, HTTPRequest &request, HTTPResponse &response)
 {
 	(void)i;
-	std::cout << "\033[1;36m" << "Entering buildResponse" << "\033[0m" << std::endl;
+	std::cout << "\033[1;36m"
+			  << "Entering buildResponse"
+			  << "\033[0m" << std::endl;
 	std::cout << "\033[1;91mRequest status code: " << response.getStatusCode() << "\033[0m" << std::endl;
 	if (response.getStatusCode() != 0)
 	{
@@ -238,7 +250,9 @@ void Server::buildResponse(Connection &conn, size_t &i, HTTPRequest &request, HT
 
 void Server::writeToClient(Connection &conn, size_t &i, HTTPResponse &response)
 {
-	std::cout << "\033[1;36m" << "Entering writeToClient" << "\033[0m" << std::endl;
+	std::cout << "\033[1;36m"
+			  << "Entering writeToClient"
+			  << "\033[0m" << std::endl;
 	(void)i;
 	send(conn.getPollFd().fd, response.objToString().c_str(), response.objToString().size(), 0);
 	// conn.setHasDataToSend(); will not be always false in case of chunked response or keep-alive connection
@@ -250,7 +264,9 @@ void Server::writeToClient(Connection &conn, size_t &i, HTTPResponse &response)
 
 void Server::closeClientConnection(Connection &conn, size_t &i)
 {
-	std::cout << "\033[1;36m" << "Entering closeClientConnection" << "\033[0m" << std::endl;
+	std::cout << "\033[1;36m"
+			  << "Entering closeClientConnection"
+			  << "\033[0m" << std::endl;
 	// if (response.getStatusCode() != 0)
 	// if (conn.getResponse().getStatusCode() != 0 && conn.getResponse().getStatusCode() != 499)
 	// {
@@ -266,7 +282,9 @@ void Server::closeClientConnection(Connection &conn, size_t &i)
 
 void Server::handleConnection(Connection &conn, size_t &i, Parser &parser, HTTPRequest &request, HTTPResponse &response)
 {
-	std::cout << "\033[1;36m" << "Entering handleConnection" << "\033[0m" << std::endl;
+	std::cout << "\033[1;36m"
+			  << "Entering handleConnection"
+			  << "\033[0m" << std::endl;
 	// conn.printConnection();
 
 	// Why is it TRUE when I refresh a page?????
@@ -275,8 +293,11 @@ void Server::handleConnection(Connection &conn, size_t &i, Parser &parser, HTTPR
 	if (!conn.getHasFinishedReading())
 		readFromClient(conn, i, parser, request, response);
 	// TODO: add comments to explain
-	if (conn.getHasReadSocket() && !conn.getHasFinishedReading()){
-		std::cout << "\033[1;36m" << "return from handleConnection" << "\033[0m" << std::endl;
+	if (conn.getHasReadSocket() && !conn.getHasFinishedReading())
+	{
+		std::cout << "\033[1;36m"
+				  << "return from handleConnection"
+				  << "\033[0m" << std::endl;
 		return;
 	}
 	if (!conn.getCanBeClosed() && !conn.getHasDataToSend())
@@ -358,12 +379,35 @@ void Server::addServerSocketPollFdToVectors()
 	serverPollFd.fd = _serverFD;
 	serverPollFd.events = POLLIN;
 	serverPollFd.revents = 0;
+	if (VERBOSE)
+	{
+		std::cout << "pollfd struct for Server socket created" << std::endl;
+		std::cout << std::endl;
+		std::cout << "Printing serverPollFd (struct pollfd) before push_back into _FDs" << std::endl;
+		std::cout << "fd: " << serverPollFd.fd << ", events: " << serverPollFd.events
+				  << ", revents: " << serverPollFd.revents << std::endl;
+	}
 	_FDs.push_back(serverPollFd);
 	Connection serverConnection(serverPollFd, *this);
+	serverConnection.setType(SERVER);
+	serverConnection.setServerIp(inet_ntoa(_serverAddr.sin_addr));
+	serverConnection.setServerPort(ntohs(_serverAddr.sin_port));
+	if (VERBOSE)
+	{
+		std::cout << "Server Connection object created" << std::endl;
+		std::cout << MAGENTA << "Printing serverConnection before push_back" << std::endl << RESET;
+		serverConnection.printConnection();
+	}
 	_connections.push_back(serverConnection);
+	if (VERBOSE)
+	{
+		std::cout << MAGENTA << "Printing serverConnection after push_back" << RESET << std::endl;
+		_connections.back().printConnection();
+		std::cout << "Server socket pollfd added to vectors" << std::endl;
+	}
 }
 
-void Server::acceptNewConnection()
+void Server::acceptNewConnection(Connection &conn)
 {
 	// TODO: think about naming.
 	// We have 4 different names for kind of the same thing: clientAddress, newSocket, newSocketPoll,
@@ -371,7 +415,8 @@ void Server::acceptNewConnection()
 	struct sockaddr_in clientAddress;
 	socklen_t ClientAddrLen = sizeof(clientAddress);
 	std::cout << "New connection detected" << std::endl;
-	int newSocket = accept(_serverFD, (struct sockaddr *)&clientAddress, (socklen_t *)&ClientAddrLen);
+	// int newSocket = accept(_serverFD, (struct sockaddr *)&clientAddress, (socklen_t *)&ClientAddrLen);
+	int newSocket = accept(conn.getPollFd().fd, (struct sockaddr *)&clientAddress, (socklen_t *)&ClientAddrLen);
 	if (newSocket >= 0)
 	{
 		struct pollfd newSocketPoll;
@@ -379,12 +424,37 @@ void Server::acceptNewConnection()
 		newSocketPoll.events = POLLIN;
 		newSocketPoll.revents = 0;
 		Connection newConnection(newSocketPoll, *this);
+		newConnection.setType(CLIENT);
+		newConnection.setServerIp(conn.getServerIp());
+		newConnection.setServerPort(conn.getServerPort());
+		if (VERBOSE)
+		{
+
+			std::cout << PURPLE << "BEFORE PUSH_BACK" << RESET << std::endl;
+			std::cout << "Printing newConnection:" << std::endl;
+			newConnection.printConnection();
+			std::cout << "Printing struct pollfd newSocketPoll:" << std::endl;
+			std::cout << "fd: " << newSocketPoll.fd << ", events: " << newSocketPoll.events
+					  << ", revents: " << newSocketPoll.revents << std::endl;
+		}
 		/* start together */
 		_FDs.push_back(newSocketPoll);
 		_connections.push_back(newConnection);
 		std::cout << newConnection.getHasFinishedReading() << std::endl;
 		std::cout << _connections.back().getHasFinishedReading() << std::endl;
 		/* end together */
+		if (VERBOSE)
+		{
+			std::cout << PURPLE << "AFTER PUSH_BACK" << RESET << std::endl;
+			std::cout << "Printing last element of _FDs:" << std::endl;
+			std::cout << "fd: " << _FDs.back().fd << ", events: " << _FDs.back().events
+					  << ", revents: " << _FDs.back().revents << std::endl;
+			std::cout << "Printing last element of _connections:" << std::endl;
+			_connections.back().printConnection();
+			std::cout << "Pringing the whole _FDs and _connections vectors after adding new connection" << std::endl;
+			print_connectionsVector(_connections);
+			printFDsVector(_FDs);
+		}
 		char clientIP[INET_ADDRSTRLEN];
 		inet_ntop(AF_INET, &clientAddress.sin_addr, clientIP, INET_ADDRSTRLEN);
 		std::cout << "New connection from " << clientIP << std::endl;

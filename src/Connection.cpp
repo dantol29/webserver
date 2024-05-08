@@ -5,6 +5,9 @@ Connection::Connection(struct pollfd &pollFd, Server &server)
 {
 	(void)server;
 	_pollFd.fd = pollFd.fd;
+	_type = UNDEFINED;
+	_serverIp = "";
+	_serverPort = 0;
 	_pollFd.events = POLLIN;
 	_pollFd.revents = 0;
 	_hasReadSocket = false;
@@ -18,6 +21,13 @@ Connection::Connection(const Connection &other)
 {
 	_pollFd = other._pollFd;
 	_response = other._response;
+	_request = other._request;
+	_parser = other._parser;
+	_type = other._type;
+	_serverIp = other._serverIp;
+	_serverPort = other._serverPort;
+	_request = other._request;
+	_parser = other._parser;
 	_hasReadSocket = other._hasReadSocket;
 	_hasFinishedReading = other._hasFinishedReading;
 	_hasDataToSend = other._hasDataToSend;
@@ -33,6 +43,16 @@ Connection &Connection::operator=(const Connection &other)
 	{
 		_pollFd = other._pollFd;
 		_response = other._response;
+		_request = other._request;
+		_parser = other._parser;
+		_type = other._type;
+		_serverIp = other._serverIp;
+		_serverPort = other._serverPort;
+		_hasReadSocket = other._hasReadSocket;
+		_hasFinishedReading = other._hasFinishedReading;
+		_hasDataToSend = other._hasDataToSend;
+		_hasFinishedSending = other._hasFinishedSending;
+		_canBeClosed = other._canBeClosed;
 	}
 	std::cout << "Connection object assigned" << std::endl;
 	return *this;
@@ -41,23 +61,11 @@ Connection &Connection::operator=(const Connection &other)
 Connection::~Connection()
 {
 	std::cout << "Connection object destroyed" << std::endl;
-	// Should I close the file descriptor here?
-	// This was causing errors, cause when exiting from scope of the function where the Connection object was creted it
-	// was closing the file descriptor. When we push back the Connection object in the vector of connections we make a
-	// copy of the object, so the file descriptor was closed in the original object and the copy was left with an
-	// invalid file descriptor. if (_pollFd.fd != -1)
-	// {
-	// 	close(_pollFd.fd);
-	// 	_pollFd.fd = -1; // Invalidate the file descriptor to prevent double closing
-	// }
 }
 
 // GETTERS AND SETTERS
 
-struct pollfd Connection::getPollFd() const
-{
-	return _pollFd;
-}
+// GETTERS
 
 HTTPResponse &Connection::getResponse()
 {
@@ -73,23 +81,9 @@ Parser &Connection::getParser()
 	return _parser;
 }
 
-bool Connection::getHasReadSocket()
+struct pollfd Connection::getPollFd() const
 {
-	return _hasReadSocket;
-}
-
-bool Connection::getHasFinishedReading()
-{
-	return _hasFinishedReading;
-}
-
-bool Connection::getHasDataToSend()
-{
-	return _hasDataToSend;
-}
-bool Connection::getHasFinishedSending()
-{
-	return _hasFinishedSending;
+	return _pollFd;
 }
 
 struct pollfd &Connection::getPollFd()
@@ -97,9 +91,60 @@ struct pollfd &Connection::getPollFd()
 	return _pollFd;
 }
 
-bool Connection::getCanBeClosed()
+enum ConnectionType Connection::getType() const
+{
+	return _type;
+}
+
+std::string Connection::getServerIp() const
+{
+	return _serverIp;
+}
+
+unsigned short Connection::getServerPort() const
+{
+	return _serverPort;
+}
+
+bool Connection::getHasReadSocket() const
+{
+	return _hasReadSocket;
+}
+
+bool Connection::getHasFinishedReading() const
+{
+	return _hasFinishedReading;
+}
+
+bool Connection::getHasDataToSend() const
+{
+	return _hasDataToSend;
+}
+bool Connection::getHasFinishedSending() const
+{
+	return _hasFinishedSending;
+}
+
+bool Connection::getCanBeClosed() const
 {
 	return _canBeClosed;
+}
+
+// SETTERS
+
+void Connection::setType(enum ConnectionType type)
+{
+	_type = type;
+}
+
+void Connection::setServerIp(std::string serverIp)
+{
+	_serverIp = serverIp;
+}
+
+void Connection::setServerPort(unsigned short serverPort)
+{
+	_serverPort = serverPort;
 }
 
 void Connection::setHasReadSocket(bool value)
@@ -130,7 +175,7 @@ void Connection::setCanBeClosed(bool value)
 {
 	_canBeClosed = value;
 }
-// Attempts to read HTTP request headers from the client connection into _headersBuffer on the Parser.
+
 bool Connection::readHeaders(Parser &parser)
 {
 	// std::cout << "\nEntering readHeaders" << std::endl;
@@ -324,6 +369,23 @@ bool Connection::readBody(Parser &parser, HTTPRequest &req, HTTPResponse &res)
 
 void Connection::printConnection() const
 {
-	std::cout << "\nprintConnection" << std::endl;
-	std::cout << "Connection: " << _pollFd.fd << std::endl;
+	std::cout << CYAN << "CONNECTION # " << _pollFd.fd << " (fd)" << RESET << std::endl;
+
+	std::string connectionType;
+
+	if (_type == SERVER)
+		connectionType = "SERVER";
+	else if (_type == CLIENT)
+		connectionType = "CLIENT";
+	else
+		connectionType = "UNDEFINED";
+
+	std::cout << std::setw(5) << ' ' << std::left << std::setw(22) << "type:" << connectionType << std::endl;
+	std::cout << std::setw(5) << ' ' << std::left << std::setw(22) << "hasReadSocket:" << _hasReadSocket << std::endl;
+	std::cout << std::setw(5) << ' ' << std::left << std::setw(22) << "hasFinishedReading:" << _hasFinishedReading
+			  << std::endl;
+	std::cout << std::setw(5) << ' ' << std::left << std::setw(22) << "hasDataToSend:" << _hasDataToSend << std::endl;
+	std::cout << std::setw(5) << ' ' << std::left << std::setw(22) << "hasFinishedSending:" << _hasFinishedSending
+			  << std::endl;
+	std::cout << std::setw(5) << ' ' << std::left << std::setw(22) << "canBeClosed:" << _canBeClosed << std::endl;
 }
