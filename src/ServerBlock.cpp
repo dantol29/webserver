@@ -39,7 +39,7 @@ bool ServerBlock::addDirective(std::string key, std::string& value, bool isLocat
 	}
 
 	if (key == "listen")
-		setListen(value, isLocation);
+		setListen(transformServerListen(value), isLocation);
 	else if (key == "server_name")
 		setServerName(transformServerName(value), isLocation);
 	else if (key == "error_page")
@@ -146,12 +146,23 @@ std::vector<std::string> ServerBlock::getCgiExt() const
 	return (_directives._cgiExt);
 }
 
-void ServerBlock::setListen(std::string& str, bool isLocation)
+void ServerBlock::setListen(std::vector<std::string> str, bool isLocation)
 {
-	if (!isLocation)
-		_directives._listen.push_back(str);
+	if (!isLocation){
+		for (unsigned int i = 0; i < str.size(); ++i)
+			_directives._listen.push_back(str[i]);
+	}
 	else
-		_locations.back()._listen.push_back(str);
+		throw ("listen directive not allowed in location block");
+
+	for (unsigned int i = 0; i < _directives._listen.size(); ++i)
+	{
+		for (unsigned int j = 0; j < _directives._listen.size(); ++j)
+		{
+			if (i != j && _directives._listen[i] == _directives._listen[j])
+				throw ("Duplicate listen directive");
+		}
+	}	
 }
 
 void ServerBlock::setServerName(std::vector<std::string> str, bool isLocation)
@@ -339,6 +350,20 @@ std::vector<std::string> ServerBlock::transformServerName(std::string& str)
 		newStr.push_back(str);
 	return (newStr);
 }
+
+std::vector<std::string> ServerBlock::transformServerListen(std::string& str)
+{
+	std::vector<std::string> newStr;
+	std::stringstream ss(str);
+	std::string name;
+
+	while (std::getline(ss, name, ' '))
+		newStr.push_back(name);
+	if (newStr.empty())
+		newStr.push_back(str);
+	return (newStr);
+}
+
 
 std::pair<int, std::string> ServerBlock::transformErrorPage(std::string& str)
 {

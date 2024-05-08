@@ -67,7 +67,7 @@ class ServerBlock
 		std::string getCgiPath() const;
 
 		// SETTERS
-		void setListen(std::string& str, bool isLocation);
+		void setListen(std::vector<std::string> str, bool isLocation);
 		void setServerName(std::vector<std::string> str, bool isLocation);
 		void setErrorPage(std::pair<int, std::string> str, bool isLocation);
 		void setIndex(std::vector<std::string> str, bool isLocation);
@@ -87,6 +87,7 @@ class ServerBlock
 		std::vector<Directives> _locations;
 		
 		// TRANSFORMERS
+		std::vector<std::string> transformServerListen(std::string& str);
 		std::vector<std::string> transformServerName(std::string& str);
 		std::pair<int, std::string> transformErrorPage(std::string& str);
 		std::vector<std::string> transformIndex(std::string& str);
