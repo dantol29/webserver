@@ -11,6 +11,22 @@
 // ---------------------------------
 struct Directives
 {
+	Directives()
+	{
+		_listen.clear();
+		_serverName.clear();
+		_errorPage.clear();
+		_index.clear();
+		_root = "";
+		_clientMaxBodySize = 0;
+		_autoindex = false;
+		_allowedMethods.clear();
+		_alias = "";
+		_cgiPath = "";
+		_cgiExt.clear();
+		_path = "";
+	
+	}
 	std::vector<std::string> _listen;
 	std::vector<std::string> _serverName;
 	std::vector<std::pair<int, std::string> >_errorPage;
