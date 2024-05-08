@@ -15,6 +15,13 @@ std::mutex coutMutex;
 
 using NameUrlPair = std::pair<std::string, std::string>;
 
+// Struct to hold the results of each request
+struct RequestResult
+{
+	std::string name;
+	double duration; // in milliseconds
+};
+
 // Function to extract the status code from the HTTP response
 std::string extractStatusCode(const std::string &response)
 {
@@ -31,7 +38,7 @@ std::string extractStatusCode(const std::string &response)
 	}
 }
 
-void GetRequest(const NameUrlPair &nameUrlPair)
+RequestResult GetRequest(const NameUrlPair &nameUrlPair)
 {
 	const std::string &name = nameUrlPair.first;
 	const std::string &url = nameUrlPair.second;
@@ -47,7 +54,7 @@ void GetRequest(const NameUrlPair &nameUrlPair)
 		std::cerr << "Socket creation failed" << std::endl;
 		std::cout << "❌ Test Failed" << std::endl;
 		std::cout << "--------------------------------" << std::endl;
-		return;
+		return {name, -1};
 	}
 
 	struct sockaddr_in serverAddress;
@@ -61,7 +68,7 @@ void GetRequest(const NameUrlPair &nameUrlPair)
 		std::cout << "❌ Test Failed" << std::endl;
 		close(sock);
 		std::cout << "--------------------------------" << std::endl;
-		return;
+		return {name, -1};
 	}
 
 	if (connect(sock, (struct sockaddr *)&serverAddress, sizeof(serverAddress)) < 0)
@@ -70,7 +77,7 @@ void GetRequest(const NameUrlPair &nameUrlPair)
 		std::cout << "❌ Test Failed" << std::endl;
 		close(sock);
 		std::cout << "--------------------------------" << std::endl;
-		return;
+		return {name, -1};
 	}
 
 	auto start = std::chrono::high_resolution_clock::now();
@@ -82,7 +89,7 @@ void GetRequest(const NameUrlPair &nameUrlPair)
 		std::cout << "❌ Test Failed" << std::endl;
 		close(sock);
 		std::cout << "--------------------------------" << std::endl;
-		return;
+		return {name, -1};
 	}
 
 	char buffer[4096];
@@ -109,6 +116,9 @@ void GetRequest(const NameUrlPair &nameUrlPair)
 			std::cout << "Response Header:" << std::endl << response.substr(0, headerEnd) << std::endl;
 			std::cout << "Status Code: " << statusCode << std::endl;
 			std::cout << "✅ Test Passed. Time taken: " << duration.count() << " ms" << std::endl;
+			std::cout << "--------------------------------" << std::endl;
+			close(sock);
+			return {name, duration.count()};
 		}
 		else
 		{
@@ -119,6 +129,7 @@ void GetRequest(const NameUrlPair &nameUrlPair)
 
 	std::cout << "--------------------------------" << std::endl;
 	close(sock);
+	return {name, -1};
 }
 
 int main()
@@ -127,13 +138,11 @@ int main()
 		{"1 - Index", "/index.html"}, {"2 - Largefile", "/largefile"}, {"3 - Example", "/example.html"}};
 
 	std::thread threads[3];
+	std::vector<RequestResult> results(3);
+
 	for (size_t i = 0; i < nameUrlPairs.size(); ++i)
 	{
-		if (i > 0)
-		{
-			std::this_thread::sleep_for(std::chrono::milliseconds(20));
-		}
-		threads[i] = std::thread(GetRequest, nameUrlPairs[i]);
+		threads[i] = std::thread([&results, i, &nameUrlPairs]() { results[i] = GetRequest(nameUrlPairs[i]); });
 	}
 
 	for (auto &thread : threads)
@@ -141,5 +150,15 @@ int main()
 		thread.join();
 	}
 
-	return 0;
+	// Verify the last request was faster than the second (largefile)
+	if (results[2].duration >= 0 && results[1].duration >= 0 && results[2].duration < results[1].duration)
+	{
+		std::cout << "✅ Test Passed: The third request was faster than the second." << std::endl;
+		return 0;
+	}
+	else
+	{
+		std::cout << "❌ Test Failed: The third request was not faster than the second." << std::endl;
+		return 1;
+	}
 }
