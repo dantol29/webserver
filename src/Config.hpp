@@ -9,6 +9,7 @@
 class Config
 {
   public:
+	Config(const char* file);
 	Config();
 	~Config();
 	Config(const Config &obj);

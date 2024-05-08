@@ -11,31 +11,11 @@ int main(int argc, char **argv)
 		return (1);
 	}
 
-	Config config;
-	std::ifstream configFile;
-
-	try{
-		if (argc == 2)
-		{
-			configFile.open(argv[1]);
-			config.parse(configFile);
-		}
-		else
-		{
-			configFile.open(CONFIG_FILE_DEFAULT_PATH);
-			config.parse(configFile);
-		}
-		if (!config.getErrorMessage().empty())
-		{
-			std::cout << config.getErrorMessage() << std::endl;
-			return 1;
-		}
-	}
-	catch (const char* error){
-		std::cout << "Exception caught: " << error << std::endl;
+	Config config(argv[1]);
+	if (!config.getErrorMessage().empty())
 		return 1;
-	}
-	// std::cout << config << std::endl; // should be in the DEBUG?
+	
+	std::cout << config << std::endl; // should be in the DEBUG?
 	Server webserv(config);
 	webserv.startListening();
 	webserv.startPollEventLoop();

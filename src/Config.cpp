@@ -4,6 +4,25 @@
 #include <dirent.h> // opendir
 #include <fstream>
 
+Config::Config(const char *file)
+{
+	std::ifstream configFile;
+
+	if (file)
+		configFile.open(file);
+	else
+		configFile.open(CONFIG_FILE_DEFAULT_PATH);
+	
+	try {
+		parse(configFile);
+	}
+	catch (const char* error){
+		_errorMessage = error;
+	}
+	if (!_errorMessage.empty())
+		std::cerr << _errorMessage << std::endl;
+}
+
 Config::Config()
 {
 }
