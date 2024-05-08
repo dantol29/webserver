@@ -250,7 +250,8 @@ std::ostream& operator<<(std::ostream& out, const Config& a)
 		std::vector<Directives> loc = it->getLocations();
 
 		std::cout << "------------------Server-Block------------------------" << std::endl;
-		std::cout << "listen: " << var._listen << std::endl;
+		for (unsigned int i = 0; i < var._listen.size(); ++i)
+			std::cout << var._listen[i] << " ";
 		std::cout << "server_name: ";
 		for (unsigned int i = 0; i < var._serverName.size(); ++i)
 			std::cout << var._serverName[i] << " ";
@@ -271,7 +272,8 @@ std::ostream& operator<<(std::ostream& out, const Config& a)
 		{
 			std::cout << "------------------Location-Block------------------------" << std::endl;
 			std::cout << "path: " << loc[i]._path << std::endl;
-			std::cout << "listen: " << loc[i]._listen << std::endl;
+			for (unsigned int i = 0; i < loc[i]._listen.size(); ++i)
+				std::cout << loc[i]._listen[i] << " ";
 			std::cout << "server_name: ";
 			for (unsigned int i = 0; i < loc[i]._serverName.size(); ++i)
 				std::cout << loc[i]._serverName[i] << " ";

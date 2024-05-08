@@ -29,7 +29,7 @@ bool ServerBlock::addVariable(std::string key, std::string& value, bool isLocati
 {
 	std::string var[] = {"listen", "server_name", "error_page", \
 	"index", "root", "client_max_body_size", "autoindex", "allow_methods", \
-	"alias", "path"};
+	"alias", "path", "cgi_path", "cgi_ext"};
 	std::list<std::string> validVar(var, var + sizeof(var) / sizeof(var[0]));
 
 	if (std::find(validVar.begin(), validVar.end(), key) == validVar.end())
@@ -56,6 +56,10 @@ bool ServerBlock::addVariable(std::string key, std::string& value, bool isLocati
 		setAllowedMethods(transformAllowedMethods(value), isLocation);
 	else if (key == "alias")
 		setAlias(value, isLocation);
+	else if (key == "cgi_path")
+		setCgiPath(value, isLocation);
+	else if (key == "cgi_ext")
+		setCgiExt(transformCgiExt(value), isLocation);
 	else if (key == "path" && isLocation)
 		setLocationPath(value);
 
@@ -87,7 +91,7 @@ std::vector<Directives> ServerBlock::getLocations() const
 	return (_locations);
 }
 
-std::string ServerBlock::getListen() const
+std::vector<std::string> ServerBlock::getListen() const
 {
 	return (_variables._listen);
 }
@@ -132,20 +136,38 @@ std::string ServerBlock::getAlias() const
 	return (_variables._alias);
 }
 
+std::string ServerBlock::getCgiPath() const
+{
+	return (_variables._cgiPath);
+}
+
+std::vector<std::string> ServerBlock::getCgiExt() const
+{
+	return (_variables._cgiExt);
+}
+
 void ServerBlock::setListen(std::string& str, bool isLocation)
 {
 	if (!isLocation)
-		_variables._listen = str;
+		_variables._listen.push_back(str);
 	else
-		_locations.back()._listen = str;
+		_locations.back()._listen.push_back(str);
 }
 
 void ServerBlock::setServerName(std::vector<std::string> str, bool isLocation)
 {
 	if (!isLocation)
+	{
+		if (_variables._serverName.size() > 0)
+			throw ("server_name already set");
 		_variables._serverName = str;
+	}
 	else
+	{
+		if (_locations.back()._serverName.size() > 0)
+			throw ("server_name already set");
 		_locations.back()._serverName = str;
+	}
 }
 
 void ServerBlock::setErrorPage(std::pair<int, std::string> str, bool isLocation)
@@ -159,30 +181,54 @@ void ServerBlock::setErrorPage(std::pair<int, std::string> str, bool isLocation)
 void ServerBlock::setIndex(std::vector<std::string> str, bool isLocation)
 {
 	if (!isLocation)
+	{
+		if (_variables._index.size() > 0)
+			throw ("index already set");
 		_variables._index = str;	
+	}
 	else
+	{
+		if (_locations.back()._index.size() > 0)
+			throw ("index already set");
 		_locations.back()._index = str;
+	}
 }
 
 void ServerBlock::setRoot(std::string& str, bool isLocation)
 {
 	if (!isLocation)
+	{
+		if (_variables._root.size() > 0)
+			throw ("root already set");
 		_variables._root = str;
+	}
 	else
+	{
+		if (_locations.back()._root.size() > 0)
+			throw ("root already set");
 		_locations.back()._root = str;
+	}
 }
 
 void ServerBlock::setClientMaxBodySize(std::string& str, bool isLocation)
 {
-	if (strToInt(str) == -1)
+	if (strToInt(str) < 1)
 		throw ("Invalid client_max_body_size");
 
 	size_t n = strToInt(str);
 	
 	if (!isLocation)
+	{
+		if (_variables._clientMaxBodySize > 0)
+			throw ("client_max_body_size already set");
 		_variables._clientMaxBodySize = n;	
+	}
 	else
+	{
+		if (_locations.back()._clientMaxBodySize > 0)
+			throw ("client_max_body_size already set");
 		_locations.back()._clientMaxBodySize = n;
+	}
 }
 
 void ServerBlock::setAutoIndex(std::string& str, bool isLocation)
@@ -197,25 +243,81 @@ void ServerBlock::setAutoIndex(std::string& str, bool isLocation)
 		throw("Invalid autoindex value (on/off)");
 
 	if (!isLocation)
+	{
+		if (_variables._autoindex)
+			throw ("autoindex already set");
 		_variables._autoindex = a;
+	}
 	else
+	{
+		if (_locations.back()._autoindex)
+			throw ("autoindex already set");
 		_locations.back()._autoindex = a;
+	}
 }
 
 void ServerBlock::setAllowedMethods(std::vector<std::string> str, bool isLocation)
 {
 	if (!isLocation)
+	{
+		if (_variables._allowedMethods.size() > 0)
+			throw ("allowed_methods already set");
 		_variables._allowedMethods = str;	
+	}
 	else
+	{
+		if (_locations.back()._allowedMethods.size() > 0)
+			throw ("allowed_methods already set");
 		_locations.back()._allowedMethods = str;
+	}
 }
 
 void ServerBlock::setAlias(std::string& str, bool isLocation)
 {
 	if (!isLocation)
+	{
+		if (_variables._alias.size() > 0)
+			throw ("alias already set");
 		_variables._alias = str;	
+	}
 	else
+	{
+		if (_locations.back()._alias.size() > 0)
+			throw ("alias already set");
 		_locations.back()._alias = str;
+	}
+}
+
+void ServerBlock::setCgiExt(std::vector<std::string> str, bool isLocation)
+{
+	if (!isLocation)
+	{
+		if (_variables._cgiExt.size() > 0)
+			throw ("cgi_ext already set");
+		_variables._cgiExt = str;	
+	}
+	else
+	{
+		if (_locations.back()._cgiExt.size() > 0)
+			throw ("cgi_ext already set");
+		_locations.back()._cgiExt = str;
+	}
+}
+
+void ServerBlock::setCgiPath(std::string str, bool isLocation)
+{
+	if (!isLocation)
+	{
+		if (_variables._cgiPath.size() > 0)
+			throw ("cgi_path already set");
+		_variables._cgiPath = str;	
+	}
+	else
+	{
+		if (_locations.back()._cgiPath.size() > 0)
+			throw ("cgi_path already set");
+		_locations.back()._cgiPath = str;
+	}
 }
 
 void ServerBlock::setLocationPath(std::string str)
@@ -280,6 +382,28 @@ std::vector<std::string> ServerBlock::transformAllowedMethods(std::string& str)
 		if (newStr[i] != "GET" && newStr[i] != "POST" \
 		&& newStr[i] != "PUT" && newStr[i] != "DELETE")
 			throw ("Invalid method");
+	}
+	return (newStr);
+}
+
+std::vector<std::string> ServerBlock::transformCgiExt(std::string& str)
+{
+	std::string extensions[] = {".php", ".py", ".pl"};
+	std::vector<std::string> newStr;
+	std::stringstream ss(str);
+	std::string name;
+
+	while (std::getline(ss, name, ' ')){
+		if (std::find(extensions, extensions + sizeof(extensions) / sizeof(extensions[0]), name) \
+		== extensions + sizeof(extensions) / sizeof(extensions[0]))
+			throw ("Invalid CGI extension");
+		newStr.push_back(name);
+	}
+	if (newStr.empty()){
+		if (std::find(extensions, extensions + sizeof(extensions) / sizeof(extensions[0]), str) \
+		== extensions + sizeof(extensions) / sizeof(extensions[0]))
+			throw ("Invalid CGI extension");
+		newStr.push_back(str);
 	}
 	return (newStr);
 }

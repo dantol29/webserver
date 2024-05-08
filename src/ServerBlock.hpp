@@ -7,11 +7,11 @@
 // ---------------------------------
 // 1. listen, 2. server_name, 3. error_page,
 // 4. index, 5. root, 6. client_max_body_size, 7. autoindex, 
-// 8. allow_methods, 9. alias, (cgi_path, cgi_ext) - optional
+// 8. allow_methods, 9. alias, 10. cgi_path, 11. cgi_ext
 // ---------------------------------
 struct Directives
 {
-	std::string _listen;
+	std::vector<std::string> _listen;
 	std::vector<std::string> _serverName;
 	std::vector<std::pair<int, std::string> >_errorPage;
 	std::vector<std::string> _index;
@@ -20,6 +20,8 @@ struct Directives
 	bool _autoindex;
 	std::vector<std::string> _allowedMethods;
 	std::string _alias;
+	std::vector<std::string> _cgiExt;
+	std::string _cgiPath;
 	std::string _path; // only for location blocks
 };
 
@@ -36,7 +38,7 @@ class ServerBlock
 		// GETTERS
 		Directives getVariables() const; // variables outside of locations
 		std::vector<Directives> getLocations() const; // location / {} blocks
-		std::string getListen() const;
+		std::vector<std::string> getListen() const;
 		std::vector<std::string> getServerName() const;
 		std::vector<std::pair<int, std::string> > getErrorPage() const;
 		std::vector<std::string> getIndex() const;
@@ -45,6 +47,8 @@ class ServerBlock
 		bool getAutoIndex() const;
 		std::vector<std::string> getAllowedMethods() const;
 		std::string getAlias() const;
+		std::vector<std::string> ServerBlock::getCgiExt() const;
+		std::string ServerBlock::getCgiPath() const;
 
 		// SETTERS
 		void setListen(std::string& str, bool isLocation);
@@ -56,6 +60,8 @@ class ServerBlock
 		void setAutoIndex(std::string& str, bool isLocation);
 		void setAllowedMethods(std::vector<std::string> str, bool isLocation);
 		void setAlias(std::string& str, bool isLocation);
+		void setCgiExt(std::vector<std::string> str, bool isLocation);
+		void setCgiPath(std::string str, bool isLocation);
 		void setLocationPath(std::string str);
 		
 		// clear ServerBlock
@@ -69,6 +75,7 @@ class ServerBlock
 		std::pair<int, std::string> transformErrorPage(std::string& str);
 		std::vector<std::string> transformIndex(std::string& str);
 		std::vector<std::string> transformAllowedMethods(std::string& str);
+		std::vector<std::string> transformCgiExt(std::string& str);
 		
 
 };
