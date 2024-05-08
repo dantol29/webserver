@@ -22,12 +22,16 @@ void Router::routeRequest(const HTTPRequest &request, HTTPResponse &response)
 		cgiHandler.handleRequest(request, response);
 		return;
 	}
-	else if (request.getMethod() == "POST")
+	else if (request.getMethod() == "POST" && !request.getUploadBoundary().empty())
 	{
 		std::cout << "Router: POST request" << std::endl;
 
 		UploadHandler uploadHandler;
 		uploadHandler.handleRequest(request, response);
+	}
+	else if (request.getMethod() == "SALAD")
+	{
+		std::cout << "🥬 + 🍅 + 🐟 = 🥗" << std::endl;
 	}
 	else
 	{

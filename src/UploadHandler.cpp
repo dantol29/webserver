@@ -13,25 +13,30 @@ UploadHandler::~UploadHandler()
 
 bool UploadHandler::isHarmfulExtension(const std::string &extension)
 {
-    const char* executableFilesArr[] = {"exe", "com", "bat", "cmd", "msi", "scr", "pif", "ps1"};
-    const char* dynamicLibrariesArr[] = {"dll", "so"};
-    const char* scriptsArr[] = {"js", "vbs", "py", "php", "pl", "sh"};
-    const char* configurationFilesArr[] = {"ini", "inf", "reg"};
+	const char *executableFilesArr[] = {"exe", "com", "bat", "cmd", "msi", "scr", "pif", "ps1"};
+	const char *dynamicLibrariesArr[] = {"dll", "so"};
+	const char *scriptsArr[] = {"js", "vbs", "py", "php", "pl", "sh"};
+	const char *configurationFilesArr[] = {"ini", "inf", "reg"};
 
-    // Initialize vectors directly from arrays
-    std::vector<std::string> executableFiles(executableFilesArr, executableFilesArr + sizeof(executableFilesArr) / sizeof(executableFilesArr[0]));
-    std::vector<std::string> dynamicLibraries(dynamicLibrariesArr, dynamicLibrariesArr + sizeof(dynamicLibrariesArr) / sizeof(dynamicLibrariesArr[0]));
-    std::vector<std::string> scripts(scriptsArr, scriptsArr + sizeof(scriptsArr) / sizeof(scriptsArr[0]));
-    std::vector<std::string> configurationFiles(configurationFilesArr, configurationFilesArr + sizeof(configurationFilesArr) / sizeof(configurationFilesArr[0]));
+	// Initialize vectors directly from arrays
+	std::vector<std::string> executableFiles(
+		executableFilesArr, executableFilesArr + sizeof(executableFilesArr) / sizeof(executableFilesArr[0]));
+	std::vector<std::string> dynamicLibraries(
+		dynamicLibrariesArr, dynamicLibrariesArr + sizeof(dynamicLibrariesArr) / sizeof(dynamicLibrariesArr[0]));
+	std::vector<std::string> scripts(scriptsArr, scriptsArr + sizeof(scriptsArr) / sizeof(scriptsArr[0]));
+	std::vector<std::string> configurationFiles(
+		configurationFilesArr,
+		configurationFilesArr + sizeof(configurationFilesArr) / sizeof(configurationFilesArr[0]));
 
-    // Combine all vectors into a single vector
-    std::vector<std::string> harmfulExtensions;
-    harmfulExtensions.reserve(executableFiles.size() + dynamicLibraries.size() + scripts.size() + configurationFiles.size());
+	// Combine all vectors into a single vector
+	std::vector<std::string> harmfulExtensions;
+	harmfulExtensions.reserve(executableFiles.size() + dynamicLibraries.size() + scripts.size() +
+							  configurationFiles.size());
 
-    harmfulExtensions.insert(harmfulExtensions.end(), executableFiles.begin(), executableFiles.end());
-    harmfulExtensions.insert(harmfulExtensions.end(), dynamicLibraries.begin(), dynamicLibraries.end());
-    harmfulExtensions.insert(harmfulExtensions.end(), scripts.begin(), scripts.end());
-    harmfulExtensions.insert(harmfulExtensions.end(), configurationFiles.begin(), configurationFiles.end());
+	harmfulExtensions.insert(harmfulExtensions.end(), executableFiles.begin(), executableFiles.end());
+	harmfulExtensions.insert(harmfulExtensions.end(), dynamicLibraries.begin(), dynamicLibraries.end());
+	harmfulExtensions.insert(harmfulExtensions.end(), scripts.begin(), scripts.end());
+	harmfulExtensions.insert(harmfulExtensions.end(), configurationFiles.begin(), configurationFiles.end());
 
 	if (std::find(harmfulExtensions.begin(), harmfulExtensions.end(), extension) != harmfulExtensions.end())
 	{
@@ -144,7 +149,6 @@ void UploadHandler::handleResponse(HTTPResponse &response, enum UploadStatus sta
 	std::string fileContents;
 	int statusCode;
 	std::string statusDescription;
-
 
 	if (status == SUCCESS)
 	{
