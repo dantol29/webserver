@@ -30,14 +30,15 @@
 !.cgi-bin/
 !docs/
 !tests/
+!/ngnix/nginx-1.24.0/*
 !webserv.conf
-!tests/
 !*.test
 
 # Exclude specific files or directories
 /secretus/
 /a.out
 **/*.o
-largefile  # so we don't pull and push 100mb file
+# so we don't pull and push 100mb file
+largefile  
 testers/myenv/
 
