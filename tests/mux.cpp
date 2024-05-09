@@ -136,7 +136,7 @@ RequestResult GetRequest(const NameUrlPair &nameUrlPair)
 int main()
 {
 	std::vector<NameUrlPair> nameUrlPairs = {
-		{"1 - Index", "/index.html"}, {"2 - Largefile", "/largefile"}, {"3 - Example", "/example.html"}};
+		{"1 - Index", "/index.html"}, {"2 - Largefile", "/5mb.jpg"}, {"3 - Example", "/example.html"}};
 
 	std::thread threads[3];
 	std::vector<RequestResult> results(3);
