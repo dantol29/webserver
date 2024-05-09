@@ -19,7 +19,7 @@
 #include "Parser.hpp"
 #include "Config.hpp"
 
-#define VERBOSE 1
+#define VERBOSE 0
 
 class Connection; // Forward declaration for circular dependency
 
