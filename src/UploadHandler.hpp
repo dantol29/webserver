@@ -3,29 +3,34 @@
 
 #include "AResponseHandler.hpp"
 #include <string>
-#include <fstream>
-#include <cstdlib> // For exit() and EXIT_FAILURE
-#include <cstring> // For memset
 #include <iostream>
-#include <netinet/in.h> // For sockaddr_in
-#include <sys/socket.h> // For socket functions
-#include <unistd.h>		// For read, write, and close
 #include <sstream>
+#include <filesystem>
 #include "webserv.hpp"
+
+enum UploadStatus
+{
+	SUCCESS,
+	BAD_REQUEST,
+	INTERNAL_SERVER_ERROR,
+};
 
 class UploadHandler : public AResponseHandler
 {
   public:
 	UploadHandler();
 	UploadHandler(const std::string &webRoot);
-	~UploadHandler();
+	UploadHandler &operator=(const UploadHandler &other);
 	void handleRequest(const HTTPRequest &request, HTTPResponse &response);
-	void handleResponse(HTTPResponse &response, const std::string &code);
+	~UploadHandler();
 
   private:
 	std::string _webRoot;
 	UploadHandler(const UploadHandler &other);
-	UploadHandler &operator=(const UploadHandler &other);
+	void handleResponse(HTTPResponse &response, enum UploadStatus status);
+	std::string readFileContents(const std::string &filePath);
+	bool isHarmfulExtension(const std::string &extension);
+	bool checkFiles(const HTTPRequest &request);
 };
 
 #endif

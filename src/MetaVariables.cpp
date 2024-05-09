@@ -2,6 +2,9 @@
 #include <utility>
 #include <MetaVariables.hpp>
 
+#define X_INTERPRETER_PATH ""
+// X_INTERPRETER_PATH "/home/lmangall/.brew/bin/python3";
+
 MetaVariables::MetaVariables()
 {
 }
@@ -131,6 +134,7 @@ void MetaVariables::HTTPRequestToMetaVars(const HTTPRequest &request, MetaVariab
 
 	// This line will have the code put the interpreter path as argv[0] to execve
 	//  env.setVar("X_INTERPRETER_PATH", "/home/lmangall/.brew/bin/python3"); // school computer...
+	env.setVar("X_INTERPRETER_PATH", X_INTERPRETER_PATH);
 
 	//________General variables
 	// Set the method used for the request (e.g., GET, POST)

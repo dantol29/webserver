@@ -34,13 +34,13 @@ void Server::startPollEventLoop()
 	int pollCounter = 0;
 	while (1)
 	{
-		printConnections("BEFORE POLL", _FDs, _connections, true);
+		// printConnections("BEFORE POLL", _FDs, _connections, true);
 		std::cout << CYAN << "++++++++++++++ #" << pollCounter
 				  << " Waiting for new connection or Polling +++++++++++++++" << RESET << std::endl;
 		int ret = poll(_FDs.data(), _FDs.size(), -1);
 		pollCounter++;
-		printFrame("POLL EVENT DETECTED", true);
-		printConnections("AFTER POLL", _FDs, _connections, true);
+		// printFrame("POLL EVENT DETECTED", true);
+		// printConnections("AFTER POLL", _FDs, _connections, true);
 		if (ret > 0)
 		{
 			size_t originalSize = _FDs.size();
@@ -55,12 +55,12 @@ void Server::startPollEventLoop()
 					std::cout << "Enters revents" << std::endl;
 					if (i == 0)
 					{
-						printFrame("SERVER SOCKET EVENT", true);
+						// printFrame("SERVER SOCKET EVENT", true);
 						acceptNewConnection(_connections[i]);
 					}
 					else
 					{
-						printFrame("CLIENT SOCKET EVENT", true);
+						// printFrame("CLIENT SOCKET EVENT", true);
 						handleConnection(_connections[i],
 										 i,
 										 _connections[i].getParser(),
@@ -83,36 +83,6 @@ void Server::startPollEventLoop()
 			handleSocketTimeoutIfAny();
 		else
 			handlePollError();
-	}
-}
-
-void createFile(HTTPRequest &request)
-{
-	std::vector<File> files = request.getFiles();
-	std::vector<File>::iterator it;
-
-	// check each file
-	for (it = files.begin(); it != files.end(); ++it)
-	{
-		if (it->headers.find("filename") == it->headers.end())
-		{
-			std::cout << "422 Unprocessable Entity (Error: file does not have a name)" << std::endl;
-			return;
-		}
-	}
-
-	// create files
-	for (it = files.begin(); it != files.end(); ++it)
-	{
-		std::ofstream outfile((it->headers.find("filename"))->second.c_str());
-		if (outfile.is_open())
-		{
-			outfile << it->fileContent;
-			outfile.close();
-			std::cout << "File created successfully" << std::endl;
-		}
-		else
-			std::cout << "422 Unprocessable Entity (Error creating a file)" << std::endl;
 	}
 }
 
@@ -233,10 +203,6 @@ void Server::buildResponse(Connection &conn, size_t &i, HTTPRequest &request, HT
 		response.setErrorResponse(response.getStatusCode());
 		conn.setHasDataToSend(true);
 		return;
-	}
-	if (!request.getUploadBoundary().empty())
-	{
-		createFile(request);
 	}
 	// std::cout << request.getRequestTarget() << std::endl;
 	// TODO: The Router should be a member of the Server class or of the Connection class

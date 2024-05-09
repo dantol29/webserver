@@ -11,6 +11,8 @@ Router::~Router()
 
 void Router::routeRequest(const HTTPRequest &request, HTTPResponse &response)
 {
+	std::cout << RED << request << RESET << std::endl;
+
 	std::string _webRoot = "var/www"; // TODO: get this from the config file
 	if (isCGI(request) && pathIsValid(const_cast<HTTPRequest &>(request), _webRoot))
 	{
@@ -20,30 +22,31 @@ void Router::routeRequest(const HTTPRequest &request, HTTPResponse &response)
 		cgiHandler.setFDsRef(_FDsRef);
 		cgiHandler.setPollFd(_pollFd);
 		cgiHandler.handleRequest(request, response);
-		// std::cout << std::endl << std::endl << std::endl << std::endl;
-		// std::cout << response;
 		return;
 	}
-	else if (request.getMethod() == "POST")
+	else if (request.getMethod() == "POST") // && !request.getUploadBoundary().empty())
 	{
 		std::cout << "Router: POST request" << std::endl;
 
-		std::cout << "successfully uploaded file" << std::endl;
-
-		std::cout << "Request target: " << request.getRequestTarget() << std::endl;
-		// std::cout << "Request body: " << request.getBody() << std::endl;
-		std::cout << "Request host: " << request.getHost() << std::endl;
+		UploadHandler uploadHandler;
+		uploadHandler.handleRequest(request, response);
 	}
-	// after a post request we redirect to the same page
-	StaticContentHandler staticContentInstance;
-	if (!pathIsValid(const_cast<HTTPRequest &>(request), _webRoot))
+	else if (request.getMethod() == "SALAD")
 	{
-		std::cout << "Path is not valid, calling handleNotFound" << std::endl;
-		staticContentInstance.handleNotFound(response);
+		std::cout << "🥬 + 🍅 + 🐟 = 🥗" << std::endl;
 	}
 	else
 	{
-		staticContentInstance.handleRequest(request, response);
+		StaticContentHandler staticContentInstance;
+		if (!pathIsValid(const_cast<HTTPRequest &>(request), _webRoot))
+		{
+			std::cout << "Path is not valid, calling handleNotFound" << std::endl;
+			staticContentInstance.handleNotFound(response);
+		}
+		else
+		{
+			staticContentInstance.handleRequest(request, response);
+		}
 	}
 }
 
@@ -112,18 +115,13 @@ void Router::splitTarget(const std::string &target)
 bool Router::pathIsValid(HTTPRequest &request, std::string webRoot)
 {
 	std::string host = request.getHost();
-	// std::cout << "Host: " << host << std::endl;
 	size_t pos = host.find(":");
 	if (pos != std::string::npos)
 	{
 		host = host.substr(0, pos);
 	}
-	// std::cout << "Host (after : trailing) :" << host << std::endl;
-	std::string path = request.getRequestTarget();
-
-	// for ease of use during deployment
-	// this if/else allows to reach target with tester or browser
-	std::cout << "    host: " << host << std::endl;
+	std::string pathWithQuery = request.getRequestTarget();
+	std::string path = pathWithQuery.substr(0, pathWithQuery.find("?"));
 
 	if (host == "localhost")
 		path = webRoot + path;
