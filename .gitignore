@@ -9,6 +9,9 @@
 !.gitignore
 !/**/
 
+# Include .gitkeep files to keep empty directories
+!**/.gitkeep
+
 # Except for these file types in any directory
 !**/*.c
 !**/*.cpp
