@@ -1,6 +1,10 @@
 # Ignore everything
 *
 
+# Allow directories (and their contents) ending with .sl or .com
+!*.sl/
+!*.com/
+
 # Except for these directories (and their contents)
 !.gitignore
 !/**/
