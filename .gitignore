@@ -39,5 +39,6 @@
 **/*.o
 largefile  # so we don't pull and push 100mb file
 testers/myenv/
+testers/testsvenv/
 
 tests/tests_venv

@@ -2,23 +2,22 @@
 #include "Parser.hpp"
 #include "Connection.hpp"
 
-// Default constructor
 Server::Server()
 {
 	loadDefaultConfig();
 }
-// Constructor with config file path
-Server::Server(const std::string configFilePath) : _configFilePath(configFilePath)
+
+Server::Server(const Config &config)
 {
+	_config = config;
+	// while we don't have a config file
 	loadDefaultConfig();
-	loadConfig();
 }
-// Destructor
+
 Server::~Server()
 {
 }
 
-// Start listening
 void Server::startListening()
 {
 
@@ -35,13 +34,13 @@ void Server::startPollEventLoop()
 	int pollCounter = 0;
 	while (1)
 	{
-		printConnections("BEFORE POLL", _FDs, _connections, true);
+		// printConnections("BEFORE POLL", _FDs, _connections, true);
 		std::cout << CYAN << "++++++++++++++ #" << pollCounter
 				  << " Waiting for new connection or Polling +++++++++++++++" << RESET << std::endl;
 		int ret = poll(_FDs.data(), _FDs.size(), -1);
 		pollCounter++;
-		printFrame("POLL EVENT DETECTED", true);
-		printConnections("AFTER POLL", _FDs, _connections, true);
+		// printFrame("POLL EVENT DETECTED", true);
+		// printConnections("AFTER POLL", _FDs, _connections, true);
 		if (ret > 0)
 		{
 			size_t originalSize = _FDs.size();
@@ -56,12 +55,12 @@ void Server::startPollEventLoop()
 					std::cout << "Enters revents" << std::endl;
 					if (i == 0)
 					{
-						printFrame("SERVER SOCKET EVENT", true);
+						// printFrame("SERVER SOCKET EVENT", true);
 						acceptNewConnection(_connections[i]);
 					}
 					else
 					{
-						printFrame("CLIENT SOCKET EVENT", true);
+						// printFrame("CLIENT SOCKET EVENT", true);
 						handleConnection(_connections[i],
 										 i,
 										 _connections[i].getParser(),
@@ -87,48 +86,14 @@ void Server::startPollEventLoop()
 	}
 }
 
-void createFile(HTTPRequest &request)
-{
-	std::vector<File> files = request.getFiles();
-	std::vector<File>::iterator it;
-
-	// check each file
-	for (it = files.begin(); it != files.end(); ++it)
-	{
-		if (it->headers.find("filename") == it->headers.end())
-		{
-			std::cout << "422 Unprocessable Entity (Error: file does not have a name)" << std::endl;
-			return;
-		}
-	}
-
-	// create files
-	for (it = files.begin(); it != files.end(); ++it)
-	{
-		std::ofstream outfile((it->headers.find("filename"))->second.c_str());
-		if (outfile.is_open())
-		{
-			outfile << it->fileContent;
-			outfile.close();
-			std::cout << "File created successfully" << std::endl;
-		}
-		else
-			std::cout << "422 Unprocessable Entity (Error creating a file)" << std::endl;
-	}
-}
-
 void Server::readFromClient(Connection &conn, size_t &i, Parser &parser, HTTPRequest &request, HTTPResponse &response)
 {
 	(void)i;
-	std::cout << "\033[1;36m"
-			  << "Entering readFromClient"
-			  << "\033[0m" << std::endl;
+	std::cout << "\033[1;36m" << "Entering readFromClient" << "\033[0m" << std::endl;
 	// TODO: change to _areHeadersCopmplete
 	if (!parser.getHeadersComplete())
 	{
-		std::cout << "\033[1;33m"
-				  << "Reading headers"
-				  << "\033[0m" << std::endl;
+		std::cout << "\033[1;33m" << "Reading headers" << "\033[0m" << std::endl;
 		if (!conn.readHeaders(parser))
 		{
 			std::cout << "Error reading headers" << std::endl;
@@ -183,9 +148,7 @@ void Server::readFromClient(Connection &conn, size_t &i, Parser &parser, HTTPReq
 		}
 		else
 		{
-			std::cout << "\033[1;33m"
-					  << "Reading body"
-					  << "\033[0m" << std::endl;
+			std::cout << "\033[1;33m" << "Reading body" << "\033[0m" << std::endl;
 			// TODO: add comments
 			if (!parser.getBodyComplete() && parser.getBuffer().size() == request.getContentLength())
 			{
@@ -211,7 +174,7 @@ void Server::readFromClient(Connection &conn, size_t &i, Parser &parser, HTTPReq
 			conn.setHasReadSocket(true);
 			return;
 		}
-		// std::cout << parser.getBuffer() << std::endl;
+		//  std::cout << parser.getBuffer() << std::endl;
 		if (!request.getUploadBoundary().empty())
 			parser.parseFileUpload(parser.getBuffer(), request, response);
 		else if (request.getMethod() != "GET")
@@ -225,19 +188,13 @@ void Server::readFromClient(Connection &conn, size_t &i, Parser &parser, HTTPReq
 void Server::buildResponse(Connection &conn, size_t &i, HTTPRequest &request, HTTPResponse &response)
 {
 	(void)i;
-	std::cout << "\033[1;36m"
-			  << "Entering buildResponse"
-			  << "\033[0m" << std::endl;
+	std::cout << "\033[1;36m" << "Entering buildResponse" << "\033[0m" << std::endl;
 	std::cout << "\033[1;91mRequest status code: " << response.getStatusCode() << "\033[0m" << std::endl;
 	if (response.getStatusCode() != 0)
 	{
 		response.setErrorResponse(response.getStatusCode());
 		conn.setHasDataToSend(true);
 		return;
-	}
-	if (!request.getUploadBoundary().empty())
-	{
-		createFile(request);
 	}
 	// std::cout << request.getRequestTarget() << std::endl;
 	// TODO: The Router should be a member of the Server class or of the Connection class
@@ -250,9 +207,7 @@ void Server::buildResponse(Connection &conn, size_t &i, HTTPRequest &request, HT
 
 void Server::writeToClient(Connection &conn, size_t &i, HTTPResponse &response)
 {
-	std::cout << "\033[1;36m"
-			  << "Entering writeToClient"
-			  << "\033[0m" << std::endl;
+	std::cout << "\033[1;36m" << "Entering writeToClient" << "\033[0m" << std::endl;
 	(void)i;
 	send(conn.getPollFd().fd, response.objToString().c_str(), response.objToString().size(), 0);
 	// conn.setHasDataToSend(); will not be always false in case of chunked response or keep-alive connection
@@ -264,9 +219,7 @@ void Server::writeToClient(Connection &conn, size_t &i, HTTPResponse &response)
 
 void Server::closeClientConnection(Connection &conn, size_t &i)
 {
-	std::cout << "\033[1;36m"
-			  << "Entering closeClientConnection"
-			  << "\033[0m" << std::endl;
+	std::cout << "\033[1;36m" << "Entering closeClientConnection" << "\033[0m" << std::endl;
 	// if (response.getStatusCode() != 0)
 	// if (conn.getResponse().getStatusCode() != 0 && conn.getResponse().getStatusCode() != 499)
 	// {
@@ -282,9 +235,7 @@ void Server::closeClientConnection(Connection &conn, size_t &i)
 
 void Server::handleConnection(Connection &conn, size_t &i, Parser &parser, HTTPRequest &request, HTTPResponse &response)
 {
-	std::cout << "\033[1;36m"
-			  << "Entering handleConnection"
-			  << "\033[0m" << std::endl;
+	std::cout << "\033[1;36m" << "Entering handleConnection" << "\033[0m" << std::endl;
 	// conn.printConnection();
 
 	// Why is it TRUE when I refresh a page?????
@@ -295,9 +246,7 @@ void Server::handleConnection(Connection &conn, size_t &i, Parser &parser, HTTPR
 	// TODO: add comments to explain
 	if (conn.getHasReadSocket() && !conn.getHasFinishedReading())
 	{
-		std::cout << "\033[1;36m"
-				  << "return from handleConnection"
-				  << "\033[0m" << std::endl;
+		std::cout << "\033[1;36m" << "return from handleConnection" << "\033[0m" << std::endl;
 		return;
 	}
 	if (!conn.getCanBeClosed() && !conn.getHasDataToSend())

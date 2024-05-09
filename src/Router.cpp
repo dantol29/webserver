@@ -11,18 +11,29 @@ Router::~Router()
 
 void Router::routeRequest(const HTTPRequest &request, HTTPResponse &response)
 {
+	std::cout << RED << request << RESET << std::endl;
+
 	std::string _webRoot = "var/www"; // TODO: get this from the config file
 	if (isCGI(request) && pathIsValid(const_cast<HTTPRequest &>(request), _webRoot))
 	{
 		CGIHandler cgiHandler;
 		cgiHandler.setFDsRef(_FDsRef);
 		cgiHandler.setPollFd(_pollFd);
-		// cgiHandler.handleRequest(request, response);
 		cgiHandler.handleRequest(request, response);
-		// std::cout << std::endl << std::endl << std::endl << std::endl;
-		// std::cout << response;
+		return;
 	}
-	else // it is a static request
+	else if (request.getMethod() == "POST") // && !request.getUploadBoundary().empty())
+	{
+		std::cout << "Router: POST request" << std::endl;
+
+		UploadHandler uploadHandler;
+		uploadHandler.handleRequest(request, response);
+	}
+	else if (request.getMethod() == "SALAD")
+	{
+		std::cout << "🥬 + 🍅 + 🐟 = 🥗" << std::endl;
+	}
+	else
 	{
 		StaticContentHandler staticContentInstance;
 		if (!pathIsValid(const_cast<HTTPRequest &>(request), _webRoot))
@@ -35,12 +46,6 @@ void Router::routeRequest(const HTTPRequest &request, HTTPResponse &response)
 			staticContentInstance.handleRequest(request, response);
 		}
 	}
-	return;
-	// else if (isDynamicRequest(request))
-	// {
-	// 	std::cout << "\033[31mCGI is the only dynamic requests we handle at the moment\033[0m" << std::endl;
-	// 	response.setStatusCode(501, "");
-	// }
 }
 
 bool Router::isDynamicRequest(const HTTPRequest &request)
@@ -108,17 +113,14 @@ void Router::splitTarget(const std::string &target)
 bool Router::pathIsValid(HTTPRequest &request, std::string webRoot)
 {
 	std::string host = request.getHost();
-	// std::cout << "Host: " << host << std::endl;
 	size_t pos = host.find(":");
 	if (pos != std::string::npos)
 	{
 		host = host.substr(0, pos);
 	}
-	// std::cout << "Host (after : trailing) :" << host << std::endl;
-	std::string path = request.getRequestTarget();
+	std::string pathWithQuery = request.getRequestTarget();
+	std::string path = pathWithQuery.substr(0, pathWithQuery.find("?"));
 
-	// for ease of use during deployment
-	// this if/else allows to reach target with tester or browser
 	if (host == "localhost")
 		path = webRoot + path;
 	else
