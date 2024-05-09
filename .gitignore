@@ -23,6 +23,7 @@
 
 # Specific files and directories to include
 !Makefile
+!Dockerfile
 !.github/
 !.clang-format
 !.vscode/
