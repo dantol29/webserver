@@ -96,6 +96,7 @@ RequestResult GetRequest(const NameUrlPair &nameUrlPair)
 	ssize_t bytesReceived = recv(sock, buffer, sizeof(buffer), 0);
 	if (bytesReceived < 0)
 	{
+		perror("recv");
 		std::cerr << "Failed to receive response" << std::endl;
 		std::cout << "❌ Test Failed" << std::endl;
 	}

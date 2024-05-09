@@ -84,8 +84,9 @@ void StaticContentHandler::handleRequest(const HTTPRequest &request, HTTPRespons
 		response.setBody("404 Not Found");
 		return;
 	}
-
+	std::cout << "after ifstream file" << std::endl;
 	std::string body((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
+	std::cout << "after string body" << std::endl;
 
 	// std::cout << "body : " << body << std::endl;
 
