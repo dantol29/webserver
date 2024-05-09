@@ -1,16 +1,16 @@
 # Ignore everything
 *
 
+# Allow subdirectories and empty directories containing .gitkeep
+!/**/
+!**/.gitkeep
+
 # Allow directories (and their contents) ending with .sl or .com
 !*.sl/
 !*.com/
 
 # Except for these directories (and their contents)
 !.gitignore
-!/**/
-
-# Include .gitkeep files to keep empty directories
-!**/.gitkeep
 
 # Except for these file types in any directory
 !**/*.c
@@ -47,4 +47,3 @@
 largefile  # so we don't pull and push 100mb file
 testers/myenv/
 testers/testsvenv/
-
