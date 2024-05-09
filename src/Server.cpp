@@ -227,6 +227,7 @@ void Server::buildResponse(Connection &conn, size_t &i, HTTPRequest &request, HT
 				//_config.setServerBlockIndex(0);
 				serverBlock = _config.getServerBlocks()[0];
 			}
+			std::cout << "Index: " << i << std::endl;
 		}
 	}
 	else

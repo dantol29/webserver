@@ -142,8 +142,8 @@ bool Router::pathIsValid(HTTPRequest &request, std::string &webRoot)
 
 	// for ease of use during deployment
 	// this if/else allows to reach target with tester or browser
-	if (host != "localhost")
-		webRoot = host + webRoot;
+	// if (host != "localhost")
+	// 	webRoot = host + webRoot;
 
 	std::cout << std::endl << "pathIsValid Path: " << webRoot << std::endl << std::endl;
 	std::cout << "pathIsValid Path: " << webRoot << std::endl;
