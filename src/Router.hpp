@@ -19,7 +19,7 @@ class Router
 {
   public:
 	Router();
-	Router(std::vector<ServerBlock> serverBlocks);
+	Router(ServerBlock serverBlock);
 	~Router();
 	void routeRequest(const HTTPRequest &request, HTTPResponse &response);
 

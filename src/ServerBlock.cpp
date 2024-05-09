@@ -109,7 +109,9 @@ std::vector<std::string> ServerBlock::getServerName() const
 	return (_directives._serverName);
 }
 
-std::vector<std::pair<int, std::string>> ServerBlock::getErrorPage() const
+// clang-format off
+std::vector<std::pair<int, std::string> > ServerBlock::getErrorPage() const
+// clang-format on
 {
 	return (_directives._errorPage);
 }
@@ -295,7 +297,6 @@ void ServerBlock::setAllowedMethods(std::vector<std::string> str, bool isLocatio
 void ServerBlock::setAlias(std::string &str, bool isLocation)
 {
 	if (!isLocation)
-		_directives._alias = str;
 	{
 		if (_directives._alias.size() > 0)
 			throw("alias already set");
@@ -308,7 +309,6 @@ void ServerBlock::setAlias(std::string &str, bool isLocation)
 		_locations.back()._alias = str;
 	}
 }
-
 void ServerBlock::setCgiExt(std::vector<std::string> str, bool isLocation)
 {
 	if (!isLocation)
@@ -413,7 +413,8 @@ std::vector<std::string> ServerBlock::transformAllowedMethods(std::string &str)
 
 	for (unsigned int i = 0; i < newStr.size(); ++i)
 	{
-		if (newStr[i] != "GET" && newStr[i] != "POST" && newStr[i] != "PUT" && newStr[i] != "DELETE")
+		if (newStr[i] != "GET" && newStr[i] != "POST" && newStr[i] != "PUT" && newStr[i] != "DELETE" &&
+			newStr[i] != "SALAD")
 			throw("Invalid method");
 	}
 	return (newStr);

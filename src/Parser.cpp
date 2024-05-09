@@ -270,7 +270,7 @@ bool Parser::hasMandatoryHeaders(HTTPRequest &req)
 	}
 	if (_isChunked && req.getMethod() == "POST")
 		return (isHost == 1 && isContentType == 1);
-	if (req.getMethod() == "POST" || req.getMethod() == "DELETE")
+	if (req.getMethod() == "POST" || req.getMethod() == "DELETE") // || req.getMethod() == "SALAD")
 		return (isHost == 1 && isContentLength == 1 && isContentType == 1);
 	else
 		return (isHost == 1);
