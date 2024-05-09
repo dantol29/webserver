@@ -119,11 +119,15 @@ void createFile(HTTPRequest &request)
 void Server::readFromClient(Connection &conn, size_t &i, Parser &parser, HTTPRequest &request, HTTPResponse &response)
 {
 	(void)i;
-	std::cout << "\033[1;36m" << "Entering readFromClient" << "\033[0m" << std::endl;
+	std::cout << "\033[1;36m"
+			  << "Entering readFromClient"
+			  << "\033[0m" << std::endl;
 	// TODO: change to _areHeadersCopmplete
 	if (!parser.getHeadersComplete())
 	{
-		std::cout << "\033[1;33m" << "Reading headers" << "\033[0m" << std::endl;
+		std::cout << "\033[1;33m"
+				  << "Reading headers"
+				  << "\033[0m" << std::endl;
 		if (!conn.readHeaders(parser))
 		{
 			std::cout << "Error reading headers" << std::endl;
@@ -178,7 +182,9 @@ void Server::readFromClient(Connection &conn, size_t &i, Parser &parser, HTTPReq
 		}
 		else
 		{
-			std::cout << "\033[1;33m" << "Reading body" << "\033[0m" << std::endl;
+			std::cout << "\033[1;33m"
+					  << "Reading body"
+					  << "\033[0m" << std::endl;
 			// TODO: add comments
 			if (!parser.getBodyComplete() && parser.getBuffer().size() == request.getContentLength())
 			{
@@ -218,7 +224,9 @@ void Server::readFromClient(Connection &conn, size_t &i, Parser &parser, HTTPReq
 void Server::buildResponse(Connection &conn, size_t &i, HTTPRequest &request, HTTPResponse &response)
 {
 	(void)i;
-	std::cout << "\033[1;36m" << "Entering buildResponse" << "\033[0m" << std::endl;
+	std::cout << "\033[1;36m"
+			  << "Entering buildResponse"
+			  << "\033[0m" << std::endl;
 	std::cout << "\033[1;91mRequest status code: " << response.getStatusCode() << "\033[0m" << std::endl;
 	if (response.getStatusCode() != 0)
 	{
@@ -241,50 +249,23 @@ void Server::buildResponse(Connection &conn, size_t &i, HTTPRequest &request, HT
 
 void Server::writeToClient(Connection &conn, size_t &i, HTTPResponse &response)
 {
-	std::cout << "\033[1;36m" << "Entering writeToClient" << "\033[0m" << std::endl;
+	std::cout << "\033[1;36m"
+			  << "Entering writeToClient"
+			  << "\033[0m" << std::endl;
 	(void)i;
-	
-	if (conn.getResponseSizeSent() == 0){
-		std::cout << RED << "string" << response.objToString() << RESET << std::endl;
-		conn.setResponseString(response.objToString());
-		conn.setResponseSize(response.objToString().size());
-	}
-
-	if (conn.getResponseSizeSent() == conn.getResponseSize())
-	{
-		std::cout << "Response sent" << std::endl;
-		conn.setHasDataToSend(false);
-		conn.setHasFinishedSending(true);
-		conn.setCanBeClosed(true);
-		return;
-	}
-	if (conn.getResponseString().size() < BUFFER_SIZE)
-	{
-		std::cout << "Sending last part of the response" << std::endl;
-		send(conn.getPollFd().fd, conn.getResponseString().c_str(), conn.getResponseString().size(), 0);
-		conn.setResponseSizeSent(conn.getResponseSizeSent() + conn.getResponseString().size());
-		conn.setResponseString("");
-		return;
-	}
-	std::cout << "Sending part of the response" << std::endl;
-	std::cout << "Response size: " << conn.getResponseString().size() << std::endl;
-	std::cout << "pollfd fd: " << conn.getPollFd().fd << std::endl;
-	std::cout << "string to send: " << conn.getResponseString().c_str() << std::endl;
-	int read = send(conn.getPollFd().fd, conn.getResponseString().c_str(), BUFFER_SIZE, 0);
-	std::cout << "Read: " << read << std::endl;
-	if (read == -1)
-	{
-		perror("send");
-	}
-	std::cout << "Response size sent: " << conn.getResponseSizeSent() << std::endl;
-	conn.setResponseSizeSent(conn.getResponseSizeSent() + BUFFER_SIZE);
-	conn.setResponseString(conn.getResponseString().substr(BUFFER_SIZE));
-	// response.getBody().erase(0, BUFFER_SIZE);
+	send(conn.getPollFd().fd, response.objToString().c_str(), response.objToString().size(), 0);
+	// conn.setHasDataToSend(); will not be always false in case of chunked response or keep-alive connection
+	conn.setHasDataToSend(false);
+	conn.setHasFinishedSending(true);
+	// setCanBeClosed(true) would not be the case only if we have a keep-alive connection or a chunked response
+	conn.setCanBeClosed(true);
 }
 
 void Server::closeClientConnection(Connection &conn, size_t &i)
 {
-	std::cout << "\033[1;36m" << "Entering closeClientConnection" << "\033[0m" << std::endl;
+	std::cout << "\033[1;36m"
+			  << "Entering closeClientConnection"
+			  << "\033[0m" << std::endl;
 	// if (response.getStatusCode() != 0)
 	// if (conn.getResponse().getStatusCode() != 0 && conn.getResponse().getStatusCode() != 499)
 	// {
@@ -300,7 +281,9 @@ void Server::closeClientConnection(Connection &conn, size_t &i)
 
 void Server::handleConnection(Connection &conn, size_t &i, Parser &parser, HTTPRequest &request, HTTPResponse &response)
 {
-	std::cout << "\033[1;36m" << "Entering handleConnection" << "\033[0m" << std::endl;
+	std::cout << "\033[1;36m"
+			  << "Entering handleConnection"
+			  << "\033[0m" << std::endl;
 	// conn.printConnection();
 
 	// Why is it TRUE when I refresh a page?????
@@ -311,7 +294,9 @@ void Server::handleConnection(Connection &conn, size_t &i, Parser &parser, HTTPR
 	// TODO: add comments to explain
 	if (conn.getHasReadSocket() && !conn.getHasFinishedReading())
 	{
-		std::cout << "\033[1;36m" << "return from handleConnection" << "\033[0m" << std::endl;
+		std::cout << "\033[1;36m"
+				  << "return from handleConnection"
+				  << "\033[0m" << std::endl;
 		return;
 	}
 	if (!conn.getCanBeClosed() && !conn.getHasDataToSend())
