@@ -15,5 +15,3 @@ RUN apt-get update && \
 # Inform Docker that the container listens on port 8080
 EXPOSE 8080
 
-# Command to run the server when the container starts
-CMD ["./myserver"]
