@@ -28,15 +28,15 @@ bool Parser::preParseHeaders(HTTPResponse &res)
 		_headersBuffer = _buffer.substr(0, headersEnd + 4);
 		// std::cout << "\033[31m"
 		// 		  << "_headersBuffer size " << _headersBuffer.size() << "\033[0m" << std::endl;
-		//std::cout << "_headersBuffer:" << std::endl;
-		//std::cout << _headersBuffer << std::endl;
+		// std::cout << "_headersBuffer:" << std::endl;
+		// std::cout << _headersBuffer << std::endl;
 		_headersComplete = true;
 		// std::cout << "\033[31m"
 		// 		  << "_buffer size " << _buffer.size() << "\033[0m" << std::endl;
 		// std::cout << "_headersBuffer size:" << std::endl;
 		// std::cout << _headersBuffer.size() << std::endl;
 		_buffer = _buffer.substr(headersEnd + 4);
-		std::cout << _buffer << std::endl;
+		// std::cout << _buffer << std::endl;
 		// std::cout << "\033[31m"
 		// 		  << "_buffer size " << _buffer.size() << "\033[0m" << std::endl;
 		return (true);
@@ -221,7 +221,7 @@ void Parser::parseFileUpload(const std::string &request, HTTPRequest &req, HTTPR
 		if (boundaryIndex == std::string::npos)
 			return (res.setStatusCode(400, "Incorrect file boundary"));
 		// get the file (headers + body + boundary + CRLF) and save
-		if(!saveFile(data.substr(0, boundaryIndex - 2), req))
+		if (!saveFile(data.substr(0, boundaryIndex - 2), req))
 			return (res.setStatusCode(400, "Incorrect file data"));
 		// erase saved data
 		data.erase(0, boundaryIndex + ("----" + upBound).size());
@@ -289,14 +289,14 @@ int Parser::fileHeaderParametrs(const std::string &headers, struct File &file, u
 		if (headers[++i] == '=') // [=]
 		{
 			key = headers.substr(start, i - start); // [KEY]
-			if (headers[++i] != '"') // ["]
+			if (headers[++i] != '"')				// ["]
 				return (0);
 
 			start = ++i; // skip '"'
 			while (i < headers.length() && headers[i] != '"')
 				i++;
 			value = headers.substr(start, i - start); // [VALUE]
-			if (headers[i++] != '"') // ["]
+			if (headers[i++] != '"')				  // ["]
 				return (0);
 
 			file.headers.insert(std::make_pair(key, value));
@@ -325,7 +325,7 @@ bool Parser::saveFileHeaders(const std::string &headers, HTTPRequest &req, unsig
 		while (i < headers.length() && headers[i] != ':')
 			i++;
 		key = headers.substr(start, i - start); // [KEY]
-		if (headers[i++] != ':') // [:]
+		if (headers[i++] != ':')				// [:]
 			return (false);
 
 		if (headers[i++] != ' ') // [SP]
@@ -359,15 +359,15 @@ bool Parser::saveFileHeaders(const std::string &headers, HTTPRequest &req, unsig
 	return (true);
 }
 
-bool Parser::saveFile(const std::string& data, HTTPRequest &req)
+bool Parser::saveFile(const std::string &data, HTTPRequest &req)
 {
 	unsigned int start;
 	unsigned int i = 0;
-	
+
 	if (!saveFileHeaders(data, req, i))
 		return (false);
 	i += 2;
-	
+
 	start = i;
 	while (i < data.length())
 		i++;

@@ -63,7 +63,7 @@ void CGIHandler::CGIStringToResponse(const std::string &cgiOutput, HTTPResponse 
 	std::string bodyPart = cgiOutput.substr(headerEndPos);
 
 	std::cout << "------------------CGIStringToResponse-------------------" << std::endl;
-	std::cout << "bodyPart: " << bodyPart << std::endl << std::endl << std::endl << std::endl;
+	// std::cout << "bodyPart: " << bodyPart << std::endl << std::endl << std::endl << std::endl;
 
 	std::istringstream headerStream(headersPart);
 	std::string headerLine;
