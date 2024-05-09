@@ -176,7 +176,7 @@ void simple(sockaddr_in serverAddress)
 {
 	std::vector<HTTPTest> tests = {
 		HTTPTest("GET / HTTP/1.1\r\nHost: www.example.com\r\n\r\n", "200"),
-		//HTTPTest("POST / HTTP/1.1\r\nHost: www.example.com\r\n\r\n", "200"),
+		// HTTPTest("POST / HTTP/1.1\r\nHost: www.example.com\r\n\r\n", "200"),
 		HTTPTest("GETT / HTTP/1.1\r\nHost: www.example.com\r\n\r\n", "501"),
 		HTTPTest("GET /random HTTP/1.1\r\nHost: www.example.com\r\n\r\n", "404"),
 		HTTPTest("GET / HTTP/9.9s\r\nHost: www.example.com\r\n\r\n", "400"),
@@ -189,7 +189,7 @@ void simple(sockaddr_in serverAddress)
 void query(sockaddr_in serverAddress)
 {
 	std::vector<HTTPTest> tests = {
-		//HTTPTest("GET /index.html?q=now&price=low HTTP/1.1\r\nHost: localhost\r\n\r\n", "200"),
+		// HTTPTest("GET /index.html?q=now&price=low HTTP/1.1\r\nHost: localhost\r\n\r\n", "200"),
 		HTTPTest("GET /search?q==now&price=low HTTP/1.1\r\nHost: www.example.com\r\n\r\n", "400"),
 		HTTPTest("GET /search??q=now&price=low HTTP/1.1\r\nHost: www.example.com\r\n\r\n", "400"),
 		HTTPTest("GET /search?now&price=low HTTP/1.1\r\nHost: www.example.com\r\n\r\n", "400"),
@@ -285,7 +285,7 @@ int main(int argc, char **argv)
 	// else if (std::strcmp(argv[1], "headers") == 0)
 	headers(serverAddress);
 	// else if (std::strcmp(argv[1], "body") == 0)
-	//body(serverAddress);
+	// body(serverAddress);
 	// else
 	// std::cout << "Invalid test name" << std::endl;
 	if (is_error)

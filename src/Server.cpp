@@ -86,44 +86,18 @@ void Server::startPollEventLoop()
 	}
 }
 
-void createFile(HTTPRequest &request)
-{
-	std::vector<File> files = request.getFiles();
-	std::vector<File>::iterator it;
-
-	// check each file
-	for (it = files.begin(); it != files.end(); ++it)
-	{
-		if (it->headers.find("filename") == it->headers.end())
-		{
-			std::cout << "422 Unprocessable Entity (Error: file does not have a name)" << std::endl;
-			return;
-		}
-	}
-
-	// create files
-	for (it = files.begin(); it != files.end(); ++it)
-	{
-		std::ofstream outfile((it->headers.find("filename"))->second.c_str());
-		if (outfile.is_open())
-		{
-			outfile << it->fileContent;
-			outfile.close();
-			std::cout << "File created successfully" << std::endl;
-		}
-		else
-			std::cout << "422 Unprocessable Entity (Error creating a file)" << std::endl;
-	}
-}
-
 void Server::readFromClient(Connection &conn, size_t &i, Parser &parser, HTTPRequest &request, HTTPResponse &response)
 {
 	(void)i;
-	std::cout << "\033[1;36m" << "Entering readFromClient" << "\033[0m" << std::endl;
+	std::cout << "\033[1;36m"
+			  << "Entering readFromClient"
+			  << "\033[0m" << std::endl;
 	// TODO: change to _areHeadersCopmplete
 	if (!parser.getHeadersComplete())
 	{
-		std::cout << "\033[1;33m" << "Reading headers" << "\033[0m" << std::endl;
+		std::cout << "\033[1;33m"
+				  << "Reading headers"
+				  << "\033[0m" << std::endl;
 		if (!conn.readHeaders(parser))
 		{
 			std::cout << "Error reading headers" << std::endl;
@@ -178,7 +152,9 @@ void Server::readFromClient(Connection &conn, size_t &i, Parser &parser, HTTPReq
 		}
 		else
 		{
-			std::cout << "\033[1;33m" << "Reading body" << "\033[0m" << std::endl;
+			std::cout << "\033[1;33m"
+					  << "Reading body"
+					  << "\033[0m" << std::endl;
 			// TODO: add comments
 			if (!parser.getBodyComplete() && parser.getBuffer().size() == request.getContentLength())
 			{
@@ -222,38 +198,33 @@ void Server::buildResponse(Connection &conn, size_t &i, HTTPRequest &request, HT
 	// for (int i = 0; i < _config.getServerBlocks().size(); i++)
 	// {
 	// 	std::string requestHost(request.getSingleHeader("Host").second);
-	// 	std::cout << GREEN << "Request host: " << requestHost << RESET << std::endl;
-	// 	// why getServerName returns a vector ?
-	// 	std::string serverName = _config.getServerBlocks()[i].getServerName()[0];
-	// 	std::cout << GREEN << "Server name: " << serverName << RESET << std::endl;
-	// 	if (serverName == requestHost)
-	// 	{
-	// 		std::cout << GREEN << "Server block and request host match" << RESET << std::endl;
-	// 		//_config.setServerBlockIndex(i);
-	// 		break;
-	// 	}
-	// 	else
-	// 	{
-	// 		// if no server name is found, use the default server block
-	// 		std::cout << GREEN << "No server block is matching the request host" << RESET << std::endl;
-	// 		//_config.setServerBlockIndex(0);
-	// 	}
-	// }
+	// why getServerName returns a vector ?
+	std::string serverName = _config.getServerBlocks()[i].getServerName()[0];
+	std::cout << GREEN << "Server name: " << serverName << RESET << std::endl;
+	if (serverName == request.getSingleHeader("Host").second)
+	{
+		std::cout << GREEN << "Server block and request host match" << RESET << std::endl;
+		//_config.setServerBlockIndex(i);
+	}
+	else
+	{
+		// if no server name is found, use the default server block
+		std::cout << GREEN << "No server block is matching the request host" << RESET << std::endl;
+		//_config.setServerBlockIndex(0);
+	}
 
 	// check if the listen in the server block is matching port and ip from connection
 
 	(void)i;
-	std::cout << "\033[1;36m" << "Entering buildResponse" << "\033[0m" << std::endl;
+	std::cout << "\033[1;36m"
+			  << "Entering buildResponse"
+			  << "\033[0m" << std::endl;
 	std::cout << "\033[1;91mRequest status code: " << response.getStatusCode() << "\033[0m" << std::endl;
 	if (response.getStatusCode() != 0)
 	{
 		response.setErrorResponse(response.getStatusCode());
 		conn.setHasDataToSend(true);
 		return;
-	}
-	if (!request.getUploadBoundary().empty())
-	{
-		createFile(request);
 	}
 	// std::cout << request.getRequestTarget() << std::endl;
 	// TODO: The Router should be a member of the Server class or of the Connection class
@@ -266,7 +237,9 @@ void Server::buildResponse(Connection &conn, size_t &i, HTTPRequest &request, HT
 
 void Server::writeToClient(Connection &conn, size_t &i, HTTPResponse &response)
 {
-	std::cout << "\033[1;36m" << "Entering writeToClient" << "\033[0m" << std::endl;
+	std::cout << "\033[1;36m"
+			  << "Entering writeToClient"
+			  << "\033[0m" << std::endl;
 	(void)i;
 	send(conn.getPollFd().fd, response.objToString().c_str(), response.objToString().size(), 0);
 	// conn.setHasDataToSend(); will not be always false in case of chunked response or keep-alive connection
@@ -278,7 +251,9 @@ void Server::writeToClient(Connection &conn, size_t &i, HTTPResponse &response)
 
 void Server::closeClientConnection(Connection &conn, size_t &i)
 {
-	std::cout << "\033[1;36m" << "Entering closeClientConnection" << "\033[0m" << std::endl;
+	std::cout << "\033[1;36m"
+			  << "Entering closeClientConnection"
+			  << "\033[0m" << std::endl;
 	// if (response.getStatusCode() != 0)
 	// if (conn.getResponse().getStatusCode() != 0 && conn.getResponse().getStatusCode() != 499)
 	// {
@@ -294,7 +269,9 @@ void Server::closeClientConnection(Connection &conn, size_t &i)
 
 void Server::handleConnection(Connection &conn, size_t &i, Parser &parser, HTTPRequest &request, HTTPResponse &response)
 {
-	std::cout << "\033[1;36m" << "Entering handleConnection" << "\033[0m" << std::endl;
+	std::cout << "\033[1;36m"
+			  << "Entering handleConnection"
+			  << "\033[0m" << std::endl;
 	// conn.printConnection();
 
 	// Why is it TRUE when I refresh a page?????
@@ -305,7 +282,9 @@ void Server::handleConnection(Connection &conn, size_t &i, Parser &parser, HTTPR
 	// TODO: add comments to explain
 	if (conn.getHasReadSocket() && !conn.getHasFinishedReading())
 	{
-		std::cout << "\033[1;36m" << "return from handleConnection" << "\033[0m" << std::endl;
+		std::cout << "\033[1;36m"
+				  << "return from handleConnection"
+				  << "\033[0m" << std::endl;
 		return;
 	}
 	if (!conn.getCanBeClosed() && !conn.getHasDataToSend())

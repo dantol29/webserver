@@ -5,6 +5,7 @@
 #include "HTTPResponse.hpp"
 #include "StaticContentHandler.hpp"
 #include "CGIHandler.hpp"
+#include "UploadHandler.hpp"
 #include "ServerBlock.hpp"
 #include "sys/stat.h"
 
@@ -36,7 +37,6 @@ class Router
 	CGIHandler _cgiHandler;
 	std::vector<pollfd> *_FDsRef;
 	struct pollfd *_pollFd;
-
 	std::string getFileExtension(const std::string &fileName);
 	bool isCGI(const HTTPRequest &request);
 	resourcePath _path;
