@@ -30,7 +30,7 @@
 !.cgi-bin/
 !docs/
 !tests/
-!/ngnix/nginx-1.24.0/*
+!/ngnix/**/**/*
 !webserv.conf
 !*.test
 
