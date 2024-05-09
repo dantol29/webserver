@@ -78,7 +78,6 @@ async def file_sender(file_name):
 		async with aiofiles.open(file_name, 'rb') as f:
 			chunk = await f.read(900)  # 900 bytes chunks
 			while chunk:
-				print(f'Sending chunk of size: {len(chunk)} bytes')  # Print chunk size
 				yield chunk
 				chunk = await f.read(1024)
 		print("Finished reading file.")
@@ -88,7 +87,7 @@ async def file_sender(file_name):
 async def send_chunked_request(file_name):
 	async with aiohttp.ClientSession() as session:
 		async with session.post(url, data=file_sender(file_name)) as response:
-			print(await response.text())
+			 await print_message(response.status, 200, "chunked request with file")
 
 # send requests async
 async def main():
@@ -98,7 +97,6 @@ async def main():
 	await upload_large_file("5mb.jpg") # large file to test non-blocking
 	await func_headers_buffer_size() # header bigger than 1024 bytes(server should read in multiple reads)
 	await func_headers_8kb() # header bigger than 8KB (server should send 431)
-	# await chunked_request() # chunked request
 	await upload_file("a.txt") # upload singe small file
 	await upload_multiple_file() # upload 3 files at the same time (in one POST request)
 	await send_chunked_request("5mb.jpg") # chunked request with file
