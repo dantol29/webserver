@@ -231,7 +231,7 @@ void Server::buildResponse(Connection &conn, size_t &i, HTTPRequest &request, HT
 	}
 	else
 	{
-		std::cout << "Single server block" << std::endl;
+		Debug::log("Single server block", Debug::NORMAL);
 	}
 
 	// check if the listen in the server block is matching port and ip from connection

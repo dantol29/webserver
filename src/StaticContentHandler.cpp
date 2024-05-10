@@ -90,7 +90,7 @@ void StaticContentHandler::handleRequest(const HTTPRequest &request, HTTPRespons
 
 void StaticContentHandler::handleNotFound(HTTPResponse &response)
 {
-	std::ifstream file("errors/404.html");
+	std::ifstream file("html/errors/404.html");
 	std::stringstream buffer;
 	buffer << file.rdbuf();
 	std::string fileContents = buffer.str();

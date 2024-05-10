@@ -23,7 +23,7 @@ class Router
 	Router(ServerBlock serverBlock);
 	~Router();
 	Router &operator=(const Router &other);
-	void routeRequest(const HTTPRequest &request, HTTPResponse &response);
+	void routeRequest(HTTPRequest &request, HTTPResponse &response);
 
 	void splitTarget(const std::string &target);
 	bool isDynamicRequest(const HTTPRequest &request);
@@ -39,7 +39,7 @@ class Router
 	std::vector<pollfd> *_FDsRef;
 	struct pollfd *_pollFd;
 	std::string getFileExtension(const std::string &fileName);
-	void handleServerBlockError(const HTTPRequest &request, HTTPResponse &response, int errorCode);
+	void handleServerBlockError(HTTPRequest &request, HTTPResponse &response, int errorCode);
 	bool isCGI(const HTTPRequest &request);
 	CGIHandler _cgiHandler;
 };
