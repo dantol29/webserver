@@ -362,17 +362,23 @@ void ServerBlock::makeListenStruct(std::vector<std::string> newStr, Listen& list
 	struct addrinfo hints;
 	struct addrinfo *res;
 
-	memset(&hints, 0, sizeof hints);
+	memset(&hints, 0, sizeof(hints));
 	hints.ai_family = AF_UNSPEC; // IPv4 or IPv6
 	hints.ai_socktype = SOCK_STREAM; // TCP socket
-	hints.ai_flags = AI_NUMERICHOST; // Treat node parameter as a numeric address
 
 	for (unsigned int i = 0; i < newStr.size(); ++i)
 	{
 		if (newStr[i].find(':') != std::string::npos)
 		{
-			ip = newStr[i].substr(0, newStr[i].find(':'));
-			portStr = newStr[i].substr(newStr[i].find(':') + 1);
+			ip = newStr[i].substr(0, newStr[i].find_last_of(':'));
+
+			// IPv6 is in [ip]:port format
+			if (ip[0] == '[')
+				ip.erase(0, 1);
+			if (ip[ip.size() - 1] == ']')
+			 	ip.erase(ip.size()- 1, 1);
+
+			portStr = newStr[i].substr(newStr[i].find_last_of(':') + 1);
 			port = strToInt(portStr);
 
 			if (port < 1 || port > 65535)
