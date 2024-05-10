@@ -37,7 +37,7 @@ void Router::routeRequest(HTTPRequest &request, HTTPResponse &response)
 	_webRoot += request.getRequestTarget();
 	request.setPath(_webRoot);
 	Debug::log("    Path: " + request.getRequestTarget(), Debug::NORMAL);
-	if (isCGI(request) && pathIsValid(const_cast<HTTPRequest &>(request), _webRoot))
+	if (isCGI(request) && pathIsValid(const_cast<HTTPRequest &>(request)))
 	{
 		CGIHandler cgiHandler;
 		cgiHandler.setFDsRef(_FDsRef);
@@ -59,7 +59,7 @@ void Router::routeRequest(HTTPRequest &request, HTTPResponse &response)
 	else
 	{
 		StaticContentHandler staticContentInstance;
-		if (!pathIsValid(const_cast<HTTPRequest &>(request), _webRoot))
+		if (!pathIsValid(const_cast<HTTPRequest &>(request)))
 		{
 			std::cout << "Path is not valid, calling handleNotFound" << std::endl;
 			handleServerBlockError(request, response, 404);
@@ -100,53 +100,52 @@ std::string Router::getFileExtension(const std::string &fileName)
 	}
 }
 
+void Router::setPathToCustomError(HTTPRequest &request, std::string errorPage)
+{
+	std::string errorPath = request.getPath();
+	std::string requestTarget = request.getRequestTarget();
+
+	// Find the position of requestTarget within errorPath
+	// TODO: solve this error: var/www/saladbook.xyz/saladbook
+	size_t targetPos = errorPath.find(requestTarget);
+	if (targetPos != std::string::npos)
+	{
+		// Remove the requestTarget portion from errorPath
+		errorPath.erase(targetPos, requestTarget.length());
+	}
+
+	// Add error page suffix or replacement
+	errorPath += "/";
+	errorPath += errorPage;
+	request.setPath(errorPath);
+}
+
 void Router::handleServerBlockError(HTTPRequest &request, HTTPResponse &response, int errorCode)
 {
 	// clang-format off
 	std::vector<std::pair<int, std::string> > errorPage = _serverBlock.getErrorPage();
 	// clang-format on
 	std::string errorPath;
-	std::cout << "+-+-+-+-handleServerBlockError: Error code: " << errorCode << std::endl;
 	for (size_t i = 0; i < errorPage.size(); i++)
 	{
-		std::cout << "handleServerBlockError: Error code: " << errorPage[i].first << std::endl;
-		std::cout << "handleServerBlockError: Error path: " << errorPage[i].second << std::endl;
 		if (errorPage[i].first == errorCode)
 		{
 			std::cout << "handleServerBlockError: Error code: " << errorCode << std::endl;
 			Debug::log("Path requested: " + request.getPath(), Debug::NORMAL);
 			Debug::log("Path to error: " + errorPage[i].second, Debug::NORMAL);
-			//
-			//
-			std::string errorPath = request.getPath();
-			std::string requestTarget = request.getRequestTarget();
-
-			// Find the position of requestTarget within errorPath
-			size_t targetPos = errorPath.find(requestTarget);
-			if (targetPos != std::string::npos)
-			{
-				// Remove the requestTarget portion from errorPath
-				errorPath.erase(targetPos, requestTarget.length());
-			}
-
-			// Add error page suffix or replacement
-			errorPath += "/";
-			errorPath += errorPage[i].second;
-			request.setPath(errorPath);
-			//
-			//
-			//
+			setPathToCustomError(request, errorPage[i].second);
 			Debug::log("errorPath: " + errorPath, Debug::NORMAL);
 			break;
 		}
 	}
+	errorPath = request.getPath();
 	// if (errorPath.empty())
 	// {
 	// 	std::cout << "handleServerBlockError: Error path is empty" << std::endl;
 	// 	return;
 	// }
 	StaticContentHandler staticContentInstance;
-	if (!pathIsValid(const_cast<HTTPRequest &>(request), errorPath))
+	if (!pathIsValid(const_cast<HTTPRequest &>(request)))
 	{
 		Debug::log("handleServerBlockError: path to given error is not valid", Debug::NORMAL);
 		staticContentInstance.handleNotFound(response);
@@ -192,9 +191,9 @@ void Router::splitTarget(const std::string &target)
 	}
 }
 
-bool Router::pathIsValid(HTTPRequest &request, std::string &webRoot)
+bool Router::pathIsValid(HTTPRequest &request)
 {
-	webRoot = request.getPath();
+	std::string webRoot = request.getPath();
 	std::string host = request.getHost();
 	Debug::log("pathIsValid Host: " + host, Debug::NORMAL);
 	Debug::log("pathIsValid webroot: " + webRoot, Debug::NORMAL);
