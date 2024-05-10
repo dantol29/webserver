@@ -56,7 +56,8 @@ void Server::startPollEventLoop()
 				{
 					std::cout << "i: " << i << std::endl;
 					std::cout << "Enters revents" << std::endl;
-					if (i == 0)
+					// if (i == 0)
+					if (_connections[i].getType() == SERVER)
 					{
 						// printFrame("SERVER SOCKET EVENT", true);
 						acceptNewConnection(_connections[i]);
