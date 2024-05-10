@@ -5,8 +5,8 @@
 !/**/
 !**/.gitkeep
 
-# Allow directories (and their contents) ending with .sl or .com
-!*.sl/
+# Allow directories (and their contents) ending with .xyz or .com
+!*.xyz/
 !*.com/
 
 # Except for these directories (and their contents)

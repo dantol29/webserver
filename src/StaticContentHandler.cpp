@@ -52,22 +52,9 @@ void StaticContentHandler::handleRequest(const HTTPRequest &request, HTTPRespons
 {
 	std::string requestTarget = request.getRequestTarget();
 	std::string webRoot = "var/www";
-	// std::cout << "path in handleRequest: " << webRoot << std::endl;
 	std::string host = request.getHost();
-	// std::cout << "host in handleRequest: " << host << std::endl;
-
-	// for ease of use during deployment
-	// this if/else allows to reach target with tester or browser
-
-	// if (host == "localhost:8080")
-	// 	path = webRoot + requestTarget;
-	// else
-	// 	path = webRoot + "/" + host + requestTarget;
-
-	// std::string path = webRoot + "/" + host + requestTarget;
 
 	std::string path = request.getPath();
-	std::cout << std::endl << "path : " << path << std::endl << std::endl;
 	if (requestTarget == "/" || requestTarget == "")
 		requestTarget = "/index.html";
 	// TODO: consider streaming the file instead of loading it all in memory for large files
@@ -75,19 +62,15 @@ void StaticContentHandler::handleRequest(const HTTPRequest &request, HTTPRespons
 	{
 		path += "/index.html";
 	}
-	std::cout << "path : " << path << std::endl;
 	std::ifstream file(path.c_str());
 	if (!file)
 	{
-		std::cerr << "Error opening file: " << path << std::endl;
+		Debug::log(" StaticContentHandler Error opening file: " + path, Debug::NORMAL);
 		response.setStatusCode(404, "Not Found");
 		response.setBody("404 Not Found");
 		return;
 	}
-
 	std::string body((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
-
-	// std::cout << "body : " << body << std::endl;
 
 	response.setStatusCode(200, "OK");
 	response.setBody(body);

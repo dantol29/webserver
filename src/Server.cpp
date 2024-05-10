@@ -89,18 +89,15 @@ void Server::startPollEventLoop()
 void Server::readFromClient(Connection &conn, size_t &i, Parser &parser, HTTPRequest &request, HTTPResponse &response)
 {
 	(void)i;
-	std::cout << "\033[1;36m"
-			  << "Entering readFromClient"
-			  << "\033[0m" << std::endl;
+
+	Debug::log("Entering readFromClient", Debug::NORMAL);
 	// TODO: change to _areHeadersCopmplete
 	if (!parser.getHeadersComplete())
 	{
-		std::cout << "\033[1;33m"
-				  << "Reading headers"
-				  << "\033[0m" << std::endl;
+		Debug::log("Headers not complete yet", Debug::NORMAL);
 		if (!conn.readHeaders(parser))
 		{
-			std::cout << "Error reading headers" << std::endl;
+			Debug::log("Error reading headers", Debug::NORMAL);
 			conn.setHasFinishedReading(true);
 			conn.setHasDataToSend(false);
 			conn.setCanBeClosed(true);
@@ -112,7 +109,7 @@ void Server::readFromClient(Connection &conn, size_t &i, Parser &parser, HTTPReq
 			conn.setCanBeClosed(true);
 			conn.setHasFinishedReading(true);
 			conn.setHasDataToSend(true);
-			std::cout << "Error pre-parsing headers" << std::endl;
+			Debug::log("Error pre-parsing headers", Debug::NORMAL);
 			return;
 		}
 	}
