@@ -90,6 +90,7 @@ void StaticContentHandler::handleRequest(const HTTPRequest &request, HTTPRespons
 
 void StaticContentHandler::handleNotFound(HTTPResponse &response)
 {
+	Debug::log("StaticContentHandler: sending default 404 Not Found", Debug::NORMAL);
 	std::ifstream file("html/errors/404.html");
 	std::stringstream buffer;
 	buffer << file.rdbuf();

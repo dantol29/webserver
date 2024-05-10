@@ -19,8 +19,8 @@ Router &Router::operator=(const Router &obj)
 		return *this;
 	_serverBlock = obj._serverBlock;
 	_path = obj._path;
-	_FDsRef = NULL;
-	_pollFd = NULL;
+	_FDsRef = obj._FDsRef;
+	_pollFd = obj._pollFd;
 	return *this;
 }
 
@@ -132,7 +132,7 @@ void Router::handleServerBlockError(HTTPRequest &request, HTTPResponse &response
 	}
 	else
 	{
-		Debug::log("handleServerBlockError: Response set to custom error", Debug::NORMAL);
+		Debug::log("handleServerBlockError: Response set to custom error file", Debug::NORMAL);
 		staticContentInstance.handleRequest(request, response);
 		response.setStatusCode(errorCode, errorPage[i].second);
 	}
@@ -209,6 +209,9 @@ bool Router::pathIsValid(HTTPRequest &request)
 			//____show dirs
 			// else
 			//____return 403
+			// does not contain an index.html file (or any other file specified as the index file in the Nginx
+			// configuration)
+			// and directory listing is turned off, accessing that directory gets a 403 Forbidden error.
 		}
 		else
 		{

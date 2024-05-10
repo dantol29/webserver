@@ -30,6 +30,7 @@ class Router
 	bool pathIsValid(HTTPRequest &request);
 	void setFDsRef(std::vector<struct pollfd> *FDsRef);
 	void setPollFd(struct pollfd *pollFd);
+	void handleServerBlockError(HTTPRequest &request, HTTPResponse &response, int errorCode);
 
   private:
 	ServerBlock _serverBlock;
@@ -39,7 +40,6 @@ class Router
 	std::vector<pollfd> *_FDsRef;
 	struct pollfd *_pollFd;
 	std::string getFileExtension(const std::string &fileName);
-	void handleServerBlockError(HTTPRequest &request, HTTPResponse &response, int errorCode);
 	bool isCGI(const HTTPRequest &request);
 	CGIHandler _cgiHandler;
 };

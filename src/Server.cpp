@@ -193,28 +193,23 @@ void Server::readFromClient(Connection &conn, size_t &i, Parser &parser, HTTPReq
 void Server::buildResponse(Connection &conn, size_t &i, HTTPRequest &request, HTTPResponse &response)
 {
 	(void)i;
-	std::cout << "Entering buildResponse" << std::endl;
-	std::cout << "Request status code : " << response.getStatusCode() << std::endl;
-	if (response.getStatusCode() != 0)
-	{
-		response.setErrorResponse(response.getStatusCode());
-		conn.setHasDataToSend(true);
-		return;
-	}
+	Debug::log("Entering buildResponse", Debug::NORMAL);
+	Debug::log("Request method: " + request.getMethod(), Debug::NORMAL);
 
 	ServerBlock serverBlock;
-	if (_config.getServerBlocks().size() != 1)
+	std::cout << GREEN << "Number of server blocks: " << _config.getServerBlocks().size() << RESET << std::endl;
+	if (_config.getServerBlocks().size() > 1)
 	{
 		// retrieve the server block which has a server name matching the request host header
 		for (size_t i = 0; i < _config.getServerBlocks().size(); i++)
 		{
 			// why getServerName returns a vector ?
 			std::string serverName = _config.getServerBlocks()[i].getServerName()[0];
-			std::cout << GREEN << "Checking server name: " << serverName << RESET << std::endl;
+			std::cout << RED << "Checking server name: " << serverName << RESET << std::endl;
 			std::cout << "Request host: " << request.getSingleHeader("host").second << std::endl;
 			if (serverName == request.getSingleHeader("host").second)
 			{
-				std::cout << RED << "Server block and request host match" << RESET << std::endl;
+				std::cout << GREEN << "Server block and request host match" << RESET << std::endl;
 				// _config.setServerBlockIndex(i);
 				serverBlock = _config.getServerBlocks()[i];
 				break;
@@ -222,9 +217,12 @@ void Server::buildResponse(Connection &conn, size_t &i, HTTPRequest &request, HT
 			else
 			{
 				// if no server name is found, use the default server block
-				std::cout << RED << "No server block is matching the request host" << RESET << std::endl;
-				//_config.setServerBlockIndex(0);
-				serverBlock = _config.getServerBlocks()[0];
+				static StaticContentHandler staticContentInstance;
+				staticContentInstance.handleNotFound(response);
+				response.setStatusCode(404, "No server block is matching the request host");
+				conn.setHasDataToSend(true);
+				Debug::log("Exiting buildResponse", Debug::NORMAL);
+				return;
 			}
 			std::cout << "Index: " << i << std::endl;
 		}
@@ -234,14 +232,24 @@ void Server::buildResponse(Connection &conn, size_t &i, HTTPRequest &request, HT
 		Debug::log("Single server block", Debug::NORMAL);
 	}
 
-	// check if the listen in the server block is matching port and ip from connection
-
-	// std::cout << request.getRequestTarget() << std::endl;
-	// TODO: The Router should be a member of the Server class or of the Connection class
 	Router router(serverBlock);
-	router.setFDsRef(&_FDs);
-	router.setPollFd(&conn.getPollFd());
-	router.routeRequest(request, response);
+
+	if (response.getStatusCode() != 0)
+	{
+		Debug::log("Error response" + toString(response.getStatusCode()), Debug::NORMAL);
+		response.setErrorResponse(response.getStatusCode());
+		router.handleServerBlockError(request, response, response.getStatusCode());
+		conn.setHasDataToSend(true);
+		return;
+	}
+	else
+	{
+		router.setFDsRef(&_FDs);
+		router.setPollFd(&conn.getPollFd());
+		router.routeRequest(request, response);
+	}
+
+	// TODO: check if the listen in the server block is matching port and ip from connection
 	conn.setHasDataToSend(true);
 }
 
@@ -279,6 +287,7 @@ void Server::closeClientConnection(Connection &conn, size_t &i)
 
 void Server::handleConnection(Connection &conn, size_t &i, Parser &parser, HTTPRequest &request, HTTPResponse &response)
 {
+	std::cout << GREEN << "  Number of server blocks: " << _config.getServerBlocks().size() << RESET << std::endl;
 	std::cout << "\033[1;36m"
 			  << "Entering handleConnection"
 			  << "\033[0m" << std::endl;

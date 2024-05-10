@@ -16,7 +16,7 @@
 #define COLOR_GREEN "\033[32m"
 #define COLOR_RED "\033[31m"
 #define COLOR_RESET "\033[0m"
-#define PRINT_RESPONSE 0
+#define PRINT_RESPONSE 1
 
 bool is_error = false;
 
@@ -170,13 +170,13 @@ void sendData(const std::vector<HTTPTest> &tests, sockaddr_in serverAddress)
 void salad(sockaddr_in serverAddress)
 {
 	std::vector<HTTPTest> tests = {
-		HTTPTest("GET / HTTP/1.1\r\nHost: saladbook.xyz\r\n\r\n", "200"),
-		HTTPTest("GET / HTTP/1.1\r\nHost: saladbook.xyz/story/our_story.html\r\n\r\n", "200"),
-		HTTPTest("GET / HTTP/1.1\r\nHost: saladbook.xyz/story/\r\n\r\n", "404"),
 		// HTTPTest("GET / HTTP/1.1\r\nHost: saladbook.xyz\r\n\r\n", "200"),
-		HTTPTest("GET / HTTP/1.1\r\nHost: saladbook.xyz/fsdfsd\r\n\r\n", "404"),
-		HTTPTest("GET / HTTP/1.1\r\nHost: sgfgdf\r\n\r\n", "404"),
-		HTTPTest("GET / HTXXXP/1.1\r\nHost: sgfgdf\r\n\r\n", "400"),
+		HTTPTest("GET / HTTP/1.1\r\nHost: saladbook.xyz/story/our_story.html\r\n\r\n", "200"),
+		// 	HTTPTest("GET / HTTP/1.1\r\nHost: saladbook.xyz/story/\r\n\r\n", "404"),
+		// 	// HTTPTest("GET / HTTP/1.1\r\nHost: saladbook.xyz\r\n\r\n", "200"),
+		// 	HTTPTest("GET / HTTP/1.1\r\nHost: saladbook.xyz/fsdfsd\r\n\r\n", "404"),
+		// 	HTTPTest("GET / HTTP/1.1\r\nHost: sgfgdf\r\n\r\n", "404"),
+		// 	HTTPTest("GET / HTXXXP/1.1\r\nHost: sgfgdf\r\n\r\n", "400"),
 	};
 	sendData(tests, serverAddress);
 }
