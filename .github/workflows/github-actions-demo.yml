@@ -36,6 +36,13 @@ jobs:
             echo "✅ Config file tests passed."
             echo "::set-output name=config_tests_correct::true"
            fi
+      - name: Check if webserv is running
+        run: |
+          if ps aux | grep -q '[w]ebserv'; then
+            echo "webserv is running."
+          else
+            echo "webserv is not running."
+          fi
       - name: Run Python tests
         if: always()
         working-directory: tests # Set working directory to 'tests'

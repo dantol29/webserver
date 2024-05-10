@@ -30,6 +30,8 @@ Router::~Router()
 
 void Router::routeRequest(const HTTPRequest &request, HTTPResponse &response)
 {
+	std::cout << "  routeRequest Request host: " << request.getSingleHeader("Host").second << std::endl;
+
 	// std::string _webRoot = "var/www"; // TODO: get this from the config file
 	std::string _webRoot = _serverBlock.getRoot();
 	if (isCGI(request) && pathIsValid(const_cast<HTTPRequest &>(request), _webRoot))

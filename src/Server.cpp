@@ -130,6 +130,8 @@ void Server::readFromClient(Connection &conn, size_t &i, Parser &parser, HTTPReq
 		std::cout << "-------------------------Enter what we need" << std::endl;
 		conn.setHasFinishedReading(true);
 	}
+	std::cout << request << std::endl;
+	std::cout << "  getHeadersComplete Request host: " << request.getSingleHeader("host").second << std::endl;
 
 	if (response.getStatusCode() != 0)
 		std::cout << "Error: " << response.getStatusCode() << std::endl;
