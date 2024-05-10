@@ -581,7 +581,9 @@ bool Parser::isOrigForm(std::string &requestTarget, int &queryStart)
 
 bool Parser::isValidContentType(std::string type)
 {
-	if (type == "text/plain" || type == "text/html" || type.substr(0, 30) == "multipart/form-data; boundary=")
+if (type == "text/plain" || type == "text/html" || \
+	type.substr(0, 30) == "multipart/form-data; boundary=" \
+	|| type == "application/octet-stream")
 		return (true);
 	return (false);
 }

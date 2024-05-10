@@ -47,7 +47,7 @@ bool ServerBlock::addDirective(std::string key, std::string &value, bool isLocat
 	}
 
 	if (key == "listen")
-		setListen(transformServerListen(value), isLocation);
+		transformServerListen(value, isLocation);
 	else if (key == "server_name")
 		setServerName(transformServerName(value), isLocation);
 	else if (key == "error_page")
@@ -99,7 +99,7 @@ std::vector<Directives> ServerBlock::getLocations() const
 	return (_locations);
 }
 
-std::vector<std::string> ServerBlock::getListen() const
+std::vector<Listen> ServerBlock::getListen() const
 {
 	return (_directives._listen);
 }
@@ -156,13 +156,10 @@ std::vector<std::string> ServerBlock::getCgiExt() const
 	return (_directives._cgiExt);
 }
 
-void ServerBlock::setListen(std::vector<std::string> str, bool isLocation)
+void ServerBlock::setListen(Listen str, bool isLocation)
 {
 	if (!isLocation)
-	{
-		for (unsigned int i = 0; i < str.size(); ++i)
-			_directives._listen.push_back(str[i]);
-	}
+		_directives._listen.push_back(str);
 	else
 		throw("listen directive not allowed in location block");
 
@@ -170,7 +167,7 @@ void ServerBlock::setListen(std::vector<std::string> str, bool isLocation)
 	{
 		for (unsigned int j = 0; j < _directives._listen.size(); ++j)
 		{
-			if (i != j && _directives._listen[i] == _directives._listen[j])
+			if (i != j && _directives._listen[i]._port == _directives._listen[j]._port)
 				throw("Duplicate listen directive");
 		}
 	}
@@ -361,8 +358,91 @@ std::vector<std::string> ServerBlock::transformServerName(std::string &str)
 	return (newStr);
 }
 
-std::vector<std::string> ServerBlock::transformServerListen(std::string &str)
+Listen ServerBlock::makeListenStruct(std::string &newStr)
 {
+	Listen listen;
+	int port;
+	std::string ip;
+	std::string portStr;
+	bool isIpAndPort = false;
+	struct addrinfo hints;
+	struct addrinfo *res;
+
+	listen.isIpv6 = false;
+	memset(&hints, 0, sizeof(hints));
+	hints.ai_family = AF_UNSPEC;	 // IPv4 or IPv6
+	hints.ai_socktype = SOCK_STREAM; // TCP socket
+
+	// if IPv6 is in [ip]:port format
+	if (newStr[0] == '[')
+		newStr.erase(0, 1);
+	if (newStr.find(']') != std::string::npos)
+		newStr.replace(newStr.find(']'), 1, "");
+
+	// (IPv6:port) or (IPv6) or (IPv4) or (port)
+	if (getaddrinfo(newStr.c_str(), NULL, &hints, &res) == 0)
+	{
+		freeaddrinfo(res);
+		portStr = newStr;
+
+		// (IPv6:port)
+		if (newStr.find_last_of(':') != std::string::npos)
+		{
+			portStr = newStr.substr(newStr.find_last_of(':') + 1);
+			isIpAndPort = true;
+		}
+
+		port = strToInt(portStr);
+		if (port >= 1 && port <= 65535)
+		{
+			listen._port = port;
+			if (!isIpAndPort)
+			{
+				listen._ip = "Any";
+				return (listen);
+			}
+		}
+		// is incorrect integer
+		else if ((port < 1 || port > 65535) && port != -1)
+			throw("Invalid port");
+
+		ip = newStr;
+		// (IPv6:port)
+		if (isIpAndPort)
+			ip = newStr.substr(0, newStr.find_last_of(':'));
+		listen._ip = ip;
+		listen.isIpv6 = true;
+	}
+	// (IPv4:port)
+	else
+	{
+		ip = newStr.substr(0, newStr.find_last_of(':'));
+		portStr = newStr.substr(newStr.find_last_of(':') + 1);
+		port = strToInt(portStr);
+		if (port < 1 || port > 65535)
+			throw("Invalid port");
+		listen._ip = ip;
+
+		if (getaddrinfo(ip.c_str(), NULL, &hints, &res) != 0)
+			throw("Invalid ip");
+		freeaddrinfo(res);
+		listen._port = port;
+	}
+
+	if (listen._ip.empty())
+		listen._ip = "Any";
+	if (listen._port == 0)
+		listen._port = 0;
+
+	return (listen);
+}
+
+void ServerBlock::transformServerListen(std::string &str, bool isLocation)
+{
+	if (isLocation)
+		throw("listen directive not allowed in location block");
+
+	Listen listen;
 	std::vector<std::string> newStr;
 	std::stringstream ss(str);
 	std::string name;
@@ -371,7 +451,8 @@ std::vector<std::string> ServerBlock::transformServerListen(std::string &str)
 		newStr.push_back(name);
 	if (newStr.empty())
 		newStr.push_back(str);
-	return (newStr);
+	for (unsigned int i = 0; i < newStr.size(); ++i)
+		setListen(makeListenStruct(newStr[i]), false);
 }
 
 std::pair<int, std::string> ServerBlock::transformErrorPage(std::string &str)

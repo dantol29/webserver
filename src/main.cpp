@@ -15,7 +15,9 @@ int main(int argc, char **argv)
 	if (!config.getErrorMessage().empty())
 		return 1;
 	
-	std::cout << config << std::endl; // should be in the DEBUG?
+	//std::cout << config << std::endl; // should be in the DEBUG?
+	Debug::enable(true);
+	Debug::setLevel(Debug::NORMAL);
 	Server webserv(config);
 	webserv.startListening();
 	webserv.startPollEventLoop();
