@@ -35,8 +35,19 @@ void Router::routeRequest(HTTPRequest &request, HTTPResponse &response)
 	std::string _webRoot = _serverBlock.getRoot();
 	Debug::log("routeRequest _webRoot: " + _webRoot, Debug::NORMAL);
 	_webRoot += request.getSingleHeader("host").second;
-	request.setPath(_webRoot);
 	Debug::log("_webRoot += request.getSingleHeader(host).second: " + _webRoot, Debug::NORMAL);
+
+	request.setPath(_webRoot);
+
+	std::string requestTarget = request.getRequestTarget();
+	std::cout << GREEN << "pathIsValid: requestTarget " << requestTarget << RESET << std::endl;
+
+	_webRoot += requestTarget;
+	std::cout << GREEN << "pathIsValid: _webRoot " << _webRoot << RESET << std::endl;
+
+	request.setPath(_webRoot);
+	std::cout << GREEN << "pathIsValid: request.getPath() " << request.getPath() << RESET << std::endl;
+
 	if (isCGI(request) && pathIsValid(const_cast<HTTPRequest &>(request)))
 	{
 		CGIHandler cgiHandler;
@@ -62,7 +73,7 @@ void Router::routeRequest(HTTPRequest &request, HTTPResponse &response)
 		if (!pathIsValid(const_cast<HTTPRequest &>(request)))
 		{
 			std::cout << "Path is not valid, calling handleNotFound" << std::endl;
-			handleServerBlockError(request, response, 404);
+			handleServerBlockError(request, response, 400);
 			// staticContentInstance.handleNotFound(response);
 		}
 		else
@@ -174,6 +185,7 @@ void Router::splitTarget(const std::string &target)
 
 bool Router::pathIsValid(HTTPRequest &request)
 {
+
 	std::string webRoot = request.getPath();
 	std::string host = request.getHost();
 	Debug::log("pathIsValid Host: " + host, Debug::NORMAL);
@@ -183,15 +195,15 @@ bool Router::pathIsValid(HTTPRequest &request)
 	{
 		host = host.substr(0, pos);
 	}
+	// webroot +        host        +  path to error
+	//  var    / www.saladbook.xyz /  html/404_salad.html
 
-	// for ease of use during deployment
-	// this if/else allows to reach target with tester or browser
-	// if (host != "localhost")
-	// 	webRoot = host + webRoot;
-
+	webRoot += "/" + host;
+	std::cout << RED << "pathIsValid: webRoot: " << webRoot << RESET << std::endl;
 	struct stat buffer;
 	if (stat(webRoot.c_str(), &buffer) != 0)
 	{
+		Debug::log("webRoot: " + webRoot, Debug::NORMAL);
 		Debug::log("pathIsValid: stat failed, path does not exist", Debug::NORMAL);
 		return false;
 	}

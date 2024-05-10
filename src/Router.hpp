@@ -30,6 +30,7 @@ class Router
 	bool pathIsValid(HTTPRequest &request);
 	void setFDsRef(std::vector<struct pollfd> *FDsRef);
 	void setPollFd(struct pollfd *pollFd);
+	void setWebRoot(std::string &webRoot);
 	void handleServerBlockError(HTTPRequest &request, HTTPResponse &response, int errorCode);
 
   private:

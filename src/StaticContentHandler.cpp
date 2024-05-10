@@ -99,6 +99,6 @@ void StaticContentHandler::handleNotFound(HTTPResponse &response)
 	response.setBody(fileContents);
 	response.setHeader("Content-Type", "text/html");
 	response.setHeader("Content-Length", toString(fileContents.length()));
-	response.setStatusCode(404, "");
+	response.setStatusCode(400, "");
 	return;
 }

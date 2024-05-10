@@ -126,73 +126,110 @@ void Server::readFromClient(Connection &conn, size_t &i, Parser &parser, HTTPReq
 	std::cout << parser.getHeadersComplete() << " ," << request.getMethod() << std::endl;
 	if (parser.getHeadersComplete() && request.getMethod() == "GET")
 		conn.setHasFinishedReading(true);
-}
 
-if (response.getStatusCode() != 0)
-	std::cout << "Error: " << response.getStatusCode() << std::endl;
-if (request.getMethod() == "GET")
-	std::cout << "GET request, no body to read" << std::endl;
-else
-{
-	if (parser.getIsChunked() && !conn.getHasReadSocket())
-	{
-		std::cout << "Chunked body" << std::endl;
-		if (!conn.readChunkedBody(parser))
-		{
-			// Case of error while reading chunked body
-			conn.setCanBeClosed(true);
-			conn.setHasFinishedReading(true);
-			// It could be that we had data that could be sent even if we have an error cause previous data was read
-			return;
-		}
-		conn.setHasReadSocket(true);
-	}
+	if (response.getStatusCode() != 0)
+		std::cout << "Error: " << response.getStatusCode() << std::endl;
+	if (request.getMethod() == "GET")
+		std::cout << "GET request, no body to read" << std::endl;
 	else
 	{
-		Debug::log("\033[1;33mReading body\033[0m", Debug::NORMAL);
-		// TODO: add comments
-		if (!parser.getBodyComplete() && parser.getBuffer().size() == request.getContentLength())
+		if (parser.getIsChunked() && !conn.getHasReadSocket())
 		{
-			// TODO: in the new design we will return here and go to the function where the response is
-			parser.setBodyComplete(true);
-			conn.setHasFinishedReading(true);
-			conn.setHasDataToSend(true);
+			std::cout << "Chunked body" << std::endl;
+			if (!conn.readChunkedBody(parser))
+			{
+				// Case of error while reading chunked body
+				conn.setCanBeClosed(true);
+				conn.setHasFinishedReading(true);
+				// It could be that we had data that could be sent even if we have an error cause previous data was read
+				return;
+			}
+			conn.setHasReadSocket(true);
 		}
-		else if (!conn.getHasReadSocket() && !conn.readBody(parser, request, response))
+		else
 		{
-			std::cout << "Error reading body" << std::endl;
-			conn.setCanBeClosed(true);
-			conn.setHasFinishedReading(true);
-			// Probably hasDataToSend false, because we have an error on reading the body
-			// conn.setHasDataToSend(false);
+			Debug::log("\033[1;33mReading body\033[0m", Debug::NORMAL);
+			// TODO: add comments
+			if (!parser.getBodyComplete() && parser.getBuffer().size() == request.getContentLength())
+			{
+				// TODO: in the new design we will return here and go to the function where the response is
+				parser.setBodyComplete(true);
+				conn.setHasFinishedReading(true);
+				conn.setHasDataToSend(true);
+			}
+			// else if (!conn.getHasReadSocket() && !conn.readBody(parser, request, response))
+			else if (request.getMethod() != "GET")
+			{
+				std::cout << "Error reading body" << std::endl;
+				conn.setCanBeClosed(true);
+				conn.setHasFinishedReading(true);
+				// Probably hasDataToSend false, because we have an error on reading the body
+				// conn.setHasDataToSend(false);
+				return;
+			}
+		}
+		if (!parser.getBodyComplete())
+		{
+			std::cout << "Body still incomplete, exiting readFromClient." << std::endl;
+			conn.setHasFinishedReading(false);
+			conn.setHasReadSocket(true);
 			return;
 		}
+		//  std::cout << parser.getBuffer() << std::endl;
+		if (!request.getUploadBoundary().empty())
+			parser.parseFileUpload(parser.getBuffer(), request, response);
+		else if (request.getMethod() != "GET")
+		{
+			request.setBody(parser.getBuffer());
+			conn.setHasFinishedReading(true);
+		}
 	}
-	if (!parser.getBodyComplete())
-	{
-		std::cout << "Body still incomplete, exiting readFromClient." << std::endl;
-		conn.setHasFinishedReading(false);
-		conn.setHasReadSocket(true);
-		return;
-	}
-	//  std::cout << parser.getBuffer() << std::endl;
-	if (!request.getUploadBoundary().empty())
-		parser.parseFileUpload(parser.getBuffer(), request, response);
-	else if (request.getMethod() != "GET")
-	{
-		request.setBody(parser.getBuffer());
-		conn.setHasFinishedReading(true);
-	}
-}
 }
 
 void Server::buildResponse(Connection &conn, size_t &i, HTTPRequest &request, HTTPResponse &response)
 {
 	(void)i;
-	std::cout << "\033[1;36m"
-			  << "Entering buildResponse"
-			  << "\033[0m" << std::endl;
-	std::cout << "\033[1;91mRequest status code: " << response.getStatusCode() << "\033[0m" << std::endl;
+	Debug::log("Entering buildResponse", Debug::NORMAL);
+	Debug::log("Request method: " + request.getMethod(), Debug::NORMAL);
+
+	ServerBlock serverBlock;
+	std::cout << GREEN << "Number of server blocks: " << _config.getServerBlocks().size() << RESET << std::endl;
+	if (_config.getServerBlocks().size() > 1)
+	{
+		// retrieve the server block which has a server name matching the request host header
+		for (size_t i = 0; i < _config.getServerBlocks().size(); i++)
+		{
+			// why getServerName returns a vector ?
+			std::string serverName = _config.getServerBlocks()[i].getServerName()[0];
+			std::cout << RED << "Checking server name: " << serverName << RESET << std::endl;
+			std::cout << "Request host: " << request.getSingleHeader("host").second << std::endl;
+			if (serverName == request.getSingleHeader("host").second)
+			{
+				std::cout << GREEN << "Server block and request host match" << RESET << std::endl;
+				// _config.setServerBlockIndex(i);
+				serverBlock = _config.getServerBlocks()[i];
+				break;
+			}
+			else
+			{
+				// if no server name is found, use the default server block
+				static StaticContentHandler staticContentInstance;
+				staticContentInstance.handleNotFound(response);
+				response.setStatusCode(404, "No server block is matching the request host");
+				conn.setHasDataToSend(true);
+				Debug::log("Exiting buildResponse", Debug::NORMAL);
+				return;
+			}
+			std::cout << "Index: " << i << std::endl;
+		}
+	}
+	else
+	{
+		Debug::log("Single server block", Debug::NORMAL);
+	}
+
+	Router router(serverBlock);
+
 	if (response.getStatusCode() != 0)
 	{
 		Debug::log("Error response" + toString(response.getStatusCode()), Debug::NORMAL);
@@ -264,6 +301,7 @@ void Server::handleConnection(Connection &conn, size_t &i, Parser &parser, HTTPR
 				  << "\033[0m" << std::endl;
 		return;
 	}
+	std::cout << request << std::endl;
 	if (!conn.getCanBeClosed() && !conn.getHasDataToSend())
 		buildResponse(conn, i, request, response);
 	// std::cout << "Has data to send: " << conn.getHasDataToSend() << std::endl;
