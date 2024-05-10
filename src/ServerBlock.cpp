@@ -358,17 +358,33 @@ std::vector<std::string> ServerBlock::transformServerName(std::string& str)
 Listen ServerBlock::makeListenStruct(std::vector<std::string> newStr)
 {
 	Listen listen;
+	int port;
 
 	for (unsigned int i = 0; i < newStr.size(); ++i)
 	{
 		if (newStr[i].find(':') != std::string::npos)
 		{
 			std::string ip = newStr[i].substr(0, newStr[i].find(':'));
-			std::string port = newStr[i].substr(newStr[i].find(':') + 1);
-			listen._ip.push_back(ip);
+			std::string portStr = newStr[i].substr(newStr[i].find(':') + 1);
+			port = strToInt(portStr);
+			if (port < 1 || port > 65535)
+				throw ("Invalid port");
+			
+			listen._port.push_back(port);
+			listen._ip = ip;
+		}
+		else
+		{
+			port = strToInt(newStr[i]);
+			if (port < 1 || port > 65535)
+				throw ("Invalid port");
 			listen._port.push_back(port);
 		}
 	}
+	if (listen._ip.empty())
+		listen._ip = "None";
+	if (listen._port.empty())
+		listen._port.push_back(0);
 	return (listen);
 }
 
@@ -383,8 +399,7 @@ Listen ServerBlock::transformServerListen(std::string& str)
 		newStr.push_back(name);
 	if (newStr.empty())
 		newStr.push_back(str);
-	listen = makeListenStruct(newStr);
-	return (newStr);
+	return (makeListenStruct(newStr));
 }
 
 std::pair<int, std::string> ServerBlock::transformErrorPage(std::string& str)
