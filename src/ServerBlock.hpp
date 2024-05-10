@@ -13,15 +13,15 @@
 struct Listen
 {
 	std::string _ip;
-	std::vector<int> _port;
+	int _port;
+	bool isIpv6;
 };
 
 struct Directives
 {
 	Directives()
 	{
-		_listen._ip.clear();
-		_listen._port.clear();
+		_listen.clear();
 		_serverName.clear();
 		_errorPage.clear();
 		_index.clear();
@@ -35,7 +35,7 @@ struct Directives
 		_path = "";
 	
 	}
-	Listen _listen;
+	std::vector<Listen> _listen;
 	std::vector<std::string> _serverName;
 	std::vector<std::pair<int, std::string> >_errorPage;
 	std::vector<std::string> _index;
@@ -62,7 +62,7 @@ class ServerBlock
 		// GETTERS
 		Directives getDirectives() const; // variables outside of locations
 		std::vector<Directives> getLocations() const; // location / {} blocks
-		Listen getListen() const;
+		std::vector<Listen> getListen() const;
 		std::vector<std::string> getServerName() const;
 		std::vector<std::pair<int, std::string> > getErrorPage() const;
 		std::vector<std::string> getIndex() const;
@@ -95,14 +95,14 @@ class ServerBlock
 		std::vector<Directives> _locations;
 		
 		// TRANSFORMERS
-		Listen transformServerListen(std::string& str);
+		void transformServerListen(std::string& str, bool isLocation);
 		std::vector<std::string> transformServerName(std::string& str);
 		std::pair<int, std::string> transformErrorPage(std::string& str);
 		std::vector<std::string> transformIndex(std::string& str);
 		std::vector<std::string> transformAllowedMethods(std::string& str);
 		std::vector<std::string> transformCgiExt(std::string& str);
 
-		void makeListenStruct(std::vector<std::string> newStr, Listen& listen);
+		Listen makeListenStruct(std::string& newStr);
 		
 
 };
