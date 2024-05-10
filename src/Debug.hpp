@@ -10,7 +10,10 @@ class Debug
 	enum Level
 	{
 		NORMAL,
-		OCF
+		SERVER,
+		PARSER,
+		OCF,
+		ALL
 	};
 
   private:
