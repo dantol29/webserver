@@ -48,8 +48,7 @@ void Router::routeRequest(HTTPRequest &request, HTTPResponse &response)
 
 	request.setPath(_webRoot);
 	std::cout << GREEN << "routeRequest: request.getPath() " << request.getPath() << RESET << std::endl;
-
-	if (isCGI(request) && pathIsValid(const_cast<HTTPRequest &>(request)))
+	if (isCGI(request) && pathIsValid(response, request))
 	{
 		CGIHandler cgiHandler;
 		cgiHandler.setFDsRef(_FDsRef);
@@ -71,7 +70,7 @@ void Router::routeRequest(HTTPRequest &request, HTTPResponse &response)
 	else
 	{
 		StaticContentHandler staticContentInstance;
-		if (!pathIsValid(const_cast<HTTPRequest &>(request)))
+		if (!pathIsValid(response, request))
 		{
 			std::cout << "Path is not valid, calling handleNotFound" << std::endl;
 			handleServerBlockError(request, response, 400);
@@ -137,7 +136,7 @@ void Router::handleServerBlockError(HTTPRequest &request, HTTPResponse &response
 	// 	return;
 	// }
 	StaticContentHandler staticContentInstance;
-	if (!pathIsValid(const_cast<HTTPRequest &>(request)))
+	if (!pathIsValid(response, request))
 	{
 		Debug::log("handleServerBlockError: path to given error is not valid", Debug::NORMAL);
 		staticContentInstance.handleNotFound(response);
@@ -184,7 +183,9 @@ void Router::splitTarget(const std::string &target)
 	}
 }
 
-std::string Router::generateDirectoryListing(const std::string &directoryPath, const std::string &requestedPath)
+void Router::generateDirectoryListing(HTTPResponse Response,
+									  const std::string &directoryPath,
+									  const std::string &requestedPath)
 {
 	std::ostringstream html;
 	html << "<html><head><title>Directory listing for " << requestedPath << "</title></head>"
@@ -213,11 +214,14 @@ std::string Router::generateDirectoryListing(const std::string &directoryPath, c
 	}
 
 	html << "</ul></body></html>";
-	return html.str();
+	Response.setBody(html.str());
+	Response.setStatusCode(200, "OK");
+	Response.setHeader("Content-Type", "text/html");
 }
 
-bool Router::pathIsValid(HTTPRequest &request)
+bool Router::pathIsValid(HTTPResponse &response, HTTPRequest &request)
 {
+	(void)response;
 	struct stat buffer;
 	std::string path = request.getPath();
 	if (stat(path.c_str(), &buffer) != 0)
@@ -228,10 +232,6 @@ bool Router::pathIsValid(HTTPRequest &request)
 	}
 	if (S_ISDIR(buffer.st_mode))
 	{
-		// TODO: finish implementing this temporary directory listing output
-		std::string directoryListing = generateDirectoryListing(path, request.getRequestTarget());
-		std::cout << "Directory listing: " << directoryListing << std::endl;
-
 		if (!path.empty() && path[path.length() - 1] != '/')
 		{
 			path += "/";
@@ -239,19 +239,20 @@ bool Router::pathIsValid(HTTPRequest &request)
 		if (_serverBlock.getIndex().empty())
 		{
 			Debug::log("User did not provided any index", Debug::NORMAL);
-			// if directory listing
-			// if (_serverBlock.getAutoindex())
-			// {
-			// 	Debug::log("pathIsValid: Autoindex is on", Debug::NORMAL);
-			// 	// path += "index.html";
-			// 	// request.setPath(path);
-			// 	// std::cout << std::endl;
-			// }
-			// else
-			// {
-			// 	Debug::log("pathIsValid: Autoindex is off", Debug::NORMAL);
-			// 	return false;
-			// }
+			if (_serverBlock.getAutoIndex())
+			{
+				Debug::log("pathIsValid: Autoindex is on", Debug::NORMAL);
+				generateDirectoryListing(response, path, request.getRequestTarget());
+				// std::cout << "Directory listing: " << directoryListing << std::endl;
+				// path += "index.html";
+				// request.setPath(path);
+				// std::cout << std::endl;
+			}
+			else
+			{
+				Debug::log("pathIsValid: Autoindex is off", Debug::NORMAL);
+				return false;
+			}
 		}
 		else // user provided an index
 		{

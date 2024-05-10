@@ -28,7 +28,7 @@ class Router
 
 	void splitTarget(const std::string &target);
 	bool isDynamicRequest(const HTTPRequest &request);
-	bool pathIsValid(HTTPRequest &request);
+	bool pathIsValid(HTTPResponse &response, HTTPRequest &request);
 	void setFDsRef(std::vector<struct pollfd> *FDsRef);
 	void setPollFd(struct pollfd *pollFd);
 	void setWebRoot(std::string &webRoot);
@@ -42,7 +42,8 @@ class Router
 	std::vector<pollfd> *_FDsRef;
 	struct pollfd *_pollFd;
 	std::string getFileExtension(const std::string &fileName);
-	std::string generateDirectoryListing(const std::string &directoryPath, const std::string &requestedPath);
+	void
+	generateDirectoryListing(HTTPResponse Response, const std::string &directoryPath, const std::string &requestedPath);
 	bool isCGI(const HTTPRequest &request);
 	CGIHandler _cgiHandler;
 };
