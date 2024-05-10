@@ -51,8 +51,7 @@ void Server::startPollEventLoop()
 			{
 				if (_FDs[i].revents & (POLLIN | POLLOUT))
 				{
-					std::cout << "i: " << i << std::endl;
-					std::cout << "Enters revents" << std::endl;
+					Debug::log("Enters revents", Debug::OCF);
 					if (i == 0)
 					{
 						// printFrame("SERVER SOCKET EVENT", true);
@@ -89,14 +88,14 @@ void Server::startPollEventLoop()
 void Server::readFromClient(Connection &conn, size_t &i, Parser &parser, HTTPRequest &request, HTTPResponse &response)
 {
 	(void)i;
-	std::cout << "\033[1;36m" << "Entering readFromClient" << "\033[0m" << std::endl;
+	Debug::log("\033[1;33mEntering read from client\033[0m", Debug::OCF);
 	// TODO: change to _areHeadersCopmplete
 	if (!parser.getHeadersComplete())
 	{
-		std::cout << "\033[1;33m" << "Reading headers" << "\033[0m" << std::endl;
+		Debug::log("\033[1;33mReading headers\033[0m", Debug::NORMAL);
 		if (!conn.readHeaders(parser))
 		{
-			std::cout << "Error reading headers" << std::endl;
+			Debug::log("Error reading headers", Debug::OCF);
 			conn.setHasFinishedReading(true);
 			conn.setHasDataToSend(false);
 			conn.setCanBeClosed(true);
@@ -108,13 +107,13 @@ void Server::readFromClient(Connection &conn, size_t &i, Parser &parser, HTTPReq
 			conn.setCanBeClosed(true);
 			conn.setHasFinishedReading(true);
 			conn.setHasDataToSend(true);
-			std::cout << "Error pre-parsing headers" << std::endl;
+			Debug::log("Error pre-parsing headers", Debug::OCF);
 			return;
 		}
 	}
 	if (!parser.getHeadersComplete())
 	{
-		std::cout << "Headers incomplete yet, exiting readFromClient." << std::endl;
+		Debug::log("Headers incomplete yet, exiting readFromClient.", Debug::NORMAL);
 		return;
 	}
 	if (parser.getHeadersComplete() && !parser.getHeadersAreParsed())
@@ -122,23 +121,21 @@ void Server::readFromClient(Connection &conn, size_t &i, Parser &parser, HTTPReq
 
 	std::cout << parser.getHeadersComplete() << " ," << request.getMethod() << std::endl;
 	if (parser.getHeadersComplete() && request.getMethod() == "GET")
-	{
-		std::cout << "-------------------------Enter what we need" << std::endl;
 		conn.setHasFinishedReading(true);
-	}
 
 	if (response.getStatusCode() != 0)
-		std::cout << "Error: " << response.getStatusCode() << std::endl;
+		Debug::log(toString(response.getStatusCode()), Debug::NORMAL);
 	if (request.getMethod() == "GET")
-		std::cout << "GET request, no body to read" << std::endl;
+		Debug::log("GET request, no body to read", Debug::NORMAL);
 	else
 	{
 		if (parser.getIsChunked() && !conn.getHasReadSocket())
 		{
-			std::cout << "Chunked body" << std::endl;
+			Debug::log("Chunked body", Debug::NORMAL);
 			if (!conn.readChunkedBody(parser))
 			{
 				// Case of error while reading chunked body
+				Debug::log("Error reading chunked body", Debug::OCF);
 				conn.setCanBeClosed(true);
 				conn.setHasFinishedReading(true);
 				// It could be that we had data that could be sent even if we have an error cause previous data was read
@@ -146,9 +143,9 @@ void Server::readFromClient(Connection &conn, size_t &i, Parser &parser, HTTPReq
 			}
 			conn.setHasReadSocket(true);
 		}
-		else
+		else if (!conn.getHasReadSocket())
 		{
-			std::cout << "\033[1;33m" << "Reading body" << "\033[0m" << std::endl;
+			Debug::log("\033[1;33mReading body\033[0m", Debug::NORMAL);
 			// TODO: add comments
 			if (!parser.getBodyComplete() && parser.getBuffer().size() == request.getContentLength())
 			{
@@ -159,7 +156,7 @@ void Server::readFromClient(Connection &conn, size_t &i, Parser &parser, HTTPReq
 			}
 			else if (!conn.getHasReadSocket() && !conn.readBody(parser, request, response))
 			{
-				std::cout << "Error reading body" << std::endl;
+				Debug::log("Error reading body", Debug::OCF);
 				conn.setCanBeClosed(true);
 				conn.setHasFinishedReading(true);
 				// Probably hasDataToSend false, because we have an error on reading the body
@@ -169,7 +166,7 @@ void Server::readFromClient(Connection &conn, size_t &i, Parser &parser, HTTPReq
 		}
 		if (!parser.getBodyComplete())
 		{
-			std::cout << "Body still incomplete, exiting readFromClient." << std::endl;
+			Debug::log("Body still incomplete, exiting readFromClient.", Debug::NORMAL);
 			conn.setHasFinishedReading(false);
 			conn.setHasReadSocket(true);
 			return;
@@ -188,8 +185,7 @@ void Server::readFromClient(Connection &conn, size_t &i, Parser &parser, HTTPReq
 void Server::buildResponse(Connection &conn, size_t &i, HTTPRequest &request, HTTPResponse &response)
 {
 	(void)i;
-	std::cout << "\033[1;36m" << "Entering buildResponse" << "\033[0m" << std::endl;
-	std::cout << "\033[1;91mRequest status code: " << response.getStatusCode() << "\033[0m" << std::endl;
+	Debug::log("\033[1;36mEntering buildResponse\033[0m", Debug::OCF);
 	if (response.getStatusCode() != 0)
 	{
 		response.setErrorResponse(response.getStatusCode());
@@ -207,7 +203,7 @@ void Server::buildResponse(Connection &conn, size_t &i, HTTPRequest &request, HT
 
 void Server::writeToClient(Connection &conn, size_t &i, HTTPResponse &response)
 {
-	std::cout << "\033[1;36m" << "Entering writeToClient" << "\033[0m" << std::endl;
+	Debug::log("\033[1;36mEntering writeToClient\033[0m", Debug::OCF);
 	(void)i;
 	send(conn.getPollFd().fd, response.objToString().c_str(), response.objToString().size(), 0);
 	// conn.setHasDataToSend(); will not be always false in case of chunked response or keep-alive connection
@@ -219,13 +215,8 @@ void Server::writeToClient(Connection &conn, size_t &i, HTTPResponse &response)
 
 void Server::closeClientConnection(Connection &conn, size_t &i)
 {
-	std::cout << "\033[1;36m" << "Entering closeClientConnection" << "\033[0m" << std::endl;
-	// if (response.getStatusCode() != 0)
-	// if (conn.getResponse().getStatusCode() != 0 && conn.getResponse().getStatusCode() != 499)
-	// {
-	// 	std::string responseString = conn.getResponse().objToString();
-	// 	send(conn.getPollFd().fd, responseString.c_str(), responseString.size(), 0);
-	// }
+	Debug::log("\033[1;36mEntering closeClientConnection\033[0m", Debug::OCF);
+
 	// TODO: should we close it with the Destructor of the Connection class?
 	close(conn.getPollFd().fd);
 	_FDs.erase(_FDs.begin() + i);
@@ -235,7 +226,7 @@ void Server::closeClientConnection(Connection &conn, size_t &i)
 
 void Server::handleConnection(Connection &conn, size_t &i, Parser &parser, HTTPRequest &request, HTTPResponse &response)
 {
-	std::cout << "\033[1;36m" << "Entering handleConnection" << "\033[0m" << std::endl;
+	Debug::log("\033[1;36mEntering handleConnection\033[0m", Debug::OCF);
 	// conn.printConnection();
 
 	// Why is it TRUE when I refresh a page?????
@@ -246,7 +237,7 @@ void Server::handleConnection(Connection &conn, size_t &i, Parser &parser, HTTPR
 	// TODO: add comments to explain
 	if (conn.getHasReadSocket() && !conn.getHasFinishedReading())
 	{
-		std::cout << "\033[1;36m" << "return from handleConnection" << "\033[0m" << std::endl;
+		Debug::log("\033[1;36mreturn from handleConnection\033[0m", Debug::OCF);
 		return;
 	}
 	if (!conn.getCanBeClosed() && !conn.getHasDataToSend())

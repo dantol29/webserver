@@ -20,6 +20,7 @@
 !**/*.json
 !**/*.jpg
 !**/*.yml
+!**/*.csv
 
 # Specific files and directories to include
 !Makefile
