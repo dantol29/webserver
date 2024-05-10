@@ -48,7 +48,8 @@ class Server
   private:
 	/* Private Attributes */
 	int _port;
-	int _serverFD;
+	// int _serverFD;
+	std::vector<int> _serverFDs;
 	size_t _clientMaxHeadersSize;
 	int _clientMaxBodySize;
 	int _maxClients; // i.e. max number of pending connections
