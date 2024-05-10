@@ -157,8 +157,8 @@ void Server::readFromClient(Connection &conn, size_t &i, Parser &parser, HTTPReq
 				conn.setHasFinishedReading(true);
 				conn.setHasDataToSend(true);
 			}
-			// else if (!conn.getHasReadSocket() && !conn.readBody(parser, request, response))
-			else if (request.getMethod() != "GET")
+			else if (!conn.getHasReadSocket() && !conn.readBody(parser, request, response))
+			// else if (request.getMethod() != "GET")
 			{
 				std::cout << "Error reading body" << std::endl;
 				conn.setCanBeClosed(true);
@@ -283,9 +283,7 @@ void Server::closeClientConnection(Connection &conn, size_t &i)
 
 void Server::handleConnection(Connection &conn, size_t &i, Parser &parser, HTTPRequest &request, HTTPResponse &response)
 {
-	std::cout << "\033[1;36m"
-			  << "Entering handleConnection"
-			  << "\033[0m" << std::endl;
+
 	// conn.printConnection();
 
 	// Why is it TRUE when I refresh a page?????
@@ -296,9 +294,7 @@ void Server::handleConnection(Connection &conn, size_t &i, Parser &parser, HTTPR
 	// TODO: add comments to explain
 	if (conn.getHasReadSocket() && !conn.getHasFinishedReading())
 	{
-		std::cout << "\033[1;36m"
-				  << "return from handleConnection"
-				  << "\033[0m" << std::endl;
+		std::cout << "Has read socket: " << conn.getHasReadSocket() << std::endl;
 		return;
 	}
 	std::cout << request << std::endl;
