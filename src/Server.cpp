@@ -25,9 +25,12 @@ Server::~Server()
 
 void Server::startListening()
 {
-	createServerSocket();
-	setReuseAddrAndPort();
-	checkSocketOptions();
+	// createServerSocket();
+	createServerSockets(_serverFDs, _config.getServerBlocks());
+	// setReuseAddrAndPort();
+	setReuseAddrAndPort(_serverFDs);
+	// checkSocketOptions();
+	checkSocketOptions(_serverFDs);
 	bindToPort(_port);
 	listen();
 }
@@ -277,18 +280,19 @@ void Server::loadDefaultConfig()
 
 void Server::createServerSockets(std::vector<int> _serverFDs, std::vector<ServerBlock> serverBlocks)
 {
-	std::vector<ListenStruct> allListens;
+	std::vector<Listen> allListens;
 	for (std::vector<ServerBlock>::iterator it = serverBlocks.begin(); it != serverBlocks.end(); ++it)
 	{
-		std::vector<ListenStruct> listens = it->getDirectives().getListen();
+		std::vector<Listen> listens = it->getDirectives().getListen();
+		std::vector<Listen> listens = it->getDirectives().getListen();
 		allListens.insert(allListens.end(), listens.begin(), listens.end());
 	}
 
-	std::vector<ListenStruct> uniqueListens;
-	for (std::vector<ListenStruct>::iterator it = allListens.begin(); it != allListens.end(); ++it)
+	std::vector<Listen> uniqueListens;
+	for (std::vector<Listen>::iterator it = allListens.begin(); it != allListens.end(); ++it)
 	{
 		bool isUnique = true;
-		for (std::vector<ListenStruct>::iterator it2 = uniqueListens.begin(); it2 != uniqueListens.end(); ++it2)
+		for (std::vector<Listen>::iterator it2 = uniqueListens.begin(); it2 != uniqueListens.end(); ++it2)
 		{
 			if (it->port == it2->port && it->ip == it2->ip)
 			{
@@ -301,21 +305,24 @@ void Server::createServerSockets(std::vector<int> _serverFDs, std::vector<Server
 	}
 }
 
-void Server::createServerSocket()
-{
-	if ((_serverFD = socket(AF_INET, SOCK_STREAM, 0)) == 0)
-		perrorAndExit("Failed to create server socket");
-	// std::cout << "Server socket created" << std::endl;
-	// std::cout << "Server socket file descriptor: " << _serverFD << std::endl;
-}
+// void Server::createServerSocket()
+//{
+//	if ((_serverFD = socket(AF_INET, SOCK_STREAM, 0)) == 0)
+//		perrorAndExit("Failed to create server socket");
+//	// std::cout << "Server socket created" << std::endl;
+//	// std::cout << "Server socket file descriptor: " << _serverFD << std::endl;
+// }
 
-void Server::setReuseAddrAndPort()
+void Server::setReuseAddrAndPort(std::vector<int> _serverFDs)
 {
 	int opt = 1;
-	if (setsockopt(_serverFD, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)))
-		perror("setsockopt SO_REUSEADDR: Protocol not available, continuing without SO_REUSEADDR");
-	if (setsockopt(_serverFD, SOL_SOCKET, SO_REUSEPORT, &opt, sizeof(opt)))
-		perror("setsockopt SO_REUSEPORT: Protocol not available, continuing without SO_REUSEPORT");
+	for (std::vector<int>::iterator it = _serverFDs.begin(); it != _serverFDs.end(); ++it)
+	{
+		if (setsockopt(*it, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)))
+			perror("setsockopt SO_REUSEADDR: Protocol not available, continuing without SO_REUSEADDR");
+		if (setsockopt(*it, SOL_SOCKET, SO_REUSEPORT, &opt, sizeof(opt)))
+			perror("setsockopt SO_REUSEPORT: Protocol not available, continuing without SO_REUSEPORT");
+	}
 	// std::cout << "SO_REUSEADDR and SO_REUSEPORT set" << std::endl;
 }
 
@@ -540,26 +547,29 @@ std::string Server::getConfigFilePath() const
 	return _configFilePath;
 }
 
-void Server::checkSocketOptions()
+void Server::checkSocketOptions(std::vector<int> _serverFDs)
 {
 	int optval;
 	socklen_t optlen = sizeof(optval);
 
-	if (getsockopt(_serverFD, SOL_SOCKET, SO_REUSEADDR, &optval, &optlen) < 0)
+	for (std::vector<int>::iterator it = _serverFDs.begin(); it != _serverFDs.end(); ++it)
 	{
-		perror("getsockopt SO_REUSEADDR failed");
-	}
-	else
-	{
-		// std::cout << "SO_REUSEADDR is " << (optval ? "enabled" : "disabled") << std::endl;
-	}
+		if (getsockopt(*it, SOL_SOCKET, SO_REUSEADDR, &optval, &optlen) < 0)
+		{
+			perror("getsockopt SO_REUSEADDR failed for server socket");
+		}
+		else
+		{
+			// std::cout << "SO_REUSEADDR is " << (optval ? "enabled" : "disabled") << std::endl;
+		}
 
-	if (getsockopt(_serverFD, SOL_SOCKET, SO_REUSEPORT, &optval, &optlen) < 0)
-	{
-		perror("getsockopt SO_REUSEPORT failed");
-	}
-	else
-	{
-		// std::cout << "SO_REUSEPORT is " << (optval ? "enabled" : "disabled") << std::endl;
+		if (getsockopt(*it, SOL_SOCKET, SO_REUSEPORT, &optval, &optlen) < 0)
+		{
+			perror("getsockopt SO_REUSEPORT failed for server socket");
+		}
+		else
+		{
+			// std::cout << "SO_REUSEPORT is " << (optval ? "enabled" : "disabled") << std::endl;
+		}
 	}
 }
