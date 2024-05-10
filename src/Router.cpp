@@ -100,33 +100,6 @@ std::string Router::getFileExtension(const std::string &fileName)
 	}
 }
 
-void Router::setPathToCustomError(HTTPRequest &request, std::string errorPage)
-{
-	// std::string errorPath = request.getPath();
-	// std::string requestTarget = request.getRequestTarget();
-	// Debug::log("setPathToCustomError: Request target: " + requestTarget, Debug::NORMAL);
-	// // Find the position of requestTarget within errorPath
-	// // TODO: solve this error: var/www/saladbook.xyz/saladbook
-	// size_t targetPos = errorPath.find(requestTarget);
-	// if (targetPos != std::string::npos)
-	// {
-	// 	Debug::log("setPathToCustomError: Found requestTarget in errorPath", Debug::NORMAL);
-	// 	// Remove the requestTarget portion from errorPath
-	// 	errorPath.erase(targetPos, requestTarget.length());
-	// }
-
-	// // Add error page suffix or replacement
-	// errorPath += "/";
-	// errorPath += errorPage;
-	// Debug::log("setPathToCustomError: Error path: " + errorPath, Debug::NORMAL);
-	// request.setPath(errorPath);
-
-	// std::string host = request.getHost();
-	std::string root = _serverBlock.getRoot();
-	std::string host = "/saladbook.xyz/";
-	request.setPath(root + host + errorPage);
-}
-
 void Router::handleServerBlockError(HTTPRequest &request, HTTPResponse &response, int errorCode)
 {
 	// clang-format off
@@ -141,7 +114,7 @@ void Router::handleServerBlockError(HTTPRequest &request, HTTPResponse &response
 			std::cout << "handleServerBlockError: Error code: " << errorCode << std::endl;
 			Debug::log("Path requested: " + request.getPath(), Debug::NORMAL);
 			Debug::log("Path to error: " + errorPage[i].second, Debug::NORMAL);
-			setPathToCustomError(request, errorPage[i].second);
+			request.setPath(_serverBlock.getRoot() + request.getHost() + errorPage[i].second);
 			break;
 		}
 	}

@@ -1,8 +1,8 @@
-#include <sys/socket.h> // socket
-#include <netinet/in.h> // sockaddr_in
+#include <sys/socket.h>
+#include <netinet/in.h>
 #include <iostream>
-#include <unistd.h> // close
-#include <string.h> // strlen
+#include <unistd.h>
+#include <string.h>
 #include <sys/wait.h>
 #include <cstring>
 #include <vector>
@@ -17,11 +17,6 @@
 #define COLOR_RED "\033[31m"
 #define COLOR_RESET "\033[0m"
 #define PRINT_RESPONSE 0
-
-// ADD TO THE MAIN IN WEBSERVER (after read())
-// #include "HTTPRequest.hpp"
-// HTTPRequest obj(buffer);
-// std::cout << obj.getStatusCode() << std::endl;
 
 bool is_error = false;
 
@@ -181,6 +176,7 @@ void salad(sockaddr_in serverAddress)
 		// HTTPTest("GET / HTTP/1.1\r\nHost: saladbook.xyz\r\n\r\n", "200"),
 		HTTPTest("GET / HTTP/1.1\r\nHost: saladbook.xyz/fsdfsd\r\n\r\n", "404"),
 		HTTPTest("GET / HTTP/1.1\r\nHost: sgfgdf\r\n\r\n", "404"),
+		HTTPTest("GET / HTXXXP/1.1\r\nHost: sgfgdf\r\n\r\n", "400"),
 	};
 	sendData(tests, serverAddress);
 }

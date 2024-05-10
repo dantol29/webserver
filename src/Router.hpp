@@ -39,7 +39,6 @@ class Router
 	std::vector<pollfd> *_FDsRef;
 	struct pollfd *_pollFd;
 	std::string getFileExtension(const std::string &fileName);
-	void setPathToCustomError(HTTPRequest &request, std::string errorPage);
 	void handleServerBlockError(HTTPRequest &request, HTTPResponse &response, int errorCode);
 	bool isCGI(const HTTPRequest &request);
 	CGIHandler _cgiHandler;
