@@ -1,7 +1,16 @@
 #include "Server.hpp"
 #include "Parser.hpp"
 #include "Connection.hpp"
+#include "ServerBlock.hpp" // for the Listen struct (to be implemented)
 #include "Debug.hpp"
+
+// Structure for holding listening address data
+// TODO: delete when Listen struct is implemented
+
+struct Directives
+{
+	std::vector<ListenStruct> _listen;
+};
 
 Server::Server()
 {
@@ -93,15 +102,11 @@ void Server::startPollEventLoop()
 void Server::readFromClient(Connection &conn, size_t &i, Parser &parser, HTTPRequest &request, HTTPResponse &response)
 {
 	(void)i;
-	std::cout << "\033[1;36m"
-			  << "Entering readFromClient"
-			  << "\033[0m" << std::endl;
+	std::cout << "\033[1;36m" << "Entering readFromClient" << "\033[0m" << std::endl;
 	// TODO: change to _areHeadersCopmplete
 	if (!parser.getHeadersComplete())
 	{
-		std::cout << "\033[1;33m"
-				  << "Reading headers"
-				  << "\033[0m" << std::endl;
+		std::cout << "\033[1;33m" << "Reading headers" << "\033[0m" << std::endl;
 		if (!conn.readHeaders(parser))
 		{
 			std::cout << "Error reading headers" << std::endl;
@@ -156,9 +161,7 @@ void Server::readFromClient(Connection &conn, size_t &i, Parser &parser, HTTPReq
 		}
 		else
 		{
-			std::cout << "\033[1;33m"
-					  << "Reading body"
-					  << "\033[0m" << std::endl;
+			std::cout << "\033[1;33m" << "Reading body" << "\033[0m" << std::endl;
 			// TODO: add comments
 			if (!parser.getBodyComplete() && parser.getBuffer().size() == request.getContentLength())
 			{
@@ -198,9 +201,7 @@ void Server::readFromClient(Connection &conn, size_t &i, Parser &parser, HTTPReq
 void Server::buildResponse(Connection &conn, size_t &i, HTTPRequest &request, HTTPResponse &response)
 {
 	(void)i;
-	std::cout << "\033[1;36m"
-			  << "Entering buildResponse"
-			  << "\033[0m" << std::endl;
+	std::cout << "\033[1;36m" << "Entering buildResponse" << "\033[0m" << std::endl;
 	std::cout << "\033[1;91mRequest status code: " << response.getStatusCode() << "\033[0m" << std::endl;
 	if (response.getStatusCode() != 0)
 	{
@@ -219,9 +220,7 @@ void Server::buildResponse(Connection &conn, size_t &i, HTTPRequest &request, HT
 
 void Server::writeToClient(Connection &conn, size_t &i, HTTPResponse &response)
 {
-	std::cout << "\033[1;36m"
-			  << "Entering writeToClient"
-			  << "\033[0m" << std::endl;
+	std::cout << "\033[1;36m" << "Entering writeToClient" << "\033[0m" << std::endl;
 	(void)i;
 	send(conn.getPollFd().fd, response.objToString().c_str(), response.objToString().size(), 0);
 	// conn.setHasDataToSend(); will not be always false in case of chunked response or keep-alive connection
@@ -233,9 +232,7 @@ void Server::writeToClient(Connection &conn, size_t &i, HTTPResponse &response)
 
 void Server::closeClientConnection(Connection &conn, size_t &i)
 {
-	std::cout << "\033[1;36m"
-			  << "Entering closeClientConnection"
-			  << "\033[0m" << std::endl;
+	std::cout << "\033[1;36m" << "Entering closeClientConnection" << "\033[0m" << std::endl;
 	// if (response.getStatusCode() != 0)
 	// if (conn.getResponse().getStatusCode() != 0 && conn.getResponse().getStatusCode() != 499)
 	// {
@@ -251,9 +248,7 @@ void Server::closeClientConnection(Connection &conn, size_t &i)
 
 void Server::handleConnection(Connection &conn, size_t &i, Parser &parser, HTTPRequest &request, HTTPResponse &response)
 {
-	std::cout << "\033[1;36m"
-			  << "Entering handleConnection"
-			  << "\033[0m" << std::endl;
+	std::cout << "\033[1;36m" << "Entering handleConnection" << "\033[0m" << std::endl;
 	// conn.printConnection();
 
 	// Why is it TRUE when I refresh a page?????
@@ -264,9 +259,7 @@ void Server::handleConnection(Connection &conn, size_t &i, Parser &parser, HTTPR
 	// TODO: add comments to explain
 	if (conn.getHasReadSocket() && !conn.getHasFinishedReading())
 	{
-		std::cout << "\033[1;36m"
-				  << "return from handleConnection"
-				  << "\033[0m" << std::endl;
+		std::cout << "\033[1;36m" << "return from handleConnection" << "\033[0m" << std::endl;
 		return;
 	}
 	if (!conn.getCanBeClosed() && !conn.getHasDataToSend())
@@ -298,6 +291,32 @@ void Server::loadDefaultConfig()
 }
 
 /* startListening */
+
+void Server::createServerSockets(std::vector<int> _serverFDs, std::vector<ServerBlock> serverBlocks)
+{
+	std::vector<ListenStruct> allListens;
+	for (std::vector<ServerBlock>::iterator it = serverBlocks.begin(); it != serverBlocks.end(); ++it)
+	{
+		std::vector<ListenStruct> listens = it->getDirectives().getListen();
+		allListens.insert(allListens.end(), listens.begin(), listens.end());
+	}
+
+	std::vector<ListenStruct> uniqueListens;
+	for (std::vector<ListenStruct>::iterator it = allListens.begin(); it != allListens.end(); ++it)
+	{
+		bool isUnique = true;
+		for (std::vector<ListenStruct>::iterator it2 = uniqueListens.begin(); it2 != uniqueListens.end(); ++it2)
+		{
+			if (it->port == it2->port && it->ip == it2->ip)
+			{
+				isUnique = false;
+				break;
+			}
+		}
+		if (isUnique)
+			uniqueListens.push_back(*it);
+	}
+}
 
 void Server::createServerSocket()
 {
