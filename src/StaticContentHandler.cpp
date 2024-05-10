@@ -71,7 +71,7 @@ void StaticContentHandler::handleRequest(const HTTPRequest &request, HTTPRespons
 		return;
 	}
 	std::string body((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
-
+	// TODO : take code arg if we serve an error page
 	response.setStatusCode(200, "OK");
 	response.setBody(body);
 	response.setHeader("Content-Type", getMimeType(path));

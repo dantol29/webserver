@@ -211,8 +211,8 @@ void Server::buildResponse(Connection &conn, size_t &i, HTTPRequest &request, HT
 			// why getServerName returns a vector ?
 			std::string serverName = _config.getServerBlocks()[i].getServerName()[0];
 			std::cout << GREEN << "Checking server name: " << serverName << RESET << std::endl;
-			std::cout << "Request host: " << request.getSingleHeader("Host").second << std::endl;
-			if (serverName == request.getSingleHeader("Host").second)
+			std::cout << "Request host: " << request.getSingleHeader("host").second << std::endl;
+			if (serverName == request.getSingleHeader("host").second)
 			{
 				std::cout << RED << "Server block and request host match" << RESET << std::endl;
 				// _config.setServerBlockIndex(i);

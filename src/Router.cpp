@@ -30,13 +30,13 @@ Router::~Router()
 
 void Router::routeRequest(HTTPRequest &request, HTTPResponse &response)
 {
-	Debug::log("routeRequest Request host: " + request.getSingleHeader("Host").second, Debug::NORMAL);
+	Debug::log("routeRequest Request host: " + request.getSingleHeader("host").second, Debug::NORMAL);
 	Debug::log("routeRequest _webRoot: " + _serverBlock.getRoot(), Debug::NORMAL);
 	std::string _webRoot = _serverBlock.getRoot();
 	Debug::log("routeRequest _webRoot: " + _webRoot, Debug::NORMAL);
-	_webRoot += request.getRequestTarget();
+	_webRoot += request.getSingleHeader("host").second;
 	request.setPath(_webRoot);
-	Debug::log("    Path: " + request.getRequestTarget(), Debug::NORMAL);
+	Debug::log("_webRoot += request.getSingleHeader(host).second: " + _webRoot, Debug::NORMAL);
 	if (isCGI(request) && pathIsValid(const_cast<HTTPRequest &>(request)))
 	{
 		CGIHandler cgiHandler;
@@ -102,22 +102,29 @@ std::string Router::getFileExtension(const std::string &fileName)
 
 void Router::setPathToCustomError(HTTPRequest &request, std::string errorPage)
 {
-	std::string errorPath = request.getPath();
-	std::string requestTarget = request.getRequestTarget();
+	// std::string errorPath = request.getPath();
+	// std::string requestTarget = request.getRequestTarget();
+	// Debug::log("setPathToCustomError: Request target: " + requestTarget, Debug::NORMAL);
+	// // Find the position of requestTarget within errorPath
+	// // TODO: solve this error: var/www/saladbook.xyz/saladbook
+	// size_t targetPos = errorPath.find(requestTarget);
+	// if (targetPos != std::string::npos)
+	// {
+	// 	Debug::log("setPathToCustomError: Found requestTarget in errorPath", Debug::NORMAL);
+	// 	// Remove the requestTarget portion from errorPath
+	// 	errorPath.erase(targetPos, requestTarget.length());
+	// }
 
-	// Find the position of requestTarget within errorPath
-	// TODO: solve this error: var/www/saladbook.xyz/saladbook
-	size_t targetPos = errorPath.find(requestTarget);
-	if (targetPos != std::string::npos)
-	{
-		// Remove the requestTarget portion from errorPath
-		errorPath.erase(targetPos, requestTarget.length());
-	}
+	// // Add error page suffix or replacement
+	// errorPath += "/";
+	// errorPath += errorPage;
+	// Debug::log("setPathToCustomError: Error path: " + errorPath, Debug::NORMAL);
+	// request.setPath(errorPath);
 
-	// Add error page suffix or replacement
-	errorPath += "/";
-	errorPath += errorPage;
-	request.setPath(errorPath);
+	// std::string host = request.getHost();
+	std::string root = _serverBlock.getRoot();
+	std::string host = "/saladbook.xyz/";
+	request.setPath(root + host + errorPage);
 }
 
 void Router::handleServerBlockError(HTTPRequest &request, HTTPResponse &response, int errorCode)
@@ -126,7 +133,8 @@ void Router::handleServerBlockError(HTTPRequest &request, HTTPResponse &response
 	std::vector<std::pair<int, std::string> > errorPage = _serverBlock.getErrorPage();
 	// clang-format on
 	std::string errorPath;
-	for (size_t i = 0; i < errorPage.size(); i++)
+	size_t i = 0;
+	for (; i < errorPage.size(); i++)
 	{
 		if (errorPage[i].first == errorCode)
 		{
@@ -134,7 +142,6 @@ void Router::handleServerBlockError(HTTPRequest &request, HTTPResponse &response
 			Debug::log("Path requested: " + request.getPath(), Debug::NORMAL);
 			Debug::log("Path to error: " + errorPage[i].second, Debug::NORMAL);
 			setPathToCustomError(request, errorPage[i].second);
-			Debug::log("errorPath: " + errorPath, Debug::NORMAL);
 			break;
 		}
 	}
@@ -154,6 +161,7 @@ void Router::handleServerBlockError(HTTPRequest &request, HTTPResponse &response
 	{
 		Debug::log("handleServerBlockError: Response set to custom error", Debug::NORMAL);
 		staticContentInstance.handleRequest(request, response);
+		response.setStatusCode(errorCode, errorPage[i].second);
 	}
 }
 
