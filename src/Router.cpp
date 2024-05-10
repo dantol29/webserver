@@ -30,36 +30,34 @@ Router::~Router()
 
 void Router::routeRequest(HTTPRequest &request, HTTPResponse &response)
 {
-	Debug::log("routeRequest Request host: " + request.getSingleHeader("host").second, Debug::NORMAL);
-	Debug::log("routeRequest _webRoot: " + _serverBlock.getRoot(), Debug::NORMAL);
-	std::string _webRoot = _serverBlock.getRoot();
-	Debug::log("routeRequest _webRoot: " + _webRoot, Debug::NORMAL);
-	request.setRoot(_webRoot);
-	_webRoot += request.getSingleHeader("host").second;
-	Debug::log("_webRoot += request.getSingleHeader(host).second: " + _webRoot, Debug::NORMAL);
-
+	Debug::log("Routing Request: host = " + request.getSingleHeader("host").second, Debug::NORMAL);
+	std::string _webRoot = _serverBlock.getRoot() + request.getSingleHeader("host").second;
+	_webRoot += request.getRequestTarget();
 	request.setPath(_webRoot);
 
-	std::string requestTarget = request.getRequestTarget();
-	std::cout << GREEN << "routeRequest: requestTarget " << requestTarget << RESET << std::endl;
+	std::cout << GREEN << "Routing request to path: " << _webRoot << RESET << std::endl;
 
-	_webRoot += requestTarget;
-	std::cout << GREEN << "routeRequest: _webRoot " << _webRoot << RESET << std::endl;
-
-	request.setPath(_webRoot);
-	std::cout << GREEN << "routeRequest: request.getPath() " << request.getPath() << RESET << std::endl;
-	if (isCGI(request) && pathIsValid(response, request))
+	if (isCGI(request))
 	{
-		CGIHandler cgiHandler;
-		cgiHandler.setFDsRef(_FDsRef);
-		cgiHandler.setPollFd(_pollFd);
-		cgiHandler.handleRequest(request, response);
+		if (pathIsValid(response, request))
+		{
+			CGIHandler cgiHandler;
+			cgiHandler.setFDsRef(_FDsRef);
+			cgiHandler.setPollFd(_pollFd);
+			cgiHandler.handleRequest(request, response);
+			return;
+		}
+	}
+
+	if (!pathIsValid(response, request))
+	{
+		std::cout << "Path is not valid, handling as error" << std::endl;
+		handleServerBlockError(request, response, 400);
 		return;
 	}
-	else if (request.getMethod() == "POST") // && !request.getUploadBoundary().empty())
-	{
-		std::cout << "Router: POST request" << std::endl;
 
+	if (request.getMethod() == "POST")
+	{
 		UploadHandler uploadHandler;
 		uploadHandler.handleRequest(request, response);
 	}
@@ -69,17 +67,8 @@ void Router::routeRequest(HTTPRequest &request, HTTPResponse &response)
 	}
 	else
 	{
-		StaticContentHandler staticContentInstance;
-		if (!pathIsValid(response, request))
-		{
-			std::cout << "Path is not valid, calling handleNotFound" << std::endl;
-			handleServerBlockError(request, response, 400);
-			// staticContentInstance.handleNotFound(response);
-		}
-		else
-		{
-			staticContentInstance.handleRequest(request, response);
-		}
+		StaticContentHandler staticContentHandler;
+		staticContentHandler.handleRequest(request, response);
 	}
 }
 
