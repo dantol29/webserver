@@ -102,7 +102,7 @@ class ServerBlock
 		std::vector<std::string> transformAllowedMethods(std::string& str);
 		std::vector<std::string> transformCgiExt(std::string& str);
 
-		Listen makeListenStruct(std::vector<std::string> newStr);
+		void makeListenStruct(std::vector<std::string> newStr, Listen& listen);
 		
 
 };

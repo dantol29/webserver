@@ -149,21 +149,20 @@ std::vector<std::string> ServerBlock::getCgiExt() const
 
 void ServerBlock::setListen(Listen str, bool isLocation)
 {
-	int port;
-
 	if (!isLocation){
-		for (unsigned int i = 0; i < str._ip.size(); ++i){
-			_directives._listen._ip.push_back(str._port[i]);
+		for (unsigned int i = 0; i < str._port.size(); ++i){
+			_directives._listen._port.push_back(str._port[i]);
 		}
+		_directives._listen._ip = str._ip;
 	}
 	else
 		throw ("listen directive not allowed in location block");
 
-	for (unsigned int i = 0; i < _directives._listen._ip.size(); ++i)
+	for (unsigned int i = 0; i < _directives._listen._port.size(); ++i)
 	{
-		for (unsigned int j = 0; j < _directives._listen._ip.size(); ++j)
+		for (unsigned int j = 0; j < _directives._listen._port.size(); ++j)
 		{
-			if (i != j && _directives._listen._ip[i] == _directives._listen._ip[j])
+			if (i != j && _directives._listen._port[i] == _directives._listen._port[j])
 				throw ("Duplicate listen directive");
 		}
 	}	
@@ -355,21 +354,33 @@ std::vector<std::string> ServerBlock::transformServerName(std::string& str)
 	return (newStr);
 }
 
-Listen ServerBlock::makeListenStruct(std::vector<std::string> newStr)
+void ServerBlock::makeListenStruct(std::vector<std::string> newStr, Listen& listen)
 {
-	Listen listen;
 	int port;
+	std::string ip;
+	std::string portStr;
+	struct addrinfo hints;
+	struct addrinfo *res;
+
+	memset(&hints, 0, sizeof hints);
+	hints.ai_family = AF_UNSPEC; // IPv4 or IPv6
+	hints.ai_socktype = SOCK_STREAM; // TCP socket
+	hints.ai_flags = AI_NUMERICHOST; // Treat node parameter as a numeric address
 
 	for (unsigned int i = 0; i < newStr.size(); ++i)
 	{
 		if (newStr[i].find(':') != std::string::npos)
 		{
-			std::string ip = newStr[i].substr(0, newStr[i].find(':'));
-			std::string portStr = newStr[i].substr(newStr[i].find(':') + 1);
+			ip = newStr[i].substr(0, newStr[i].find(':'));
+			portStr = newStr[i].substr(newStr[i].find(':') + 1);
 			port = strToInt(portStr);
+
 			if (port < 1 || port > 65535)
 				throw ("Invalid port");
+			if (getaddrinfo(ip.c_str(), NULL, &hints, &res) != 0)
+				throw ("Invalid IP address");
 			
+			freeaddrinfo(res);
 			listen._port.push_back(port);
 			listen._ip = ip;
 		}
@@ -385,7 +396,6 @@ Listen ServerBlock::makeListenStruct(std::vector<std::string> newStr)
 		listen._ip = "None";
 	if (listen._port.empty())
 		listen._port.push_back(0);
-	return (listen);
 }
 
 Listen ServerBlock::transformServerListen(std::string& str)
@@ -399,7 +409,8 @@ Listen ServerBlock::transformServerListen(std::string& str)
 		newStr.push_back(name);
 	if (newStr.empty())
 		newStr.push_back(str);
-	return (makeListenStruct(newStr));
+	makeListenStruct(newStr, listen);
+	return (listen);
 }
 
 std::pair<int, std::string> ServerBlock::transformErrorPage(std::string& str)

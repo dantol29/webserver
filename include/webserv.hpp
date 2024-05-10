@@ -10,6 +10,8 @@
 #include <list>
 #include <vector>
 #include <algorithm>
+#include <sys/socket.h>
+#include <netdb.h>
 
 #define CONFIG_FILE_DEFAULT_PATH "./webserv.conf"
 #define RED "\033[1;31m"
