@@ -182,9 +182,6 @@ int strToInt(const std::string &str)
 	iss >> num;
 
 	if (iss.fail() || !iss.eof())
-	{
-		std::cerr << "Invalid input: conversion failed." << std::endl;
 		return -1;
-	}
 	return num;
 }
