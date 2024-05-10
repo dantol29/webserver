@@ -378,13 +378,12 @@ void Server::addServerSocketPollFdToVectors()
 
 void Server::acceptNewConnection(Connection &conn)
 {
-	// TODO: think about naming.
-	// We have 4 different names for kind of the same thing: clientAddress, newSocket, newSocketPoll,
-	// newConnection
-	struct sockaddr_in clientAddress;
+
+	// struct sockaddr_in clientAddress;
+	// We choose sockaddr_storage to be able to handle both IPv4 and IPv6
+	struct sockaddr_storage clientAddress;
 	socklen_t ClientAddrLen = sizeof(clientAddress);
-	std::cout << "New connection detected" << std::endl;
-	// int newSocket = accept(_serverFD, (struct sockaddr *)&clientAddress, (socklen_t *)&ClientAddrLen);
+	Debug::log("New connection detected", Debug::SERVER);
 	int newSocket = accept(conn.getPollFd().fd, (struct sockaddr *)&clientAddress, (socklen_t *)&ClientAddrLen);
 	if (newSocket >= 0)
 	{
@@ -424,9 +423,24 @@ void Server::acceptNewConnection(Connection &conn)
 			print_connectionsVector(_connections);
 			printFDsVector(_FDs);
 		}
-		char clientIP[INET_ADDRSTRLEN];
-		inet_ntop(AF_INET, &clientAddress.sin_addr, clientIP, INET_ADDRSTRLEN);
-		std::cout << "New connection from " << clientIP << std::endl;
+		char clientIP[INET6_ADDRSTRLEN];
+		if (clientAddress.ss_family == AF_INET)
+		{
+			struct sockaddr_in *s = (struct sockaddr_in *)&clientAddress;
+			// TODO: inet_ntop is forbidden in the subject.
+			inet_ntop(AF_INET, &s->sin_addr, clientIP, sizeof clientIP);
+			std::cout << "New connection from (IPv4): " << clientIP << std::endl;
+		}
+		else if (clientAddress.ss_family == AF_INET6)
+		{
+			struct sockaddr_in6 *s = (struct sockaddr_in6 *)&clientAddress;
+			inet_ntop(AF_INET6, &s->sin6_addr, clientIP, sizeof clientIP);
+			std::cout << "New connection from (IPv6): " << clientIP << std::endl;
+		}
+		else
+		{
+			std::cerr << "Unknown address family" << std::endl;
+		}
 	}
 	else
 	{
