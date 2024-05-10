@@ -368,15 +368,30 @@ void ServerBlock::makeListenStruct(std::vector<std::string> newStr, Listen& list
 
 	for (unsigned int i = 0; i < newStr.size(); ++i)
 	{
-		if (newStr[i].find(':') != std::string::npos)
+		std::cout << "newStr: " << newStr[i] << std::endl;
+		// if IPv6 is in [ip]:port format
+		if (newStr[i][0] == '[')
+			newStr[i].erase(0, 1);
+		if (newStr[i].find(']') != std::string::npos)
+			newStr[i].erase(newStr[i].find(']'));
+		
+		// only IP or port
+		if (getaddrinfo(newStr[i].c_str(), NULL, &hints, &res) == 0)
+		{
+			std::cout << "IP: " << newStr[i].c_str() << std::endl;
+			freeaddrinfo(res);
+			port = strToInt(newStr[i]);
+			if (port >= 1 && port <= 65535)
+			{
+				listen._port.push_back(port);
+				continue;
+			}
+			listen._ip = newStr[i];
+		}
+		// IP + port
+		else if (newStr[i].find(':') != std::string::npos)
 		{
 			ip = newStr[i].substr(0, newStr[i].find_last_of(':'));
-
-			// IPv6 is in [ip]:port format
-			if (ip[0] == '[')
-				ip.erase(0, 1);
-			if (ip[ip.size() - 1] == ']')
-			 	ip.erase(ip.size()- 1, 1);
 
 			portStr = newStr[i].substr(newStr[i].find_last_of(':') + 1);
 			port = strToInt(portStr);
@@ -390,8 +405,10 @@ void ServerBlock::makeListenStruct(std::vector<std::string> newStr, Listen& list
 			listen._port.push_back(port);
 			listen._ip = ip;
 		}
+		// only port
 		else
 		{
+			std::cout << "port: " << newStr[i].c_str() << std::endl;
 			port = strToInt(newStr[i]);
 			if (port < 1 || port > 65535)
 				throw ("Invalid port");
