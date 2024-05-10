@@ -416,6 +416,7 @@ Listen ServerBlock::makeListenStruct(std::string& newStr)
 
 		if (getaddrinfo(ip.c_str(), NULL, &hints, &res) != 0)
 			throw ("Invalid ip");
+		freeaddrinfo(res);
 		listen._port = port;
 	}
 
