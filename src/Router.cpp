@@ -5,13 +5,13 @@ Router::Router()
 {
 }
 
-Router::Router(ServerBlock serverBlock) : _serverBlock(serverBlock)
+// Constructor with ServerBlock parameter
+Router::Router(ServerBlock serverBlock) : _serverBlock(serverBlock), _FDsRef(NULL), _pollFd(NULL)
 {
 }
 
-Router::Router(const Router &obj)
+Router::Router(const Router &obj) : _serverBlock(obj._serverBlock), _path(obj._path), _FDsRef(NULL), _pollFd(NULL)
 {
-	*this = obj;
 }
 
 Router &Router::operator=(const Router &obj)
@@ -19,8 +19,9 @@ Router &Router::operator=(const Router &obj)
 	if (this == &obj)
 		return *this;
 	_serverBlock = obj._serverBlock;
-	_FDsRef = obj._FDsRef;
-	_pollFd = obj._pollFd;
+	_path = obj._path;
+	_FDsRef = NULL;
+	_pollFd = NULL;
 	return *this;
 }
 
