@@ -109,9 +109,11 @@ void Server::readFromClient(Connection &conn, size_t &i, Parser &parser, HTTPReq
 		conn.setHasReadSocket(true);
 		if (!parser.preParseHeaders(response))
 		{
-			conn.setCanBeClosed(true);
+			// logic was incorrect here
+			conn.setCanBeClosed(false);
 			conn.setHasFinishedReading(true);
-			conn.setHasDataToSend(true);
+			conn.setHasDataToSend(false);
+			// ---------------------
 			std::cout << "Error pre-parsing headers" << std::endl;
 			return;
 		}
@@ -294,32 +296,24 @@ void Server::closeClientConnection(Connection &conn, size_t &i)
 
 void Server::handleConnection(Connection &conn, size_t &i, Parser &parser, HTTPRequest &request, HTTPResponse &response)
 {
-	std::cout << "\033[1;36m"
-			  << "Entering handleConnection"
-			  << "\033[0m" << std::endl;
-	// conn.printConnection();
+	std::cout << "\033[1;36m" << "Entering handleConnection" << "\033[0m" << std::endl;
 
-	// Why is it TRUE when I refresh a page?????
 	conn.setHasReadSocket(false);
 	std::cout << "Has finished reading: " << conn.getHasFinishedReading() << std::endl;
 	if (!conn.getHasFinishedReading())
 		readFromClient(conn, i, parser, request, response);
-	// TODO: add comments to explain
+
 	if (conn.getHasReadSocket() && !conn.getHasFinishedReading())
 	{
-		std::cout << "\033[1;36m"
-				  << "return from handleConnection"
-				  << "\033[0m" << std::endl;
+		std::cout << "\033[1;36m" << "return from handleConnection" << "\033[0m" << std::endl;
 		return;
 	}
 	if (!conn.getCanBeClosed() && !conn.getHasDataToSend())
 		buildResponse(conn, i, request, response);
-	// std::cout << "Has data to send: " << conn.getHasDataToSend() << std::endl;
-	// std::cout << response << std::endl;
+
 	if (conn.getHasDataToSend() && !conn.getHasReadSocket())
 		writeToClient(conn, i, response);
-	// std::cout << "Has finished sending: " << conn.getHasFinishedSending() << std::endl;
-	// std::cout << "Can be closed: " << conn.getCanBeClosed() << std::endl;
+
 	if (conn.getCanBeClosed())
 		closeClientConnection(conn, i);
 }
