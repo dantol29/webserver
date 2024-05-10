@@ -69,7 +69,8 @@ bool ServerBlock::addDirective(std::string key, std::string& value, bool isLocat
 void ServerBlock::deleteData()
 {
 	_locations.clear();
-	_directives._listen.clear();
+	_directives._listen._ip.clear();
+	_directives._listen._port.clear();
 	_directives._serverName.clear();
 	_directives._errorPage.clear();
 	_directives._index.clear();
@@ -91,7 +92,7 @@ std::vector<Directives> ServerBlock::getLocations() const
 	return (_locations);
 }
 
-std::vector<std::string> ServerBlock::getListen() const
+Listen ServerBlock::getListen() const
 {
 	return (_directives._listen);
 }
@@ -146,20 +147,23 @@ std::vector<std::string> ServerBlock::getCgiExt() const
 	return (_directives._cgiExt);
 }
 
-void ServerBlock::setListen(std::vector<std::string> str, bool isLocation)
+void ServerBlock::setListen(Listen str, bool isLocation)
 {
+	int port;
+
 	if (!isLocation){
-		for (unsigned int i = 0; i < str.size(); ++i)
-			_directives._listen.push_back(str[i]);
+		for (unsigned int i = 0; i < str._ip.size(); ++i){
+			_directives._listen._ip.push_back(str._port[i]);
+		}
 	}
 	else
 		throw ("listen directive not allowed in location block");
 
-	for (unsigned int i = 0; i < _directives._listen.size(); ++i)
+	for (unsigned int i = 0; i < _directives._listen._ip.size(); ++i)
 	{
-		for (unsigned int j = 0; j < _directives._listen.size(); ++j)
+		for (unsigned int j = 0; j < _directives._listen._ip.size(); ++j)
 		{
-			if (i != j && _directives._listen[i] == _directives._listen[j])
+			if (i != j && _directives._listen._ip[i] == _directives._listen._ip[j])
 				throw ("Duplicate listen directive");
 		}
 	}	
@@ -351,8 +355,26 @@ std::vector<std::string> ServerBlock::transformServerName(std::string& str)
 	return (newStr);
 }
 
-std::vector<std::string> ServerBlock::transformServerListen(std::string& str)
+Listen ServerBlock::makeListenStruct(std::vector<std::string> newStr)
 {
+	Listen listen;
+
+	for (unsigned int i = 0; i < newStr.size(); ++i)
+	{
+		if (newStr[i].find(':') != std::string::npos)
+		{
+			std::string ip = newStr[i].substr(0, newStr[i].find(':'));
+			std::string port = newStr[i].substr(newStr[i].find(':') + 1);
+			listen._ip.push_back(ip);
+			listen._port.push_back(port);
+		}
+	}
+	return (listen);
+}
+
+Listen ServerBlock::transformServerListen(std::string& str)
+{
+	Listen listen;
 	std::vector<std::string> newStr;
 	std::stringstream ss(str);
 	std::string name;
@@ -361,9 +383,9 @@ std::vector<std::string> ServerBlock::transformServerListen(std::string& str)
 		newStr.push_back(name);
 	if (newStr.empty())
 		newStr.push_back(str);
+	listen = makeListenStruct(newStr);
 	return (newStr);
 }
-
 
 std::pair<int, std::string> ServerBlock::transformErrorPage(std::string& str)
 {
