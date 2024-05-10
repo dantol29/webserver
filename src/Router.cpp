@@ -5,7 +5,6 @@ Router::Router()
 {
 }
 
-// Constructor with ServerBlock parameter
 Router::Router(ServerBlock serverBlock) : _serverBlock(serverBlock), _FDsRef(NULL), _pollFd(NULL)
 {
 }
@@ -31,7 +30,7 @@ Router::~Router()
 
 void Router::routeRequest(const HTTPRequest &request, HTTPResponse &response)
 {
-	std::cout << "  routeRequest Request host: " << request.getSingleHeader("Host").second << std::endl;
+	Debug::log("routeRequest Request host: " + request.getSingleHeader("Host").second, Debug::NORMAL);
 
 	// std::string _webRoot = "var/www"; // TODO: get this from the config file
 	std::string _webRoot = _serverBlock.getRoot();
@@ -134,8 +133,8 @@ void Router::splitTarget(const std::string &target)
 bool Router::pathIsValid(HTTPRequest &request, std::string &webRoot)
 {
 	std::string host = request.getHost();
-	std::cout << "pathIsValid Host: " << host << std::endl;
-	std::cout << "pathIsValid WebrRoot: " << webRoot << std::endl;
+	Debug::log("pathIsValid Host: " + host, Debug::NORMAL);
+	Debug::log("pathIsValid WebRoot: " + webRoot, Debug::NORMAL);
 	size_t pos = host.find(":");
 	if (pos != std::string::npos)
 	{
@@ -148,8 +147,6 @@ bool Router::pathIsValid(HTTPRequest &request, std::string &webRoot)
 	// if (host != "localhost")
 	// 	webRoot = host + webRoot;
 
-	std::cout << std::endl << "pathIsValid Path: " << webRoot << std::endl << std::endl;
-	std::cout << "pathIsValid Path: " << webRoot << std::endl;
 	struct stat buffer;
 	if (stat(webRoot.c_str(), &buffer) != 0)
 	{
@@ -159,7 +156,6 @@ bool Router::pathIsValid(HTTPRequest &request, std::string &webRoot)
 	}
 	if (S_ISDIR(buffer.st_mode))
 	{
-		// std::cout << "Path is a directory" << std::endl;
 		if (!webRoot.empty() && webRoot[webRoot.length() - 1] != '/')
 		{
 			webRoot += "/";
@@ -176,7 +172,6 @@ bool Router::pathIsValid(HTTPRequest &request, std::string &webRoot)
 			webRoot += index;
 			std::cout << "Path: " << webRoot << std::endl;
 		}
-		// std::cout << "Path: " << path << std::endl;
 		if (stat(webRoot.c_str(), &buffer) != 0)
 		{
 			request.setPath(webRoot);
@@ -185,7 +180,6 @@ bool Router::pathIsValid(HTTPRequest &request, std::string &webRoot)
 		}
 		request.setPath(webRoot);
 	}
-	// std::cout << "Path: " << path << " exists" << std::endl;
 
 	std::ifstream file(webRoot.c_str());
 	if (!file.is_open())
@@ -195,7 +189,6 @@ bool Router::pathIsValid(HTTPRequest &request, std::string &webRoot)
 	}
 	file.close();
 
-	// std::cout << "Path is an accesible and readable file" << std::endl;
 	return true;
 }
 
