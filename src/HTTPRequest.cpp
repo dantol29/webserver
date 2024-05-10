@@ -111,6 +111,11 @@ std::string HTTPRequest::getPath() const
 	return (_path);
 }
 
+std::string HTTPRequest::getRoot() const
+{
+	return (_root);
+}
+
 void HTTPRequest::setMethod(std::string method)
 {
 	_method = method;
@@ -163,6 +168,11 @@ void HTTPRequest::setFileContent(const std::string &content)
 void HTTPRequest::setPath(const std::string &path)
 {
 	this->_path = path;
+}
+
+void HTTPRequest::setRoot(const std::string &root)
+{
+	this->_path = root;
 }
 
 std::ostream &operator<<(std::ostream &out, const HTTPRequest &obj)

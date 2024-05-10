@@ -9,6 +9,7 @@
 #include "ServerBlock.hpp"
 #include "Debug.hpp"
 #include "sys/stat.h"
+#include <dirent.h> // POSIX lib for DIR
 
 struct resourcePath
 {
@@ -41,6 +42,7 @@ class Router
 	std::vector<pollfd> *_FDsRef;
 	struct pollfd *_pollFd;
 	std::string getFileExtension(const std::string &fileName);
+	std::string generateDirectoryListing(const std::string &directoryPath, const std::string &requestedPath);
 	bool isCGI(const HTTPRequest &request);
 	CGIHandler _cgiHandler;
 };

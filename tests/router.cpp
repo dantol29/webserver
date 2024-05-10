@@ -170,13 +170,12 @@ void sendData(const std::vector<HTTPTest> &tests, sockaddr_in serverAddress)
 void salad(sockaddr_in serverAddress)
 {
 	std::vector<HTTPTest> tests = {
-		// HTTPTest("GET / HTTP/1.1\r\nHost: www.saladbook.xyz\r\n\r\n", "200"),
-		// HTTPTest("GET /story/our_story.html HTTP/1.1\r\nHost: www.saladbook.xyz\r\n\r\n", "200"),
-		HTTPTest("GET /story/ HTTP/1.1\r\nHost: saladbook.xyz\r\n\r\n", "400"),
-		HTTPTest("GET / HTTP/1.1\r\nHost: saladbook.xyz\r\n\r\n", "400"),
-		HTTPTest("GET /fsdfsd HTTP/1.1\r\nHost: www.saladbook.xyz\r\n\r\n", "404"),
-		// HTTPTest("GET / HTTP/1.1\r\nHost: www.sgfgdf\r\n\r\n", "404"),
-		// HTTPTest("GET / HTXXXP/1.1\r\nHost: www.sgfgdf\r\n\r\n", "400"),
+		HTTPTest("GET / HTTP/1.1\r\nHost: www.saladbook.xyz\r\n\r\n", "200"),
+		HTTPTest("GET /story/our_story.html HTTP/1.1\r\nHost: www.saladbook.xyz\r\n\r\n", "200"),
+		HTTPTest("GET / HTTP/1.1\r\nHost: saladbook.xyz\r\n\r\n", "404"),
+		HTTPTest("GET /fsdfsd HTTP/1.1\r\nHost: www.saladbook.xyz\r\n\r\n", "400"),
+		HTTPTest("GET / HTTP/1.1\r\nHost: www.sgfgdf\r\n\r\n", "404"),
+		HTTPTest("GET / HTXXXP/1.1\r\nHost: www.sgfgdf\r\n\r\n", "400"),
 
 	};
 	sendData(tests, serverAddress);

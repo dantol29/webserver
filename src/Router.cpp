@@ -34,19 +34,20 @@ void Router::routeRequest(HTTPRequest &request, HTTPResponse &response)
 	Debug::log("routeRequest _webRoot: " + _serverBlock.getRoot(), Debug::NORMAL);
 	std::string _webRoot = _serverBlock.getRoot();
 	Debug::log("routeRequest _webRoot: " + _webRoot, Debug::NORMAL);
+	request.setRoot(_webRoot);
 	_webRoot += request.getSingleHeader("host").second;
 	Debug::log("_webRoot += request.getSingleHeader(host).second: " + _webRoot, Debug::NORMAL);
 
 	request.setPath(_webRoot);
 
 	std::string requestTarget = request.getRequestTarget();
-	std::cout << GREEN << "pathIsValid: requestTarget " << requestTarget << RESET << std::endl;
+	std::cout << GREEN << "routeRequest: requestTarget " << requestTarget << RESET << std::endl;
 
 	_webRoot += requestTarget;
-	std::cout << GREEN << "pathIsValid: _webRoot " << _webRoot << RESET << std::endl;
+	std::cout << GREEN << "routeRequest: _webRoot " << _webRoot << RESET << std::endl;
 
 	request.setPath(_webRoot);
-	std::cout << GREEN << "pathIsValid: request.getPath() " << request.getPath() << RESET << std::endl;
+	std::cout << GREEN << "routeRequest: request.getPath() " << request.getPath() << RESET << std::endl;
 
 	if (isCGI(request) && pathIsValid(const_cast<HTTPRequest &>(request)))
 	{
@@ -183,64 +184,99 @@ void Router::splitTarget(const std::string &target)
 	}
 }
 
+std::string Router::generateDirectoryListing(const std::string &directoryPath, const std::string &requestedPath)
+{
+	std::ostringstream html;
+	html << "<html><head><title>Directory listing for " << requestedPath << "</title></head>"
+		 << "<body><h1>Directory listing for " << requestedPath << "</h1><ul>";
+
+	DIR *dir = opendir(directoryPath.c_str());
+	if (dir)
+	{
+		struct dirent *entry;
+		while ((entry = readdir(dir)) != NULL)
+		{
+			std::string name(entry->d_name);
+			if (name == "." || name == "..")
+				continue;
+
+			std::string fullUrl = requestedPath;
+			if (!requestedPath.empty() && requestedPath[requestedPath.length() - 1] != '/')
+			{
+				fullUrl += '/';
+			}
+			fullUrl += name;
+
+			html << "<li><a href=\"" << fullUrl << "\">" << name << "</a></li>";
+		}
+		closedir(dir);
+	}
+
+	html << "</ul></body></html>";
+	return html.str();
+}
+
 bool Router::pathIsValid(HTTPRequest &request)
 {
-
-	std::string webRoot = request.getPath();
-	std::string host = request.getHost();
-	Debug::log("pathIsValid Host: " + host, Debug::NORMAL);
-	Debug::log("pathIsValid webroot: " + webRoot, Debug::NORMAL);
-	size_t pos = host.find(":");
-	if (pos != std::string::npos)
-	{
-		host = host.substr(0, pos);
-	}
-	// webroot +        host        +  path to error
-	//  var    / www.saladbook.xyz /  html/404_salad.html
-
-	webRoot += "/" + host;
-	std::cout << RED << "pathIsValid: webRoot: " << webRoot << RESET << std::endl;
 	struct stat buffer;
-	if (stat(webRoot.c_str(), &buffer) != 0)
+	std::string path = request.getPath();
+	if (stat(path.c_str(), &buffer) != 0)
 	{
-		Debug::log("webRoot: " + webRoot, Debug::NORMAL);
+		Debug::log("webRoot: " + path, Debug::NORMAL);
 		Debug::log("pathIsValid: stat failed, path does not exist", Debug::NORMAL);
 		return false;
 	}
 	if (S_ISDIR(buffer.st_mode))
 	{
-		if (!webRoot.empty() && webRoot[webRoot.length() - 1] != '/')
+		// TODO: finish implementing this temporary directory listing output
+		std::string directoryListing = generateDirectoryListing(path, request.getRequestTarget());
+		std::cout << "Directory listing: " << directoryListing << std::endl;
+
+		if (!path.empty() && path[path.length() - 1] != '/')
 		{
-			webRoot += "/";
+			path += "/";
 		}
-		// TODO: check directory listing
 		if (_serverBlock.getIndex().empty())
 		{
 			Debug::log("User did not provided any index", Debug::NORMAL);
 			// if directory listing
-			//____show dirs
+			// if (_serverBlock.getAutoindex())
+			// {
+			// 	Debug::log("pathIsValid: Autoindex is on", Debug::NORMAL);
+			// 	// path += "index.html";
+			// 	// request.setPath(path);
+			// 	// std::cout << std::endl;
+			// }
 			// else
-			//____return 403
-			// does not contain an index.html file (or any other file specified as the index file in the Nginx
-			// configuration)
-			// and directory listing is turned off, accessing that directory gets a 403 Forbidden error.
+			// {
+			// 	Debug::log("pathIsValid: Autoindex is off", Debug::NORMAL);
+			// 	return false;
+			// }
 		}
-		else
+		else // user provided an index
 		{
 			Debug::log("pathIsValid: Index: " + _serverBlock.getIndex()[0], Debug::NORMAL);
 			// TODO: implement several indexes
 			std::string index = _serverBlock.getIndex()[0];
 			Debug::log("pathIsValid: Index: " + index, Debug::NORMAL);
-			webRoot += index;
-			Debug::log("pathIsValid: WebRoot: " + webRoot, Debug::NORMAL);
+			path += index;
+			Debug::log("pathIsValid: path: " + path, Debug::NORMAL);
 		}
-		request.setPath(webRoot);
+		request.setPath(path);
+		std::cout << std::endl;
 	}
 
-	std::ifstream file(webRoot.c_str());
+	std::ifstream file(path.c_str());
 	if (!file.is_open())
 	{
-		std::cout << "Failed to open the file at path: " << webRoot << std::endl;
+		std::cout << "Failed to open the file at path: " << path << std::endl;
+
+		// if (path[path.length() - 1] != '/')
+		// {
+		// 	path += "/";
+		// }
+		// path += _serverBlock.getErrorPage()[0].second;
+		// std::cout << GREEN << "pathIsValid: path: " << path << RESET << std::endl;
 		return false;
 	}
 	file.close();
