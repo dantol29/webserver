@@ -17,6 +17,13 @@ struct resourcePath
 	std::string resource;
 };
 
+enum PathValidation
+{
+	PathValid,
+	PathInvalid,
+	IsDirectoryListing
+};
+
 class Router
 {
   public:
@@ -28,7 +35,7 @@ class Router
 
 	void splitTarget(const std::string &target);
 	bool isDynamicRequest(const HTTPRequest &request);
-	bool pathIsValid(HTTPResponse &response, HTTPRequest &request);
+	enum PathValidation pathIsValid(HTTPResponse &response, HTTPRequest &request);
 	void setFDsRef(std::vector<struct pollfd> *FDsRef);
 	void setPollFd(struct pollfd *pollFd);
 	void setWebRoot(std::string &webRoot);

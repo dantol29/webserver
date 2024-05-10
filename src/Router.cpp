@@ -37,38 +37,39 @@ void Router::routeRequest(HTTPRequest &request, HTTPResponse &response)
 
 	std::cout << GREEN << "Routing request to path: " << _webRoot << RESET << std::endl;
 
-	if (isCGI(request))
+	PathValidation pathResult = pathIsValid(response, request);
+	switch (pathResult)
 	{
-		if (pathIsValid(response, request))
+	case PathValid:
+		if (isCGI(request))
 		{
 			CGIHandler cgiHandler;
 			cgiHandler.setFDsRef(_FDsRef);
 			cgiHandler.setPollFd(_pollFd);
 			cgiHandler.handleRequest(request, response);
-			return;
 		}
-	}
-
-	if (!pathIsValid(response, request))
-	{
+		else if (request.getMethod() == "POST")
+		{
+			UploadHandler uploadHandler;
+			uploadHandler.handleRequest(request, response);
+		}
+		else
+		{
+			StaticContentHandler staticContentHandler;
+			staticContentHandler.handleRequest(request, response);
+		}
+		break;
+	case IsDirectoryListing:
+		break;
+	case PathInvalid:
 		std::cout << "Path is not valid, handling as error" << std::endl;
 		handleServerBlockError(request, response, 400);
-		return;
+		break;
 	}
 
-	if (request.getMethod() == "POST")
-	{
-		UploadHandler uploadHandler;
-		uploadHandler.handleRequest(request, response);
-	}
-	else if (request.getMethod() == "SALAD")
+	if (request.getMethod() == "SALAD")
 	{
 		std::cout << "🥬 + 🍅 + 🐟 = 🥗" << std::endl;
-	}
-	else
-	{
-		StaticContentHandler staticContentHandler;
-		staticContentHandler.handleRequest(request, response);
 	}
 }
 
@@ -208,7 +209,7 @@ void Router::generateDirectoryListing(HTTPResponse Response,
 	Response.setHeader("Content-Type", "text/html");
 }
 
-bool Router::pathIsValid(HTTPResponse &response, HTTPRequest &request)
+enum PathValidation Router::pathIsValid(HTTPResponse &response, HTTPRequest &request)
 {
 	(void)response;
 	struct stat buffer;
@@ -217,7 +218,7 @@ bool Router::pathIsValid(HTTPResponse &response, HTTPRequest &request)
 	{
 		Debug::log("webRoot: " + path, Debug::NORMAL);
 		Debug::log("pathIsValid: stat failed, path does not exist", Debug::NORMAL);
-		return false;
+		return PathInvalid;
 	}
 	if (S_ISDIR(buffer.st_mode))
 	{
@@ -240,7 +241,7 @@ bool Router::pathIsValid(HTTPResponse &response, HTTPRequest &request)
 			else
 			{
 				Debug::log("pathIsValid: Autoindex is off", Debug::NORMAL);
-				return false;
+				return IsDirectoryListing;
 			}
 		}
 		else // user provided an index
@@ -267,11 +268,11 @@ bool Router::pathIsValid(HTTPResponse &response, HTTPRequest &request)
 		// }
 		// path += _serverBlock.getErrorPage()[0].second;
 		// std::cout << GREEN << "pathIsValid: path: " << path << RESET << std::endl;
-		return false;
+		return PathInvalid;
 	}
 	file.close();
 
-	return true;
+	return PathValid;
 }
 
 void Router::setFDsRef(std::vector<struct pollfd> *FDsRef)
