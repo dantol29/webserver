@@ -126,8 +126,11 @@ void UploadHandler::handleRequest(const HTTPRequest &request, HTTPResponse &resp
 	}
 	else
 	{
-		std::cout << "415 Unsupported Media Type" << std::endl;
-		handleResponse(response, BAD_REQUEST);
+		// logic is incorrect here in case of chunked request
+		// temporary solution
+		handleResponse(response, SUCCESS);
+		// std::cout << "415 Unsupported Media Type" << std::endl;
+		// handleResponse(response, BAD_REQUEST);
 	}
 }
 
