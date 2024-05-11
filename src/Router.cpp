@@ -166,9 +166,11 @@ void Router::handleServerBlockError(HTTPRequest &request, HTTPResponse &response
 	case PathValid:
 		staticContentInstance.handleRequest(request, response);
 		response.setStatusCode(errorCode, errorPage[i].second);
+		break;
 	case PathInvalid:
 		Debug::log("handleServerBlockError: path to given error is not valid", Debug::NORMAL);
 		response.setErrorResponse(errorCode);
+		break;
 	case IsDirectoryListing:
 		Debug::log("handleServerBlockError: path to given error is a directory listing", Debug::NORMAL);
 		break;
