@@ -171,7 +171,8 @@ void Server::readFromClient(Connection &conn, size_t &i, Parser &parser, HTTPReq
 				return;
 			}
 		}
-		if (!parser.getBodyComplete() && parser.getBuffer().size() == request.getContentLength())
+		if (!parser.getBodyComplete() && request.getContentLength() != 0 &&
+			parser.getBuffer().size() == request.getContentLength())
 		{
 			// TODO: in the new design we will return here and go to the function where the response is
 			parser.setBodyComplete(true);
