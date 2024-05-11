@@ -26,19 +26,9 @@ bool Parser::preParseHeaders(HTTPResponse &res)
 	if (headersEnd != std::string::npos)
 	{
 		_headersBuffer = _buffer.substr(0, headersEnd + 4);
-		// std::cout << "\033[31m"
-		// 		  << "_headersBuffer size " << _headersBuffer.size() << "\033[0m" << std::endl;
-		//std::cout << "_headersBuffer:" << std::endl;
-		//std::cout << _headersBuffer << std::endl;
 		_headersComplete = true;
-		// std::cout << "\033[31m"
-		// 		  << "_buffer size " << _buffer.size() << "\033[0m" << std::endl;
-		// std::cout << "_headersBuffer size:" << std::endl;
-		// std::cout << _headersBuffer.size() << std::endl;
 		_buffer = _buffer.substr(headersEnd + 4);
 		std::cout << _buffer << std::endl;
-		// std::cout << "\033[31m"
-		// 		  << "_buffer size " << _buffer.size() << "\033[0m" << std::endl;
 		return (true);
 	}
 	std::cout << "headers are not complete" << std::endl;
@@ -187,6 +177,7 @@ void Parser::parseHeaders(const char *request, HTTPRequest &req, HTTPResponse &r
 	if (!hasMandatoryHeaders(req))
 		return (res.setStatusCode(400, "Invalid headers"));
 	_headersAreParsed = true;
+	saveCokies(req);
 }
 
 // [--BOUNDARY][CRLF][HEADERS][CRLF][DATA][CRLF][--BOUNDARY--]
@@ -274,6 +265,40 @@ bool Parser::hasMandatoryHeaders(HTTPRequest &req)
 		return (isHost == 1 && isContentLength == 1 && isContentType == 1);
 	else
 		return (isHost == 1);
+}
+
+void Parser::saveCokies(HTTPRequest &req)
+{
+	std::multimap<std::string, std::string> headers = req.getHeaders();
+	std::multimap<std::string, std::string>::iterator it;
+
+	for (it = headers.begin(); it != headers.end(); it++)
+	{
+		if (it->first == "cookie")
+		{
+			std::string cookie = it->second;
+			std::string key;
+			std::string value;
+			unsigned int start = 0;
+
+			for (unsigned int i = 0; i < cookie.length(); i++)
+			{
+				if (cookie[i] == '=')
+				{
+					key = cookie.substr(start, i - start);
+					start = ++i;
+					while (i < cookie.length() && cookie[i] != ';')
+						i++;
+					value = cookie.substr(start, i - start);
+					req.setCookies(key, value);
+					std::cout << cookie.substr(i) << std::endl;
+					if (cookie[i] == ';')
+						start = ++i;
+				}
+			}
+			break;
+		}
+	}
 }
 
 // [KEY][=]["][VALUE][""][;][SP][KEY][=]["][VALUE][""][;]
