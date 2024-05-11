@@ -19,6 +19,10 @@ void HTTPResponse::setErrorResponse(int statusCode)
 	std::string body = "<html><head><title>Error</title></head>"
 					   "<body><h1>Error: " +
 					   toString(_statusCode) + " " + "</h1><p>" + statusMessage + "</p></body></html>";
+
+	// print purple to identify a 0 status code
+	std::cout << PURPLE << "setErrorResponse: statusCode: " << statusCode << " statusMessage: " << statusMessage
+			  << " body: " << body << RESET << std::endl;
 	setStatusCode(statusCode, "");
 	setHeader("Content-Length", toString(body.length()));
 	setHeader("Content-Type", "text/html");
@@ -28,6 +32,10 @@ void HTTPResponse::setErrorResponse(int statusCode)
 std::string HTTPResponse::objToString() const
 {
 	std::stringstream responseStream;
+	if (_statusCode == 0)
+	{
+		std::cerr << "\033[31mWarning: Sending a response with status code 0\033[0m" << std::endl;
+	}
 	responseStream << "HTTP/1.1 " << _statusCode << " " << getStatusMessage(_statusCode) << "\r\n";
 	for (size_t i = 0; i < _headers.size(); ++i)
 	{
@@ -60,7 +68,7 @@ int HTTPResponse::getStatusCode() const
 	return _statusCode;
 }
 
-void HTTPResponse::setStatusCode(int statusCode, const std::string& message)
+void HTTPResponse::setStatusCode(int statusCode, const std::string &message)
 {
 	if (!message.empty())
 		std::cerr << message << std::endl;
@@ -246,7 +254,10 @@ std::string HTTPResponse::getStatusMessage(int statusCode) const
 	case 511:
 		return "Network Authentication Required"; // RFC 6585
 	default:
-		return "Unknown";
+	{
+		std::cerr << RED << "Unassigned status code: " << statusCode << RESET << std::endl;
+		return "Unassigned Status Code";
+	}
 	}
 }
 
