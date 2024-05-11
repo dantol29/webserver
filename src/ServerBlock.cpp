@@ -59,7 +59,7 @@ bool ServerBlock::addDirective(std::string key, std::string &value, bool isLocat
 	else if (key == "client_max_body_size")
 		_directives.setClientMaxBodySize(value, *this, isLocation);
 	else if (key == "autoindex")
-		_directives.setClientMaxBodySize(value, *this, isLocation);
+		_directives.setAutoIndex(value, *this, isLocation);
 	else if (key == "allow_methods")
 		_directives.setAllowedMethods(transformAllowedMethods(value), *this, isLocation);
 	else if (key == "alias")
@@ -230,6 +230,7 @@ void Directives::setRoot(std::string &str, ServerBlock &block, bool isLocation)
 
 void Directives::setClientMaxBodySize(std::string &str, ServerBlock &block, bool isLocation)
 {
+	std::cout << "str: " << str << std::endl;
 	if (strToInt(str) < 1)
 		throw("Invalid client_max_body_size");
 
@@ -497,7 +498,8 @@ std::vector<std::string> ServerBlock::transformAllowedMethods(std::string &str)
 
 	for (unsigned int i = 0; i < newStr.size(); ++i)
 	{
-		if (newStr[i] != "GET" && newStr[i] != "POST" && newStr[i] != "PUT" && newStr[i] != "DELETE")
+		if (newStr[i] != "GET" && newStr[i] != "POST" && newStr[i] != "PUT" && newStr[i] != "DELETE" &&
+			newStr[i] != "SALAD")
 			throw("Invalid method");
 	}
 	return (newStr);

@@ -60,7 +60,7 @@ void ServerSocket::prepareServerSocketAddr()
 	hints.ai_socktype = SOCK_STREAM;
 	hints.ai_flags = AI_PASSIVE;
 
-	std::string port = std::to_string(_listen._port);
+	std::string port = toString(_listen._port);
 	char *ip = NULL;
 	if (!_listen._ip.empty() && _listen._ip != "any")
 		ip = const_cast<char *>(_listen._ip.c_str());
