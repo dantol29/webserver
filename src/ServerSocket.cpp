@@ -13,21 +13,7 @@ ServerSocket::ServerSocket(int serverFD, Listen listen)
 	_serverFD = serverFD;
 	_listen = listen;
 	memset(&_serverSocketAddr, 0, sizeof(_serverSocketAddr));
-	if (_listen._isIpv6)
-	{
-		// c_style case
-		// struct sockaddr_in6 *serverSocketAddr = (struct sockaddr_in6 *)&_serverSocketAddr;
-		// c++ style case
-		struct sockaddr_in6 *serverSocketAddr = reinterpret_cast<struct sockaddr_in6 *>(&_serverSocketAddr);
-		socklen_t len = sizeof(*serverSocketAddr);
-		getsockname(_serverFD, (struct sockaddr *)serverSocketAddr, &len);
-	}
-	else
-	{
-		struct sockaddr_in *serverSocketAddr = reinterpret_cast<struct sockaddr_in *>(&_serverSocketAddr);
-		socklen_t len = sizeof(*serverSocketAddr);
-		getsockname(_serverFD, (struct sockaddr *)serverSocketAddr, &len);
-	}
+	// We don't initialize the serverSocketAddr here but in the bindToPort method, just before calling bind()
 }
 
 ServerSocket::~ServerSocket()
@@ -64,4 +50,31 @@ Listen ServerSocket::getListen() const
 struct sockaddr_storage ServerSocket::getServerSocketAddr() const
 {
 	return _serverSocketAddr;
+}
+
+void ServerSocket::prepareServerSocketAddr()
+{
+	struct addrinfo hints, *res;
+	memset(&hints, 0, sizeof(hints));
+	hints.ai_family = _listen._isIpv6 ? AF_INET6 : AF_INET;
+	hints.ai_socktype = SOCK_STREAM;
+	hints.ai_flags = AI_PASSIVE;
+
+	std::string port = std::to_string(_listen._port);
+	char *ip = NULL;
+	if (!_listen._ip.empty() && _listen._ip != "any")
+		ip = const_cast<char *>(_listen._ip.c_str());
+	int status = getaddrinfo(ip, port.c_str(), &hints, &res);
+	if (status != 0)
+	{
+		std::cerr << "getaddrinfo: " << gai_strerror(status) << std::endl;
+		return;
+	}
+	if (res == NULL)
+	{
+		std::cerr << "getaddrinfo: res is NULL" << std::endl;
+		return;
+	}
+	memcpy(&_serverSocketAddr, res->ai_addr, res->ai_addrlen);
+	freeaddrinfo(res);
 }

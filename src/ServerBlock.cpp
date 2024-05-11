@@ -49,25 +49,25 @@ bool ServerBlock::addDirective(std::string key, std::string &value, bool isLocat
 	if (key == "listen")
 		transformServerListen(value, isLocation);
 	else if (key == "server_name")
-		setServerName(transformServerName(value), isLocation);
+		_directives.setServerName(transformServerName(value), *this, isLocation);
 	else if (key == "error_page")
-		setErrorPage(transformErrorPage(value), isLocation);
+		_directives.setErrorPage(transformErrorPage(value), *this, isLocation);
 	else if (key == "index")
-		setIndex(transformIndex(value), isLocation);
+		_directives.setIndex(transformIndex(value), *this, isLocation);
 	else if (key == "root")
-		setRoot(value, isLocation);
+		_directives.setRoot(value, *this, isLocation);
 	else if (key == "client_max_body_size")
-		setClientMaxBodySize(value, isLocation);
+		_directives.setClientMaxBodySize(value, *this, isLocation);
 	else if (key == "autoindex")
-		setAutoIndex(value, isLocation);
+		_directives.setClientMaxBodySize(value, *this, isLocation);
 	else if (key == "allow_methods")
-		setAllowedMethods(transformAllowedMethods(value), isLocation);
+		_directives.setAllowedMethods(transformAllowedMethods(value), *this, isLocation);
 	else if (key == "alias")
-		setAlias(value, isLocation);
+		_directives.setAlias(value, *this, isLocation);
 	else if (key == "cgi_path")
-		setCgiPath(value, isLocation);
+		_directives.setCgiPath(value, *this, isLocation);
 	else if (key == "cgi_ext")
-		setCgiExt(transformCgiExt(value), isLocation);
+		_directives.setCgiExt(transformCgiExt(value), *this, isLocation);
 	else if (key == "path" && isLocation)
 		setLocationPath(value);
 
@@ -108,8 +108,9 @@ std::vector<std::string> Directives::getServerName() const
 {
 	return (_serverName);
 }
-
-std::vector<std::pair<int, std::string>> Directives::getErrorPage() const
+// clang-format off
+std::vector<std::pair<int, std::string> > Directives::getErrorPage() const
+// clang-format on
 {
 	return (_errorPage);
 }
@@ -357,84 +358,84 @@ std::vector<std::string> ServerBlock::transformServerName(std::string &str)
 	return (newStr);
 }
 
-Listen ServerBlock::buildListenStruct(std::string &newStr)
-{
-	Listen listen;
-	int port;
-	std::string ip;
-	std::string portStr;
-	bool isIpAndPort = false;
-	struct addrinfo hints;
-	struct addrinfo *res;
+// Listen ServerBlock::buildListenStruct(std::string &newStr)
+// {
+// 	Listen listen;
+// 	int port;
+// 	std::string ip;
+// 	std::string portStr;
+// 	bool isIpAndPort = false;
+// 	struct addrinfo hints;
+// 	struct addrinfo *res;
 
-	listen.isIpv6 = false;
-	memset(&hints, 0, sizeof(hints));
-	hints.ai_family = AF_UNSPEC;	 // IPv4 or IPv6
-	hints.ai_socktype = SOCK_STREAM; // TCP socket
+// 	listen.isIpv6 = false;
+// 	memset(&hints, 0, sizeof(hints));
+// 	hints.ai_family = AF_UNSPEC;	 // IPv4 or IPv6
+// 	hints.ai_socktype = SOCK_STREAM; // TCP socket
 
-	// if IPv6 is in [ip]:port format
-	if (newStr[0] == '[')
-		newStr.erase(0, 1);
-	if (newStr.find(']') != std::string::npos)
-		newStr.replace(newStr.find(']'), 1, "");
+// 	// if IPv6 is in [ip]:port format
+// 	if (newStr[0] == '[')
+// 		newStr.erase(0, 1);
+// 	if (newStr.find(']') != std::string::npos)
+// 		newStr.replace(newStr.find(']'), 1, "");
 
-	// (IPv6:port) or (IPv6) or (IPv4) or (port)
-	if (getaddrinfo(newStr.c_str(), NULL, &hints, &res) == 0)
-	{
-		freeaddrinfo(res);
-		portStr = newStr;
+// 	// (IPv6:port) or (IPv6) or (IPv4) or (port)
+// 	if (getaddrinfo(newStr.c_str(), NULL, &hints, &res) == 0)
+// 	{
+// 		freeaddrinfo(res);
+// 		portStr = newStr;
 
-		// (IPv6:port)
-		if (newStr.find_last_of(':') != std::string::npos)
-		{
-			portStr = newStr.substr(newStr.find_last_of(':') + 1);
-			isIpAndPort = true;
-		}
+// 		// (IPv6:port)
+// 		if (newStr.find_last_of(':') != std::string::npos)
+// 		{
+// 			portStr = newStr.substr(newStr.find_last_of(':') + 1);
+// 			isIpAndPort = true;
+// 		}
 
-		port = strToInt(portStr);
-		if (port >= 1 && port <= 65535)
-		{
-			listen._port = port;
-			if (!isIpAndPort)
-			{
-				listen._ip = "Any";
-				return (listen);
-			}
-		}
-		// is incorrect integer
-		else if ((port < 1 || port > 65535) && port != -1)
-			throw("Invalid port");
+// 		port = strToInt(portStr);
+// 		if (port >= 1 && port <= 65535)
+// 		{
+// 			listen._port = port;
+// 			if (!isIpAndPort)
+// 			{
+// 				listen._ip = "Any";
+// 				return (listen);
+// 			}
+// 		}
+// 		// is incorrect integer
+// 		else if ((port < 1 || port > 65535) && port != -1)
+// 			throw("Invalid port");
 
-		ip = newStr;
-		// (IPv6:port)
-		if (isIpAndPort)
-			ip = newStr.substr(0, newStr.find_last_of(':'));
-		listen._ip = ip;
-		listen.isIpv6 = true;
-	}
-	// (IPv4:port)
-	else
-	{
-		ip = newStr.substr(0, newStr.find_last_of(':'));
-		portStr = newStr.substr(newStr.find_last_of(':') + 1);
-		port = strToInt(portStr);
-		if (port < 1 || port > 65535)
-			throw("Invalid port");
-		listen._ip = ip;
+// 		ip = newStr;
+// 		// (IPv6:port)
+// 		if (isIpAndPort)
+// 			ip = newStr.substr(0, newStr.find_last_of(':'));
+// 		listen._ip = ip;
+// 		listen.isIpv6 = true;
+// 	}
+// 	// (IPv4:port)
+// 	else
+// 	{
+// 		ip = newStr.substr(0, newStr.find_last_of(':'));
+// 		portStr = newStr.substr(newStr.find_last_of(':') + 1);
+// 		port = strToInt(portStr);
+// 		if (port < 1 || port > 65535)
+// 			throw("Invalid port");
+// 		listen._ip = ip;
 
-		if (getaddrinfo(ip.c_str(), NULL, &hints, &res) != 0)
-			throw("Invalid ip");
-		freeaddrinfo(res);
-		listen._port = port;
-	}
+// 		if (getaddrinfo(ip.c_str(), NULL, &hints, &res) != 0)
+// 			throw("Invalid ip");
+// 		freeaddrinfo(res);
+// 		listen._port = port;
+// 	}
 
-	if (listen._ip.empty())
-		listen._ip = "Any";
-	if (listen._port == 0)
-		listen._port = 0;
+// 	if (listen._ip.empty())
+// 		listen._ip = "Any";
+// 	if (listen._port == 0)
+// 		listen._port = 0;
 
-	return (listen);
-}
+// 	return (listen);
+// }
 
 void ServerBlock::transformServerListen(std::string &str, bool isLocation)
 {
@@ -451,7 +452,8 @@ void ServerBlock::transformServerListen(std::string &str, bool isLocation)
 	if (newStr.empty())
 		newStr.push_back(str);
 	for (unsigned int i = 0; i < newStr.size(); ++i)
-		_directives.setListenEntry(buildListenStruct(newStr[i]), false);
+		// _directives.setListenEntry(buildListenStruct(newStr[i]), false);
+		_directives.setListenEntry(Listen(newStr[i]), false);
 }
 
 std::pair<int, std::string> ServerBlock::transformErrorPage(std::string &str)

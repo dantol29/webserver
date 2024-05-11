@@ -14,6 +14,7 @@ class ServerSocket
 	int getServerFD() const;
 	Listen getListen() const;
 	struct sockaddr_storage getServerSocketAddr() const;
+	void prepareServerSocketAddr();
 
   private:
 	int _serverFD;

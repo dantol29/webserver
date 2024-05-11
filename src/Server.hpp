@@ -44,7 +44,7 @@ class Server
 	void setPort(int port);
 	void setWebRoot(const std::string &webRoot);
 
-	void checkSocketOptions(std::vector<int> _serverFDs);
+	void checkSocketOptions();
 
   private:
 	/* Private Attributes */
@@ -64,13 +64,12 @@ class Server
 	void loadConfig();
 	void loadDefaultConfig();
 	/* for startListening */
-	// void createServerSocket();
 	void createServerSockets(std::vector<ServerBlock> &serverBlocks);
-	void setReuseAddrAndPort(std::vector<ServerSocket> &_serverSockets);
-	void bindToPort(int port);
+	void setReuseAddrAndPort();
+	void bindToPort();
 	void listen();
-	/* for startPollEventLoop */
-	void addServerSocketPollFdToVectors();
+	// void addServerSocketPollFdToVectors();
+	void addServerSocketsPollFdToVectors();
 	void acceptNewConnection(Connection &conn);
 	void handleConnection(Connection &conn, size_t &i, Parser &parser, HTTPRequest &request, HTTPResponse &response);
 	void handleServerSocketError();
