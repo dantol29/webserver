@@ -199,11 +199,58 @@ void Server::readFromClient(Connection &conn, size_t &i, Parser &parser, HTTPReq
 	}
 }
 
+void Server::accessThroughLocalhost(HTTPRequest &request)
+{
+	std::cout << std::endl;
+	Debug::log("Entering accessThroughLocalhost", Debug::NORMAL);
+
+	std::string host = request.getSingleHeader("host").second;
+	std::cout << "Request host: " << host << std::endl;
+
+	std::string requestTarget = request.getRequestTarget();
+	std::cout << "Request target: " << requestTarget << std::endl;
+
+	std::string host1 = "/www.development_site.com";
+	std::string host2 = "/www.example.com";
+	std::string host3 = "/www.saladbook.xyz";
+	std::vector<std::string> realHosts;
+	realHosts.push_back(host1);
+	realHosts.push_back(host2);
+	realHosts.push_back(host3);
+
+	// we identify the website from the realHosts, we erase it from the request target and set it as the host
+	for (size_t i = 0; i < realHosts.size(); i++)
+	{
+		std::cout << "Checking host: " << realHosts[i] << std::endl;
+		if (requestTarget.find(realHosts[i]) != std::string::npos)
+		{
+			std::cout << "Found host: " << realHosts[i] << std::endl;
+			// remove the "/" from the host
+			std::string hostToSet = realHosts[i].erase(0, 1);
+			request.setHost(hostToSet);
+			std::string newRequestTarget = request.getRequestTarget();
+			std::cout << BLUE << "Request target: " << RESET << newRequestTarget << std::endl;
+			// erase first char of requestTarget
+			newRequestTarget.erase(0, 1);
+			std::cout << BLUE << "Request target after erase: " << RESET << newRequestTarget << std::endl;
+			request.setRequestTarget(newRequestTarget.erase(newRequestTarget.find(hostToSet), hostToSet.size()));
+
+			break;
+		}
+	}
+	Debug::log("Request host end of accessThroughLocalhost: " + request.getSingleHeader("host").second, Debug::NORMAL);
+	Debug::log("Request target end of accessThroughLocalhost: " + request.getRequestTarget(), Debug::NORMAL);
+	Debug::log("Exiting accessThroughLocalhost", Debug::NORMAL);
+	std::cout << std::endl;
+}
+
 void Server::buildResponse(Connection &conn, size_t &i, HTTPRequest &request, HTTPResponse &response)
 {
 	(void)i;
 	Debug::log("Entering buildResponse", Debug::NORMAL);
 	Debug::log("Request method: " + request.getMethod(), Debug::NORMAL);
+
+	accessThroughLocalhost(request);
 
 	ServerBlock serverBlock;
 	std::cout << GREEN << "Number of server blocks: " << _config.getServerBlocks().size() << RESET << std::endl;
@@ -215,6 +262,8 @@ void Server::buildResponse(Connection &conn, size_t &i, HTTPRequest &request, HT
 			// why getServerName returns a vector ?
 			std::string serverName = _config.getServerBlocks()[i].getServerName()[0];
 			std::cout << RED << "Checking server name: " << serverName << RESET << std::endl;
+			std::string requestTarget = request.getRequestTarget();
+			std::cout << "Request target: " << requestTarget << std::endl;
 			std::cout << "Request host: " << request.getSingleHeader("host").second << std::endl;
 			if (serverName == request.getSingleHeader("host").second)
 			{
@@ -314,7 +363,7 @@ void Server::handleConnection(Connection &conn, size_t &i, Parser &parser, HTTPR
 		std::cout << "Has read socket: " << conn.getHasReadSocket() << std::endl;
 		return;
 	}
-	std::cout << request << std::endl;
+	// std::cout << request << std::endl;
 	if (!conn.getCanBeClosed() && !conn.getHasDataToSend())
 		buildResponse(conn, i, request, response);
 	// std::cout << "Has data to send: " << conn.getHasDataToSend() << std::endl;

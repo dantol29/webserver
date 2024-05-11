@@ -30,15 +30,17 @@ Router::~Router()
 
 void Router::routeRequest(HTTPRequest &request, HTTPResponse &response)
 {
+	std::cout << std::endl;
 	Debug::log("Routing Request: host = " + request.getSingleHeader("host").second, Debug::NORMAL);
-	std::string _webRoot = _serverBlock.getRoot() + request.getSingleHeader("host").second;
-	_webRoot += request.getRequestTarget();
-	request.setPath(_webRoot);
+	std::string root = _serverBlock.getRoot() + request.getSingleHeader("host").second;
 
-	std::cout << GREEN << "Routing request to path: " << _webRoot << RESET << std::endl;
+	root += request.getRequestTarget();
+	request.setPath(root);
+
+	std::cout << GREEN << "Routing request to path: " << root << RESET << std::endl;
 	std::cout << PURPLE << "Request method: " << request.getMethod() << RESET << std::endl;
 
-	std::cout << request << std::endl;
+	// std::cout << request << std::endl;
 
 	PathValidation pathResult = pathIsValid(response, request);
 	switch (pathResult)
@@ -119,18 +121,13 @@ void Router::handleServerBlockError(HTTPRequest &request, HTTPResponse &response
 			Debug::log("Path requested: " + request.getPath(), Debug::NORMAL);
 			Debug::log("Path to error: " + errorPage[i].second, Debug::NORMAL);
 			// setting the path to the custom error page
-			request.setPath(_serverBlock.getRoot() + request.getHost() + errorPage[i].second);
+			request.setPath(_serverBlock.getRoot() + request.getHost() + "/" + errorPage[i].second);
+			std::cout << RED << "         custom error page: " << request.getPath() << RESET << std::endl;
 			// TODO: move here what is todo below
 			//  handle here a custom error page
 			break;
 		}
 	}
-
-	std::cout << "handleServerBlockError: No custom error page found for error code: " << errorCode << std::endl;
-	// send default page with error code
-	StaticContentHandler staticContentInstance;
-	response.setErrorResponse(errorCode);
-	return;
 
 	// TODO: BELOW IS THE LOGIC FOR CUSTOM ERROR PAGES, it should be move above and checked
 	//  errorPath = request.getPath();
@@ -139,22 +136,20 @@ void Router::handleServerBlockError(HTTPRequest &request, HTTPResponse &response
 	//  	std::cout << "handleServerBlockError: Error path is empty" << std::endl;
 	//  	return;
 	//  }
+	StaticContentHandler staticContentInstance;
 
-	if (pathIsValid(response, request) == PathInvalid)
+	PathValidation pathResult = pathIsValid(response, request);
+	switch (pathResult)
 	{
-		Debug::log("handleServerBlockError: path to given error is not valid", Debug::NORMAL);
-		staticContentInstance.handleNotFound(response);
-	}
-	else
-	{
-		if (pathIsValid(response, request) == PathInvalid)
-		{
-			std::cout << "handleServerBlockError: Path to custom error file is invalid" << std::endl;
-			staticContentInstance.handleNotFound(response);
-			return;
-		}
+	case PathValid:
 		staticContentInstance.handleRequest(request, response);
 		response.setStatusCode(errorCode, errorPage[i].second);
+	case PathInvalid:
+		Debug::log("handleServerBlockError: path to given error is not valid", Debug::NORMAL);
+		response.setErrorResponse(errorCode);
+	case IsDirectoryListing:
+		Debug::log("handleServerBlockError: path to given error is a directory listing", Debug::NORMAL);
+		break;
 	}
 }
 
@@ -233,6 +228,7 @@ enum PathValidation Router::pathIsValid(HTTPResponse &response, HTTPRequest &req
 	(void)response;
 	struct stat buffer;
 	std::string path = request.getPath();
+	std::cout << "+-+-pathIsValid: path: " << path << std::endl;
 	if (stat(path.c_str(), &buffer) != 0)
 	{
 		Debug::log("webRoot: " + path, Debug::NORMAL);

@@ -175,6 +175,15 @@ void HTTPRequest::setRoot(const std::string &root)
 	this->_path = root;
 }
 
+void HTTPRequest::setHost(const std::string &host)
+{
+	std::multimap<std::string, std::string>::iterator it = _headers.find("host");
+	if (it != _headers.end())
+		it->second = host;
+	else
+		Debug::log("Host not found in headers", Debug::NORMAL);
+}
+
 std::ostream &operator<<(std::ostream &out, const HTTPRequest &obj)
 {
 	std::multimap<std::string, std::string> headers = obj.getHeaders();

@@ -41,6 +41,7 @@ class HTTPRequest
 	void setFileContent(const std::string &content);
 	void setPath(const std::string &path);
 	void setRoot(const std::string &root);
+	void setHost(const std::string &host);
 
   private:
 	// VARIABLES
