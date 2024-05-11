@@ -27,6 +27,8 @@ class HTTPRequest
 	std::string getBody() const;
 	std::vector<struct File> getFiles() const;
 	std::map<std::string, std::string> getCookies() const;
+	std::string getPath() const;
+	std::string getRoot() const;
 
 	// SETTERS
 	void setMethod(std::string method);
@@ -39,6 +41,8 @@ class HTTPRequest
 	void setFiles(struct File &file);
 	void setFileContent(const std::string &content);
 	void setCookies(const std::string &key, const std::string &value);
+	void setPath(const std::string &path);
+	void setRoot(const std::string &root);
 
   private:
 	// VARIABLES
@@ -51,6 +55,8 @@ class HTTPRequest
 	std::string _uploadBoundary;
 	std::vector<File> _files;
 	std::map<std::string, std::string> _cookies;
+	std::string _path;
+	std::string _root;
 };
 
 std::ostream &operator<<(std::ostream &out, const HTTPRequest &a);

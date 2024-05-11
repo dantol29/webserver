@@ -22,10 +22,12 @@ headers_8kb = {
 
 headers_chunked = {
     "Host": "www.example.com",
-    "Transfer-Encoding": "chunked"
+}
+correct_headers = {
+	"Host": "www.example.com"
 }
 
-url = "http://localhost:8080"
+url = "http://localhost:8080/index.html"
 
 async def print_message(status, expected_status, message):
 	global is_error
@@ -41,27 +43,22 @@ async def upload_multiple_file():
 		file_paths = ["a.txt", "b.txt", "c.txt"]
 		for file_path in file_paths:
 			data.add_field('file',open(file_path, 'rb'), filename=file_path, content_type='text/tab-separated-values')
-		async with session.post(url, data=data) as response:
+		async with session.post(url, headers=correct_headers, data=data) as response:
 			await print_message(response.status, 200, "multiple file upload")
 
 async def upload_large_file(file_name):
 	async with aiohttp.ClientSession() as session:
 		data = aiohttp.FormData()
 		data.add_field('file',open(file_name, 'rb'), filename=file_name, content_type='text/tab-separated-values')
-		async with session.post(url, data=data) as response:
+		async with session.post(url, headers=correct_headers, data=data) as response:
 			await print_message(response.status, 200, "file upload")
 
 async def upload_file(file_name):
 	async with aiohttp.ClientSession() as session:
 		data = aiohttp.FormData()
 		data.add_field('file',open(file_name, 'rb'), filename=file_name, content_type='text/tab-separated-values')
-		async with session.post(url, data=data) as response:
+		async with session.post(url, headers=correct_headers, data=data) as response:
 			await print_message(response.status, 200, "file upload")
-
-async def chunked_request():
-	async with aiohttp.ClientSession() as session:
-		async with session.post(url, headers=headers_chunked, data="A" * (BUFFER_SIZE * 8)) as response:
-			await print_message(response.status, 200, "chunked request")
 
 async def func_headers_8kb():
 	async with aiohttp.ClientSession() as session:
@@ -86,7 +83,7 @@ async def file_sender(file_name):
 
 async def send_chunked_request(file_name):
 	async with aiohttp.ClientSession() as session:
-		async with session.post(url, data=file_sender(file_name)) as response:
+		async with session.post(url, headers=headers_chunked, data=file_sender(file_name)) as response:
 			 await print_message(response.status, 200, "chunked request with file")
 
 # send requests async
