@@ -15,6 +15,7 @@ HTTPRequest::HTTPRequest(const HTTPRequest &obj)
 	_body = obj._body;
 	_uploadBoundary = obj._uploadBoundary;
 	_files = obj._files;
+	_path = obj._path;
 }
 
 HTTPRequest &HTTPRequest::operator=(const HTTPRequest &obj)
@@ -29,6 +30,7 @@ HTTPRequest &HTTPRequest::operator=(const HTTPRequest &obj)
 	_body = obj._body;
 	_uploadBoundary = obj._uploadBoundary;
 	_files = obj._files;
+	_path = obj._path;
 	return (*this);
 }
 
@@ -104,6 +106,16 @@ std::vector<File> HTTPRequest::getFiles() const
 	return (_files);
 }
 
+std::string HTTPRequest::getPath() const
+{
+	return (_path);
+}
+
+std::string HTTPRequest::getRoot() const
+{
+	return (_root);
+}
+
 void HTTPRequest::setMethod(std::string method)
 {
 	_method = method;
@@ -153,6 +165,16 @@ void HTTPRequest::setFileContent(const std::string &content)
 	_files.back().fileContent = content;
 }
 
+void HTTPRequest::setPath(const std::string &path)
+{
+	this->_path = path;
+}
+
+void HTTPRequest::setRoot(const std::string &root)
+{
+	this->_path = root;
+}
+
 std::ostream &operator<<(std::ostream &out, const HTTPRequest &obj)
 {
 	std::multimap<std::string, std::string> headers = obj.getHeaders();
@@ -172,7 +194,7 @@ std::ostream &operator<<(std::ostream &out, const HTTPRequest &obj)
 	out << "---------------------End--------------------------" << std::endl;
 
 	out << "---------------------Body-------------------------" << std::endl;
-	std::cout << body << std::endl;
+	// std::cout << body << std::endl;
 	out << "---------------------End--------------------------" << std::endl;
 
 	out << "---------------------File-Upload------------------" << std::endl;

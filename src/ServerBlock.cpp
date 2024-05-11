@@ -108,9 +108,8 @@ std::vector<std::string> Directives::getServerName() const
 {
 	return (_serverName);
 }
-// clang-format off
-std::vector<std::pair<int, std::string> > Directives::getErrorPage() const
-// clang-format on
+
+std::vector<std::pair<int, std::string>> ServerBlock::getErrorPage() const
 {
 	return (_errorPage);
 }
@@ -316,9 +315,9 @@ void Directives::setCgiExt(std::vector<std::string> stringsVector, ServerBlock &
 	}
 	else
 	{
-		if (block.getLocations().back()._cgiExt.size() > 0)
+		if (_locations.back()._cgiExt.size() > 0)
 			throw("cgi_ext already set");
-		block.getLocations().back()._cgiExt = stringsVector;
+		_locations.back()._cgiExt = str;
 	}
 }
 
@@ -392,42 +391,42 @@ std::vector<std::string> ServerBlock::transformServerName(std::string &str)
 // 			isIpAndPort = true;
 // 		}
 
-// 		port = strToInt(portStr);
-// 		if (port >= 1 && port <= 65535)
-// 		{
-// 			listen._port = port;
-// 			if (!isIpAndPort)
-// 			{
-// 				listen._ip = "Any";
-// 				return (listen);
-// 			}
-// 		}
-// 		// is incorrect integer
-// 		else if ((port < 1 || port > 65535) && port != -1)
-// 			throw("Invalid port");
-
-// 		ip = newStr;
-// 		// (IPv6:port)
-// 		if (isIpAndPort)
-// 			ip = newStr.substr(0, newStr.find_last_of(':'));
-// 		listen._ip = ip;
-// 		listen.isIpv6 = true;
-// 	}
-// 	// (IPv4:port)
-// 	else
+// 	port = strToInt(portStr);
+// 	if (port >= 1 && port <= 65535)
 // 	{
-// 		ip = newStr.substr(0, newStr.find_last_of(':'));
-// 		portStr = newStr.substr(newStr.find_last_of(':') + 1);
-// 		port = strToInt(portStr);
-// 		if (port < 1 || port > 65535)
-// 			throw("Invalid port");
-// 		listen._ip = ip;
-
-// 		if (getaddrinfo(ip.c_str(), NULL, &hints, &res) != 0)
-// 			throw("Invalid ip");
-// 		freeaddrinfo(res);
 // 		listen._port = port;
+// 		if (!isIpAndPort)
+// 		{
+// 			listen._ip = "Any";
+// 			return (listen);
+// 		}
 // 	}
+// 	// is incorrect integer
+// 	else if ((port < 1 || port > 65535) && port != -1)
+// 		throw("Invalid port");
+
+// 	ip = newStr;
+// 	// (IPv6:port)
+// 	if (isIpAndPort)
+// 		ip = newStr.substr(0, newStr.find_last_of(':'));
+// 	listen._ip = ip;
+// 	listen.isIpv6 = true;
+// }
+// (IPv4:port)
+// else
+// {
+// 	ip = newStr.substr(0, newStr.find_last_of(':'));
+// 	portStr = newStr.substr(newStr.find_last_of(':') + 1);
+// 	port = strToInt(portStr);
+// 	if (port < 1 || port > 65535)
+// 		throw("Invalid port");
+// 	listen._ip = ip;
+
+// 	if (getaddrinfo(ip.c_str(), NULL, &hints, &res) != 0)
+// 		throw("Invalid ip");
+// 	freeaddrinfo(res);
+// 	listen._port = port;
+// }
 
 // 	if (listen._ip.empty())
 // 		listen._ip = "Any";
@@ -513,14 +512,19 @@ std::vector<std::string> ServerBlock::transformCgiExt(std::string &str)
 		if (std::find(extensions, extensions + sizeof(extensions) / sizeof(extensions[0]), name) ==
 			extensions + sizeof(extensions) / sizeof(extensions[0]))
 			throw("Invalid CGI extension");
-		newStr.push_back(name);
+		while (std::getline(ss, name, ' '))
+		{
+			if (std::find(extensions, extensions + sizeof(extensions) / sizeof(extensions[0]), name) ==
+				extensions + sizeof(extensions) / sizeof(extensions[0]))
+				throw("Invalid CGI extension");
+			newStr.push_back(name);
+		}
+		if (newStr.empty())
+		{
+			if (std::find(extensions, extensions + sizeof(extensions) / sizeof(extensions[0]), str) ==
+				extensions + sizeof(extensions) / sizeof(extensions[0]))
+				throw("Invalid CGI extension");
+			newStr.push_back(str);
+		}
+		return (newStr);
 	}
-	if (newStr.empty())
-	{
-		if (std::find(extensions, extensions + sizeof(extensions) / sizeof(extensions[0]), str) ==
-			extensions + sizeof(extensions) / sizeof(extensions[0]))
-			throw("Invalid CGI extension");
-		newStr.push_back(str);
-	}
-	return (newStr);
-}
