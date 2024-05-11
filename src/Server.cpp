@@ -116,7 +116,7 @@ void Server::readFromClient(Connection &conn, size_t &i, Parser &parser, HTTPReq
 		Debug::log("Headers incomplete yet, exiting readFromClient.", Debug::NORMAL);
 		return;
 	}
-	if (parser.getHeadersComplete() && !parser.getHeadersAreParsed()){
+	if (parser.getHeadersComplete() && !parser.getHeadersAreParsed())
 		parser.parseRequestLineAndHeaders(parser.getHeadersBuffer().c_str(), request, response);
 	if (response.getStatusCode() != 0)
 	{
