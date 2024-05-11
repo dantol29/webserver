@@ -275,11 +275,10 @@ enum PathValidation Router::pathIsValid(HTTPResponse &response, HTTPRequest &req
 		if (!path.empty() && path[path.length()] != '/') // we will append /index.html
 		{
 			Debug::log("pathIsValid: path does not end with /, appending /index.html", Debug::NORMAL);
-			std::string requestedPath = request.getRequestTarget();
-			requestedPath += "/index.html";
-			if (stat(requestedPath.c_str(), &buffer) == 0)
+			path += "/index.html";
+			if (stat(path.c_str(), &buffer) == 0)
 			{
-				request.setPath(requestedPath);
+				request.setPath(path);
 				return PathValid;
 			}
 		}
