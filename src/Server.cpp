@@ -2,23 +2,22 @@
 #include "Parser.hpp"
 #include "Connection.hpp"
 
-// Default constructor
 Server::Server()
 {
 	loadDefaultConfig();
 }
-// Constructor with config file path
-Server::Server(const std::string configFilePath) : _configFilePath(configFilePath)
+
+Server::Server(const Config &config)
 {
+	_config = config;
+	// while we don't have a config file
 	loadDefaultConfig();
-	loadConfig();
 }
-// Destructor
+
 Server::~Server()
 {
 }
 
-// Start listening
 void Server::startListening()
 {
 
@@ -32,10 +31,16 @@ void Server::startListening()
 void Server::startPollEventLoop()
 {
 	addServerSocketPollFdToVectors();
+	int pollCounter = 0;
 	while (1)
 	{
-		std::cout << "++++++++++++++ Waiting for new connection or Polling +++++++++++++++" << std::endl;
+		// printConnections("BEFORE POLL", _FDs, _connections, true);
+		std::cout << CYAN << "++++++++++++++ #" << pollCounter
+				  << " Waiting for new connection or Polling +++++++++++++++" << RESET << std::endl;
 		int ret = poll(_FDs.data(), _FDs.size(), -1);
+		pollCounter++;
+		// printFrame("POLL EVENT DETECTED", true);
+		// printConnections("AFTER POLL", _FDs, _connections, true);
 		if (ret > 0)
 		{
 			size_t originalSize = _FDs.size();
@@ -46,16 +51,15 @@ void Server::startPollEventLoop()
 			{
 				if (_FDs[i].revents & (POLLIN | POLLOUT))
 				{
-					std::cout << "i: " << i << std::endl;
-					std::cout << "Enters revents" << std::endl;
+					Debug::log("Enters revents", Debug::OCF);
 					if (i == 0)
 					{
-						std::cout << "Server socket event" << std::endl;
+						// printFrame("SERVER SOCKET EVENT", true);
 						acceptNewConnection(_connections[i]);
 					}
 					else
 					{
-						std::cout << "Client socket event" << std::endl;
+						// printFrame("CLIENT SOCKET EVENT", true);
 						handleConnection(_connections[i],
 										 i,
 										 _connections[i].getParser(),
@@ -81,51 +85,17 @@ void Server::startPollEventLoop()
 	}
 }
 
-void createFile(HTTPRequest &request)
-{
-	std::vector<File> files = request.getFiles();
-	std::vector<File>::iterator it;
-
-	// check each file
-	for (it = files.begin(); it != files.end(); ++it)
-	{
-		if (it->headers.find("filename") == it->headers.end())
-		{
-			std::cout << "422 Unprocessable Entity (Error: file does not have a name)" << std::endl;
-			return;
-		}
-	}
-
-	// create files
-	for (it = files.begin(); it != files.end(); ++it)
-	{
-		std::ofstream outfile((it->headers.find("filename"))->second.c_str());
-		if (outfile.is_open())
-		{
-			outfile << it->fileContent;
-			outfile.close();
-			std::cout << "File created successfully" << std::endl;
-		}
-		else
-			std::cout << "422 Unprocessable Entity (Error creating a file)" << std::endl;
-	}
-}
-
 void Server::readFromClient(Connection &conn, size_t &i, Parser &parser, HTTPRequest &request, HTTPResponse &response)
 {
 	(void)i;
-	std::cout << "\033[1;36m"
-			  << "Entering readFromClient"
-			  << "\033[0m" << std::endl;
+	Debug::log("\033[1;33mEntering read from client\033[0m", Debug::OCF);
 	// TODO: change to _areHeadersCopmplete
 	if (!parser.getHeadersComplete())
 	{
-		std::cout << "\033[1;33m"
-				  << "Reading headers"
-				  << "\033[0m" << std::endl;
+		Debug::log("\033[1;33mReading headers\033[0m", Debug::NORMAL);
 		if (!conn.readHeaders(parser))
 		{
-			std::cout << "Error reading headers" << std::endl;
+			Debug::log("Error reading headers", Debug::OCF);
 			conn.setHasFinishedReading(true);
 			conn.setHasDataToSend(false);
 			conn.setCanBeClosed(true);
@@ -137,37 +107,42 @@ void Server::readFromClient(Connection &conn, size_t &i, Parser &parser, HTTPReq
 			conn.setCanBeClosed(true);
 			conn.setHasFinishedReading(true);
 			conn.setHasDataToSend(true);
-			std::cout << "Error pre-parsing headers" << std::endl;
+			Debug::log("Error pre-parsing headers", Debug::OCF);
 			return;
 		}
 	}
 	if (!parser.getHeadersComplete())
 	{
-		std::cout << "Headers incomplete yet, exiting readFromClient." << std::endl;
+		Debug::log("Headers incomplete yet, exiting readFromClient.", Debug::NORMAL);
 		return;
 	}
 	if (parser.getHeadersComplete() && !parser.getHeadersAreParsed())
 		parser.parseRequestLineAndHeaders(parser.getHeadersBuffer().c_str(), request, response);
-
+	if (response.getStatusCode() != 0)
+	{
+		conn.setCanBeClosed(false);
+		conn.setHasFinishedReading(true);
+		conn.setHasDataToSend(false);
+		Debug::log("Error parsing headers or request line", Debug::OCF);
+		return;
+	}
 	std::cout << parser.getHeadersComplete() << " ," << request.getMethod() << std::endl;
 	if (parser.getHeadersComplete() && request.getMethod() == "GET")
-	{
-		std::cout << "-------------------------Enter what we need" << std::endl;
 		conn.setHasFinishedReading(true);
-	}
 
 	if (response.getStatusCode() != 0)
-		std::cout << "Error: " << response.getStatusCode() << std::endl;
+		Debug::log(toString(response.getStatusCode()), Debug::NORMAL);
 	if (request.getMethod() == "GET")
-		std::cout << "GET request, no body to read" << std::endl;
+		Debug::log("GET request, no body to read", Debug::NORMAL);
 	else
 	{
 		if (parser.getIsChunked() && !conn.getHasReadSocket())
 		{
-			std::cout << "Chunked body" << std::endl;
+			Debug::log("Chunked body", Debug::NORMAL);
 			if (!conn.readChunkedBody(parser))
 			{
 				// Case of error while reading chunked body
+				Debug::log("Error reading chunked body", Debug::OCF);
 				conn.setCanBeClosed(true);
 				conn.setHasFinishedReading(true);
 				// It could be that we had data that could be sent even if we have an error cause previous data was read
@@ -175,11 +150,9 @@ void Server::readFromClient(Connection &conn, size_t &i, Parser &parser, HTTPReq
 			}
 			conn.setHasReadSocket(true);
 		}
-		else
+		else if (!conn.getHasReadSocket())
 		{
-			std::cout << "\033[1;33m"
-					  << "Reading body"
-					  << "\033[0m" << std::endl;
+			Debug::log("\033[1;33mReading body\033[0m", Debug::NORMAL);
 			// TODO: add comments
 			if (!parser.getBodyComplete() && parser.getBuffer().size() == request.getContentLength())
 			{
@@ -190,7 +163,7 @@ void Server::readFromClient(Connection &conn, size_t &i, Parser &parser, HTTPReq
 			}
 			else if (!conn.getHasReadSocket() && !conn.readBody(parser, request, response))
 			{
-				std::cout << "Error reading body" << std::endl;
+				Debug::log("Error reading body", Debug::OCF);
 				conn.setCanBeClosed(true);
 				conn.setHasFinishedReading(true);
 				// Probably hasDataToSend false, because we have an error on reading the body
@@ -198,14 +171,24 @@ void Server::readFromClient(Connection &conn, size_t &i, Parser &parser, HTTPReq
 				return;
 			}
 		}
+		if (!parser.getBodyComplete() && request.getContentLength() != 0 &&
+			parser.getBuffer().size() == request.getContentLength())
+		{
+			// TODO: in the new design we will return here and go to the function where the response is
+			parser.setBodyComplete(true);
+			conn.setHasFinishedReading(true);
+			conn.setCanBeClosed(false);
+			conn.setHasDataToSend(false);
+			return;
+		}
 		if (!parser.getBodyComplete())
 		{
-			std::cout << "Body still incomplete, exiting readFromClient." << std::endl;
+			Debug::log("Body still incomplete, exiting readFromClient.", Debug::NORMAL);
 			conn.setHasFinishedReading(false);
 			conn.setHasReadSocket(true);
 			return;
 		}
-		// std::cout << parser.getBuffer() << std::endl;
+		//  std::cout << parser.getBuffer() << std::endl;
 		if (!request.getUploadBoundary().empty())
 			parser.parseFileUpload(parser.getBuffer(), request, response);
 		else if (request.getMethod() != "GET")
@@ -219,26 +202,67 @@ void Server::readFromClient(Connection &conn, size_t &i, Parser &parser, HTTPReq
 void Server::buildResponse(Connection &conn, size_t &i, HTTPRequest &request, HTTPResponse &response)
 {
 	(void)i;
-	std::cout << "\033[1;36m"
-			  << "Entering buildResponse"
-			  << "\033[0m" << std::endl;
-	std::cout << "\033[1;91mRequest status code: " << response.getStatusCode() << "\033[0m" << std::endl;
+	Debug::log("Entering buildResponse", Debug::NORMAL);
+	Debug::log("Request method: " + request.getMethod(), Debug::NORMAL);
+
+	ServerBlock serverBlock;
+	std::cout << GREEN << "Number of server blocks: " << _config.getServerBlocks().size() << RESET << std::endl;
+	if (_config.getServerBlocks().size() > 1)
+	{
+		// retrieve the server block which has a server name matching the request host header
+		for (size_t i = 0; i < _config.getServerBlocks().size(); i++)
+		{
+			// why getServerName returns a vector ?
+			std::string serverName = _config.getServerBlocks()[i].getServerName()[0];
+			std::cout << RED << "Checking server name: " << serverName << RESET << std::endl;
+			std::cout << "Request host: " << request.getSingleHeader("host").second << std::endl;
+			std::cout << "Request target: " << request.getRequestTarget() << std::endl;
+			if (serverName == request.getSingleHeader("host").second)
+			{
+				std::cout << GREEN << "Server block and request host match" << RESET << std::endl;
+				// _config.setServerBlockIndex(i);
+				serverBlock = _config.getServerBlocks()[i];
+				break;
+			}
+			else
+			{
+				// if no server name is found, use the default server block
+				static StaticContentHandler staticContentInstance;
+				staticContentInstance.handleNotFound(response);
+				response.setStatusCode(404, "No server block is matching the request host");
+				conn.setHasDataToSend(true);
+				Debug::log("Exiting buildResponse", Debug::NORMAL);
+				return;
+			}
+			std::cout << "Index: " << i << std::endl;
+		}
+	}
+	else
+	{
+		Debug::log("Single server block", Debug::NORMAL);
+		serverBlock = _config.getServerBlocks()[0];
+	}
+
+	std::string root = serverBlock.getRoot();
+	std::cout << RED << "Root: " << root << RESET << std::endl;
+
+	Router router(serverBlock);
+
 	if (response.getStatusCode() != 0)
 	{
+		Debug::log("Error response" + toString(response.getStatusCode()), Debug::NORMAL);
 		response.setErrorResponse(response.getStatusCode());
+		router.handleServerBlockError(request, response, response.getStatusCode());
 		conn.setHasDataToSend(true);
 		return;
 	}
-	if (!request.getUploadBoundary().empty())
+	else
 	{
-		createFile(request);
+		router.setFDsRef(&_FDs);
+		router.setPollFd(&conn.getPollFd());
+		router.routeRequest(request, response);
 	}
-	// std::cout << request.getRequestTarget() << std::endl;
-	// TODO: The Router should be a member of the Server class or of the Connection class
-	Router router;
-	router.setFDsRef(&_FDs);
-	router.setPollFd(&conn.getPollFd());
-	router.routeRequest(request, response);
+	// TODO: check if the listen in the server block is matching port and ip from connection
 	conn.setHasDataToSend(true);
 }
 
@@ -248,7 +272,8 @@ void Server::writeToClient(Connection &conn, size_t &i, HTTPResponse &response)
 			  << "Entering writeToClient"
 			  << "\033[0m" << std::endl;
 	(void)i;
-	send(conn.getPollFd().fd, response.objToString().c_str(), response.objToString().size(), 0);
+	std::string responseString = response.objToString();
+	send(conn.getPollFd().fd, responseString.c_str(), responseString.size(), 0);
 	// conn.setHasDataToSend(); will not be always false in case of chunked response or keep-alive connection
 	conn.setHasDataToSend(false);
 	conn.setHasFinishedSending(true);
@@ -276,9 +301,7 @@ void Server::closeClientConnection(Connection &conn, size_t &i)
 
 void Server::handleConnection(Connection &conn, size_t &i, Parser &parser, HTTPRequest &request, HTTPResponse &response)
 {
-	std::cout << "\033[1;36m"
-			  << "Entering handleConnection"
-			  << "\033[0m" << std::endl;
+
 	// conn.printConnection();
 
 	// Why is it TRUE when I refresh a page?????
@@ -289,11 +312,10 @@ void Server::handleConnection(Connection &conn, size_t &i, Parser &parser, HTTPR
 	// TODO: add comments to explain
 	if (conn.getHasReadSocket() && !conn.getHasFinishedReading())
 	{
-		std::cout << "\033[1;36m"
-				  << "return from handleConnection"
-				  << "\033[0m" << std::endl;
+		std::cout << "Has read socket: " << conn.getHasReadSocket() << std::endl;
 		return;
 	}
+	std::cout << request << std::endl;
 	if (!conn.getCanBeClosed() && !conn.getHasDataToSend())
 		buildResponse(conn, i, request, response);
 	// std::cout << "Has data to send: " << conn.getHasDataToSend() << std::endl;
@@ -373,12 +395,32 @@ void Server::addServerSocketPollFdToVectors()
 	serverPollFd.fd = _serverFD;
 	serverPollFd.events = POLLIN;
 	serverPollFd.revents = 0;
+	if (VERBOSE)
+	{
+		std::cout << "pollfd struct for Server socket created" << std::endl;
+		std::cout << std::endl;
+		std::cout << "Printing serverPollFd (struct pollfd) before push_back into _FDs" << std::endl;
+		std::cout << "fd: " << serverPollFd.fd << ", events: " << serverPollFd.events
+				  << ", revents: " << serverPollFd.revents << std::endl;
+	}
 	_FDs.push_back(serverPollFd);
 	Connection serverConnection(serverPollFd, *this);
 	serverConnection.setType(SERVER);
 	serverConnection.setServerIp(inet_ntoa(_serverAddr.sin_addr));
 	serverConnection.setServerPort(ntohs(_serverAddr.sin_port));
+	if (VERBOSE)
+	{
+		std::cout << "Server Connection object created" << std::endl;
+		std::cout << MAGENTA << "Printing serverConnection before push_back" << std::endl << RESET;
+		serverConnection.printConnection();
+	}
 	_connections.push_back(serverConnection);
+	if (VERBOSE)
+	{
+		std::cout << MAGENTA << "Printing serverConnection after push_back" << RESET << std::endl;
+		_connections.back().printConnection();
+		std::cout << "Server socket pollfd added to vectors" << std::endl;
+	}
 }
 
 void Server::acceptNewConnection(Connection &conn)
@@ -401,12 +443,34 @@ void Server::acceptNewConnection(Connection &conn)
 		newConnection.setType(CLIENT);
 		newConnection.setServerIp(conn.getServerIp());
 		newConnection.setServerPort(conn.getServerPort());
+		if (VERBOSE)
+		{
+
+			std::cout << PURPLE << "BEFORE PUSH_BACK" << RESET << std::endl;
+			std::cout << "Printing newConnection:" << std::endl;
+			newConnection.printConnection();
+			std::cout << "Printing struct pollfd newSocketPoll:" << std::endl;
+			std::cout << "fd: " << newSocketPoll.fd << ", events: " << newSocketPoll.events
+					  << ", revents: " << newSocketPoll.revents << std::endl;
+		}
 		/* start together */
 		_FDs.push_back(newSocketPoll);
 		_connections.push_back(newConnection);
 		std::cout << newConnection.getHasFinishedReading() << std::endl;
 		std::cout << _connections.back().getHasFinishedReading() << std::endl;
 		/* end together */
+		if (VERBOSE)
+		{
+			std::cout << PURPLE << "AFTER PUSH_BACK" << RESET << std::endl;
+			std::cout << "Printing last element of _FDs:" << std::endl;
+			std::cout << "fd: " << _FDs.back().fd << ", events: " << _FDs.back().events
+					  << ", revents: " << _FDs.back().revents << std::endl;
+			std::cout << "Printing last element of _connections:" << std::endl;
+			_connections.back().printConnection();
+			std::cout << "Pringing the whole _FDs and _connections vectors after adding new connection" << std::endl;
+			print_connectionsVector(_connections);
+			printFDsVector(_FDs);
+		}
 		char clientIP[INET_ADDRSTRLEN];
 		inet_ntop(AF_INET, &clientAddress.sin_addr, clientIP, INET_ADDRSTRLEN);
 		std::cout << "New connection from " << clientIP << std::endl;

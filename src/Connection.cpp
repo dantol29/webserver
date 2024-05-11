@@ -61,15 +61,6 @@ Connection &Connection::operator=(const Connection &other)
 Connection::~Connection()
 {
 	std::cout << "Connection object destroyed" << std::endl;
-	// Should I close the file descriptor here?
-	// This was causing errors, cause when exiting from scope of the function where the Connection object was creted it
-	// was closing the file descriptor. When we push back the Connection object in the vector of connections we make a
-	// copy of the object, so the file descriptor was closed in the original object and the copy was left with an
-	// invalid file descriptor. if (_pollFd.fd != -1)
-	// {
-	// 	close(_pollFd.fd);
-	// 	_pollFd.fd = -1; // Invalidate the file descriptor to prevent double closing
-	// }
 }
 
 // GETTERS AND SETTERS
@@ -252,6 +243,7 @@ bool Connection::readChunkedBody(Parser &parser)
 			if (!readChunk(chunkSize, chunkData, _response))
 				return false;
 			parser.setBuffer(parser.getBuffer() + chunkData);
+			return true;
 		}
 	}
 	return false;
@@ -378,6 +370,23 @@ bool Connection::readBody(Parser &parser, HTTPRequest &req, HTTPResponse &res)
 
 void Connection::printConnection() const
 {
-	std::cout << "\nprintConnection" << std::endl;
-	std::cout << "Connection: " << _pollFd.fd << std::endl;
+	std::cout << CYAN << "CONNECTION # " << _pollFd.fd << " (fd)" << RESET << std::endl;
+
+	std::string connectionType;
+
+	if (_type == SERVER)
+		connectionType = "SERVER";
+	else if (_type == CLIENT)
+		connectionType = "CLIENT";
+	else
+		connectionType = "UNDEFINED";
+
+	std::cout << std::setw(5) << ' ' << std::left << std::setw(22) << "type:" << connectionType << std::endl;
+	std::cout << std::setw(5) << ' ' << std::left << std::setw(22) << "hasReadSocket:" << _hasReadSocket << std::endl;
+	std::cout << std::setw(5) << ' ' << std::left << std::setw(22) << "hasFinishedReading:" << _hasFinishedReading
+			  << std::endl;
+	std::cout << std::setw(5) << ' ' << std::left << std::setw(22) << "hasDataToSend:" << _hasDataToSend << std::endl;
+	std::cout << std::setw(5) << ' ' << std::left << std::setw(22) << "hasFinishedSending:" << _hasFinishedSending
+			  << std::endl;
+	std::cout << std::setw(5) << ' ' << std::left << std::setw(22) << "canBeClosed:" << _canBeClosed << std::endl;
 }

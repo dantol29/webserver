@@ -1,9 +1,16 @@
 # Ignore everything
 *
 
+# Allow subdirectories and empty directories containing .gitkeep
+!/**/
+!**/.gitkeep
+
+# Allow directories (and their contents) ending with .xyz or .com
+!*.xyz/
+!*.com/
+
 # Except for these directories (and their contents)
 !.gitignore
-!/**/
 
 # Except for these file types in any directory
 !**/*.c
@@ -20,6 +27,7 @@
 !**/*.json
 !**/*.jpg
 !**/*.yml
+!**/*.csv
 
 # Specific files and directories to include
 !Makefile
@@ -32,6 +40,8 @@
 !tests/
 !/ngnix/**/**/*
 !webserv.conf
+!webserv_default.conf
+!tests/
 !*.test
 
 # Exclude specific files or directories
@@ -41,4 +51,4 @@
 # so we don't pull and push 100mb file
 largefile  
 testers/myenv/
-
+testers/testsvenv/
