@@ -53,13 +53,6 @@ void Router::routeRequest(HTTPRequest &request, HTTPResponse &response)
 		}
 		else if (request.getMethod() == "POST" || request.getUploadBoundary() != "")
 		{
-			if (request.getUploadBoundary().empty())
-			{
-				// Is chunked
-				std::cout << PURPLE << "\n\n Handling as chunked upload\n\n" << PURPLE << std::endl;
-			}
-			std::cout << PURPLE << "\n\nHandling as upload\n\n" << PURPLE << std::endl;
-
 			UploadHandler uploadHandler;
 			uploadHandler.handleRequest(request, response);
 		}
@@ -73,7 +66,7 @@ void Router::routeRequest(HTTPRequest &request, HTTPResponse &response)
 		break;
 	case PathInvalid:
 		std::cout << "Path is not valid, handling as error" << std::endl;
-		handleServerBlockError(request, response, 400);
+		handleServerBlockError(request, response, 404);
 		break;
 	}
 
@@ -116,7 +109,7 @@ void Router::handleServerBlockError(HTTPRequest &request, HTTPResponse &response
 	// clang-format off
 	std::vector<std::pair<int, std::string> > errorPage = _serverBlock.getErrorPage();
 	// clang-format on
-	std::string errorPath;
+	// std::string errorPath;
 	size_t i = 0;
 	for (; i < errorPage.size(); i++)
 	{
@@ -125,25 +118,35 @@ void Router::handleServerBlockError(HTTPRequest &request, HTTPResponse &response
 			std::cout << "handleServerBlockError: Error code: " << errorCode << std::endl;
 			Debug::log("Path requested: " + request.getPath(), Debug::NORMAL);
 			Debug::log("Path to error: " + errorPage[i].second, Debug::NORMAL);
+			// setting the path to the custom error page
 			request.setPath(_serverBlock.getRoot() + request.getHost() + errorPage[i].second);
+			// TODO: move here what is todo below
+			//  handle here a custom error page
 			break;
 		}
 	}
-	errorPath = request.getPath();
-	// if (errorPath.empty())
-	// {
-	// 	std::cout << "handleServerBlockError: Error path is empty" << std::endl;
-	// 	return;
-	// }
+
+	std::cout << "handleServerBlockError: No custom error page found for error code: " << errorCode << std::endl;
+	// send default page with error code
 	StaticContentHandler staticContentInstance;
-	if (!pathIsValid(response, request))
+	response.setErrorResponse(errorCode);
+	return;
+
+	// TODO: BELOW IS THE LOGIC FOR CUSTOM ERROR PAGES, it should be move above and checked
+	//  errorPath = request.getPath();
+	//  if (errorPath.empty())
+	//  {
+	//  	std::cout << "handleServerBlockError: Error path is empty" << std::endl;
+	//  	return;
+	//  }
+
+	if (pathIsValid(response, request) == PathInvalid)
 	{
 		Debug::log("handleServerBlockError: path to given error is not valid", Debug::NORMAL);
 		staticContentInstance.handleNotFound(response);
 	}
 	else
 	{
-		Debug::log("handleServerBlockError: Response set to custom error file", Debug::NORMAL);
 		if (pathIsValid(response, request) == PathInvalid)
 		{
 			std::cout << "handleServerBlockError: Path to custom error file is invalid" << std::endl;
@@ -151,8 +154,6 @@ void Router::handleServerBlockError(HTTPRequest &request, HTTPResponse &response
 			return;
 		}
 		staticContentInstance.handleRequest(request, response);
-		std::cout << PURPLE << "handleServerBlockError: STATUS CODE: " << response.getStatusCode() << RESET
-				  << std::endl;
 		response.setStatusCode(errorCode, errorPage[i].second);
 	}
 }

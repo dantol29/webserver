@@ -118,7 +118,14 @@ void Server::readFromClient(Connection &conn, size_t &i, Parser &parser, HTTPReq
 	}
 	if (parser.getHeadersComplete() && !parser.getHeadersAreParsed())
 		parser.parseRequestLineAndHeaders(parser.getHeadersBuffer().c_str(), request, response);
-
+	if (response.getStatusCode() != 0)
+	{
+		conn.setCanBeClosed(false);
+		conn.setHasFinishedReading(true);
+		conn.setHasDataToSend(false);
+		Debug::log("Error parsing headers or request line", Debug::OCF);
+		return;
+	}
 	std::cout << parser.getHeadersComplete() << " ," << request.getMethod() << std::endl;
 	if (parser.getHeadersComplete() && request.getMethod() == "GET")
 		conn.setHasFinishedReading(true);
@@ -163,6 +170,15 @@ void Server::readFromClient(Connection &conn, size_t &i, Parser &parser, HTTPReq
 				// conn.setHasDataToSend(false);
 				return;
 			}
+		}
+		if (!parser.getBodyComplete() && parser.getBuffer().size() == request.getContentLength())
+		{
+			// TODO: in the new design we will return here and go to the function where the response is
+			parser.setBodyComplete(true);
+			conn.setHasFinishedReading(true);
+			conn.setCanBeClosed(false);
+			conn.setHasDataToSend(false);
+			return;
 		}
 		if (!parser.getBodyComplete())
 		{
@@ -236,16 +252,6 @@ void Server::buildResponse(Connection &conn, size_t &i, HTTPRequest &request, HT
 		response.setErrorResponse(response.getStatusCode());
 		router.handleServerBlockError(request, response, response.getStatusCode());
 		conn.setHasDataToSend(true);
-		//
-		//
-		if (response.getStatusCode() == 0)
-		{
-			std::cout << PURPLE << "No status code" << RESET << std::endl;
-			response.setStatusCode(404, "Not Found");
-			response.setBody("404 Not Found");
-		}
-		//
-		//
 		return;
 	}
 	else
