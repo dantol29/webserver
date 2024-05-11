@@ -5,74 +5,46 @@ Router::Router()
 {
 }
 
-Router::Router(ServerBlock serverBlock) : _serverBlock(serverBlock), _FDsRef(NULL), _pollFd(NULL)
-{
-}
-
-Router::Router(const Router &obj) : _serverBlock(obj._serverBlock), _path(obj._path), _FDsRef(NULL), _pollFd(NULL)
-{
-}
-
-Router &Router::operator=(const Router &obj)
-{
-	if (this == &obj)
-		return *this;
-	_serverBlock = obj._serverBlock;
-	_path = obj._path;
-	_FDsRef = obj._FDsRef;
-	_pollFd = obj._pollFd;
-	return *this;
-}
-
 Router::~Router()
 {
 }
 
-void Router::routeRequest(HTTPRequest &request, HTTPResponse &response)
+void Router::routeRequest(const HTTPRequest &request, HTTPResponse &response)
 {
-	Debug::log("Routing Request: host = " + request.getSingleHeader("host").second, Debug::NORMAL);
-	std::string _webRoot = _serverBlock.getRoot() + request.getSingleHeader("host").second;
-	_webRoot += request.getRequestTarget();
-	request.setPath(_webRoot);
+	std::cout << RED << request << RESET << std::endl;
 
-	std::cout << GREEN << "Routing request to path: " << _webRoot << RESET << std::endl;
-	std::cout << PURPLE << "Request method: " << request.getMethod() << RESET << std::endl;
-
-	std::cout << request << std::endl;
-
-	PathValidation pathResult = pathIsValid(response, request);
-	switch (pathResult)
+	std::string _webRoot = "var/www"; // TODO: get this from the config file
+	if (isCGI(request) && pathIsValid(const_cast<HTTPRequest &>(request), _webRoot))
 	{
-	case PathValid:
-		if (isCGI(request))
+		CGIHandler cgiHandler;
+		cgiHandler.setFDsRef(_FDsRef);
+		cgiHandler.setPollFd(_pollFd);
+		cgiHandler.handleRequest(request, response);
+		return;
+	}
+	else if (request.getMethod() == "POST") // && !request.getUploadBoundary().empty())
+	{
+		std::cout << "Router: POST request" << std::endl;
+
+		UploadHandler uploadHandler;
+		uploadHandler.handleRequest(request, response);
+	}
+	else if (request.getMethod() == "SALAD")
+	{
+		std::cout << "🥬 + 🍅 + 🐟 = 🥗" << std::endl;
+	}
+	else
+	{
+		StaticContentHandler staticContentInstance;
+		if (!pathIsValid(const_cast<HTTPRequest &>(request), _webRoot))
 		{
-			CGIHandler cgiHandler;
-			cgiHandler.setFDsRef(_FDsRef);
-			cgiHandler.setPollFd(_pollFd);
-			cgiHandler.handleRequest(request, response);
-		}
-		else if (request.getMethod() == "POST" || request.getUploadBoundary() != "")
-		{
-			UploadHandler uploadHandler;
-			uploadHandler.handleRequest(request, response);
+			std::cout << "Path is not valid, calling handleNotFound" << std::endl;
+			staticContentInstance.handleNotFound(response);
 		}
 		else
 		{
-			StaticContentHandler staticContentHandler;
-			staticContentHandler.handleRequest(request, response);
+			staticContentInstance.handleRequest(request, response);
 		}
-		break;
-	case IsDirectoryListing:
-		break;
-	case PathInvalid:
-		std::cout << "Path is not valid, handling as error" << std::endl;
-		handleServerBlockError(request, response, 404);
-		break;
-	}
-
-	if (request.getMethod() == "SALAD")
-	{
-		std::cout << "🥬 + 🍅 + 🐟 = 🥗" << std::endl;
 	}
 }
 
@@ -101,60 +73,6 @@ std::string Router::getFileExtension(const std::string &fileName)
 	else
 	{
 		return fileName.substr(dotIndex + 1, queryStart - dotIndex - 1);
-	}
-}
-
-void Router::handleServerBlockError(HTTPRequest &request, HTTPResponse &response, int errorCode)
-{
-	// clang-format off
-	std::vector<std::pair<int, std::string> > errorPage = _serverBlock.getErrorPage();
-	// clang-format on
-	// std::string errorPath;
-	size_t i = 0;
-	for (; i < errorPage.size(); i++)
-	{
-		if (errorPage[i].first == errorCode)
-		{
-			std::cout << "handleServerBlockError: Error code: " << errorCode << std::endl;
-			Debug::log("Path requested: " + request.getPath(), Debug::NORMAL);
-			Debug::log("Path to error: " + errorPage[i].second, Debug::NORMAL);
-			// setting the path to the custom error page
-			request.setPath(_serverBlock.getRoot() + request.getHost() + errorPage[i].second);
-			// TODO: move here what is todo below
-			//  handle here a custom error page
-			break;
-		}
-	}
-
-	std::cout << "handleServerBlockError: No custom error page found for error code: " << errorCode << std::endl;
-	// send default page with error code
-	StaticContentHandler staticContentInstance;
-	response.setErrorResponse(errorCode);
-	return;
-
-	// TODO: BELOW IS THE LOGIC FOR CUSTOM ERROR PAGES, it should be move above and checked
-	//  errorPath = request.getPath();
-	//  if (errorPath.empty())
-	//  {
-	//  	std::cout << "handleServerBlockError: Error path is empty" << std::endl;
-	//  	return;
-	//  }
-
-	if (pathIsValid(response, request) == PathInvalid)
-	{
-		Debug::log("handleServerBlockError: path to given error is not valid", Debug::NORMAL);
-		staticContentInstance.handleNotFound(response);
-	}
-	else
-	{
-		if (pathIsValid(response, request) == PathInvalid)
-		{
-			std::cout << "handleServerBlockError: Path to custom error file is invalid" << std::endl;
-			staticContentInstance.handleNotFound(response);
-			return;
-		}
-		staticContentInstance.handleRequest(request, response);
-		response.setStatusCode(errorCode, errorPage[i].second);
 	}
 }
 
@@ -192,106 +110,56 @@ void Router::splitTarget(const std::string &target)
 	}
 }
 
-void Router::generateDirectoryListing(HTTPResponse Response,
-									  const std::string &directoryPath,
-									  const std::string &requestedPath)
+bool Router::pathIsValid(HTTPRequest &request, std::string webRoot)
 {
-	std::ostringstream html;
-	html << "<html><head><title>Directory listing for " << requestedPath << "</title></head>"
-		 << "<body><h1>Directory listing for " << requestedPath << "</h1><ul>";
-
-	DIR *dir = opendir(directoryPath.c_str());
-	if (dir)
+	std::string host = request.getHost();
+	size_t pos = host.find(":");
+	if (pos != std::string::npos)
 	{
-		struct dirent *entry;
-		while ((entry = readdir(dir)) != NULL)
-		{
-			std::string name(entry->d_name);
-			if (name == "." || name == "..")
-				continue;
-
-			std::string fullUrl = requestedPath;
-			if (!requestedPath.empty() && requestedPath[requestedPath.length() - 1] != '/')
-			{
-				fullUrl += '/';
-			}
-			fullUrl += name;
-
-			html << "<li><a href=\"" << fullUrl << "\">" << name << "</a></li>";
-		}
-		closedir(dir);
+		host = host.substr(0, pos);
 	}
+	std::string pathWithQuery = request.getRequestTarget();
+	std::string path = pathWithQuery.substr(0, pathWithQuery.find("?"));
 
-	html << "</ul></body></html>";
-	Response.setBody(html.str());
-	Response.setStatusCode(200, "OK");
-	Response.setHeader("Content-Type", "text/html");
-}
+	if (host == "localhost")
+		path = webRoot + path;
+	else
+		path = webRoot + "/" + host + path;
 
-enum PathValidation Router::pathIsValid(HTTPResponse &response, HTTPRequest &request)
-{
-	(void)response;
+	std::cout << std::endl << "Path: " << path << std::endl << std::endl;
+	std::cout << "Path: " << path << std::endl;
 	struct stat buffer;
-	std::string path = request.getPath();
 	if (stat(path.c_str(), &buffer) != 0)
 	{
-		Debug::log("webRoot: " + path, Debug::NORMAL);
-		Debug::log("pathIsValid: stat failed, path does not exist", Debug::NORMAL);
-		return PathInvalid;
+		return false;
 	}
 	if (S_ISDIR(buffer.st_mode))
 	{
+		// std::cout << "Path is a directory" << std::endl;
 		if (!path.empty() && path[path.length() - 1] != '/')
 		{
 			path += "/";
 		}
-		if (_serverBlock.getIndex().empty())
+		path += "index.html";
+		// std::cout << "Path: " << path << std::endl;
+		if (stat(path.c_str(), &buffer) != 0)
 		{
-			Debug::log("User did not provided any index", Debug::NORMAL);
-			if (_serverBlock.getAutoIndex())
-			{
-				Debug::log("pathIsValid: Autoindex is on", Debug::NORMAL);
-				generateDirectoryListing(response, path, request.getRequestTarget());
-				// std::cout << "Directory listing: " << directoryListing << std::endl;
-				// path += "index.html";
-				// request.setPath(path);
-				// std::cout << std::endl;
-			}
-			else
-			{
-				Debug::log("pathIsValid: Autoindex is off", Debug::NORMAL);
-				return IsDirectoryListing;
-			}
+			// TODO: decide if we should return a custom error for a directory without an index.html
+			return false;
 		}
-		else // user provided an index
-		{
-			Debug::log("pathIsValid: Index: " + _serverBlock.getIndex()[0], Debug::NORMAL);
-			// TODO: implement several indexes
-			std::string index = _serverBlock.getIndex()[0];
-			Debug::log("pathIsValid: Index: " + index, Debug::NORMAL);
-			path += index;
-			Debug::log("pathIsValid: path: " + path, Debug::NORMAL);
-		}
-		request.setPath(path);
-		std::cout << std::endl;
 	}
+	// std::cout << "Path: " << path << " exists" << std::endl;
 
 	std::ifstream file(path.c_str());
 	if (!file.is_open())
 	{
 		std::cout << "Failed to open the file at path: " << path << std::endl;
-
-		// if (path[path.length() - 1] != '/')
-		// {
-		// 	path += "/";
-		// }
-		// path += _serverBlock.getErrorPage()[0].second;
-		// std::cout << GREEN << "pathIsValid: path: " << path << RESET << std::endl;
-		return PathInvalid;
+		return false;
 	}
 	file.close();
 
-	return PathValid;
+	// std::cout << "Path is an accesible and readable file" << std::endl;
+	return true;
 }
 
 void Router::setFDsRef(std::vector<struct pollfd> *FDsRef)

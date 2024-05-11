@@ -15,7 +15,6 @@ HTTPRequest::HTTPRequest(const HTTPRequest &obj)
 	_body = obj._body;
 	_uploadBoundary = obj._uploadBoundary;
 	_files = obj._files;
-	_path = obj._path;
 	_cookies = obj._cookies;
 }
 
@@ -31,7 +30,6 @@ HTTPRequest &HTTPRequest::operator=(const HTTPRequest &obj)
 	_body = obj._body;
 	_uploadBoundary = obj._uploadBoundary;
 	_files = obj._files;
-	_path = obj._path;
 	_cookies = obj._cookies;
 	return (*this);
 }
@@ -108,16 +106,6 @@ std::vector<File> HTTPRequest::getFiles() const
 	return (_files);
 }
 
-std::string HTTPRequest::getPath() const
-{
-	return (_path);
-}
-
-std::string HTTPRequest::getRoot() const
-{
-	return (_root);
-}
-
 std::map<std::string, std::string> HTTPRequest::getCookies() const
 {
 	return (_cookies);
@@ -173,16 +161,6 @@ void HTTPRequest::setFileContent(const std::string &content)
 	_files.back().fileContent = content;
 }
 
-void HTTPRequest::setPath(const std::string &path)
-{
-	this->_path = path;
-}
-
-void HTTPRequest::setRoot(const std::string &root)
-{
-	this->_path = root;
-}
-
 void HTTPRequest::setCookies(const std::string &key, const std::string &value)
 {
 	_cookies.insert(std::make_pair(key, value));
@@ -207,7 +185,7 @@ std::ostream &operator<<(std::ostream &out, const HTTPRequest &obj)
 	out << "---------------------End--------------------------" << std::endl;
 
 	out << "---------------------Body-------------------------" << std::endl;
-	// std::cout << body << std::endl;
+	std::cout << body << std::endl;
 	out << "---------------------End--------------------------" << std::endl;
 
 	out << "---------------------File-Upload------------------" << std::endl;

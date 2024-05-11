@@ -36,13 +36,6 @@ jobs:
             echo "✅ Config file tests passed."
             echo "::set-output name=config_tests_correct::true"
            fi
-      - name: Check if webserv is running
-        run: |
-          if ps aux | grep -q '[w]ebserv'; then
-            echo "webserv is running."
-          else
-            echo "webserv is not running."
-          fi
       - name: Run Python tests
         if: always()
         working-directory: tests # Set working directory to 'tests'
@@ -63,14 +56,4 @@ jobs:
             echo "❌ Tests failed. Exiting with status code $exit_code."
             exit $exit_code
            fi
-      # - name: Run C++ router tests
-      #   if: always()
-      #   working-directory: tests # Set working directory to 'tests'
-      #   run: |
-      #     c++ router.cpp -o parse && ./parse
-      #      exit_code=$?
-      #      if [ $exit_code -ne 0 ]; then
-      #       echo "❌ Tests failed. Exiting with status code $exit_code."
-      #       exit $exit_code
-      #      fi
-      # - run: echo "🍏 This job's status is ${{ job.status }}."
+      - run: echo "🍏 This job's status is ${{ job.status }}."

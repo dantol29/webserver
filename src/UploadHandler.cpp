@@ -112,37 +112,15 @@ void createFile(HTTPRequest &request)
 	}
 }
 
-void createFileChunked(HTTPRequest &request)
-{
-	std::string uploadDir = "upload/";
-	std::string filepath = "chunked_upload.jpg";
-	uploadDir += filepath;
-
-	std::ofstream outfile(uploadDir.c_str());
-	if (outfile.is_open())
-	{
-		outfile << request.getBody();
-		outfile.close();
-		std::cout << "File created successfully at " << uploadDir << std::endl;
-	}
-	else
-	{
-
-		std::cout << "422 Unprocessable Entity (Error creating a file at " << uploadDir << ")" << std::endl;
-	}
-}
-
 void UploadHandler::handleRequest(const HTTPRequest &request, HTTPResponse &response)
 {
 	if (!checkFiles(request))
 	{
-		handleResponse(response, SUCCESS);
 		handleResponse(response, BAD_REQUEST);
 		return;
 	}
 	if (!request.getUploadBoundary().empty())
 	{
-		handleResponse(response, SUCCESS);
 		createFile(const_cast<HTTPRequest &>(request));
 		handleResponse(response, SUCCESS);
 	}
@@ -150,8 +128,6 @@ void UploadHandler::handleRequest(const HTTPRequest &request, HTTPResponse &resp
 	{
 		// logic is incorrect here in case of chunked request
 		// temporary solution
-		std::cout << PURPLE << "calling create file chunked" << RESET << std::endl;
-		createFileChunked(const_cast<HTTPRequest &>(request));
 		handleResponse(response, SUCCESS);
 		// std::cout << "415 Unsupported Media Type" << std::endl;
 		// handleResponse(response, BAD_REQUEST);
@@ -199,5 +175,6 @@ void UploadHandler::handleResponse(HTTPResponse &response, enum UploadStatus sta
 	}
 
 	response.setHeader("Content-Type", "text/html");
+	response.setHeader("Content-Length", toString(fileContents.length()));
 	response.setBody(fileContents);
 }

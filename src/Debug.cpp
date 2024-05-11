@@ -1,6 +1,6 @@
 #include "Debug.hpp"
 
-bool Debug::debugEnabled = true;
+bool Debug::debugEnabled = false;
 Debug::Level Debug::debugLevel = Debug::NORMAL;
 
 Debug::Debug()
