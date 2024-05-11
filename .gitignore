@@ -38,6 +38,7 @@
 !docs/
 !tests/
 !webserv.conf
+./webserv_default.conf"
 !tests/
 !*.test
 
