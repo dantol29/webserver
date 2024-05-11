@@ -214,6 +214,8 @@ enum PathValidation Router::pathIsValid(HTTPResponse &response, HTTPRequest &req
 	(void)response;
 	struct stat buffer;
 	std::string path = request.getPath();
+	std::cout << "pathIsValid: path: " << path << std::endl;
+	std::cout << "pathIsValid: root: " << _serverBlock.getRoot() << std::endl;
 	if (stat(path.c_str(), &buffer) != 0)
 	{
 		Debug::log("webRoot: " + path, Debug::NORMAL);

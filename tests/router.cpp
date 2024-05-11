@@ -192,7 +192,7 @@ int main(void)
 
 	if (is_error)
 		exit(1);
-	else
+	else if (!is_error)
 		std::cout << std::endl << "     🎉 All tests passed 🎉" << std::endl << std::endl;
 	exit(0);
 }
