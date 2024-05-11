@@ -23,20 +23,22 @@
 
 # Specific files and directories to include
 !Makefile
+!Dockerfile
 !.github/
 !.clang-format
 !.vscode/
 !.cgi-bin/
 !docs/
 !tests/
+!/ngnix/**/**/*
 !webserv.conf
-!tests/
 !*.test
 
 # Exclude specific files or directories
 /secretus/
 /a.out
 **/*.o
-largefile  # so we don't pull and push 100mb file
+# so we don't pull and push 100mb file
+largefile  
 testers/myenv/
 

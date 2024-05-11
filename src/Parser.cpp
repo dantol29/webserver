@@ -268,6 +268,8 @@ bool Parser::hasMandatoryHeaders(HTTPRequest &req)
 			_isChunked = true;
 		}
 	}
+	if (_isChunked && req.getMethod() == "POST")
+		return (isHost == 1 && isContentType == 1);
 	if (req.getMethod() == "POST" || req.getMethod() == "DELETE")
 		return (isHost == 1 && isContentLength == 1 && isContentType == 1);
 	else

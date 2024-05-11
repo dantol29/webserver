@@ -26,6 +26,8 @@ Connection::Connection(const Connection &other)
 	_type = other._type;
 	_serverIp = other._serverIp;
 	_serverPort = other._serverPort;
+	_request = other._request;
+	_parser = other._parser;
 	_hasReadSocket = other._hasReadSocket;
 	_hasFinishedReading = other._hasFinishedReading;
 	_hasDataToSend = other._hasDataToSend;
