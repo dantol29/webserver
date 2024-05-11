@@ -28,17 +28,39 @@ Router::~Router()
 {
 }
 
+void Router::adaptRequestForFirefox(HTTPRequest &request)
+{
+	std::string _webRoot = _serverBlock.getRoot() + request.getSingleHeader("host").second;
+	std::string requestTarget = request.getRequestTarget();
+	size_t hostPos = requestTarget.find(request.getSingleHeader("host").second);
+	if (hostPos != std::string::npos)
+	{
+		requestTarget.erase(hostPos, request.getSingleHeader("host").second.length());
+	}
+
+	size_t hostPos2 = requestTarget.find("http://");
+	if (hostPos2 != std::string::npos)
+	{
+		std::string remove = "http://";
+		requestTarget.erase(hostPos2, remove.length());
+	}
+	_webRoot += requestTarget;
+	request.setPath(_webRoot);
+}
+
 void Router::routeRequest(HTTPRequest &request, HTTPResponse &response)
 {
 	Debug::log("Routing Request: host = " + request.getSingleHeader("host").second, Debug::NORMAL);
 	std::string _webRoot = _serverBlock.getRoot() + request.getSingleHeader("host").second;
-	_webRoot += request.getRequestTarget();
-	request.setPath(_webRoot);
+
+	std::string requestTarget = request.getRequestTarget();
+
+	adaptRequestForFirefox(request);
 
 	std::cout << GREEN << "Routing request to path: " << _webRoot << RESET << std::endl;
 	std::cout << PURPLE << "Request method: " << request.getMethod() << RESET << std::endl;
 
-	std::cout << request << std::endl;
+	// std::cout << request << std::endl;
 
 	PathValidation pathResult = pathIsValid(response, request);
 	switch (pathResult)
@@ -119,18 +141,15 @@ void Router::handleServerBlockError(HTTPRequest &request, HTTPResponse &response
 			Debug::log("Path requested: " + request.getPath(), Debug::NORMAL);
 			Debug::log("Path to error: " + errorPage[i].second, Debug::NORMAL);
 			// setting the path to the custom error page
-			request.setPath(_serverBlock.getRoot() + request.getHost() + errorPage[i].second);
+			request.setPath(_serverBlock.getRoot() + request.getHost() + "/" + errorPage[i].second);
+			std::cout << RED << "         custom error page: " << request.getPath() << RESET << std::endl;
 			// TODO: move here what is todo below
-			//  handle here a custom error page
-			break;
+			StaticContentHandler staticContentInstance;
+			staticContentInstance.handleRequest(request, response);
+			response.setStatusCode(errorCode, errorPage[i].second);
+			return;
 		}
 	}
-
-	std::cout << "handleServerBlockError: No custom error page found for error code: " << errorCode << std::endl;
-	// send default page with error code
-	StaticContentHandler staticContentInstance;
-	response.setErrorResponse(errorCode);
-	return;
 
 	// TODO: BELOW IS THE LOGIC FOR CUSTOM ERROR PAGES, it should be move above and checked
 	//  errorPath = request.getPath();
@@ -139,22 +158,22 @@ void Router::handleServerBlockError(HTTPRequest &request, HTTPResponse &response
 	//  	std::cout << "handleServerBlockError: Error path is empty" << std::endl;
 	//  	return;
 	//  }
+	StaticContentHandler staticContentInstance;
 
-	if (pathIsValid(response, request) == PathInvalid)
+	PathValidation pathResult = pathIsValid(response, request);
+	switch (pathResult)
 	{
-		Debug::log("handleServerBlockError: path to given error is not valid", Debug::NORMAL);
-		staticContentInstance.handleNotFound(response);
-	}
-	else
-	{
-		if (pathIsValid(response, request) == PathInvalid)
-		{
-			std::cout << "handleServerBlockError: Path to custom error file is invalid" << std::endl;
-			staticContentInstance.handleNotFound(response);
-			return;
-		}
+	case PathValid:
 		staticContentInstance.handleRequest(request, response);
 		response.setStatusCode(errorCode, errorPage[i].second);
+		break;
+	case PathInvalid:
+		Debug::log("handleServerBlockError: path to given error is not valid", Debug::NORMAL);
+		response.setErrorResponse(errorCode);
+		break;
+	case IsDirectoryListing:
+		Debug::log("handleServerBlockError: path to given error is a directory listing", Debug::NORMAL);
+		break;
 	}
 }
 
@@ -235,6 +254,7 @@ enum PathValidation Router::pathIsValid(HTTPResponse &response, HTTPRequest &req
 	std::string path = request.getPath();
 	if (stat(path.c_str(), &buffer) != 0)
 	{
+		std::cout << "Failed to stat the file at path: " << path << std::endl;
 		Debug::log("webRoot: " + path, Debug::NORMAL);
 		Debug::log("pathIsValid: stat failed, path does not exist", Debug::NORMAL);
 		return PathInvalid;

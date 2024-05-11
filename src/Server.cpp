@@ -216,6 +216,7 @@ void Server::buildResponse(Connection &conn, size_t &i, HTTPRequest &request, HT
 			std::string serverName = _config.getServerBlocks()[i].getServerName()[0];
 			std::cout << RED << "Checking server name: " << serverName << RESET << std::endl;
 			std::cout << "Request host: " << request.getSingleHeader("host").second << std::endl;
+			std::cout << "Request target: " << request.getRequestTarget() << std::endl;
 			if (serverName == request.getSingleHeader("host").second)
 			{
 				std::cout << GREEN << "Server block and request host match" << RESET << std::endl;
