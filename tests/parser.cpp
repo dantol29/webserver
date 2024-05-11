@@ -175,13 +175,13 @@ void sendData(const std::vector<HTTPTest> &tests, sockaddr_in serverAddress)
 void simple(sockaddr_in serverAddress)
 {
 	std::vector<HTTPTest> tests = {
-		HTTPTest("GET / HTTP/1.1\r\nHost: www.example.com\r\n\r\n", "200"),
-		// HTTPTest("POST / HTTP/1.1\r\nHost: www.example.com\r\n\r\n", "200"),
-		HTTPTest("GETT / HTTP/1.1\r\nHost: www.example.com\r\n\r\n", "501"),
-		HTTPTest("GET /random HTTP/1.1\r\nHost: www.example.com\r\n\r\n", "404"),
-		HTTPTest("GET / HTTP/9.9s\r\nHost: www.example.com\r\n\r\n", "400"),
-		HTTPTest(" / HTTP/1.1\r\nHost: www.example.com\r\n\r\n", "501"),
-		HTTPTest("GET / HTTP/1.1\nHost: www.example.com\r\n\r\n", "400"),
+		HTTPTest("GET / HTTP/1.1\r\nHost: www.saladbook.xyz\r\n\r\n", "200"),
+		// HTTPTest("POST / HTTP/1.1\r\nHost: www.saladbook.xyz\r\n\r\n", "200"),
+		HTTPTest("GETT / HTTP/1.1\r\nHost: www.saladbook.xyz\r\n\r\n", "501"),
+		HTTPTest("GET /random HTTP/1.1\r\nHost: www.saladbook.xyz\r\n\r\n", "404"),
+		HTTPTest("GET / HTTP/9.9s\r\nHost: www.saladbook.xyz\r\n\r\n", "400"),
+		HTTPTest(" / HTTP/1.1\r\nHost: www.saladbook.xyz\r\n\r\n", "501"),
+		HTTPTest("GET / HTTP/1.1\nHost: www.saladbook.xyz\r\n\r\n", "400"),
 	};
 	sendData(tests, serverAddress);
 }
@@ -190,13 +190,13 @@ void query(sockaddr_in serverAddress)
 {
 	std::vector<HTTPTest> tests = {
 		// HTTPTest("GET /index.html?q=now&price=low HTTP/1.1\r\nHost: localhost\r\n\r\n", "200"),
-		HTTPTest("GET /search?q==now&price=low HTTP/1.1\r\nHost: www.example.com\r\n\r\n", "400"),
-		HTTPTest("GET /search??q=now&price=low HTTP/1.1\r\nHost: www.example.com\r\n\r\n", "400"),
-		HTTPTest("GET /search?now&price=low HTTP/1.1\r\nHost: www.example.com\r\n\r\n", "400"),
-		HTTPTest("GET /search?q=now&&price=low HTTP/1.1\r\nHost: www.example.com\r\n\r\n", "400"),
-		HTTPTest("GET /search?q=now&price=low= HTTP/1.1\r\nHost: www.example.com\r\n\r\n", "400"),
-		HTTPTest("GET /search?=now&price=low HTTP/1.1\r\nHost: www.example.com\r\n\r\n", "400"),
-		HTTPTest("GET /search?&q=now&price=low HTTP/1.1\r\nHost: www.example.com\r\n\r\n", "400"),
+		HTTPTest("GET /search?q==now&price=low HTTP/1.1\r\nHost: www.saladbook.xyz\r\n\r\n", "400"),
+		HTTPTest("GET /search??q=now&price=low HTTP/1.1\r\nHost: www.saladbook.xyz\r\n\r\n", "400"),
+		HTTPTest("GET /search?now&price=low HTTP/1.1\r\nHost: www.saladbook.xyz\r\n\r\n", "400"),
+		HTTPTest("GET /search?q=now&&price=low HTTP/1.1\r\nHost: www.saladbook.xyz\r\n\r\n", "400"),
+		HTTPTest("GET /search?q=now&price=low= HTTP/1.1\r\nHost: www.saladbook.xyz\r\n\r\n", "400"),
+		HTTPTest("GET /search?=now&price=low HTTP/1.1\r\nHost: www.saladbook.xyz\r\n\r\n", "400"),
+		HTTPTest("GET /search?&q=now&price=low HTTP/1.1\r\nHost: www.saladbook.xyz\r\n\r\n", "400"),
 	};
 	sendData(tests, serverAddress);
 }
@@ -204,16 +204,16 @@ void query(sockaddr_in serverAddress)
 void headers(sockaddr_in serverAddress)
 {
 	std::vector<HTTPTest> tests = {
-		HTTPTest("GET / HTTP/1.1\r\nHost: www.example.com\r\n\r\n", "200"),
-		HTTPTest("GET / HTTP/1.1\r\nHost: www.example.com\r\nSecond: hello\r\n\r\n", "200"),
-		HTTPTest("GET / HTTP/1.1\r\nRandom: www.example.com\r\n\r\n", "400"),
-		HTTPTest("GET / HTTP/1.1\r\nHost www.example.com\r\n\r\n", "400"),
-		HTTPTest("GET / HTTP/1.1\r\nHost:: www.example.com\r\n\r\n", "400"),
-		HTTPTest("GET / HTTP/1.1\r\nHost: www.example.com\r\n\r", "400"),
-		HTTPTest("GET / HTTP/1.1\r\nHost:www.example.com\r\n\r\n", "400"),
-		HTTPTest("GET / HTTP/1.1\r\n Host: www.example.com\r\n\r\n", "400"),
-		HTTPTest("GET /HTTP/1.1\r\nHo st: www.example.com\r\n\r\n", "400"),
-		HTTPTest("GET / HTTP/1.1\r\nHost: www.example.com\nSecond: hello\r\n\r\n", "400"),
+		HTTPTest("GET / HTTP/1.1\r\nHost: www.saladbook.xyz\r\n\r\n", "200"),
+		HTTPTest("GET / HTTP/1.1\r\nHost: www.saladbook.xyz\r\nSecond: hello\r\n\r\n", "200"),
+		HTTPTest("GET / HTTP/1.1\r\nRandom: www.saladbook.xyz\r\n\r\n", "400"),
+		HTTPTest("GET / HTTP/1.1\r\nHost www.saladbook.xyz\r\n\r\n", "400"),
+		HTTPTest("GET / HTTP/1.1\r\nHost:: www.saladbook.xyz\r\n\r\n", "400"),
+		HTTPTest("GET / HTTP/1.1\r\nHost: www.saladbook.xyz\r\n\r", "400"),
+		HTTPTest("GET / HTTP/1.1\r\nHost:www.saladbook.xyz\r\n\r\n", "400"),
+		HTTPTest("GET / HTTP/1.1\r\n Host: www.saladbook.xyz\r\n\r\n", "400"),
+		HTTPTest("GET /HTTP/1.1\r\nHo st: www.saladbook.xyz\r\n\r\n", "400"),
+		HTTPTest("GET / HTTP/1.1\r\nHost: www.saladbook.xyz\nSecond: hello\r\n\r\n", "400"),
 	};
 	sendData(tests, serverAddress);
 }
@@ -221,39 +221,39 @@ void headers(sockaddr_in serverAddress)
 void body(sockaddr_in serverAddress)
 {
 	std::vector<HTTPTest> tests = {
-		HTTPTest("POST / HTTP/1.1\r\nHost: www.example.com\r\nContent-Length: 17\r\nContent-Type: "
+		HTTPTest("POST / HTTP/1.1\r\nHost: www.saladbook.xyz\r\nContent-Length: 17\r\nContent-Type: "
 				 "text/plain\r\n\r\nThis\r\nis body\r\n\r\n",
 				 "200"),
-		HTTPTest("POST / HTTP/1.1\r\nHost: www.example.com\r\nContent-Length: 17\r\nContent-Type: "
+		HTTPTest("POST / HTTP/1.1\r\nHost: www.saladbook.xyz\r\nContent-Length: 17\r\nContent-Type: "
 				 "text/plain\r\n\r\nThis\r\nis body\r\n",
 				 "400"), // 400 (Bad Request) -- - Wrong content length // This case is
 						 // complicated: we have an extra linera issue for it!}
-		HTTPTest("POST / HTTP/1.1\r\nHost: www.example.com\r\nContent-Length: 16\r\nContent-Type: "
+		HTTPTest("POST / HTTP/1.1\r\nHost: www.saladbook.xyz\r\nContent-Length: 16\r\nContent-Type: "
 				 "text/plain\r\n\r\nThis\r\nis body\r\n\n",
 				 "400"), // 400 (Bad Request) - - Improper line termination of the body with '\n'}
-		HTTPTest("POST / HTTP/1.1\r\nHost: www.example.com\r\nContent-Length: 17\r\nContent-Type: "
+		HTTPTest("POST / HTTP/1.1\r\nHost: www.saladbook.xyz\r\nContent-Length: 17\r\nContent-Type: "
 				 "text/plain\r\n\rThis\r\nis body\r\n\r\n",
 				 "400"), // 400 (Bad Request) -- - Malformed headers (misplaced 'r')}
-		HTTPTest("POST / HTTP/1.1\r\nHost: www.example.com\r\nContent-Length: 16\r\nContent-Type: "
+		HTTPTest("POST / HTTP/1.1\r\nHost: www.saladbook.xyz\r\nContent-Length: 16\r\nContent-Type: "
 				 "text/plain\r\n\r\nThis\ris body\r\n\r\n",
 				 "400"), // 400 (Bad Request) -- - Malformed headers (misplaced 'n') -- // TODO : why is this invalid?}
 		HTTPTest(
-			"POST / HTTP/1.1\r\nHost: www.example.com\r\nContent-Length: 17\r\nContent-Type: "
+			"POST / HTTP/1.1\r\nHost: www.saladbook.xyz\r\nContent-Length: 17\r\nContent-Type: "
 			"text/plain\r\n\r\nThis\r\n\r\nis body\r\n\r\n",
 			"400"), // 400 (Bad Request) -- - Improper line termination of the body // with '\r' // TODO: are you sure?}
-		HTTPTest("GET / HTTP/1.1\r\nHost: www.example.com\r\nContent-Length: 17\r\nContent-Type: "
+		HTTPTest("GET / HTTP/1.1\r\nHost: www.saladbook.xyz\r\nContent-Length: 17\r\nContent-Type: "
 				 "text/plain\r\n\r\nThis\r\nis body\r\n\r\n",
 				 "400"), // 400 (Bad Request) -- - GET request with body}
-		HTTPTest("POST / HTTP/1.1\r\nHost: www.example.com\r\nContent-Length: 17\r\n\r\nThis\r\nis "
+		HTTPTest("POST / HTTP/1.1\r\nHost: www.saladbook.xyz\r\nContent-Length: 17\r\n\r\nThis\r\nis "
 				 "body\r\n\r\n",
 				 "400"), // 400 (Bad Request) -- - Missing content type}
-		HTTPTest("POST / HTTP/1.1\r\nHost: www.example.com\r\nContent-Type: text/plain\r\n\r\nThis\r\nis "
+		HTTPTest("POST / HTTP/1.1\r\nHost: www.saladbook.xyz\r\nContent-Type: text/plain\r\n\r\nThis\r\nis "
 				 "body\r\n\r\n",
 				 "400"), // 400 (Bad Request) -- - Missing content length}
-		HTTPTest("POST / HTTP/1.1\r\nHost: www.example.com\r\nContent-Length: 17\r\nContent-Type: "
+		HTTPTest("POST / HTTP/1.1\r\nHost: www.saladbook.xyz\r\nContent-Length: 17\r\nContent-Type: "
 				 "text/notplain\r\n\r\nThis\r\nis body\r\n\r\n",
 				 "400"), // 400 (Bad Request) -- - Invalid content type}
-		HTTPTest("POST / HTTP/1.1\r\nHost: www.example.com\r\nContent-Length: abcd\r\nContent-Type: "
+		HTTPTest("POST / HTTP/1.1\r\nHost: www.saladbook.xyz\r\nContent-Length: abcd\r\nContent-Type: "
 				 "text/plain\r\n\r\nThis\r\nis body\r\n\r\n",
 				 "400"), // 400 (Bad Request) -- - Invalid content length value}
 
@@ -279,16 +279,24 @@ int main(int argc, char **argv)
 	serverAddress.sin_addr.s_addr = INADDR_ANY;
 
 	// if (std::strcmp(argv[1], "query") == 0)
+	std::cout << "\033[38;5;214mRunning query tests\033[0m" << std::endl;
 	query(serverAddress);
 	// else if (std::strcmp(argv[1], "simple") == 0)
+	std::cout << "\033[38;5;214mQuery tests done\033[0m" << std::endl;
+	std::cout << "Running simple tests" << std::endl;
 	simple(serverAddress);
+	std::cout << "\033[38;5;214mSimple tests done\033[0m" << std::endl;
+	std::cout << "\033[38;5;214mRunning headers tests\033[0m" << std::endl;
 	// else if (std::strcmp(argv[1], "headers") == 0)
 	headers(serverAddress);
+	std::cout << "\033[38;5;214mHeaders tests done\033[0m" << std::endl;
 	// else if (std::strcmp(argv[1], "body") == 0)
 	// body(serverAddress);
 	// else
 	// std::cout << "Invalid test name" << std::endl;
 	if (is_error)
 		exit(1);
+	else
+		std::cout << std::endl << "     🎉 All tests passed 🎉" << std::endl << std::endl;
 	exit(0);
 }
