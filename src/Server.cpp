@@ -206,6 +206,7 @@ void Server::writeToClient(Connection &conn, size_t &i, HTTPResponse &response)
 	Debug::log("\033[1;36mEntering writeToClient\033[0m", Debug::OCF);
 	(void)i;
 	send(conn.getPollFd().fd, response.objToString().c_str(), response.objToString().size(), 0);
+	std::cout << response.objToString().c_str() << std::endl;
 	// conn.setHasDataToSend(); will not be always false in case of chunked response or keep-alive connection
 	conn.setHasDataToSend(false);
 	conn.setHasFinishedSending(true);

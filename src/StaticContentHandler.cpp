@@ -93,6 +93,7 @@ void StaticContentHandler::handleRequest(const HTTPRequest &request, HTTPRespons
 	response.setBody(body);
 	response.setHeader("Content-Type", getMimeType(path));
 	response.setHeader("Content-Length", toString(body.length()));
+	response.setHeader("Set-Cookie", "meal=salad; Expires=Wed, 09 Jun 2024 10:18:14 GMT; Path=/; Secure; HttpOnly");
 	response.setStatusCode(200, "");
 	// TODO ADD MORE HEADER LINE
 	//  response.setHeader("Content-Length: ", std::to_string(body.length()));
