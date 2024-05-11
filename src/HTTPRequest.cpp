@@ -194,7 +194,7 @@ std::ostream &operator<<(std::ostream &out, const HTTPRequest &obj)
 	out << "---------------------End--------------------------" << std::endl;
 
 	out << "---------------------Body-------------------------" << std::endl;
-	std::cout << body << std::endl;
+	// std::cout << body << std::endl;
 	out << "---------------------End--------------------------" << std::endl;
 
 	out << "---------------------File-Upload------------------" << std::endl;

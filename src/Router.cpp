@@ -36,6 +36,9 @@ void Router::routeRequest(HTTPRequest &request, HTTPResponse &response)
 	request.setPath(_webRoot);
 
 	std::cout << GREEN << "Routing request to path: " << _webRoot << RESET << std::endl;
+	std::cout << PURPLE << "Request method: " << request.getMethod() << RESET << std::endl;
+
+	std::cout << request << std::endl;
 
 	PathValidation pathResult = pathIsValid(response, request);
 	switch (pathResult)
@@ -48,8 +51,15 @@ void Router::routeRequest(HTTPRequest &request, HTTPResponse &response)
 			cgiHandler.setPollFd(_pollFd);
 			cgiHandler.handleRequest(request, response);
 		}
-		else if (request.getMethod() == "POST")
+		else if (request.getMethod() == "POST" || request.getUploadBoundary() != "")
 		{
+			if (request.getUploadBoundary().empty())
+			{
+				// Is chunked
+				std::cout << PURPLE << "\n\n Handling as chunked upload\n\n" << PURPLE << std::endl;
+			}
+			std::cout << PURPLE << "\n\nHandling as upload\n\n" << PURPLE << std::endl;
+
 			UploadHandler uploadHandler;
 			uploadHandler.handleRequest(request, response);
 		}
@@ -141,6 +151,8 @@ void Router::handleServerBlockError(HTTPRequest &request, HTTPResponse &response
 			return;
 		}
 		staticContentInstance.handleRequest(request, response);
+		std::cout << PURPLE << "handleServerBlockError: STATUS CODE: " << response.getStatusCode() << RESET
+				  << std::endl;
 		response.setStatusCode(errorCode, errorPage[i].second);
 	}
 }

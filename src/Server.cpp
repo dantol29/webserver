@@ -88,18 +88,14 @@ void Server::startPollEventLoop()
 void Server::readFromClient(Connection &conn, size_t &i, Parser &parser, HTTPRequest &request, HTTPResponse &response)
 {
 	(void)i;
-	std::cout << "\033[1;36m"
-			  << "Entering readFromClient"
-			  << "\033[0m" << std::endl;
+	Debug::log("\033[1;33mEntering read from client\033[0m", Debug::OCF);
 	// TODO: change to _areHeadersCopmplete
 	if (!parser.getHeadersComplete())
 	{
-		std::cout << "\033[1;33m"
-				  << "Reading headers"
-				  << "\033[0m" << std::endl;
+		Debug::log("\033[1;33mReading headers\033[0m", Debug::NORMAL);
 		if (!conn.readHeaders(parser))
 		{
-			Debug::log("Error reading headers", Debug::NORMAL);
+			Debug::log("Error reading headers", Debug::OCF);
 			conn.setHasFinishedReading(true);
 			conn.setHasDataToSend(false);
 			conn.setCanBeClosed(true);
@@ -111,7 +107,7 @@ void Server::readFromClient(Connection &conn, size_t &i, Parser &parser, HTTPReq
 			conn.setCanBeClosed(true);
 			conn.setHasFinishedReading(true);
 			conn.setHasDataToSend(true);
-			Debug::log("Error pre-parsing headers", Debug::NORMAL);
+			Debug::log("Error pre-parsing headers", Debug::OCF);
 			return;
 		}
 	}
@@ -128,17 +124,18 @@ void Server::readFromClient(Connection &conn, size_t &i, Parser &parser, HTTPReq
 		conn.setHasFinishedReading(true);
 
 	if (response.getStatusCode() != 0)
-		std::cout << "Error: " << response.getStatusCode() << std::endl;
+		Debug::log(toString(response.getStatusCode()), Debug::NORMAL);
 	if (request.getMethod() == "GET")
-		std::cout << "GET request, no body to read" << std::endl;
+		Debug::log("GET request, no body to read", Debug::NORMAL);
 	else
 	{
 		if (parser.getIsChunked() && !conn.getHasReadSocket())
 		{
-			std::cout << "Chunked body" << std::endl;
+			Debug::log("Chunked body", Debug::NORMAL);
 			if (!conn.readChunkedBody(parser))
 			{
 				// Case of error while reading chunked body
+				Debug::log("Error reading chunked body", Debug::OCF);
 				conn.setCanBeClosed(true);
 				conn.setHasFinishedReading(true);
 				// It could be that we had data that could be sent even if we have an error cause previous data was read
@@ -146,7 +143,7 @@ void Server::readFromClient(Connection &conn, size_t &i, Parser &parser, HTTPReq
 			}
 			conn.setHasReadSocket(true);
 		}
-		else
+		else if (!conn.getHasReadSocket())
 		{
 			Debug::log("\033[1;33mReading body\033[0m", Debug::NORMAL);
 			// TODO: add comments
@@ -158,9 +155,8 @@ void Server::readFromClient(Connection &conn, size_t &i, Parser &parser, HTTPReq
 				conn.setHasDataToSend(true);
 			}
 			else if (!conn.getHasReadSocket() && !conn.readBody(parser, request, response))
-			// else if (request.getMethod() != "GET")
 			{
-				std::cout << "Error reading body" << std::endl;
+				Debug::log("Error reading body", Debug::OCF);
 				conn.setCanBeClosed(true);
 				conn.setHasFinishedReading(true);
 				// Probably hasDataToSend false, because we have an error on reading the body
@@ -170,7 +166,7 @@ void Server::readFromClient(Connection &conn, size_t &i, Parser &parser, HTTPReq
 		}
 		if (!parser.getBodyComplete())
 		{
-			std::cout << "Body still incomplete, exiting readFromClient." << std::endl;
+			Debug::log("Body still incomplete, exiting readFromClient.", Debug::NORMAL);
 			conn.setHasFinishedReading(false);
 			conn.setHasReadSocket(true);
 			return;
@@ -240,6 +236,16 @@ void Server::buildResponse(Connection &conn, size_t &i, HTTPRequest &request, HT
 		response.setErrorResponse(response.getStatusCode());
 		router.handleServerBlockError(request, response, response.getStatusCode());
 		conn.setHasDataToSend(true);
+		//
+		//
+		if (response.getStatusCode() == 0)
+		{
+			std::cout << PURPLE << "No status code" << RESET << std::endl;
+			response.setStatusCode(404, "Not Found");
+			response.setBody("404 Not Found");
+		}
+		//
+		//
 		return;
 	}
 	else
@@ -248,7 +254,6 @@ void Server::buildResponse(Connection &conn, size_t &i, HTTPRequest &request, HT
 		router.setPollFd(&conn.getPollFd());
 		router.routeRequest(request, response);
 	}
-
 	// TODO: check if the listen in the server block is matching port and ip from connection
 	conn.setHasDataToSend(true);
 }
@@ -259,7 +264,8 @@ void Server::writeToClient(Connection &conn, size_t &i, HTTPResponse &response)
 			  << "Entering writeToClient"
 			  << "\033[0m" << std::endl;
 	(void)i;
-	send(conn.getPollFd().fd, response.objToString().c_str(), response.objToString().size(), 0);
+	std::string responseString = response.objToString();
+	send(conn.getPollFd().fd, responseString.c_str(), responseString.size(), 0);
 	// conn.setHasDataToSend(); will not be always false in case of chunked response or keep-alive connection
 	conn.setHasDataToSend(false);
 	conn.setHasFinishedSending(true);
