@@ -226,7 +226,11 @@ void Server::buildResponse(Connection &conn, size_t &i, HTTPRequest &request, HT
 	else
 	{
 		Debug::log("Single server block", Debug::NORMAL);
+		serverBlock = _config.getServerBlocks()[0];
 	}
+
+	std::string root = serverBlock.getRoot();
+	std::cout << RED << "Root: " << root << RESET << std::endl;
 
 	Router router(serverBlock);
 

@@ -134,6 +134,12 @@ void Router::handleServerBlockError(HTTPRequest &request, HTTPResponse &response
 	else
 	{
 		Debug::log("handleServerBlockError: Response set to custom error file", Debug::NORMAL);
+		if (pathIsValid(response, request) == PathInvalid)
+		{
+			std::cout << "handleServerBlockError: Path to custom error file is invalid" << std::endl;
+			staticContentInstance.handleNotFound(response);
+			return;
+		}
 		staticContentInstance.handleRequest(request, response);
 		response.setStatusCode(errorCode, errorPage[i].second);
 	}
@@ -214,8 +220,6 @@ enum PathValidation Router::pathIsValid(HTTPResponse &response, HTTPRequest &req
 	(void)response;
 	struct stat buffer;
 	std::string path = request.getPath();
-	std::cout << "pathIsValid: path: " << path << std::endl;
-	std::cout << "pathIsValid: root: " << _serverBlock.getRoot() << std::endl;
 	if (stat(path.c_str(), &buffer) != 0)
 	{
 		Debug::log("webRoot: " + path, Debug::NORMAL);
