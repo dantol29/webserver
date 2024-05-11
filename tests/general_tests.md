@@ -30,7 +30,7 @@ Run the `create_venv.sh` script to create the virtual environment. This only nee
 Manually activate the virtual environment using the source command. This needs to be done each time you start a new shell session and want to use the virtual environment.
 
 ```bash
-source python_tests/bin/activate
+source tests_venv/bin/activate
 ```
 
 ### Step 3: Install Required Packages
@@ -59,5 +59,7 @@ deactivate
 
 - Ensure each script is executable: `chmod +x script_name.sh`
 - Modify the list of packages in `install_packages.sh` as needed for your projects.
+
 ```
 
+```
