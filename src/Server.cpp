@@ -278,12 +278,25 @@ void Server::loadDefaultConfig()
 
 /* startListening */
 
+std::string normalizeIPAddress(const std::string &ip, bool isIpV6)
+{
+	if (isIpV6)
+	{
+		size_t pos = ip.find("::ffff:");
+		if (pos != std::string::npos)
+			return ip.substr(pos + 7); // Remove the ::ffff:
+		pos = ip.find("::");
+		if (pos != std::string::npos && ip.length() - pos == 7)
+			return ip.substr(pos + 2); // Remove the ::
+	}
+	return ip;
+}
+
 void Server::createServerSockets(std::vector<int> _serverFDs, std::vector<ServerBlock> serverBlocks)
 {
 	std::vector<Listen> allListens;
 	for (std::vector<ServerBlock>::iterator it = serverBlocks.begin(); it != serverBlocks.end(); ++it)
 	{
-		std::vector<Listen> listens = it->getDirectives().getListen();
 		std::vector<Listen> listens = it->getDirectives().getListen();
 		allListens.insert(allListens.end(), listens.begin(), listens.end());
 	}
@@ -291,10 +304,12 @@ void Server::createServerSockets(std::vector<int> _serverFDs, std::vector<Server
 	std::vector<Listen> uniqueListens;
 	for (std::vector<Listen>::iterator it = allListens.begin(); it != allListens.end(); ++it)
 	{
+		std::string normalizedIp = normalizeIPAddress(it->_ip, it->_isIpv6);
 		bool isUnique = true;
 		for (std::vector<Listen>::iterator it2 = uniqueListens.begin(); it2 != uniqueListens.end(); ++it2)
 		{
-			if (it->port == it2->port && it->ip == it2->ip)
+			std::string normalizedIp2 = normalizeIPAddress(it2->_ip, it2->_isIpv6);
+			if (it->_port == it2->_port && normalizedIp == normalizedIp2)
 			{
 				isUnique = false;
 				break;
@@ -303,15 +318,23 @@ void Server::createServerSockets(std::vector<int> _serverFDs, std::vector<Server
 		if (isUnique)
 			uniqueListens.push_back(*it);
 	}
+	for (std::vector<Listen>::iterator it = uniqueListens.begin(); it != uniqueListens.end(); ++it)
+	{
+		int serverFD;
+		if ((serverFD = socket(AF_INET6, SOCK_STREAM, 0)) == 0)
+		{
+			perror("Failed to create server socket");
+			continue; // just to remember that we aren not exiting
+		}
+		int no = 0;
+		if (setsockopt(serverFD, IPPROTO_IPV6, IPV6_V6ONLY, (void *)&no, sizeof(no)) < 0)
+		{
+			perror("setsockopt IPV6_V6ONLY: Protocol not available, continuing without IPV6_V6ONLY");
+			continue; // just to remember that we aren not exiting
+		}
+		_serverFDs.push_back(serverFD);
+	}
 }
-
-// void Server::createServerSocket()
-//{
-//	if ((_serverFD = socket(AF_INET, SOCK_STREAM, 0)) == 0)
-//		perrorAndExit("Failed to create server socket");
-//	// std::cout << "Server socket created" << std::endl;
-//	// std::cout << "Server socket file descriptor: " << _serverFD << std::endl;
-// }
 
 void Server::setReuseAddrAndPort(std::vector<int> _serverFDs)
 {
