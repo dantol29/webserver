@@ -134,7 +134,7 @@ void Parser::parseRequestLine(const char *request, HTTPRequest &req, HTTPRespons
 
 	std::string protocolVersion = extractProtocolVersion(request, i);
 	if (protocolVersion.empty())
-		return (res.setStatusCode(400, "Invalid protocol version"));
+		return (res.setStatusCode(505, "Invalid protocol version"));
 	if (!hasCRLF(request, i, 0))
 		return (res.setStatusCode(400, "No CRLF at the end of request-line"));
 
@@ -247,7 +247,7 @@ bool Parser::hasMandatoryHeaders(HTTPRequest &req, HTTPResponse& res)
 		else if (it->first == "content-type")
 		{
 			if (!isValidContentType(it->second))
-				return (res.setStatusCode(400, "Not supported content-type"), false);
+				return (res.setStatusCode(415, "Not supported content-type"), false);
 			if (it->second.substr(0, 30) == "multipart/form-data; boundary=")
 				req.setUploadBoundary(extractUploadBoundary(it->second));
 			isContentType++;

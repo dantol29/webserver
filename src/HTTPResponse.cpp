@@ -186,15 +186,15 @@ std::string HTTPResponse::getStatusMessage(int statusCode) const
 	case 410:
 		return "Gone";
 	case 411:
-		return "Length Required";
+		return "Length Required"; // ✅in Parser.cpp
 	case 412:
 		return "Precondition Failed";
 	case 413:
 		return "Payload Too Large";
 	case 414:
-		return "URI Too Long";
+		return "URI Too Long"; // not present in NGINX
 	case 415:
-		return "Unsupported Media Type";
+		return "Unsupported Media Type"; // ✅in Parser.cpp
 	case 416:
 		return "Range Not Satisfiable";
 	case 417:
@@ -218,7 +218,7 @@ std::string HTTPResponse::getStatusMessage(int statusCode) const
 	case 429:
 		return "Too Many Requests"; // RFC 6585
 	case 431:
-		return "Request Header Fields Too Large"; // RFC 6585
+		return "Request Header Fields Too Large"; // ✅in Server.cpp, RFC 6585
 	case 451:
 		return "Unavailable For Legal Reasons"; // RFC 7725
 	case 499:
@@ -234,7 +234,7 @@ std::string HTTPResponse::getStatusMessage(int statusCode) const
 	case 504:
 		return "Gateway Timeout";
 	case 505:
-		return "HTTP Version Not Supported";
+		return "HTTP Version Not Supported"; // ✅in Parser.cpp
 	case 506:
 		return "Variant Also Negotiates"; // RFC 2295
 	case 507:
