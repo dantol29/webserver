@@ -108,8 +108,9 @@ std::vector<std::string> Directives::getServerName() const
 {
 	return (_serverName);
 }
-
-std::vector<std::pair<int, std::string>> ServerBlock::getErrorPage() const
+// clang-format off
+std::vector<std::pair<int, std::string> > Directives::getErrorPage() const
+// clang-format on
 {
 	return (_errorPage);
 }
@@ -315,9 +316,11 @@ void Directives::setCgiExt(std::vector<std::string> stringsVector, ServerBlock &
 	}
 	else
 	{
-		if (_locations.back()._cgiExt.size() > 0)
+		// if (_locations.back()._cgiExt.size() > 0)
+		if (block.getLocations().back()._cgiExt.size() > 0)
 			throw("cgi_ext already set");
-		_locations.back()._cgiExt = str;
+		// _locations.back()._cgiExt = str;
+		block.getLocations().back()._cgiExt = stringsVector;
 	}
 }
 
@@ -526,5 +529,6 @@ std::vector<std::string> ServerBlock::transformCgiExt(std::string &str)
 				throw("Invalid CGI extension");
 			newStr.push_back(str);
 		}
-		return (newStr);
 	}
+	return (newStr);
+}

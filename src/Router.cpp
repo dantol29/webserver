@@ -31,7 +31,8 @@ Router::~Router()
 void Router::routeRequest(HTTPRequest &request, HTTPResponse &response)
 {
 	Debug::log("Routing Request: host = " + request.getSingleHeader("host").second, Debug::NORMAL);
-	std::string _webRoot = _serverBlock.getRoot() + request.getSingleHeader("host").second;
+	// std::string _webRoot = _serverBlock.getRoot() + request.getSingleHeader("host").second;
+	std::string _webRoot = _serverBlock.getDirectives().getRoot() + request.getSingleHeader("host").second;
 	_webRoot += request.getRequestTarget();
 	request.setPath(_webRoot);
 
@@ -107,7 +108,8 @@ std::string Router::getFileExtension(const std::string &fileName)
 void Router::handleServerBlockError(HTTPRequest &request, HTTPResponse &response, int errorCode)
 {
 	// clang-format off
-	std::vector<std::pair<int, std::string> > errorPage = _serverBlock.getErrorPage();
+	// std::vector<std::pair<int, std::string> > errorPage = _serverBlock.getErrorPage();
+	std::vector<std::pair<int, std::string> > errorPage = _serverBlock.getDirectives().getErrorPage();
 	// clang-format on
 	// std::string errorPath;
 	size_t i = 0;
@@ -119,7 +121,8 @@ void Router::handleServerBlockError(HTTPRequest &request, HTTPResponse &response
 			Debug::log("Path requested: " + request.getPath(), Debug::NORMAL);
 			Debug::log("Path to error: " + errorPage[i].second, Debug::NORMAL);
 			// setting the path to the custom error page
-			request.setPath(_serverBlock.getRoot() + request.getHost() + errorPage[i].second);
+			// request.setPath(_serverBlock.getRoot() + request.getHost() + errorPage[i].second);
+			request.setPath(_serverBlock.getDirectives().getRoot() + request.getHost() + errorPage[i].second);
 			// TODO: move here what is todo below
 			//  handle here a custom error page
 			break;
@@ -245,10 +248,12 @@ enum PathValidation Router::pathIsValid(HTTPResponse &response, HTTPRequest &req
 		{
 			path += "/";
 		}
-		if (_serverBlock.getIndex().empty())
+		// if (_serverBlock.getIndex().empty())
+		if (_serverBlock.getDirectives().getIndex().empty())
 		{
 			Debug::log("User did not provided any index", Debug::NORMAL);
-			if (_serverBlock.getAutoIndex())
+			// if (_serverBlock.getAutoIndex())
+			if (_serverBlock.getDirectives().getAutoIndex())
 			{
 				Debug::log("pathIsValid: Autoindex is on", Debug::NORMAL);
 				generateDirectoryListing(response, path, request.getRequestTarget());
@@ -265,9 +270,11 @@ enum PathValidation Router::pathIsValid(HTTPResponse &response, HTTPRequest &req
 		}
 		else // user provided an index
 		{
-			Debug::log("pathIsValid: Index: " + _serverBlock.getIndex()[0], Debug::NORMAL);
+			// Debug::log("pathIsValid: Index: " + _serverBlock.getIndex()[0], Debug::NORMAL);
+			Debug::log("pathIsValid: Index: " + _serverBlock.getDirectives().getIndex()[0], Debug::NORMAL);
 			// TODO: implement several indexes
-			std::string index = _serverBlock.getIndex()[0];
+			// std::string index = _serverBlock.getIndex()[0];
+			std::string index = _serverBlock.getDirectives().getIndex()[0];
 			Debug::log("pathIsValid: Index: " + index, Debug::NORMAL);
 			path += index;
 			Debug::log("pathIsValid: path: " + path, Debug::NORMAL);

@@ -221,7 +221,8 @@ void Server::buildResponse(Connection &conn, size_t &i, HTTPRequest &request, HT
 		for (size_t i = 0; i < _config.getServerBlocks().size(); i++)
 		{
 			// why getServerName returns a vector ?
-			std::string serverName = _config.getServerBlocks()[i].getServerName()[0];
+			// std::string serverName = _config.getServerBlocks()[i].getServerName()[0];
+			std::string serverName = _config.getServerBlocks()[i].getDirectives().getServerName()[0];
 			std::cout << RED << "Checking server name: " << serverName << RESET << std::endl;
 			std::cout << "Request host: " << request.getSingleHeader("host").second << std::endl;
 			if (serverName == request.getSingleHeader("host").second)
@@ -250,7 +251,7 @@ void Server::buildResponse(Connection &conn, size_t &i, HTTPRequest &request, HT
 		serverBlock = _config.getServerBlocks()[0];
 	}
 
-	std::string root = serverBlock.getRoot();
+	std::string root = serverBlock.getDirectives().getRoot();
 	std::cout << RED << "Root: " << root << RESET << std::endl;
 
 	Router router(serverBlock);
