@@ -53,6 +53,7 @@ class Router
 	generateDirectoryListing(HTTPResponse Response, const std::string &directoryPath, const std::string &requestedPath);
 	bool isCGI(const HTTPRequest &request);
 	CGIHandler _cgiHandler;
+	void adaptRequestForFirefox(HTTPRequest &request);
 };
 
 #endif
