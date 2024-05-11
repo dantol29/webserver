@@ -12,11 +12,13 @@ Config::Config(const char *file)
 		configFile.open(file);
 	else
 		configFile.open(CONFIG_FILE_DEFAULT_PATH);
-	
-	try {
+
+	try
+	{
 		parse(configFile);
 	}
-	catch (const char* error){
+	catch (const char *error)
+	{
 		_errorMessage = error;
 	}
 	if (!_errorMessage.empty())
@@ -151,10 +153,10 @@ bool Config::saveLocationDirective(const std::string &line, std::string &key, st
 	return (true);
 }
 
-bool	Config::parseLocation(std::string& line, std::ifstream& config)
+bool Config::parseLocation(std::string &line, std::ifstream &config)
 {
-	std::string	key;
-	std::string	value;
+	std::string key;
+	std::string value;
 
 	_tmpServerBlock.addDirective("path", _tmpPath, true);
 	while (std::getline(config, line))
@@ -247,12 +249,12 @@ std::ostream &operator<<(std::ostream &out, const Config &a)
 		std::vector<Directives> loc = it->getLocations();
 
 		std::cout << "------------------Server-Block------------------------" << std::endl;
-		
+
 		for (unsigned int i = 0; i < var._listen.size(); ++i)
 		{
 			std::cout << "listen: " << var._listen[i]._ip << std::endl;
 			std::cout << "port: " << var._listen[i]._port << std::endl;
-			std::cout << "isIpv6: " << var._listen[i].isIpv6 << std::endl;
+			std::cout << "isIpv6: " << var._listen[i]._isIpv6 << std::endl;
 		}
 		std::cout << "server_name: ";
 		for (unsigned int i = 0; i < var._serverName.size(); ++i)
@@ -278,7 +280,7 @@ std::ostream &operator<<(std::ostream &out, const Config &a)
 			{
 				std::cout << "ip: " << loc[i]._listen[i]._ip << std::endl;
 				std::cout << "port: " << loc[i]._listen[i]._port << std::endl;
-				std::cout << "isIpv6: " << loc[i]._listen[i].isIpv6 << std::endl;
+				std::cout << "isIpv6: " << loc[i]._listen[i]._isIpv6 << std::endl;
 			}
 			std::cout << "server_name: ";
 			for (unsigned int i = 0; i < loc[i]._serverName.size(); ++i)

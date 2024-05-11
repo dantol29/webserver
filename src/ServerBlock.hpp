@@ -10,6 +10,7 @@
 // 8. allow_methods, 9. alias, 10. cgi_path, 11. cgi_ext
 // ---------------------------------
 
+class ServerBlock; // forward declaration
 struct Listen
 {
 	std::string _ip;

@@ -20,7 +20,8 @@ SRCS = src/main.cpp \
 	src/UploadHandler.cpp \
 	src/Debug.cpp \
 	src/utils.cpp \
-	src/ServerBlock.cpp
+	src/ServerBlock.cpp \
+	src/ServerSocket.cpp \
 OBJDIR = obj
 OBJS = $(SRCS:%.cpp=$(OBJDIR)/%.o)
 

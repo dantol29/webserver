@@ -25,8 +25,10 @@ Server::~Server()
 
 void Server::startListening()
 {
-	// createServerSocket();
-	createServerSockets(_serverFDs, _config.getServerBlocks());
+	// We need this extra line to get serverBlocks cause the argument in createServerSockets is a reference
+	// i.e. we can't call getServerBlocks() directly in the function call
+	std::vector<ServerBlock> serverBlocks = _config.getServerBlocks();
+	createServerSockets(serverBlocks);
 	// setReuseAddrAndPort();
 	setReuseAddrAndPort(_serverFDs);
 	// checkSocketOptions();
@@ -292,7 +294,7 @@ std::string normalizeIPAddress(const std::string &ip, bool isIpV6)
 	return ip;
 }
 
-void Server::createServerSockets(std::vector<int> _serverFDs, std::vector<ServerBlock> serverBlocks)
+void Server::createServerSockets(std::vector<ServerBlock> &serverBlocks)
 {
 	std::vector<Listen> allListens;
 	for (std::vector<ServerBlock>::iterator it = serverBlocks.begin(); it != serverBlocks.end(); ++it)
@@ -321,7 +323,8 @@ void Server::createServerSockets(std::vector<int> _serverFDs, std::vector<Server
 	for (std::vector<Listen>::iterator it = uniqueListens.begin(); it != uniqueListens.end(); ++it)
 	{
 		int serverFD;
-		if ((serverFD = socket(AF_INET6, SOCK_STREAM, 0)) == 0)
+
+		if ((serverFD = socket(AF_INET6, SOCK_STREAM, 0)) < 0)
 		{
 			perror("Failed to create server socket");
 			continue; // just to remember that we aren not exiting
@@ -332,18 +335,19 @@ void Server::createServerSockets(std::vector<int> _serverFDs, std::vector<Server
 			perror("setsockopt IPV6_V6ONLY: Protocol not available, continuing without IPV6_V6ONLY");
 			continue; // just to remember that we aren not exiting
 		}
-		_serverFDs.push_back(serverFD);
+		ServerSocket serverSocket(serverFD, *it);
+		_serverSockets.push_back(serverSocket);
 	}
 }
 
-void Server::setReuseAddrAndPort(std::vector<int> _serverFDs)
+void Server::setReuseAddrAndPort(std::vector<ServerSocket> &serverSockets)
 {
 	int opt = 1;
-	for (std::vector<int>::iterator it = _serverFDs.begin(); it != _serverFDs.end(); ++it)
+	for (std::vector<ServerSocket>::iterator it = serverSockets.begin(); it != serverSockets.end(); ++it)
 	{
-		if (setsockopt(*it, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)))
+		if (setsockopt(it->getServerFD(), SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)))
 			perror("setsockopt SO_REUSEADDR: Protocol not available, continuing without SO_REUSEADDR");
-		if (setsockopt(*it, SOL_SOCKET, SO_REUSEPORT, &opt, sizeof(opt)))
+		if (setsockopt(it->getServerFD(), SOL_SOCKET, SO_REUSEPORT, &opt, sizeof(opt)))
 			perror("setsockopt SO_REUSEPORT: Protocol not available, continuing without SO_REUSEPORT");
 	}
 	// std::cout << "SO_REUSEADDR and SO_REUSEPORT set" << std::endl;
