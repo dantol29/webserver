@@ -75,6 +75,8 @@ void ServerSocket::prepareServerSocketAddr()
 		std::cerr << "getaddrinfo: res is NULL" << std::endl;
 		return;
 	}
+	std::cout << "Before memcpy, port: " << ntohs(((struct sockaddr_in *)res->ai_addr)->sin_port) << std::endl;
 	memcpy(&_serverSocketAddr, res->ai_addr, res->ai_addrlen);
+	std::cout << "After memcpy, port: " << ntohs(((struct sockaddr_in *)&_serverSocketAddr)->sin_port) << std::endl;
 	freeaddrinfo(res);
 }

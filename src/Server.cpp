@@ -276,9 +276,7 @@ void Server::buildResponse(Connection &conn, size_t &i, HTTPRequest &request, HT
 
 void Server::writeToClient(Connection &conn, size_t &i, HTTPResponse &response)
 {
-	std::cout << "\033[1;36m"
-			  << "Entering writeToClient"
-			  << "\033[0m" << std::endl;
+	std::cout << "\033[1;36m" << "Entering writeToClient" << "\033[0m" << std::endl;
 	(void)i;
 	std::string responseString = response.objToString();
 	send(conn.getPollFd().fd, responseString.c_str(), responseString.size(), 0);
@@ -291,9 +289,7 @@ void Server::writeToClient(Connection &conn, size_t &i, HTTPResponse &response)
 
 void Server::closeClientConnection(Connection &conn, size_t &i)
 {
-	std::cout << "\033[1;36m"
-			  << "Entering closeClientConnection"
-			  << "\033[0m" << std::endl;
+	std::cout << "\033[1;36m" << "Entering closeClientConnection" << "\033[0m" << std::endl;
 	// if (response.getStatusCode() != 0)
 	// if (conn.getResponse().getStatusCode() != 0 && conn.getResponse().getStatusCode() != 499)
 	// {
@@ -433,16 +429,36 @@ void Server::bindToPort()
 	{
 		it->prepareServerSocketAddr();
 
+		struct sockaddr_storage serverSocketAddr = it->getServerSocketAddr();
+		const sockaddr *serverSocketAddrPtr = reinterpret_cast<const sockaddr *>(&serverSocketAddr);
+
+		// Print the sockaddr and address family
+		const sockaddr_in *debugAddrIn = reinterpret_cast<const sockaddr_in *>(serverSocketAddrPtr);
+		std::cout << "IP Address: " << inet_ntoa(debugAddrIn->sin_addr) << std::endl;
+		std::cout << "Port: " << ntohs(debugAddrIn->sin_port) << std::endl;
+		std::cout << "Address Family: " << debugAddrIn->sin_family << std::endl;
+
 		// Retrieve the prepared socket address
 		// We retrieve the sockaddr_storage struct from the ServerSocket object
-		struct sockaddr_storage serverSocketAddr = it->getServerSocketAddr();
+		serverSocketAddr = it->getServerSocketAddr();
 		// We cast the sockaddr_storage struct to sockaddr struct, cause bind() needs a sockaddr struct
-		const sockaddr *serverSocketAddrPtr = reinterpret_cast<const sockaddr *>(&serverSocketAddr);
-		if (bind(it->getServerFD(), serverSocketAddrPtr, sizeof(serverSocketAddr)) < 0)
+		serverSocketAddrPtr = reinterpret_cast<const sockaddr *>(&serverSocketAddr);
+		std::cout << "serverFd: " << it->getServerFD() << std::endl;
+		std::cout << "serverSocketAddrPtr: " << serverSocketAddrPtr << std::endl;
+		std::cout << "serverSocketAddr: " << &serverSocketAddr << std::endl;
+		std::cout << "serverSocketAddr size: " << sizeof(serverSocketAddr) << std::endl;
+		int bindResult = bind(it->getServerFD(), serverSocketAddrPtr, sizeof(serverSocketAddr));
+		std::cout << "Bind result: " << bindResult << std::endl;
+		if (bindResult < 0)
 		{
 			perror("In bind");
 			continue; // just to remember that we aren not exiting
 		}
+		else
+		{
+			std::cout << "Server socket binded on port " << ntohs(it->getListen()._port) << std::endl;
+		}
+		// if (bind(it->getServerFD(), serverSocketAddrPtr, sizeof(serverSocketAddr)) < 0)
 	}
 }
 
