@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Check if the required packages are installed, if not, install them
-required_packages=(aiohttp asyncio)
+required_packages=(aiohttp asyncio aiofiles)
 for package in "${required_packages[@]}"; do
     pip show $package > /dev/null 2>&1
     if [ $? -ne 0 ]; then
