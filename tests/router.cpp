@@ -181,6 +181,19 @@ void salad(sockaddr_in serverAddress)
 	sendData(tests, serverAddress);
 }
 
+void cgi(sockaddr_in serverAdress)
+{
+	std::vector<HTTPTest> tests = {
+		// HTTPTest("GET /cgi-bin/hello.cgi HTTP/1.1\r\nHost: www.saladbook.xyz\r\n\r\n", "200"),
+		// HTTPTest("GET /cgi-bin/hello.cgi HTTP/1.1\r\nHost: www.saladbook.xyz\r\n\r\n", "200"),
+		// HTTPTest("GET /cgi-bin/hello.cgi HTTP/1.1\r\nHost: www.saladbook.xyz\r\n\r\n", "200"),
+		// HTTPTest("GET /cgi-bin/hello.cgi HTTP/1.1\r\nHost: www.saladbook.xyz\r\n\r\n", "200"),
+		// HTTPTest("GET /cgi-bin/hello.cgi HTTP/1.1\r\nHost: www.saladbook.xyz\r\n\r\n", "200"),
+		// HTTPTest("GET /cgi-bin/hello.cgi HTTP/1.1\r\nHost: www.saladbook.xyz\r\n\r\n", "200"),
+	};
+	sendData(tests, serverAdress);
+}
+
 int main(void)
 {
 	sockaddr_in serverAddress;
@@ -188,7 +201,9 @@ int main(void)
 	serverAddress.sin_port = htons(PORT);
 	serverAddress.sin_addr.s_addr = INADDR_ANY;
 
-	salad(serverAddress);
+	// NOTE: when you run a test, configfile and dir structure should fit
+	salad(serverAddress); //
+	cgi(serverAddress);
 
 	if (is_error)
 		exit(1);

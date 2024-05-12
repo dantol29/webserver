@@ -54,6 +54,7 @@ std::vector<std::string> MetaVariables::getForExecve() const
 std::pair<std::string, std::string> MetaVariables::separatePathAndInfo(const std::string &requestTarget) const
 {
 	const char *extensions[] = {".cgi", ".pl", ".py", ".php"};
+
 	const size_t extCount = sizeof(extensions) / sizeof(extensions[0]);
 
 	std::string scriptPath;

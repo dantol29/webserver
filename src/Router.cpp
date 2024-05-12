@@ -180,8 +180,19 @@ void Router::handleServerBlockError(HTTPRequest &request, HTTPResponse &response
 bool Router::isCGI(const HTTPRequest &request)
 {
 	// TODO: check against config file, not this hardcoded version
-	std::string fileExtension = getFileExtension(request.getRequestTarget());
-	return (fileExtension == "cgi" || fileExtension == "pl" || fileExtension == "py" || fileExtension == "php");
+	std::vector<std::string> cgiExtensions = _serverBlock.getCgiExt();
+	if (!cgiExtensions.empty())
+	{
+		std::string fileExtension = getFileExtension(request.getRequestTarget());
+		for (size_t i = 0; i < cgiExtensions.size(); i++)
+		{
+			if (cgiExtensions[i] == fileExtension)
+			{
+				return true;
+			}
+		}
+	}
+	return false;
 }
 
 void Router::splitTarget(const std::string &target)
