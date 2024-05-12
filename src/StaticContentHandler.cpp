@@ -52,22 +52,9 @@ void StaticContentHandler::handleRequest(const HTTPRequest &request, HTTPRespons
 {
 	std::string requestTarget = request.getRequestTarget();
 	std::string webRoot = "var/www";
-	// std::cout << "path in handleRequest: " << webRoot << std::endl;
 	std::string host = request.getHost();
-	// std::cout << "host in handleRequest: " << host << std::endl;
 
-	std::string path;
-
-	// for ease of use during deployment
-	// this if/else allows to reach target with tester or browser
-	if (host == "localhost:8080")
-		path = webRoot + requestTarget;
-	else
-		path = webRoot + "/" + host + requestTarget;
-
-	// std::string path = webRoot + "/" + host + requestTarget;
-
-	std::cout << std::endl << "path : " << path << std::endl << std::endl;
+	std::string path = request.getPath();
 	if (requestTarget == "/" || requestTarget == "")
 		requestTarget = "/index.html";
 	// TODO: consider streaming the file instead of loading it all in memory for large files
@@ -75,21 +62,16 @@ void StaticContentHandler::handleRequest(const HTTPRequest &request, HTTPRespons
 	{
 		path += "/index.html";
 	}
-	std::cout << "path : " << path << std::endl;
 	std::ifstream file(path.c_str());
 	if (!file)
 	{
-		std::cerr << "Error opening file: " << path << std::endl;
+		Debug::log(" StaticContentHandler Error opening file: " + path, Debug::NORMAL);
 		response.setStatusCode(404, "Not Found");
 		response.setBody("404 Not Found");
 		return;
 	}
-	std::cout << "after ifstream file" << std::endl;
 	std::string body((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
-	std::cout << "after string body" << std::endl;
-
-	// std::cout << "body : " << body << std::endl;
-
+	// TODO : take code arg if we serve an error page
 	response.setStatusCode(200, "OK");
 	response.setBody(body);
 	response.setHeader("Content-Type", getMimeType(path));
@@ -108,7 +90,8 @@ void StaticContentHandler::handleRequest(const HTTPRequest &request, HTTPRespons
 
 void StaticContentHandler::handleNotFound(HTTPResponse &response)
 {
-	std::ifstream file("errors/404.html");
+	Debug::log("StaticContentHandler: sending default 404 Not Found", Debug::NORMAL);
+	std::ifstream file("html/errors/404.html");
 	std::stringstream buffer;
 	buffer << file.rdbuf();
 	std::string fileContents = buffer.str();
@@ -116,6 +99,6 @@ void StaticContentHandler::handleNotFound(HTTPResponse &response)
 	response.setBody(fileContents);
 	response.setHeader("Content-Type", "text/html");
 	response.setHeader("Content-Length", toString(fileContents.length()));
-	response.setStatusCode(404, "");
+	response.setStatusCode(400, "");
 	return;
 }

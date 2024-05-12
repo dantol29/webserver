@@ -9,6 +9,14 @@
 // 4. index, 5. root, 6. client_max_body_size, 7. autoindex, 
 // 8. allow_methods, 9. alias, 10. cgi_path, 11. cgi_ext
 // ---------------------------------
+
+struct Listen
+{
+	std::string _ip;
+	int _port;
+	bool isIpv6;
+};
+
 struct Directives
 {
 	Directives()
@@ -27,7 +35,7 @@ struct Directives
 		_path = "";
 	
 	}
-	std::vector<std::string> _listen;
+	std::vector<Listen> _listen;
 	std::vector<std::string> _serverName;
 	std::vector<std::pair<int, std::string> >_errorPage;
 	std::vector<std::string> _index;
@@ -54,7 +62,7 @@ class ServerBlock
 		// GETTERS
 		Directives getDirectives() const; // variables outside of locations
 		std::vector<Directives> getLocations() const; // location / {} blocks
-		std::vector<std::string> getListen() const;
+		std::vector<Listen> getListen() const;
 		std::vector<std::string> getServerName() const;
 		std::vector<std::pair<int, std::string> > getErrorPage() const;
 		std::vector<std::string> getIndex() const;
@@ -67,7 +75,7 @@ class ServerBlock
 		std::string getCgiPath() const;
 
 		// SETTERS
-		void setListen(std::vector<std::string> str, bool isLocation);
+		void setListen(Listen str, bool isLocation);
 		void setServerName(std::vector<std::string> str, bool isLocation);
 		void setErrorPage(std::pair<int, std::string> str, bool isLocation);
 		void setIndex(std::vector<std::string> str, bool isLocation);
@@ -87,12 +95,14 @@ class ServerBlock
 		std::vector<Directives> _locations;
 		
 		// TRANSFORMERS
-		std::vector<std::string> transformServerListen(std::string& str);
+		void transformServerListen(std::string& str, bool isLocation);
 		std::vector<std::string> transformServerName(std::string& str);
 		std::pair<int, std::string> transformErrorPage(std::string& str);
 		std::vector<std::string> transformIndex(std::string& str);
 		std::vector<std::string> transformAllowedMethods(std::string& str);
 		std::vector<std::string> transformCgiExt(std::string& str);
+
+		Listen makeListenStruct(std::string& newStr);
 		
 
 };
