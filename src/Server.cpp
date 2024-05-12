@@ -227,7 +227,7 @@ void Server::buildResponse(Connection &conn, size_t &i, HTTPRequest &request, HT
 			serverBlock = _config.getServerBlocks()[i];
 			break;
 		}
-		else
+		else if (i == _config.getServerBlocks().size() - 1)
 		{
 			static StaticContentHandler staticContentInstance;
 			// if error already occurred, we don't want to overwrite it
