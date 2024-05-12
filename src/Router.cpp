@@ -48,7 +48,7 @@ void Router::adaptRequestForFirefox(HTTPRequest &request)
 	request.setPath(_webRoot);
 }
 
-void Router::routeRequest(HTTPRequest &request, HTTPResponse &response)
+void Router::routeRequest(Connection &conn, HTTPRequest &request, HTTPResponse &response)
 {
 	Debug::log("Routing Request: host = " + request.getSingleHeader("host").second, Debug::NORMAL);
 	std::string _webRoot = _serverBlock.getRoot() + request.getSingleHeader("host").second;
@@ -69,7 +69,7 @@ void Router::routeRequest(HTTPRequest &request, HTTPResponse &response)
 	case PathValid:
 		if (isCGI(request))
 		{
-			CGIHandler cgiHandler;
+			CGIHandler cgiHandler(&conn);
 			cgiHandler.setFDsRef(_FDsRef);
 			cgiHandler.setPollFd(_pollFd);
 			cgiHandler.handleRequest(request, response);

@@ -9,6 +9,7 @@
 #include "ServerBlock.hpp"
 #include "Debug.hpp"
 #include "sys/stat.h"
+#include "Connection.hpp"
 #include <dirent.h> // POSIX lib for DIR
 
 struct resourcePath
@@ -31,7 +32,7 @@ class Router
 	Router(ServerBlock serverBlock);
 	~Router();
 	Router &operator=(const Router &other);
-	void routeRequest(HTTPRequest &request, HTTPResponse &response);
+	void routeRequest(Connection &conn, HTTPRequest &request, HTTPResponse &response);
 
 	void splitTarget(const std::string &target);
 	bool isDynamicRequest(const HTTPRequest &request);

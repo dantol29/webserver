@@ -8,11 +8,18 @@ CGIHandler::~CGIHandler()
 {
 }
 
+CGIHandler::CGIHandler(Connection *conn)
+{
+	_conn = conn;
+}
+
 CGIHandler &CGIHandler::operator=(const CGIHandler &other)
 {
 	if (this != &other)
 	{
-		AResponseHandler::operator=(other);
+		_conn = other._conn;
+		_FDsRef = other._FDsRef;
+		_pollFd = other._pollFd;
 	}
 	return *this;
 }

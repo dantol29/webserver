@@ -4,6 +4,7 @@
 #include "AResponseHandler.hpp"
 #include "HTTPRequest.hpp"
 #include "MetaVariables.hpp"
+#include "Connection.hpp"
 #include <unistd.h>
 #include <sys/wait.h>
 #include <fcntl.h>
@@ -16,6 +17,8 @@ class CGIHandler : public AResponseHandler
   public:
 	CGIHandler();
 	virtual ~CGIHandler();
+	CGIHandler(Connection *conn);
+	CGIHandler &operator=(CGIHandler &other);
 	void handleRequest(const HTTPRequest &request, HTTPResponse &response);
 	std::vector<std::string> createArgvForExecve(const MetaVariables &env);
 	std::vector<char *> convertToCStringArray(const std::vector<std::string> &input);
@@ -28,6 +31,7 @@ class CGIHandler : public AResponseHandler
 	CGIHandler(const CGIHandler &other);
 	CGIHandler &operator=(const CGIHandler &other);
 	void closeAllSocketFDs();
+	Connection *_conn;
 	std::vector<pollfd> *_FDsRef;
 	struct pollfd *_pollFd;
 };
