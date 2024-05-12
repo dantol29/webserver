@@ -118,9 +118,6 @@ void Server::readFromClient(Connection &conn, size_t &i, Parser &parser, HTTPReq
 	}
 	if (parser.getHeadersComplete() && !parser.getHeadersAreParsed())
 		parser.parseRequestLineAndHeaders(parser.getHeadersBuffer().c_str(), request, response);
-
-	std::cout << PURPLE << "Request: " << RESET << std::endl;
-	std::cout << request << std::endl;
 	if (response.getStatusCode() != 0)
 	{
 		conn.setCanBeClosed(false);

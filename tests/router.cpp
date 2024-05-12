@@ -191,7 +191,7 @@ void cgi(sockaddr_in serverAdress)
 		// HTTPTest("GET /cgi-bin/hello.cgi HTTP/1.1\r\nHost: www.saladbook.xyz\r\n\r\n", "200"),
 		// HTTPTest("GET /cgi-bin/hello.cgi HTTP/1.1\r\nHost: www.saladbook.xyz\r\n\r\n", "200"),
 		// HTTPTest("GET / HTTP/1.1\r\nHost: www.example.com\r\n\r\n", "200"),
-		HTTPTest("GET /cgi-bin/hello.cgi HTTP/1.1\r\nHost: www.saladbook.xyz\r\n\r\n", "200"),
+		HTTPTest("GET /cgi-bin/hello.cgi HTTP/1.1\r\nHost: www.example.com\r\n\r\n", "200"),
 
 		// HTTPTest("GET /story/our_story.html HTTP/1.1\r\nHost: www.saladbook.xyz\r\n\r\n", "200"),
 		// HTTPTest("GET / HTTP/1.1\r\nHost: saladbook.xyz\r\n\r\n", "404"),
