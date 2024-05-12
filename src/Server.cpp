@@ -287,6 +287,12 @@ void Server::writeToClient(Connection &conn, size_t &i, HTTPResponse &response)
 	{
 		tmpBufferSize = conn.getResponseString().size();
 		Debug::log("Last part of the response", Debug::NORMAL);
+		if (response.getStatusCode() > 299)
+			std::cout << RED;
+		else
+			std::cout << GREEN;
+		std::cout << "HTTP/1.1 " << response.getStatusCode() << std::endl;
+		std::cout << RESET;
 		isLastSend = true;
 	}
 
@@ -469,8 +475,8 @@ void Server::acceptNewConnection(Connection &conn)
 		/* start together */
 		_FDs.push_back(newSocketPoll);
 		_connections.push_back(newConnection);
-		std::cout << newConnection.getHasFinishedReading() << std::endl;
-		std::cout << _connections.back().getHasFinishedReading() << std::endl;
+		//std::cout << newConnection.getHasFinishedReading() << std::endl;
+		//std::cout << _connections.back().getHasFinishedReading() << std::endl;
 		/* end together */
 		if (VERBOSE)
 		{
