@@ -3,6 +3,7 @@
 
 #include "webserv.hpp"
 #include "Debug.hpp"
+#include "Listen.hpp"
 
 // a list of all accepted variables
 // ---------------------------------
@@ -12,131 +13,6 @@
 // ---------------------------------
 
 class ServerBlock; // forward declaration
-struct Listen
-{
-	std::string _ip;
-	int _port;
-	bool _isIpv6;
-
-	Listen()
-	{
-		_ip = "";
-		_port = 0;
-		_isIpv6 = false;
-		Debug::log("Listen default constructor called", Debug::OCF);
-	}
-
-	Listen(std::string ip, int port, bool ipv6)
-	{
-		_ip = ip;
-		_port = port;
-		_isIpv6 = ipv6;
-		Debug::log("Listen param (ip, port, ipv6) constructor called", Debug::OCF);
-	}
-
-	Listen(std::string str)
-	{
-		std::string ip;
-		int port;
-		std::string portStr;
-		bool isIpAndPort = false;
-		struct addrinfo hints;
-		struct addrinfo *res;
-
-		Debug::log("Listen param (str) constructor called", Debug::OCF);
-
-		_isIpv6 = false;
-		memset(&hints, 0, sizeof(hints));
-		hints.ai_family = AF_UNSPEC;	 // IPv4 or IPv6
-		hints.ai_socktype = SOCK_STREAM; // TCP stream sockets
-
-		// If IPv6:port or [ip]:port format
-		if (str[0] == '[')
-			str.erase(0, 1);
-		if (str.find(']') != std::string::npos)
-			str.replace(str.find(']'), 1, "");
-
-		// (IPv6:port) or (IPv6) or (IPv4) or (port)
-		if (getaddrinfo(str.c_str(), NULL, &hints, &res) == 0)
-		{
-			freeaddrinfo(res);
-			portStr = str;
-			// (IPv6:port)
-			if (str.find_last_of(':') != std::string::npos)
-			{
-				portStr = str.substr(str.find_last_of(':') + 1);
-				isIpAndPort = true;
-			}
-
-			port = strToInt(portStr);
-			if (port >= 1 && port <= 65535)
-			{
-				_port = port;
-				if (!isIpAndPort)
-				{
-					_ip = "Any";
-					return;
-				}
-			}
-			// is incorrect integer
-			else if ((port < 1 || port > 65535) && port != -1)
-				throw("Invalid port number");
-
-			ip = str;
-			// (IPv6:port) or (IPv6)
-			if (isIpAndPort)
-				ip = str.substr(0, str.find_last_of(':'));
-			_ip = ip;
-			_isIpv6 = true;
-		}
-		// (IPv4:port)
-		else
-		{
-			ip = str.substr(0, str.find_last_of(':'));
-			portStr = str.substr(str.find_last_of(':') + 1);
-			port = strToInt(portStr);
-			if (port < 1 || port > 65535)
-				throw("Invalid port");
-			_ip = ip;
-
-			if (getaddrinfo(ip.c_str(), NULL, &hints, &res) != 0)
-				throw("Invalid ip");
-			freeaddrinfo(res);
-			_port = port;
-		}
-		if (_ip.empty())
-			_ip = "Any";
-		if (_port == 0)
-			_port = 0;
-
-		return;
-	}
-
-	Listen(const Listen &obj)
-	{
-		_ip = obj._ip;
-		_port = obj._port;
-		_isIpv6 = obj._isIpv6;
-		Debug::log("Listen copy constructor called", Debug::OCF);
-	}
-
-	Listen &operator=(const Listen &obj)
-	{
-		_ip = obj._ip;
-		_port = obj._port;
-		_isIpv6 = obj._isIpv6;
-		Debug::log("Listen assignment operator called", Debug::OCF);
-		return *this;
-	}
-};
-
-// Overload the << operator outside of the Listen struct
-// The inline keyword is used to avoid multiple definitions of the operator
-inline std::ostream &operator<<(std::ostream &os, const Listen &l)
-{
-	os << "IP: " << l._ip << ", Port: " << l._port << ", IPv6: " << (l._isIpv6 ? "Yes" : "No");
-	return os;
-}
 
 struct Directives
 {

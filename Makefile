@@ -21,7 +21,8 @@ SRCS = src/main.cpp \
 	src/Debug.cpp \
 	src/utils.cpp \
 	src/ServerBlock.cpp \
-	src/ServerSocket.cpp 
+	src/ServerSocket.cpp \
+	src/Listen.cpp 
 OBJDIR = obj
 OBJS = $(SRCS:%.cpp=$(OBJDIR)/%.o)
 
