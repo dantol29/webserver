@@ -10,7 +10,7 @@
 #include "Debug.hpp"
 #include "sys/stat.h"
 #include "Connection.hpp"
-#include <dirent.h> // POSIX lib for DIR
+#include <dirent.h>
 
 struct resourcePath
 {

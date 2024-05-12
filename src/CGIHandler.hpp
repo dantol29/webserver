@@ -4,13 +4,14 @@
 #include "AResponseHandler.hpp"
 #include "HTTPRequest.hpp"
 #include "MetaVariables.hpp"
-#include "Connection.hpp"
 #include <unistd.h>
 #include <sys/wait.h>
 #include <fcntl.h>
 #include <vector>
 #include <cstring>
 #include <poll.h>
+
+class Connection; // Forward declaration for circular dependency
 
 class CGIHandler : public AResponseHandler
 {

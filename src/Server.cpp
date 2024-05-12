@@ -30,6 +30,22 @@ void Server::startListening()
 	listen();
 }
 
+void CGIMonitor(Connection &conn)
+{
+	(void)conn;
+
+	int status;
+	waitpid(-1, &status, WNOHANG);
+	if (WIFEXITED(status)) // returned pid of the child process that has exited
+	{
+		std::cout << "Child exited normally with status: " << WEXITSTATUS(status) << std::endl;
+	}
+	else if (WIFSIGNALED(status)) // returned 0 : no child has exited, continue executing without blocking.
+	{
+		std::cout << "Child exited due to signal: " << WTERMSIG(status) << std::endl;
+	}
+}
+
 void Server::startPollEventLoop()
 {
 	addServerSocketPollFdToVectors();
@@ -69,6 +85,7 @@ void Server::startPollEventLoop()
 										 _connections[i].getResponse());
 						if (_connections[i].getHasFinishedReading() && _connections[i].getHasDataToSend())
 							_FDs[i].events = POLLOUT;
+						CGIMonitor(_connections[i]);
 					}
 				}
 				else if (_FDs[i].revents & (POLLERR | POLLHUP | POLLNVAL))

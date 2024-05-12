@@ -76,6 +76,7 @@ class Connection
 	/* CGI related */
 	bool getHasCGI() const;
 	bool getCGIexpired() const;
+	int getPID() const;
 
 	struct pollfd &getPollFd();
 
@@ -96,6 +97,7 @@ class Connection
 	/* CGI related */
 	void setHasCGI(bool value);
 	void setCGIexpired(bool value);
+	void setPID(int PID);
 
 	/* Debugging */
 	void printConnection() const;

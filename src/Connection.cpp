@@ -163,6 +163,11 @@ bool Connection::getCGIexpired() const
 	return _CGIexpired;
 }
 
+int Connection::getPID() const
+{
+	return _PID;
+}
+
 // SETTERS
 
 void Connection::setResponseSize(size_t responseSize)
@@ -232,6 +237,11 @@ void Connection::setHasCGI(bool value)
 void Connection::setCGIexpired(bool value)
 {
 	_CGIexpired = value;
+}
+
+void Connection::setPID(int value)
+{
+	_PID = value;
 }
 
 bool Connection::readHeaders(Parser &parser)
