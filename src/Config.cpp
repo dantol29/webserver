@@ -12,11 +12,13 @@ Config::Config(const char *file)
 		configFile.open(file);
 	else
 		configFile.open(CONFIG_FILE_DEFAULT_PATH);
-	
-	try {
+
+	try
+	{
 		parse(configFile);
 	}
-	catch (const char* error){
+	catch (const char *error)
+	{
 		_errorMessage = error;
 	}
 	if (!_errorMessage.empty())
@@ -151,10 +153,10 @@ bool Config::saveLocationDirective(const std::string &line, std::string &key, st
 	return (true);
 }
 
-bool	Config::parseLocation(std::string& line, std::ifstream& config)
+bool Config::parseLocation(std::string &line, std::ifstream &config)
 {
-	std::string	key;
-	std::string	value;
+	std::string key;
+	std::string value;
 
 	_tmpServerBlock.addDirective("path", _tmpPath, true);
 	while (std::getline(config, line))

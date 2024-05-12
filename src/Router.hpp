@@ -49,8 +49,9 @@ class Router
 	std::vector<pollfd> *_FDsRef;
 	struct pollfd *_pollFd;
 	std::string getFileExtension(const std::string &fileName);
-	void
-	generateDirectoryListing(HTTPResponse Response, const std::string &directoryPath, const std::string &requestedPath);
+	void generateDirectoryListing(HTTPResponse &Response,
+								  const std::string &directoryPath,
+								  const std::string &requestedPath);
 	bool isCGI(const HTTPRequest &request);
 	CGIHandler _cgiHandler;
 	void adaptPathForFirefox(HTTPRequest &request);

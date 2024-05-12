@@ -36,7 +36,7 @@ bool Parser::preParseHeaders(HTTPResponse &res)
 		// std::cout << "_headersBuffer size:" << std::endl;
 		// std::cout << _headersBuffer.size() << std::endl;
 		_buffer = _buffer.substr(headersEnd + 4);
-		std::cout << _buffer << std::endl;
+		// std::cout << _buffer << std::endl;
 		// std::cout << "\033[31m"
 		// 		  << "_buffer size " << _buffer.size() << "\033[0m" << std::endl;
 		return (true);
