@@ -131,7 +131,8 @@ struct Listen
 };
 
 // Overload the << operator outside of the Listen struct
-std::ostream &operator<<(std::ostream &os, const Listen &l)
+// The inline keyword is used to avoid multiple definitions of the operator
+inline std::ostream &operator<<(std::ostream &os, const Listen &l)
 {
 	os << "IP: " << l._ip << ", Port: " << l._port << ", IPv6: " << (l._isIpv6 ? "Yes" : "No");
 	return os;
