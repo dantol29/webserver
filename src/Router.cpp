@@ -63,6 +63,8 @@ void Router::routeRequest(HTTPRequest &request, HTTPResponse &response)
 	// std::cout << request << std::endl;
 
 	PathValidation pathResult = pathIsValid(response, request);
+	std::cout << "Path validation result: " << pathResult << std::endl;
+
 	switch (pathResult)
 	{
 	case PathValid:
@@ -151,13 +153,6 @@ void Router::handleServerBlockError(HTTPRequest &request, HTTPResponse &response
 		}
 	}
 
-	// TODO: BELOW IS THE LOGIC FOR CUSTOM ERROR PAGES, it should be move above and checked
-	//  errorPath = request.getPath();
-	//  if (errorPath.empty())
-	//  {
-	//  	std::cout << "handleServerBlockError: Error path is empty" << std::endl;
-	//  	return;
-	//  }
 	StaticContentHandler staticContentInstance;
 
 	PathValidation pathResult = pathIsValid(response, request);
@@ -181,17 +176,24 @@ bool Router::isCGI(const HTTPRequest &request)
 {
 	// TODO: check against config file, not this hardcoded version
 	std::vector<std::string> cgiExtensions = _serverBlock.getCgiExt();
+	std::cout << RED << "isCGI" << RESET << std::endl;
+	std::cout << "cgiExtensions: " << cgiExtensions.size() << std::endl;
+	std::cout << "request target: " << request.getRequestTarget() << std::endl;
 	if (!cgiExtensions.empty())
 	{
 		std::string fileExtension = getFileExtension(request.getRequestTarget());
+		std::cout << "fileExtension: " << fileExtension << std::endl;
 		for (size_t i = 0; i < cgiExtensions.size(); i++)
 		{
+			std::cout << "cgiExtensions[" << i << "]: " << cgiExtensions[i] << std::endl;
 			if (cgiExtensions[i] == fileExtension)
 			{
+				Debug::log("isCGI: CGI request detected", Debug::NORMAL);
 				return true;
 			}
 		}
 	}
+	Debug::log("isCGI: Not a CGI request", Debug::NORMAL);
 	return false;
 }
 

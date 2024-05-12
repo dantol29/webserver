@@ -27,6 +27,12 @@ void CGIHandler::handleRequest(const HTTPRequest &request, HTTPResponse &respons
 	std::string cgiOutput = executeCGI(env);
 	CGIStringToResponse(cgiOutput, response);
 	// std::cout << response;
+
+	std::cout << "------------------CGIHandler::handleRequest-------------------" << std::endl;
+	std::cout << "CGIHandler: path: " << request.getPath() << std::endl;
+
+	std::cout << "CGIHandler: request target: " << request.getRequestTarget() << std::endl;
+
 	return;
 }
 
