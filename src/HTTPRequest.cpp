@@ -123,7 +123,6 @@ std::map<std::string, std::string> HTTPRequest::getCookies() const
 	return (_cookies);
 }
 
-
 void HTTPRequest::setMethod(std::string method)
 {
 	_method = method;
@@ -173,12 +172,12 @@ void HTTPRequest::setFileContent(const std::string &content)
 	_files.back().fileContent = content;
 }
 
-void HTTPRequest::setPath(const std::string path)
+void HTTPRequest::setPath(const std::string &path)
 {
 	this->_path = path;
 }
 
-void HTTPRequest::setRoot(const std::string root)
+void HTTPRequest::setRoot(const std::string &root)
 {
 	this->_root = root;
 }
