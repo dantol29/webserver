@@ -41,7 +41,7 @@ bool Parser::preParseHeaders(HTTPResponse &res)
 		// 		  << "_buffer size " << _buffer.size() << "\033[0m" << std::endl;
 		return (true);
 	}
-	std::cout << "headers are not complete" << std::endl;
+	Debug::log("headers are not complete", Debug::NORMAL);
 	if (_buffer.length() > CLIENT_MAX_HEADERS_SIZE)
 		return (res.setStatusCode(431, "Headers too large"), false);
 	return true;

@@ -12,17 +12,14 @@ HTTPResponse::HTTPResponse(const HTTPResponse &other)
 }
 void HTTPResponse::setErrorResponse(int statusCode)
 {
-	std::cout << "\033[31m"
-			  << "Error " << statusCode << " in request"
-			  << "\033[0m" << std::endl;
+	Debug::log("Error " + toString(statusCode) + " in request", Debug::NORMAL);
 	std::string statusMessage = getStatusMessage(statusCode);
 	std::string body = "<html><head><title>Error</title></head>"
 					   "<body><h1>Error: " +
 					   toString(_statusCode) + " " + "</h1><p>" + statusMessage + "</p></body></html>";
 
 	// print purple to identify a 0 status code
-	std::cout << PURPLE << "setErrorResponse: statusCode: " << statusCode << " statusMessage: " << statusMessage
-			  << " body: " << body << RESET << std::endl;
+	Debug::log("setErrorResponse: statusCode: " + toString(statusCode) + " statusMessage: " + statusMessage + " body: " + body, Debug::NORMAL);
 	setStatusCode(statusCode, "");
 	setHeader("Content-Length", toString(body.length()));
 	setHeader("Content-Type", "text/html");
@@ -71,12 +68,12 @@ int HTTPResponse::getStatusCode() const
 void HTTPResponse::setStatusCode(int statusCode, const std::string &message)
 {
 	if (!message.empty())
-		std::cerr << message << std::endl;
+		Debug::log(message, Debug::NORMAL);
 	if (_statusCode != 0)
 	{
-		std::cerr << "\033[31mWarning: Overwriting existing status code (" << _statusCode << ") and message ("
-				  << _statusMessage << ") with new code (" << statusCode << ") and message ("
-				  << getStatusMessage(statusCode) << ").\033[0m" << std::endl;
+		Debug::log("Warning: Overwriting existing status code (" + toString(_statusCode) + ") and message (" +
+				   _statusMessage + ") with new code (" + toString(statusCode) + ") and message (" +
+				   getStatusMessage(statusCode) + ").", Debug::NORMAL);
 	}
 
 	_statusCode = statusCode;

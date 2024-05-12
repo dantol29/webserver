@@ -16,7 +16,7 @@ int main(int argc, char **argv)
 		return 1;
 	
 	//std::cout << config << std::endl; // should be in the DEBUG?
-	Debug::enable(true);
+	Debug::enable(false);
 	Debug::setLevel(Debug::NORMAL);
 	Server webserv(config);
 	webserv.startListening();

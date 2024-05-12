@@ -36,13 +36,9 @@ void Server::startPollEventLoop()
 	int pollCounter = 0;
 	while (1)
 	{
-		// printConnections("BEFORE POLL", _FDs, _connections, true);
-		std::cout << CYAN << "++++++++++++++ #" << pollCounter
-				  << " Waiting for new connection or Polling +++++++++++++++" << RESET << std::endl;
+		Debug::log("Waiting for new connection, pollCounter: " + toString(pollCounter), Debug::NORMAL);
 		int ret = poll(_FDs.data(), _FDs.size(), -1);
 		pollCounter++;
-		// printFrame("POLL EVENT DETECTED", true);
-		// printConnections("AFTER POLL", _FDs, _connections, true);
 		if (ret > 0)
 		{
 			size_t originalSize = _FDs.size();
@@ -56,7 +52,6 @@ void Server::startPollEventLoop()
 					Debug::log("Enters revents", Debug::OCF);
 					if (i == 0)
 					{
-						// printFrame("SERVER SOCKET EVENT", true);
 						acceptNewConnection(_connections[i]);
 					}
 					else
@@ -111,7 +106,7 @@ void Server::readFromClient(Connection &conn, size_t &i, Parser &parser, HTTPReq
 			conn.setHasFinishedReading(true);
 			conn.setHasDataToSend(false);
 			// ---------------------
-			std::cout << "Error pre-parsing headers" << std::endl;
+			Debug::log("Error pre-parsing headers", Debug::NORMAL);
 			return;
 		}
 	}
@@ -127,10 +122,10 @@ void Server::readFromClient(Connection &conn, size_t &i, Parser &parser, HTTPReq
 		conn.setCanBeClosed(false);
 		conn.setHasFinishedReading(true);
 		conn.setHasDataToSend(false);
-		Debug::log("Error parsing headers or request line", Debug::OCF);
+		Debug::log("Error parsing headers or request line", Debug::NORMAL);
 		return;
 	}
-	std::cout << parser.getHeadersComplete() << " ," << request.getMethod() << std::endl;
+	Debug::log(request.getMethod(), Debug::NORMAL);
 	if (parser.getHeadersComplete() && request.getMethod() == "GET")
 		conn.setHasFinishedReading(true);
 
@@ -210,7 +205,7 @@ void Server::buildResponse(Connection &conn, size_t &i, HTTPRequest &request, HT
 	Debug::log("Request method: " + request.getMethod(), Debug::NORMAL);
 
 	ServerBlock serverBlock;
-	std::cout << GREEN << "Number of server blocks: " << _config.getServerBlocks().size() << RESET << std::endl;
+	Debug::log("Number of server blocks: " + toString(_config.getServerBlocks().size()), Debug::NORMAL);
 	// if (_config.getServerBlocks().size() > 1)
 	// {
 	// retrieve the server block which has a server name matching the request host header
@@ -218,12 +213,13 @@ void Server::buildResponse(Connection &conn, size_t &i, HTTPRequest &request, HT
 	{
 		// why getServerName returns a vector ?
 		std::string serverName = _config.getServerBlocks()[i].getServerName()[0];
-		std::cout << RED << "Checking server name: " << serverName << RESET << std::endl;
-		std::cout << "Request host: " << request.getSingleHeader("host").second << std::endl;
-		std::cout << "Request target: " << request.getRequestTarget() << std::endl;
+		Debug::log("Server name: " + serverName, Debug::NORMAL);
+		Debug::log("Request host: " + request.getSingleHeader("host").second, Debug::NORMAL);
+		Debug::log("Request target: " + request.getRequestTarget(), Debug::NORMAL);
+
 		if (serverName == request.getSingleHeader("host").second)
 		{
-			std::cout << GREEN << "Server block and request host match" << RESET << std::endl;
+			Debug::log("Server block and request host match", Debug::NORMAL);
 			// _config.setServerBlockIndex(i);
 			serverBlock = _config.getServerBlocks()[i];
 			break;
@@ -246,17 +242,10 @@ void Server::buildResponse(Connection &conn, size_t &i, HTTPRequest &request, HT
 			Debug::log("Exiting buildResponse", Debug::NORMAL);
 			return;
 		}
-		std::cout << "Index: " << i << std::endl;
 	}
-	// }
-	// else
-	// {
-	// 	Debug::log("Single server block", Debug::NORMAL);
-	// 	serverBlock = _config.getServerBlocks()[0];
-	// }
 
 	std::string root = serverBlock.getRoot();
-	std::cout << RED << "Root: " << root << RESET << std::endl;
+	Debug::log("Root: " + root, Debug::NORMAL);
 
 	Router router(serverBlock);
 
@@ -280,7 +269,7 @@ void Server::buildResponse(Connection &conn, size_t &i, HTTPRequest &request, HT
 
 void Server::writeToClient(Connection &conn, size_t &i, HTTPResponse &response)
 {
-	std::cout << "\033[1;36m" << "Entering writeToClient" << "\033[0m" << std::endl;
+	Debug::log("\033[1;36mEntering writeToClient\033[0m", Debug::NORMAL);
 
 	static int sendResponseCounter = 0;
 	bool isLastSend = false;
@@ -297,16 +286,14 @@ void Server::writeToClient(Connection &conn, size_t &i, HTTPResponse &response)
 	if (conn.getResponseString().size() < SEND_BUFFER_SIZE)
 	{
 		tmpBufferSize = conn.getResponseString().size();
-		std::cout << GREEN << "Sending last part of the response" << RESET << std::endl;
+		Debug::log("Last part of the response", Debug::NORMAL);
 		isLastSend = true;
 	}
 
-	std::cout << GREEN << "sendResponseCounter: " << sendResponseCounter << RESET << std::endl;
+	Debug::log("sendResponseCounter: " + toString(sendResponseCounter), Debug::NORMAL);
 	int read = send(conn.getPollFd().fd, conn.getResponseString().c_str(), tmpBufferSize, 0);
 	if (read == -1)
-	{
 		perror("send");
-	}
 
 	sendResponseCounter++;
 	conn.setResponseSizeSent(conn.getResponseSizeSent() + tmpBufferSize);
@@ -322,7 +309,7 @@ void Server::writeToClient(Connection &conn, size_t &i, HTTPResponse &response)
 
 void Server::closeClientConnection(Connection &conn, size_t &i)
 {
-	std::cout << "\033[1;36m" << "Entering closeClientConnection" << "\033[0m" << std::endl;
+	Debug::log("\033[1;36mEntering closeClientConnection\033[0m", Debug::NORMAL);
 	// TODO: should we close it with the Destructor of the Connection class?
 	close(conn.getPollFd().fd);
 	_FDs.erase(_FDs.begin() + i);
@@ -332,19 +319,18 @@ void Server::closeClientConnection(Connection &conn, size_t &i)
 
 void Server::handleConnection(Connection &conn, size_t &i, Parser &parser, HTTPRequest &request, HTTPResponse &response)
 {
-	std::cout << "\033[1;36m" << "Entering handleConnection" << "\033[0m" << std::endl;
+	Debug::log("\033[1;33mEntering handleConnection\033[0m", Debug::NORMAL);
 
 	conn.setHasReadSocket(false);
-	std::cout << "Has finished reading: " << conn.getHasFinishedReading() << std::endl;
 	if (!conn.getHasFinishedReading())
 		readFromClient(conn, i, parser, request, response);
 
 	if (conn.getHasReadSocket() && !conn.getHasFinishedReading())
 	{
-		std::cout << "Has read socket: " << conn.getHasReadSocket() << std::endl;
+		Debug::log("Has read socket: " + toString(conn.getHasReadSocket()), Debug::NORMAL);
 		return;
 	}
-	std::cout << request << std::endl;
+
 	if (!conn.getCanBeClosed() && !conn.getHasDataToSend())
 		buildResponse(conn, i, request, response);
 
@@ -409,7 +395,7 @@ void Server::listen()
 {
 	if (::listen(_serverFD, _maxClients) < 0)
 		perrorAndExit("In listen");
-	std::cout << "Server socket listening on port " << ntohs(_serverAddr.sin_port) << std::endl;
+	Debug::log("Server socket listening on port " + toString(ntohs(_serverAddr.sin_port)), Debug::NORMAL);
 }
 
 /* startPollEventsLoop */
@@ -457,7 +443,7 @@ void Server::acceptNewConnection(Connection &conn)
 	// newConnection
 	struct sockaddr_in clientAddress;
 	socklen_t ClientAddrLen = sizeof(clientAddress);
-	std::cout << "New connection detected" << std::endl;
+	Debug::log("New connection detected", Debug::NORMAL);
 	// int newSocket = accept(_serverFD, (struct sockaddr *)&clientAddress, (socklen_t *)&ClientAddrLen);
 	int newSocket = accept(conn.getPollFd().fd, (struct sockaddr *)&clientAddress, (socklen_t *)&ClientAddrLen);
 	if (newSocket >= 0)
@@ -500,7 +486,7 @@ void Server::acceptNewConnection(Connection &conn)
 		}
 		char clientIP[INET_ADDRSTRLEN];
 		inet_ntop(AF_INET, &clientAddress.sin_addr, clientIP, INET_ADDRSTRLEN);
-		std::cout << "New connection from " << clientIP << std::endl;
+		Debug::log("New connection from " + std::string(clientIP), Debug::NORMAL);
 	}
 	else
 	{
@@ -523,7 +509,7 @@ void Server::handleServerSocketError()
 
 void Server::handleClientSocketError(int clientFD, size_t &i)
 {
-	std::cout << "handleClientSocketError" << std::endl;
+	Debug::log("Entering handleClientSocketError", Debug::NORMAL);
 	close(clientFD);
 	/* start together */
 	_FDs.erase(_FDs.begin() + i);
@@ -536,7 +522,7 @@ void Server::handleClientSocketError(int clientFD, size_t &i)
 void Server::handleSocketTimeoutIfAny()
 {
 	// Is not the socket timeout, but the poll timeout
-	std::cout << "Timeout occurred!" << std::endl;
+	Debug::log("Timeout occurred", Debug::NORMAL);
 	// This should never happen with an infinite timeout
 }
 

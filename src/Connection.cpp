@@ -40,7 +40,7 @@ Connection::Connection(const Connection &other)
 	_responseSizeSent = other._responseSizeSent;
 	_responseString = other._responseString;
 
-	std::cout << "Connection object copied" << std::endl;
+	Debug::log("Connection object copied", Debug::OCF);
 }
 
 Connection &Connection::operator=(const Connection &other)
@@ -63,13 +63,13 @@ Connection &Connection::operator=(const Connection &other)
 		_responseSizeSent = other._responseSizeSent;
 		_responseString = other._responseString;
 	}
-	std::cout << "Connection object assigned" << std::endl;
+	Debug::log("Connection object assigned", Debug::OCF);
 	return *this;
 }
 
 Connection::~Connection()
 {
-	std::cout << "Connection object destroyed" << std::endl;
+	Debug::log("Connection object destroyed", Debug::OCF);
 }
 
 // GETTERS AND SETTERS
@@ -218,15 +218,12 @@ bool Connection::readHeaders(Parser &parser)
 {
 	// std::cout << "\nEntering readHeaders" << std::endl;
 	char buffer[BUFFER_SIZE] = {0};
-	std::cout << "buffers size: " << sizeof(buffer) << std::endl;
+	Debug::log("buffer size: " + toString(sizeof(buffer)), Debug::NORMAL);
 	ssize_t bytesRead = recv(_pollFd.fd, buffer, BUFFER_SIZE, 0);
-	std::cout << "bytesRead: " << bytesRead << std::endl;
+	Debug::log("bytesRead: " + toString(bytesRead), Debug::NORMAL);
 	if (bytesRead > 0)
 	{
 		parser.setBuffer(parser.getBuffer() + std::string(buffer, bytesRead));
-		// std::cout << "The buffer is: " << parser.getBuffer() << std::endl;
-
-		// std::cout << "Exiting readHeaders" << std::endl;
 		return true;
 	}
 	else if (bytesRead < 0)
@@ -236,12 +233,12 @@ bool Connection::readHeaders(Parser &parser)
 	}
 	else if (bytesRead == 0)
 	{
-		std::cout << "Connection closed before headers being completely sent" << std::endl;
+		Debug::log("Connection closed before headers being completely sent", Debug::NORMAL);
 		return false;
 	}
 	else
 	{
-		std::cout << "Exiting readHeaders. This will never happen here!" << std::endl;
+		Debug::log("Exiting readHeaders. This will never happen here!", Debug::NORMAL);
 		return true;
 	}
 }
@@ -313,7 +310,7 @@ bool Connection::readChunkSize(std::string &line)
 		}
 		else
 		{
-			std::cout << "Connection closed" << std::endl;
+			Debug::log("Connection closed while reading chunk size", Debug::NORMAL);
 			return false;
 		}
 	}
@@ -360,24 +357,21 @@ bool Connection::readChunk(size_t chunkSize, std::string &chunkData, HTTPRespons
 
 bool Connection::readBody(Parser &parser, HTTPRequest &req, HTTPResponse &res)
 {
-	std::cout << "\nEntering readBody" << std::endl;
+	Debug::log("Entering readBody", Debug::NORMAL);
 	size_t contentLength = req.getContentLength();
 	char buffer[BUFFER_SIZE];
 	// We could also use _bodyTotalBytesRead from the parser
 	size_t bytesRead = parser.getBuffer().size();
-	std::cout << "contentLength: " << contentLength << std::endl;
-	std::cout << "bytesRead: " << bytesRead << std::endl;
+	Debug::log("contentLength: " + toString(contentLength), Debug::NORMAL);
+	Debug::log("bytesRead: " + toString(bytesRead), Debug::NORMAL);
 	if (bytesRead < contentLength)
 	{
 		// TODO: check if this is blocking
 		ssize_t read = recv(_pollFd.fd, buffer, BUFFER_SIZE, 0);
 		if (read > 0)
 		{
-			std::cout << "read > 0" << std::endl;
-			// _body.append(buffer, read);j
 			parser.setBuffer(parser.getBuffer() + std::string(buffer, read));
-			std::cout << "bytesRead: " << parser.getBuffer().size() << std::endl;
-			// std::cout << "The 'body; is: " << parser.getBuffer() << std::endl;
+			Debug::log("bytesRead: " + toString(parser.getBuffer().size()), Debug::NORMAL);
 			bytesRead += read;
 			if (bytesRead == contentLength)
 			{
@@ -393,14 +387,14 @@ bool Connection::readBody(Parser &parser, HTTPRequest &req, HTTPResponse &res)
 		}
 		else
 		{
-			std::cout << "read == 0" << std::endl;
+			Debug::log("read == 0", Debug::NORMAL);
 			res.setStatusCode(499, "Connection closed by the client"); // Client Closed Request
 			return false;
 		}
 	}
 	else
 		parser.setBodyComplete(true);
-	std::cout << "Exiting readBody" << std::endl;
+	Debug::log("Exiting readBody", Debug::NORMAL);
 	return true;
 }
 

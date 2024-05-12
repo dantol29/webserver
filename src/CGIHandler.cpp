@@ -62,7 +62,7 @@ void CGIHandler::CGIStringToResponse(const std::string &cgiOutput, HTTPResponse 
 	std::string headersPart = cgiOutput.substr(0, headerEndPos);
 	std::string bodyPart = cgiOutput.substr(headerEndPos);
 
-	std::cout << "------------------CGIStringToResponse-------------------" << std::endl;
+	Debug::log("------------------CGIStringToResponse-------------------", Debug::NORMAL);
 
 	std::istringstream headerStream(headersPart);
 	std::string headerLine;
@@ -164,10 +164,9 @@ std::string CGIHandler::executeCGI(const MetaVariables &env)
 
 		int status;
 		waitpid(pid, &status, WNOHANG);
-		std::cout << "------------------CGI output prepared-------------------" << std::endl;
+		Debug::log("------------------CGI output prepared-------------------", Debug::NORMAL);
 	}
-
-	std::cout << "\n\n\n\nCGI output: " << cgiOutput << std::endl;
+	Debug::log("cgiOutput: " + cgiOutput, Debug::NORMAL);
 
 	return cgiOutput;
 }

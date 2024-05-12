@@ -57,13 +57,13 @@ void Router::routeRequest(HTTPRequest &request, HTTPResponse &response)
 
 	adaptRequestForFirefox(request);
 
-	std::cout << GREEN << "Routing request to path: " << _webRoot << RESET << std::endl;
+	Debug::log("Routing Request: path = " + request.getPath(), Debug::NORMAL);
 
 	// std::cout << request << std::endl;
 
 	PathValidation pathResult = pathIsValid(response, request);
-	std::cout << BLUE << "path: " << request.getPath() << RESET << std::endl;
-	std::cout << BLUE << "PathValidation: " << pathResult << RESET << std::endl;
+	Debug::log("path: " + request.getPath(), Debug::NORMAL);
+	Debug::log("PathValidation: " + toString(pathResult), Debug::NORMAL);
 	switch (pathResult)
 	{
 	case PathValid:
@@ -86,11 +86,11 @@ void Router::routeRequest(HTTPRequest &request, HTTPResponse &response)
 		}
 		break;
 	case IsDirectoryListing:
-		std::cout << "Path is a directory listing, generating directory listing" << std::endl;
+		Debug::log("Path is a directory listing, generating directory listing", Debug::NORMAL);
 		generateDirectoryListing(response, request.getPath(), request.getRequestTarget());
 		break;
 	case PathInvalid:
-		std::cout << "Path is not valid, handling as error" << std::endl;
+		Debug::log("Path is not valid, handling as error", Debug::NORMAL);
 		handleServerBlockError(request, response, 404);
 		break;
 	}
@@ -140,12 +140,12 @@ void Router::handleServerBlockError(HTTPRequest &request, HTTPResponse &response
 	{
 		if (errorPage[i].first == errorCode)
 		{
-			std::cout << "handleServerBlockError: Error code: " << errorCode << std::endl;
+			Debug::log("handleServerBlockError: Error code: " + toString(errorCode), Debug::NORMAL);
 			Debug::log("Path requested: " + request.getPath(), Debug::NORMAL);
 			Debug::log("Path to error: " + errorPage[i].second, Debug::NORMAL);
 			// setting the path to the custom error page
 			request.setPath(_serverBlock.getRoot() + request.getHost() + "/" + errorPage[i].second);
-			std::cout << RED << "         custom error page: " << request.getPath() << RESET << std::endl;
+			Debug::log("custom error page: " + request.getPath(), Debug::NORMAL);
 			// TODO: move here what is todo below
 			StaticContentHandler staticContentInstance;
 			staticContentInstance.handleRequest(request, response);
@@ -257,15 +257,14 @@ enum PathValidation Router::pathIsValid(HTTPResponse &response, HTTPRequest &req
 	std::string path = request.getPath();
 	if (stat(path.c_str(), &buffer) != 0 && !(S_ISDIR(buffer.st_mode)))
 	{
-		std::cout << "Failed to stat the file at path: " << path << std::endl;
-		Debug::log("webRoot: " + path, Debug::NORMAL);
 		Debug::log("pathIsValid: stat failed, path does not exist", Debug::NORMAL);
+		Debug::log("webRoot: " + path, Debug::NORMAL);
 		return PathInvalid;
 	}
 	else if (stat(path.c_str(), &buffer) == 0 && !(S_ISDIR(buffer.st_mode)))
 	{
 		Debug::log("pathIsValid: stat success", Debug::NORMAL);
-		std::cout << " path :" << path << std::endl;
+		Debug::log("path: " + path, Debug::NORMAL);
 		return PathValid;
 	}
 
@@ -318,9 +317,8 @@ enum PathValidation Router::pathIsValid(HTTPResponse &response, HTTPRequest &req
 			{
 				Debug::log("pathIsValid: Autoindex is on", Debug::NORMAL);
 				generateDirectoryListing(response, path, request.getRequestTarget());
-				std::cout << "Directory listing generated for " << path << std::endl;
+				Debug::log("pathIsValid: Directory listing generated for " + path, Debug::NORMAL);
 				return IsDirectoryListing;
-				std::cout << std::endl;
 			}
 			else
 			{
