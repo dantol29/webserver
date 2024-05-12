@@ -10,8 +10,11 @@
 #include <list>
 #include <vector>
 #include <algorithm>
+#include <sys/socket.h>
+#include <netdb.h>
+#include "Debug.hpp"
 
-#define CONFIG_FILE_DEFAULT_PATH "./webserv.conf"
+#define CONFIG_FILE_DEFAULT_PATH "./webserv_default.conf"
 #define RED "\033[1;31m"
 #define GREEN "\033[1;32m"
 #define YELLOW "\033[1;33m"
