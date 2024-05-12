@@ -165,13 +165,12 @@ void Server::readFromClient(Connection &conn, size_t &i, Parser &parser, HTTPReq
 				conn.setHasFinishedReading(true);
 				conn.setHasDataToSend(true);
 			}
-			else if (!conn.getHasReadSocket() && !conn.readBody(parser, request, response))
+			else if (!conn.getHasReadSocket() && !conn.readBody(parser, request, response, _config))
 			{
 				Debug::log("Error reading body", Debug::OCF);
-				conn.setCanBeClosed(true);
+				conn.setCanBeClosed(false);
 				conn.setHasFinishedReading(true);
-				// Probably hasDataToSend false, because we have an error on reading the body
-				// conn.setHasDataToSend(false);
+				conn.setHasDataToSend(false);
 				return;
 			}
 		}

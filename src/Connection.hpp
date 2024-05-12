@@ -8,6 +8,7 @@
 #include "webserv.hpp"
 #include "HTTPResponse.hpp" // Assuming existence of HTTPResponse class
 #include "Parser.hpp"		// Assuming existence of Parser class
+#include "Config.hpp"
 
 enum ConnectionType
 {
@@ -48,7 +49,7 @@ class Connection
 	bool readChunkedBody(Parser &parser);
 	bool readChunkSize(std::string &line);
 	bool readChunk(size_t chunkSize, std::string &chunkedData, HTTPResponse &response);
-	bool readBody(Parser &parser, HTTPRequest &req, HTTPResponse &res);
+	bool readBody(Parser &parser, HTTPRequest &req, HTTPResponse &res, Config& config);
 
 	/* Getters */
 	Parser &getParser();
