@@ -34,6 +34,9 @@ class Connection
 	bool _hasDataToSend;
 	bool _hasFinishedSending;
 	bool _canBeClosed;
+	bool _hasCGI;
+	bool _CGIexpired;
+	int _PID;
 	size_t _responseSize;
 	size_t _responseSizeSent;
 	std::string _responseString;
@@ -70,6 +73,10 @@ class Connection
 	bool getHasFinishedSending() const;
 	bool getCanBeClosed() const;
 
+	/* CGI related */
+	bool getHasCGI() const;
+	bool getCGIexpired() const;
+
 	struct pollfd &getPollFd();
 
 	/* Setters */
@@ -85,6 +92,11 @@ class Connection
 	void setCanBeClosed(bool value);
 	void setHasDataToSend(bool value);
 	void setHasFinishedSending(bool value);
+
+	/* CGI related */
+	void setHasCGI(bool value);
+	void setCGIexpired(bool value);
+
 	/* Debugging */
 	void printConnection() const;
 };

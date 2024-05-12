@@ -153,6 +153,16 @@ bool Connection::getCanBeClosed() const
 	return _canBeClosed;
 }
 
+bool Connection::getHasCGI() const
+{
+	return _hasCGI;
+}
+
+bool Connection::getCGIexpired() const
+{
+	return _CGIexpired;
+}
+
 // SETTERS
 
 void Connection::setResponseSize(size_t responseSize)
@@ -212,6 +222,16 @@ void Connection::setHasFinishedSending(bool value)
 void Connection::setCanBeClosed(bool value)
 {
 	_canBeClosed = value;
+}
+
+void Connection::setHasCGI(bool value)
+{
+	_hasCGI = value;
+}
+
+void Connection::setCGIexpired(bool value)
+{
+	_CGIexpired = value;
 }
 
 bool Connection::readHeaders(Parser &parser)
