@@ -26,6 +26,7 @@ class HTTPRequest
 	std::pair<std::string, std::string> getSingleHeader(std::string key) const;
 	std::string getBody() const;
 	std::vector<struct File> getFiles() const;
+	std::map<std::string, std::string> getCookies() const;
 	std::string getPath() const;
 	std::string getRoot() const;
 
@@ -39,8 +40,9 @@ class HTTPRequest
 	void setUploadBoundary(const std::string &boundary);
 	void setFiles(struct File &file);
 	void setFileContent(const std::string &content);
-	void setPath(const std::string path);
-	void setRoot(const std::string root);
+	void setCookies(const std::string &key, const std::string &value);
+	void setPath(const std::string &path);
+	void setRoot(const std::string &root);
 
   private:
 	// VARIABLES
@@ -52,6 +54,7 @@ class HTTPRequest
 	std::string _body;
 	std::string _uploadBoundary;
 	std::vector<File> _files;
+	std::map<std::string, std::string> _cookies;
 	std::string _path;
 	std::string _root;
 };

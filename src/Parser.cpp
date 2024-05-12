@@ -26,15 +26,7 @@ bool Parser::preParseHeaders(HTTPResponse &res)
 	if (headersEnd != std::string::npos)
 	{
 		_headersBuffer = _buffer.substr(0, headersEnd + 4);
-		// std::cout << "\033[31m"
-		// 		  << "_headersBuffer size " << _headersBuffer.size() << "\033[0m" << std::endl;
-		// std::cout << "_headersBuffer:" << std::endl;
-		// std::cout << _headersBuffer << std::endl;
 		_headersComplete = true;
-		// std::cout << "\033[31m"
-		// 		  << "_buffer size " << _buffer.size() << "\033[0m" << std::endl;
-		// std::cout << "_headersBuffer size:" << std::endl;
-		// std::cout << _headersBuffer.size() << std::endl;
 		_buffer = _buffer.substr(headersEnd + 4);
 		// std::cout << _buffer << std::endl;
 		// std::cout << "\033[31m"
@@ -144,7 +136,7 @@ void Parser::parseRequestLine(const char *request, HTTPRequest &req, HTTPRespons
 
 	std::string protocolVersion = extractProtocolVersion(request, i);
 	if (protocolVersion.empty())
-		return (res.setStatusCode(400, "Invalid protocol version"));
+		return (res.setStatusCode(505, "Invalid protocol version"));
 	if (!hasCRLF(request, i, 0))
 		return (res.setStatusCode(400, "No CRLF at the end of request-line"));
 
@@ -184,9 +176,10 @@ void Parser::parseHeaders(const char *request, HTTPRequest &req, HTTPResponse &r
 	}
 	if (!hasCRLF(request, i, 0))
 		return (res.setStatusCode(400, "No CRLF after headers"));
-	if (!hasMandatoryHeaders(req))
-		return (res.setStatusCode(400, "Invalid headers"));
+	if (!hasMandatoryHeaders(req, res))
+		return ;
 	_headersAreParsed = true;
+	saveCokies(req);
 }
 
 // [--BOUNDARY][CRLF][HEADERS][CRLF][DATA][CRLF][--BOUNDARY--]
@@ -230,7 +223,7 @@ void Parser::parseFileUpload(const std::string &request, HTTPRequest &req, HTTPR
 
 // ----------------UTILS----------------------------
 
-bool Parser::hasMandatoryHeaders(HTTPRequest &req)
+bool Parser::hasMandatoryHeaders(HTTPRequest &req, HTTPResponse& res)
 {
 	_isChunked = false;
 	int isHost = 0;
@@ -244,19 +237,19 @@ bool Parser::hasMandatoryHeaders(HTTPRequest &req)
 		if (it->first == "host")
 		{
 			if (!isValidHost(it->second))
-				return (false);
+				return (res.setStatusCode(400, "Invalid host"), false);
 			isHost++;
 		}
 		else if (it->first == "content-length")
 		{
 			if (!isNumber(it->second))
-				return (false);
+				return (res.setStatusCode(400, "Invalid content-length"), false);
 			isContentLength++;
 		}
 		else if (it->first == "content-type")
 		{
 			if (!isValidContentType(it->second))
-				return (false);
+				return (res.setStatusCode(415, "Not supported content-type"), false);
 			if (it->second.substr(0, 30) == "multipart/form-data; boundary=")
 				req.setUploadBoundary(extractUploadBoundary(it->second));
 			isContentType++;
@@ -264,16 +257,59 @@ bool Parser::hasMandatoryHeaders(HTTPRequest &req)
 		else if (it->first == "transfer-encoding")
 		{
 			if (it->second != "chunked")
-				return (false);
+				return (res.setStatusCode(400, "Not supported transfer-encoding"), false);
 			_isChunked = true;
 		}
 	}
 	if (_isChunked && req.getMethod() == "POST")
 		return (isHost == 1 && isContentType == 1);
-	if (req.getMethod() == "POST" || req.getMethod() == "DELETE") // || req.getMethod() == "SALAD")
-		return (isHost == 1 && isContentLength == 1 && isContentType == 1);
+	if (req.getMethod() == "POST" || req.getMethod() == "DELETE")
+	{
+		if (isContentLength == 0)
+			return (res.setStatusCode(411, "POST request: Length Required"), false);
+		if (!(isHost == 1 && isContentLength == 1 && isContentType == 1))
+			return (res.setStatusCode(400, "POST request: not enough headers to process the request"), false);
+	}
 	else
-		return (isHost == 1);
+	{
+		if (!(isHost == 1))
+			return (res.setStatusCode(400, "GET request: no host header"), false);
+	}
+	return (true);
+}
+
+void Parser::saveCokies(HTTPRequest &req)
+{
+	std::multimap<std::string, std::string> headers = req.getHeaders();
+	std::multimap<std::string, std::string>::iterator it;
+
+	for (it = headers.begin(); it != headers.end(); it++)
+	{
+		if (it->first == "cookie")
+		{
+			std::string cookie = it->second;
+			std::string key;
+			std::string value;
+			unsigned int start = 0;
+
+			for (unsigned int i = 0; i < cookie.length(); i++)
+			{
+				if (cookie[i] == '=')
+				{
+					key = cookie.substr(start, i - start);
+					start = ++i;
+					while (i < cookie.length() && cookie[i] != ';')
+						i++;
+					value = cookie.substr(start, i - start);
+					req.setCookies(key, value);
+					std::cout << cookie.substr(i) << std::endl;
+					if (cookie[i] == ';')
+						start = ++i;
+				}
+			}
+			break;
+		}
+	}
 }
 
 // [KEY][=]["][VALUE][""][;][SP][KEY][=]["][VALUE][""][;]
