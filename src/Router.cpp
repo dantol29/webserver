@@ -28,9 +28,11 @@ Router::~Router()
 {
 }
 
-void Router::adaptRequestForFirefox(HTTPRequest &request)
+// Modifies the HTTP request path:  removes host header and "http://" prefix
+// combines with root directory for standardized routing,
+void Router::adaptPathForFirefox(HTTPRequest &request)
 {
-	std::string _webRoot = _serverBlock.getRoot() + request.getSingleHeader("host").second;
+	std::string path = _serverBlock.getRoot() + request.getSingleHeader("host").second;
 	std::string requestTarget = request.getRequestTarget();
 	size_t hostPos = requestTarget.find(request.getSingleHeader("host").second);
 	if (hostPos != std::string::npos)
@@ -44,20 +46,24 @@ void Router::adaptRequestForFirefox(HTTPRequest &request)
 		std::string remove = "http://";
 		requestTarget.erase(hostPos2, remove.length());
 	}
-	_webRoot += requestTarget;
-	request.setPath(_webRoot);
+	std::cout << "requestTarget after adaptPathForFirefox: " << requestTarget << std::endl;
+	request.setRequestTarget(requestTarget);
+	path += requestTarget;
+	request.setPath(path);
 }
 
 void Router::routeRequest(HTTPRequest &request, HTTPResponse &response)
 {
 	Debug::log("Routing Request: host = " + request.getSingleHeader("host").second, Debug::NORMAL);
-	std::string _webRoot = _serverBlock.getRoot() + request.getSingleHeader("host").second;
-
+	std::string root = _serverBlock.getRoot();
+	request.setRoot(root);
+	std::string path = root + request.getSingleHeader("host").second;
 	std::string requestTarget = request.getRequestTarget();
+	std::cout << YELLOW << "requestTarget: " << requestTarget << RESET << std::endl;
 
-	adaptRequestForFirefox(request);
+	adaptPathForFirefox(request);
 
-	std::cout << GREEN << "Routing request to path: " << _webRoot << RESET << std::endl;
+	std::cout << GREEN << "Routing request to path: " << path << RESET << std::endl;
 	std::cout << PURPLE << "Request method: " << request.getMethod() << RESET << std::endl;
 
 	// std::cout << request << std::endl;
@@ -120,11 +126,11 @@ std::string Router::getFileExtension(const std::string &fileName)
 	size_t queryStart = fileName.find("?", dotIndex);
 	if (queryStart == std::string::npos)
 	{
-		return fileName.substr(dotIndex + 1);
+		return fileName.substr(dotIndex);
 	}
 	else
 	{
-		return fileName.substr(dotIndex + 1, queryStart - dotIndex - 1);
+		return fileName.substr(dotIndex, queryStart - dotIndex - 1);
 	}
 }
 

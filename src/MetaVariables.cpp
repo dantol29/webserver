@@ -142,25 +142,38 @@ void MetaVariables::HTTPRequestToMetaVars(const HTTPRequest &request, MetaVariab
 	env.setVar("REQUEST_METHOD", request.getMethod());
 	// Set the protocol version used in the request (e.g., HTTP/1.1)
 	env.setVar("PROTOCOL_VERSION", request.getProtocolVersion());
-	env.setVar("SERVER_PORT", "8080");
+
+	env.setVar("SERVER_PORT", request.getSingleHeader("listen").second);
 
 	//_______Server-related variables
 	env.setVar("SERVER_SOFTWARE", "Server_of_people_identifying_as_objects/1.0");
-	env.setVar("SERVER_NAME", "The_objects.com");
+	env.setVar("SERVER_NAME", request.getSingleHeader("host").second);
 	env.setVar("GATEWAY_INTERFACE", "CGI/1.1");
 
 	//_______Path-related variables
 	std::string queryString = formatQueryString(request.getQueryString());
 	env.setVar("QUERY_STRING", queryString);
+
+	std::cout << "MetaVariables::HTTPRequestToMetaVars:  request.getRequestTarget(): " << request.getRequestTarget()
+			  << std::endl;
 	std::pair<std::string, std::string> pathComponents = separatePathAndInfo(request.getRequestTarget());
+	std::cout << "MetaVariables::HTTPRequestToMetaVars:  pathComponents.first: " << pathComponents.first << std::endl;
+
+	std::string root = request.getRoot();
+	std::string host = request.getSingleHeader("host").second;
 	std::string scriptName = pathComponents.first;
 	std::string pathInfo = pathComponents.second;
+
+	Debug::log("MetaVariables::HTTPRequestToMetaVars: root: " + root, Debug::NORMAL);
+	Debug::log("MetaVariables::HTTPRequestToMetaVars: host: " + host, Debug::NORMAL);
+	Debug::log("MetaVariables::HTTPRequestToMetaVars: scriptName: " + scriptName, Debug::NORMAL);
+	Debug::log("MetaVariables::HTTPRequestToMetaVars: pathInfo: " + pathInfo, Debug::NORMAL);
 
 	subtractQueryFromPathInfo(pathInfo, queryString);
 
 	env.setVar("PATH_INFO", pathInfo);
 	// std::string pathTranslated = translatePathToPhysical(scriptVirtualPath, pathInfo); // Implement this function
-	env.setVar("PATH_TRANSLATED", "var/www");
+	env.setVar("PATH_TRANSLATED", root + host + scriptName);
 	env.setVar("SCRIPT_NAME", scriptName);
 
 	// The query string from the URL sent by the client
