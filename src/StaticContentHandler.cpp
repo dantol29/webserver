@@ -66,10 +66,10 @@ void StaticContentHandler::handleRequest(const HTTPRequest &request, HTTPRespons
 	// TODO: consider streaming the file instead of loading it all in memory for large files
 	if (isDirectory(path))
 	{
-		path += "/index.html";
+		path += "index.html";
 	}
 	std::ifstream file(path.c_str());
-	if (!file)
+	if (!file) // TODO: this is wrong, it should return a false bool
 	{
 		Debug::log(" StaticContentHandler Error opening file: " + path, Debug::NORMAL);
 		response.setStatusCode(404, "Not Found");
@@ -82,6 +82,8 @@ void StaticContentHandler::handleRequest(const HTTPRequest &request, HTTPRespons
 	response.setBody(body);
 	response.setHeader("Content-Type", getMimeType(path));
 	response.setHeader("Content-Length", toString(body.length()));
+	response.setHeader("Set-Cookie", "meal=salad; Expires=Wed, 09 Jun 2024 10:18:14 GMT; Path=/;");
+	response.setHeader("Set-Cookie", "user=dtolmaco; Expires=Wed, 09 Jun 2024 10:18:14 GMT; Path=/;");
 	response.setStatusCode(200, "");
 	// TODO ADD MORE HEADER LINE
 	//  response.setHeader("Content-Length: ", std::to_string(body.length()));

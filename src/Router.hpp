@@ -55,7 +55,7 @@ class Router
 								  const std::string &requestedPath);
 	bool isCGI(const HTTPRequest &request);
 	CGIHandler _cgiHandler;
-	void adaptRequestForFirefox(HTTPRequest &request);
+	void adaptPathForFirefox(HTTPRequest &request);
 };
 
 #endif

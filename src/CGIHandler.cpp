@@ -34,6 +34,12 @@ void CGIHandler::handleRequest(const HTTPRequest &request, HTTPResponse &respons
 	std::string cgiOutput = executeCGI(env);
 	CGIStringToResponse(cgiOutput, response);
 	// std::cout << response;
+
+	std::cout << "------------------CGIHandler::handleRequest-------------------" << std::endl;
+	std::cout << "CGIHandler: path: " << request.getPath() << std::endl;
+
+	std::cout << "CGIHandler: request target: " << request.getRequestTarget() << std::endl;
+
 	return;
 }
 
@@ -41,8 +47,11 @@ std::vector<std::string> CGIHandler::createArgvForExecve(const MetaVariables &en
 {
 	std::vector<std::string> argv;
 	std::string scriptName = env.getVar("SCRIPT_NAME");
+	std::cout << "createArgvForExecve: scriptName: " << scriptName << std::endl;
 	std::string pathTranslated = env.getVar("PATH_TRANSLATED");
-	std::string scriptPath = pathTranslated + scriptName;
+	std::cout << "createArgvForExecve: pathTranslated: " << pathTranslated << std::endl;
+	std::string scriptPath = pathTranslated;
+	std::cout << "createArgvForExecve: scriptPath: " << scriptPath << std::endl;
 
 	if (env.getVar("X_INTERPRETER_PATH") != "")
 	{
@@ -54,7 +63,6 @@ std::vector<std::string> CGIHandler::createArgvForExecve(const MetaVariables &en
 	{
 		argv.push_back(scriptPath);
 	}
-
 	return argv;
 }
 
@@ -125,6 +133,7 @@ std::string CGIHandler::executeCGI(const MetaVariables &env)
 	std::vector<std::string> argv = createArgvForExecve(env);
 	std::vector<std::string> envp = env.getForExecve();
 
+	// Debug::log("Executing CGI script: " + std::string(argv[0]), Debug::NORMAL);
 	int pipeFD[2];
 	if (pipe(pipeFD) == -1)
 	{
@@ -148,6 +157,9 @@ std::string CGIHandler::executeCGI(const MetaVariables &env)
 
 		std::vector<char *> argvPointers = convertToCStringArray(argv);
 		std::vector<char *> envpPointers = convertToCStringArray(envp);
+
+		// Debug::log("Executing CGI script: " + std::string(argvPointers[0]), Debug::NORMAL);
+		// Debug::log("CGI script path: " + std::string(argvPointers[1]), Debug::NORMAL);
 
 		execve(argvPointers[0], &argvPointers[0], &envpPointers[0]);
 

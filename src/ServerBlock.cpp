@@ -503,7 +503,9 @@ std::vector<std::string> ServerBlock::transformAllowedMethods(std::string &str)
 
 std::vector<std::string> ServerBlock::transformCgiExt(std::string &str)
 {
-	std::string extensions[] = {".php", ".py", ".pl"};
+	// The user can choose its extensions *among* the following ones
+	// (for security reasons)
+	std::string extensions[] = {".php", ".py", ".pl", ".cgi", ".magicsalad"};
 	std::vector<std::string> newStr;
 	std::stringstream ss(str);
 	std::string name;
