@@ -3,33 +3,40 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Welcome to Example.com</title>
+    <title>Welcome to Our Web Service</title>
 </head>
 <body>
     <header>
-        <h1>Welcome to Example.com</h1>
-        <p>Your source for examples!</p>
+        <div class="container">
+            <h1>Welcome to Our Web Service</h1>
+        </div>
     </header>
     <nav>
-        <ul>
-            <li><a href="#">Home</a></li>
-            <li><a href="#">About Us</a></li>
-            <li><a href="#">Services</a></li>
-            <li><a href="#">Contact</a></li>
-        </ul>
+        <div class="container">
+            <a href="/development_site/cgi-bin/hello_py.cgi">Development Site</a>
+            <a href="/perl_site/index.html">Perl Site</a>
+            <a href="/php_site/index.html">PHP Site</a>
+            <a href="/www.python_site.com/index.html">Python Site</a>
+        </div>
     </nav>
-    <main>
-        <section>
-            <h2>About Us</h2>
-            <p>This section can contain information about the purpose of the website or about the company.</p>
-        </section>
-        <section>
-            <h2>Services</h2>
-            <p>Details about the services offered can go here.</p>
-        </section>
-    </main>
-    <footer>
-        <p>Copyright &copy; 2024 by Example.com. All rights reserved.</p>
-    </footer>
+    <div class="container">
+        <article>
+            <h2>About This Server</h2>
+            <p>Welcome to our multi-faceted web server. Here, you can find a variety of web applications and sites ranging from development tools to language-specific sites. Whether you're here to explore our Perl, PHP, or Python projects, or to delve into our development tools, there's something for everyone.</p>
+            <p>Please use the navigation above to explore our sites.</p>
+        </article>
+    </div>
+	<form action="http://localhost:8080/" method="post" enctype="multipart/form-data">
+		<label for="file">Choose a file:</label>
+		<input type="file" id="file" name="file">
+		<br>
+		<input type="submit" value="Upload">
+	</form>
+	<h2>Upload Multiple Files</h2>
+	<form action="upload.php" method="post" enctype="multipart/form-data">
+	  <input type="file" name="files[]" multiple>
+	  <br>
+	  <input type="submit" value="Upload Files">
+	</form>
 </body>
 </html>

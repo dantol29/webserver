@@ -207,41 +207,49 @@ void Server::buildResponse(Connection &conn, size_t &i, HTTPRequest &request, HT
 
 	ServerBlock serverBlock;
 	std::cout << GREEN << "Number of server blocks: " << _config.getServerBlocks().size() << RESET << std::endl;
-	if (_config.getServerBlocks().size() > 1)
+	// if (_config.getServerBlocks().size() > 1)
+	// {
+	// retrieve the server block which has a server name matching the request host header
+	for (size_t i = 0; i < _config.getServerBlocks().size(); i++)
 	{
-		// retrieve the server block which has a server name matching the request host header
-		for (size_t i = 0; i < _config.getServerBlocks().size(); i++)
+		// why getServerName returns a vector ?
+		std::string serverName = _config.getServerBlocks()[i].getServerName()[0];
+		std::cout << RED << "Checking server name: " << serverName << RESET << std::endl;
+		std::cout << "Request host: " << request.getSingleHeader("host").second << std::endl;
+		std::cout << "Request target: " << request.getRequestTarget() << std::endl;
+		if (serverName == request.getSingleHeader("host").second)
 		{
-			// why getServerName returns a vector ?
-			std::string serverName = _config.getServerBlocks()[i].getServerName()[0];
-			std::cout << RED << "Checking server name: " << serverName << RESET << std::endl;
-			std::cout << "Request host: " << request.getSingleHeader("host").second << std::endl;
-			std::cout << "Request target: " << request.getRequestTarget() << std::endl;
-			if (serverName == request.getSingleHeader("host").second)
+			std::cout << GREEN << "Server block and request host match" << RESET << std::endl;
+			// _config.setServerBlockIndex(i);
+			serverBlock = _config.getServerBlocks()[i];
+			break;
+		}
+		else
+		{
+			static StaticContentHandler staticContentInstance;
+			// if error already occurred, we don't want to overwrite it
+			if (response.getStatusCode() != 0)
 			{
-				std::cout << GREEN << "Server block and request host match" << RESET << std::endl;
-				// _config.setServerBlockIndex(i);
-				serverBlock = _config.getServerBlocks()[i];
-				break;
-			}
-			else
-			{
-				// if no server name is found, use the default server block
-				static StaticContentHandler staticContentInstance;
-				staticContentInstance.handleNotFound(response);
-				response.setStatusCode(404, "No server block is matching the request host");
+				Debug::log("Error response" + toString(response.getStatusCode()), Debug::NORMAL);
+				response.setErrorResponse(response.getStatusCode());
 				conn.setHasDataToSend(true);
-				Debug::log("Exiting buildResponse", Debug::NORMAL);
 				return;
 			}
-			std::cout << "Index: " << i << std::endl;
+			// if no server name is found, use the default server block
+			staticContentInstance.handleNotFound(response);
+			response.setStatusCode(404, "No server block is matching the request host");
+			conn.setHasDataToSend(true);
+			Debug::log("Exiting buildResponse", Debug::NORMAL);
+			return;
 		}
+		std::cout << "Index: " << i << std::endl;
 	}
-	else
-	{
-		Debug::log("Single server block", Debug::NORMAL);
-		serverBlock = _config.getServerBlocks()[0];
-	}
+	// }
+	// else
+	// {
+	// 	Debug::log("Single server block", Debug::NORMAL);
+	// 	serverBlock = _config.getServerBlocks()[0];
+	// }
 
 	std::string root = serverBlock.getRoot();
 	std::cout << RED << "Root: " << root << RESET << std::endl;

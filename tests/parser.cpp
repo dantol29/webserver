@@ -191,13 +191,13 @@ void query(sockaddr_in serverAddress)
 	std::vector<HTTPTest> tests = {
 		// HTTPTest("GET /index.html?q=now&price=low HTTP/1.1\r\nHost: www.example.com\r\n\r\n", "200"), // TODO:
 		// Implement query parsing
-		HTTPTest("GET /search?q==now&price=low HTTP/1.1\r\nHost: www.example.com\r\n\r\n", "400"),
-		HTTPTest("GET /search??q=now&price=low HTTP/1.1\r\nHost: www.example.com\r\n\r\n", "400"),
-		HTTPTest("GET /search?now&price=low HTTP/1.1\r\nHost: www.example.com\r\n\r\n", "400"),
-		HTTPTest("GET /search?q=now&&price=low HTTP/1.1\r\nHost: www.example.com\r\n\r\n", "400"),
-		HTTPTest("GET /search?q=now&price=low= HTTP/1.1\r\nHost: www.example.com\r\n\r\n", "400"),
-		HTTPTest("GET /search?=now&price=low HTTP/1.1\r\nHost: www.example.com\r\n\r\n", "400"),
-		HTTPTest("GET /search?&q=now&price=low HTTP/1.1\r\nHost: www.example.com\r\n\r\n", "400"),
+		HTTPTest("GET /index.html?q==now&price=low HTTP/1.1\r\nHost: www.example.com\r\n\r\n", "400"),
+		HTTPTest("GET /index.html??q=now&price=low HTTP/1.1\r\nHost: www.example.com\r\n\r\n", "400"),
+		HTTPTest("GET /index.html?now&price=low HTTP/1.1\r\nHost: www.example.com\r\n\r\n", "400"),
+		HTTPTest("GET /index.html?q=now&&price=low HTTP/1.1\r\nHost: www.example.com\r\n\r\n", "400"),
+		HTTPTest("GET /index.html?q=now&price=low= HTTP/1.1\r\nHost: www.example.com\r\n\r\n", "400"),
+		HTTPTest("GET /index.html?=now&price=low HTTP/1.1\r\nHost: www.example.com\r\n\r\n", "400"),
+		HTTPTest("GET /index.html?&q=now&price=low HTTP/1.1\r\nHost: www.example.com\r\n\r\n", "400"),
 	};
 	sendData(tests, serverAddress);
 }
