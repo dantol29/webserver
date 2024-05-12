@@ -28,7 +28,7 @@ class Router
 {
   public:
 	Router();
-	Router(ServerBlock serverBlock);
+	Router(Directives& directive);
 	~Router();
 	Router &operator=(const Router &other);
 	void routeRequest(HTTPRequest &request, HTTPResponse &response);
@@ -42,7 +42,7 @@ class Router
 	void handleServerBlockError(HTTPRequest &request, HTTPResponse &response, int errorCode);
 
   private:
-	ServerBlock _serverBlock;
+	Directives _directive;
 	Router(const Router &other);
 	StaticContentHandler _staticContentHandler;
 	resourcePath _path;

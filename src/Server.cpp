@@ -209,10 +209,9 @@ void Server::buildResponse(Connection &conn, size_t &i, HTTPRequest &request, HT
 	Debug::log("Request method: " + request.getMethod(), Debug::NORMAL);
 
 	ServerBlock serverBlock;
+	Directives directive;
 	std::cout << GREEN << "Number of server blocks: " << _config.getServerBlocks().size() << RESET << std::endl;
-	// if (_config.getServerBlocks().size() > 1)
-	// {
-	// retrieve the server block which has a server name matching the request host header
+
 	for (size_t i = 0; i < _config.getServerBlocks().size(); i++)
 	{
 		// why getServerName returns a vector ?
@@ -225,6 +224,19 @@ void Server::buildResponse(Connection &conn, size_t &i, HTTPRequest &request, HT
 			std::cout << GREEN << "Server block and request host match" << RESET << std::endl;
 			// _config.setServerBlockIndex(i);
 			serverBlock = _config.getServerBlocks()[i];
+			directive = serverBlock.getDirectives();
+			std::cout << "Request target in block: " << request.getRequestTarget() << std::endl;
+			
+			for (size_t i = 0; i < serverBlock.getLocations().size(); i++)
+			{
+				std::cout << "Location: " << serverBlock.getLocations()[i]._path << std::endl;
+				if (request.getRequestTarget() == serverBlock.getLocations()[i]._path)
+				{
+					std::cout << "Location found" << std::endl;
+					directive = serverBlock.getLocations()[i];
+					break;
+				}
+			}
 			break;
 		}
 		else if (i == _config.getServerBlocks().size() - 1)
@@ -247,17 +259,11 @@ void Server::buildResponse(Connection &conn, size_t &i, HTTPRequest &request, HT
 		}
 		std::cout << "Index: " << i << std::endl;
 	}
-	// }
-	// else
-	// {
-	// 	Debug::log("Single server block", Debug::NORMAL);
-	// 	serverBlock = _config.getServerBlocks()[0];
-	// }
 
-	std::string root = serverBlock.getRoot();
+	std::string root = directive._root;
 	std::cout << RED << "Root: " << root << RESET << std::endl;
 
-	Router router(serverBlock);
+	Router router(directive);
 
 	if (response.getStatusCode() != 0)
 	{

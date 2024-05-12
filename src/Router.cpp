@@ -5,11 +5,11 @@ Router::Router()
 {
 }
 
-Router::Router(ServerBlock serverBlock) : _serverBlock(serverBlock), _FDsRef(NULL), _pollFd(NULL)
+Router::Router(Directives& directive) : _directive(directive), _FDsRef(NULL), _pollFd(NULL)
 {
 }
 
-Router::Router(const Router &obj) : _serverBlock(obj._serverBlock), _path(obj._path), _FDsRef(NULL), _pollFd(NULL)
+Router::Router(const Router &obj) : _directive(obj._directive), _path(obj._path), _FDsRef(NULL), _pollFd(NULL)
 {
 }
 
@@ -17,7 +17,7 @@ Router &Router::operator=(const Router &obj)
 {
 	if (this == &obj)
 		return *this;
-	_serverBlock = obj._serverBlock;
+	_directive = obj._directive;
 	_path = obj._path;
 	_FDsRef = obj._FDsRef;
 	_pollFd = obj._pollFd;
@@ -30,7 +30,7 @@ Router::~Router()
 
 void Router::adaptRequestForFirefox(HTTPRequest &request)
 {
-	std::string _webRoot = _serverBlock.getRoot() + request.getSingleHeader("host").second;
+	std::string _webRoot = _directive._root + request.getSingleHeader("host").second;
 	std::string requestTarget = request.getRequestTarget();
 	size_t hostPos = requestTarget.find(request.getSingleHeader("host").second);
 	if (hostPos != std::string::npos)
@@ -51,7 +51,7 @@ void Router::adaptRequestForFirefox(HTTPRequest &request)
 void Router::routeRequest(HTTPRequest &request, HTTPResponse &response)
 {
 	Debug::log("Routing Request: host = " + request.getSingleHeader("host").second, Debug::NORMAL);
-	std::string _webRoot = _serverBlock.getRoot() + request.getSingleHeader("host").second;
+	std::string _webRoot = _directive._root + request.getSingleHeader("host").second;
 
 	std::string requestTarget = request.getRequestTarget();
 
@@ -132,7 +132,7 @@ std::string Router::getFileExtension(const std::string &fileName)
 void Router::handleServerBlockError(HTTPRequest &request, HTTPResponse &response, int errorCode)
 {
 	// clang-format off
-	std::vector<std::pair<int, std::string> > errorPage = _serverBlock.getErrorPage();
+	std::vector<std::pair<int, std::string> > errorPage = _directive._errorPage;
 	// clang-format on
 	// std::string errorPath;
 	size_t i = 0;
@@ -144,7 +144,7 @@ void Router::handleServerBlockError(HTTPRequest &request, HTTPResponse &response
 			Debug::log("Path requested: " + request.getPath(), Debug::NORMAL);
 			Debug::log("Path to error: " + errorPage[i].second, Debug::NORMAL);
 			// setting the path to the custom error page
-			request.setPath(_serverBlock.getRoot() + request.getHost() + "/" + errorPage[i].second);
+			request.setPath(_directive._root + request.getHost() + "/" + errorPage[i].second);
 			std::cout << RED << "         custom error page: " << request.getPath() << RESET << std::endl;
 			// TODO: move here what is todo below
 			StaticContentHandler staticContentInstance;
@@ -295,12 +295,12 @@ enum PathValidation Router::pathIsValid(HTTPResponse &response, HTTPRequest &req
 			}
 		}
 
-		if (!_serverBlock.getIndex().empty()) // user provided one or more indexes
+		if (!_directive._index.empty()) // user provided one or more indexes
 		{
 			// TODO: implement several indexes
-			for (size_t i = 0; i < _serverBlock.getIndex().size(); i++)
+			for (size_t i = 0; i < _directive._index.size(); i++)
 			{
-				std::string index = _serverBlock.getIndex()[i];
+				std::string index = _directive._index[i];
 				std::string requestedPath = request.getRequestTarget();
 				requestedPath += index;
 				if (stat(requestedPath.c_str(), &buffer) == 0)
@@ -311,10 +311,10 @@ enum PathValidation Router::pathIsValid(HTTPResponse &response, HTTPRequest &req
 				}
 			}
 		}
-		if (_serverBlock.getIndex().empty()) // user did not provide any index
+		if (_directive._index.empty()) // user did not provide any index
 		{
 			Debug::log("User did not provided any index", Debug::NORMAL);
-			if (_serverBlock.getAutoIndex()) // autoindex is on
+			if (_directive._autoindex) // autoindex is on
 			{
 				Debug::log("pathIsValid: Autoindex is on", Debug::NORMAL);
 				generateDirectoryListing(response, path, request.getRequestTarget());
