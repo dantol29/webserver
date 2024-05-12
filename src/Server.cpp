@@ -56,6 +56,7 @@ void Server::startPollEventLoop()
 					}
 					else
 					{
+						std::cout << "New connection from " << _connections[i].getServerIp() << std::endl;
 						// printFrame("CLIENT SOCKET EVENT", true);
 						handleConnection(_connections[i],
 										 i,
@@ -267,7 +268,7 @@ void Server::buildResponse(Connection &conn, size_t &i, HTTPRequest &request, HT
 	conn.setHasDataToSend(true);
 }
 
-void Server::writeToClient(Connection &conn, size_t &i, HTTPResponse &response)
+void Server::writeToClient(Connection &conn, size_t &i, HTTPResponse &response, HTTPRequest &request)
 {
 	Debug::log("\033[1;36mEntering writeToClient\033[0m", Debug::NORMAL);
 
@@ -291,7 +292,7 @@ void Server::writeToClient(Connection &conn, size_t &i, HTTPResponse &response)
 			std::cout << RED;
 		else
 			std::cout << GREEN;
-		std::cout << "HTTP/1.1 " << response.getStatusCode() << std::endl;
+		std::cout << request.getMethod() << " " << response.getStatusCode() << " URL: " << request.getRequestTarget() << std::endl;
 		std::cout << RESET;
 		isLastSend = true;
 	}
@@ -341,7 +342,7 @@ void Server::handleConnection(Connection &conn, size_t &i, Parser &parser, HTTPR
 		buildResponse(conn, i, request, response);
 
 	if (conn.getHasDataToSend() && !conn.getHasReadSocket())
-		writeToClient(conn, i, response);
+		writeToClient(conn, i, response, request);
 
 	if (conn.getCanBeClosed())
 		closeClientConnection(conn, i);
