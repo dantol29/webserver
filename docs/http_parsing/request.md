@@ -8,11 +8,11 @@
 - headers (content type, content length and more)
 - body (html, json, plain, octet-stream)
 
--------------------------------------------------------------------------------------------------------------------
+---
 
 ### REQUEST LINE
 
-- Syntax:  `method token, single space (SP), request-target, SP, protocol version\r\n`.
+- Syntax: `method token, single space (SP), request-target, SP, protocol version\r\n`.
 - Example: `GET /index.html HTTP/1.1`.
 
 #### ⚠️ Request line rules
@@ -21,16 +21,17 @@
 2. There are **four distinct formats** for the request-target (origin-form, absolute-form, authority-form, asterisk-form).
 3. **No whitespace** is allowed in the request-target.
 
-| Method  | Description |
-| ------------- | ------------- |
-| GET  | Retrieves data from the server |
-| POST  | Submits data to be processed to the server |
-| PUT  | Uploads a resource to the server |
-| DELETE  | Requests the server to delete a resource  |
-| HEAD  | Similar to GET but requests only the headers |
-| CONNECT  | Establish a tunnel to the server |
-| OPTIONS  | Request information about the communication options |
-| TRACE  | Echo back the received request to the client  |
+| Method  | Description                                         |
+| ------- | --------------------------------------------------- |
+| GET     | Retrieves data from the server                      |
+| POST    | Submits data to be processed to the server          |
+| PUT     | Uploads a resource to the server                    |
+| DELETE  | Requests the server to delete a resource            |
+| HEAD    | Similar to GET but requests only the headers        |
+| CONNECT | Establish a tunnel to the server                    |
+| OPTIONS | Request information about the communication options |
+| TRACE   | Echo back the received request to the client        |
+| SALAD   |                                                     |
 
 #### Requst-target formats
 
@@ -57,24 +58,26 @@
 4. <b>Asterisk-form</b>
    - _Example_ `OPTIONS * HTTP/1.1`
    - This form of is only used for **OPTIONS** request
-   - When a client wishes to request OPTIONS for the server as a whole, the client **MUST** send only "*" as the request-target (`OPTIONS * HTTP/1.1`)
--------------------------------------------------------------------------------------------------------------------
+   - When a client wishes to request OPTIONS for the server as a whole, the client **MUST** send only "_" as the request-target (`OPTIONS _ HTTP/1.1`)
+
+---
 
 ### HEADERS
 
-- Syntax:  `header-field-name: SP header-field-value\r\n`.
+- Syntax: `header-field-name: SP header-field-value\r\n`.
 - Example: `Connection: keep-alive\r\n`.
 
 #### ⚠️ Header rules
+
 1. Each header is a single line terminated by a pair `\r\n`.
 2. Values may contain **any valid ASCII characters**, including spaces
 3. Multiple headers with the same field name can be included in the request.
 4. A client **MUST** send a `Host` header field.
 5. A client **MUST** send a `Content-length` header for requests with a body (POST, PUT).
-5. A client **MUST** send a `Content-type` header for requests with a body (POST, PUT).
+6. A client **MUST** send a `Content-type` header for requests with a body (POST, PUT).
 7. Headers are terminated by a blank line `\r\n\r\n`.
 
--------------------------------------------------------------------------------------------------------------------
+---
 
 ### BODY
 
@@ -89,7 +92,7 @@
 7. A server that receives an HTTP/1.0 message containing a Transfer-Encoding header field **MUST** treat the message as if the framing is faulty, even if a Content-Length is present.
 8. If a message is received without Transfer-Encoding and with an invalid Content-Length header field, then the message framing is invalid and the recipient **MUST** treat it as `400` (unrecoverable error).
 
--------------------------------------------------------------------------------------------------------------------
+---
 
 ### :bomb: Error status codes
 

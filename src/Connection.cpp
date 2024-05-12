@@ -281,6 +281,7 @@ bool Connection::readChunkedBody(Parser &parser)
 			if (!readChunk(chunkSize, chunkData, _response))
 				return false;
 			parser.setBuffer(parser.getBuffer() + chunkData);
+			return true;
 		}
 	}
 	return false;

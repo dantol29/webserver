@@ -270,7 +270,7 @@ bool Parser::hasMandatoryHeaders(HTTPRequest &req)
 	}
 	if (_isChunked && req.getMethod() == "POST")
 		return (isHost == 1 && isContentType == 1);
-	if (req.getMethod() == "POST" || req.getMethod() == "DELETE")
+	if (req.getMethod() == "POST" || req.getMethod() == "DELETE") // || req.getMethod() == "SALAD")
 		return (isHost == 1 && isContentLength == 1 && isContentType == 1);
 	else
 		return (isHost == 1);
@@ -505,7 +505,7 @@ std::string Parser::extractMethod(const char *request, unsigned int &i)
 	while (request[i] && request[i] != ' ' && !isInvalidChar(request[i]))
 		i++;
 	method = string_request.substr(0, i);
-	if (method == "GET" || method == "POST" || method == "DELETE")
+	if (method == "GET" || method == "POST" || method == "SALAD" || method == "DELETE")
 		return (method);
 	return ("");
 }
@@ -581,7 +581,9 @@ bool Parser::isOrigForm(std::string &requestTarget, int &queryStart)
 
 bool Parser::isValidContentType(std::string type)
 {
-	if (type == "text/plain" || type == "text/html" || type.substr(0, 30) == "multipart/form-data; boundary=")
+if (type == "text/plain" || type == "text/html" || \
+	type.substr(0, 30) == "multipart/form-data; boundary=" \
+	|| type == "application/octet-stream")
 		return (true);
 	return (false);
 }
