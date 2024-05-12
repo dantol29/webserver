@@ -38,11 +38,15 @@ class Server
 	int getPort() const;
 	std::string getWebRoot() const;
 	size_t getClientMaxHeadersSize() const;
+	// for CGI
+	bool getHasCGI() const;
+	int getCGICounter() const;
 
 	// SETTERS
 	void setPort(int port);
 	void setWebRoot(const std::string &webRoot);
-
+	void setHasCGI(bool hasCGI);
+	void setCGICounter(int CGICounter);
 	void checkSocketOptions();
 
   private:
@@ -58,6 +62,10 @@ class Server
 	std::vector<struct pollfd> _FDs;
 	std::vector<Connection> _connections;
 	Config _config;
+	// for CGI
+	bool _hasCGI;
+	int _CGICounter;
+	//	std::vector<pollfd> _CGIFDs;                  ?
 
 	/*** Private Methods ***/
 	/* for Constructors */
@@ -77,6 +85,7 @@ class Server
 	void handleSocketTimeoutIfAny();
 	void handlePollError();
 	void AlertAdminAndTryToRecover();
+	void CGIMonitor(Connection &conn);
 
 	/* for handleConnection */
 	void readFromClient(Connection &conn, size_t &i, Parser &parser, HTTPRequest &request, HTTPResponse &response);

@@ -30,7 +30,7 @@ void Server::startListening()
 	listen();
 }
 
-void CGIMonitor(Connection &conn)
+void Server::CGIMonitor(Connection &conn)
 {
 	(void)conn;
 
@@ -38,7 +38,20 @@ void CGIMonitor(Connection &conn)
 	waitpid(-1, &status, WNOHANG);
 	if (WIFEXITED(status)) // returned pid of the child process that has exited
 	{
-		std::cout << "Child exited normally with status: " << WEXITSTATUS(status) << std::endl;
+		Debug::log("Child exited normally with status: " + toString(WEXITSTATUS(status)), Debug::OCF);
+		// TODO: locate the corresponding connection and finalize the CGI response.
+
+		if (_CGICounter > 0)
+		{
+			_CGICounter--; // TODO (you need to pass a reference to the Server at the same point where you set this,
+			if (_CGICounter == 0)
+				_hasCGI = false;
+			conn.setHasCGI(false);
+			conn.setPID(NULL);
+			Debug::log("CGI counter is now at 0, _hasCGI at false, PID got set to NULL", Debug::OCF);
+		}
+		else
+			Debug::log("CGI counter is already at 0", Debug::OCF);
 	}
 	else if (WIFSIGNALED(status)) // returned 0 : no child has exited, continue executing without blocking.
 	{
@@ -52,10 +65,15 @@ void Server::startPollEventLoop()
 	int pollCounter = 0;
 	while (1)
 	{
+		// TODO:
+		//  Right before entering poll, we check if the Server.hasCGI is true, and if it is the case we switch the
+		//  timeout to the value of the macro WITH_CGI  that will be of some millisecond, this is the frequency we want
+		//  to go through waitpid. If the Server has no CGI the value go back to -1 and we block on poll
+
 		// printConnections("BEFORE POLL", _FDs, _connections, true);
 		std::cout << CYAN << "++++++++++++++ #" << pollCounter
 				  << " Waiting for new connection or Polling +++++++++++++++" << RESET << std::endl;
-		int ret = poll(_FDs.data(), _FDs.size(), -1);
+		int ret = poll(_FDs.data(), _FDs.size(), -1); // TODO: CGI int timeout for the -1.
 		pollCounter++;
 		// printFrame("POLL EVENT DETECTED", true);
 		// printConnections("AFTER POLL", _FDs, _connections, true);
@@ -643,4 +661,28 @@ void Server::checkSocketOptions()
 	{
 		// std::cout << "SO_REUSEPORT is " << (optval ? "enabled" : "disabled") << std::endl;
 	}
+}
+
+bool Server::getHasCGI() const
+{
+	return _hasCGI;
+}
+
+int Server::getCGICounter() const
+{
+	return _CGICounter;
+}
+
+// void Server::setHasCGI(bool hasCGI)
+// {
+// 	_hasCGI = hasCGI;
+// 	if (hasCGI)
+// 		_CGICounter++; // TODO (you need to pass a reference to the Server at the same point where you set this,
+// 	else
+// 		_CGICounter--;
+// }
+
+void Server::setCGICounter(int CGICounter)
+{
+	_CGICounter = CGICounter;
 }

@@ -32,7 +32,7 @@ class CGIHandler : public AResponseHandler
 	CGIHandler(const CGIHandler &other);
 	CGIHandler &operator=(const CGIHandler &other);
 	void closeAllSocketFDs();
-	Connection *_conn;
+	Connection *_conn; // TODO: AVOID POINTER => but we get a circular dependency
 	std::vector<pollfd> *_FDsRef;
 	struct pollfd *_pollFd;
 };

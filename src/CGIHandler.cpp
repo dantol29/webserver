@@ -142,6 +142,12 @@ std::string CGIHandler::executeCGI(const MetaVariables &env)
 	}
 
 	pid_t pid = fork();
+
+	_conn->setPID(pid);
+	_conn->setHasCGI(true);
+	_conn->setCGIexpired(false);
+	_conn->_cgiCounter++;
+
 	if (pid == -1)
 	{
 		perror("fork failed");
@@ -181,8 +187,8 @@ std::string CGIHandler::executeCGI(const MetaVariables &env)
 		}
 		close(pipeFD[0]);
 
-		int status;
-		waitpid(pid, &status, WNOHANG);
+		// int status;
+		// waitpid(pid, &status, WNOHANG);        this has been moved to CGIMonitor in startPollEventLoop
 		std::cout << "------------------CGI output prepared-------------------" << std::endl;
 	}
 
