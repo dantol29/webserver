@@ -25,9 +25,14 @@ This document outlines the test programs to test our Webserver
 
 ### Testing: non-blocking
 
-Designed to test the non-blocking nature of the webserver. It sends concurrent GET requests using multithreading.
-To create the largefile (which is gitignored): `dd if=/dev/zero of=var/www/development_site/largefile bs=100M count=1`
+Designed to test the non-blocking nature of the webserver.
+
+It sends concurrent GET requests using multithreading.
+The largefile is gitignored and create with the Makefile`dd if=/dev/zero of=var/www/development_site/largefile bs=100M count=1`
 (see _docs/mux_tester_dd_command.md_ for more information)
+
+- 3 tests for a 200 in the responses of each request
+- 1 test for the non blocking nature (3rd request should be served faster than second (largefile))
 
 ## parser.cpp
 

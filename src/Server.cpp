@@ -2,6 +2,8 @@
 #include "Parser.hpp"
 #include "Connection.hpp"
 
+#define SEND_BUFFER_SIZE 1024 * 100 // 100 KB
+
 Server::Server()
 {
 	loadDefaultConfig();
@@ -104,10 +106,12 @@ void Server::readFromClient(Connection &conn, size_t &i, Parser &parser, HTTPReq
 		conn.setHasReadSocket(true);
 		if (!parser.preParseHeaders(response))
 		{
-			conn.setCanBeClosed(true);
+			// logic was incorrect here
+			conn.setCanBeClosed(false);
 			conn.setHasFinishedReading(true);
-			conn.setHasDataToSend(true);
-			Debug::log("Error pre-parsing headers", Debug::OCF);
+			conn.setHasDataToSend(false);
+			// ---------------------
+			std::cout << "Error pre-parsing headers" << std::endl;
 			return;
 		}
 	}
@@ -207,41 +211,49 @@ void Server::buildResponse(Connection &conn, size_t &i, HTTPRequest &request, HT
 
 	ServerBlock serverBlock;
 	std::cout << GREEN << "Number of server blocks: " << _config.getServerBlocks().size() << RESET << std::endl;
-	if (_config.getServerBlocks().size() > 1)
+	// if (_config.getServerBlocks().size() > 1)
+	// {
+	// retrieve the server block which has a server name matching the request host header
+	for (size_t i = 0; i < _config.getServerBlocks().size(); i++)
 	{
-		// retrieve the server block which has a server name matching the request host header
-		for (size_t i = 0; i < _config.getServerBlocks().size(); i++)
+		// why getServerName returns a vector ?
+		std::string serverName = _config.getServerBlocks()[i].getServerName()[0];
+		std::cout << RED << "Checking server name: " << serverName << RESET << std::endl;
+		std::cout << "Request host: " << request.getSingleHeader("host").second << std::endl;
+		std::cout << "Request target: " << request.getRequestTarget() << std::endl;
+		if (serverName == request.getSingleHeader("host").second)
 		{
-			// why getServerName returns a vector ?
-			std::string serverName = _config.getServerBlocks()[i].getServerName()[0];
-			std::cout << RED << "Checking server name: " << serverName << RESET << std::endl;
-			std::cout << "Request host: " << request.getSingleHeader("host").second << std::endl;
-			std::cout << "Request target: " << request.getRequestTarget() << std::endl;
-			if (serverName == request.getSingleHeader("host").second)
+			std::cout << GREEN << "Server block and request host match" << RESET << std::endl;
+			// _config.setServerBlockIndex(i);
+			serverBlock = _config.getServerBlocks()[i];
+			break;
+		}
+		else
+		{
+			static StaticContentHandler staticContentInstance;
+			// if error already occurred, we don't want to overwrite it
+			if (response.getStatusCode() != 0)
 			{
-				std::cout << GREEN << "Server block and request host match" << RESET << std::endl;
-				// _config.setServerBlockIndex(i);
-				serverBlock = _config.getServerBlocks()[i];
-				break;
-			}
-			else
-			{
-				// if no server name is found, use the default server block
-				static StaticContentHandler staticContentInstance;
-				staticContentInstance.handleNotFound(response);
-				response.setStatusCode(404, "No server block is matching the request host");
+				Debug::log("Error response" + toString(response.getStatusCode()), Debug::NORMAL);
+				response.setErrorResponse(response.getStatusCode());
 				conn.setHasDataToSend(true);
-				Debug::log("Exiting buildResponse", Debug::NORMAL);
 				return;
 			}
-			std::cout << "Index: " << i << std::endl;
+			// if no server name is found, use the default server block
+			staticContentInstance.handleNotFound(response);
+			response.setStatusCode(404, "No server block is matching the request host");
+			conn.setHasDataToSend(true);
+			Debug::log("Exiting buildResponse", Debug::NORMAL);
+			return;
 		}
+		std::cout << "Index: " << i << std::endl;
 	}
-	else
-	{
-		Debug::log("Single server block", Debug::NORMAL);
-		serverBlock = _config.getServerBlocks()[0];
-	}
+	// }
+	// else
+	// {
+	// 	Debug::log("Single server block", Debug::NORMAL);
+	// 	serverBlock = _config.getServerBlocks()[0];
+	// }
 
 	std::string root = serverBlock.getRoot();
 	std::cout << RED << "Root: " << root << RESET << std::endl;
@@ -251,7 +263,7 @@ void Server::buildResponse(Connection &conn, size_t &i, HTTPRequest &request, HT
 	if (response.getStatusCode() != 0)
 	{
 		Debug::log("Error response" + toString(response.getStatusCode()), Debug::NORMAL);
-		response.setErrorResponse(response.getStatusCode());
+		// response.setErrorResponse(response.getStatusCode());
 		router.handleServerBlockError(request, response, response.getStatusCode());
 		conn.setHasDataToSend(true);
 		return;
@@ -268,30 +280,49 @@ void Server::buildResponse(Connection &conn, size_t &i, HTTPRequest &request, HT
 
 void Server::writeToClient(Connection &conn, size_t &i, HTTPResponse &response)
 {
-	std::cout << "\033[1;36m"
-			  << "Entering writeToClient"
-			  << "\033[0m" << std::endl;
+	std::cout << "\033[1;36m" << "Entering writeToClient" << "\033[0m" << std::endl;
+
+	static int sendResponseCounter = 0;
+	bool isLastSend = false;
+	size_t tmpBufferSize = SEND_BUFFER_SIZE;
 	(void)i;
-	std::string responseString = response.objToString();
-	send(conn.getPollFd().fd, responseString.c_str(), responseString.size(), 0);
-	// conn.setHasDataToSend(); will not be always false in case of chunked response or keep-alive connection
-	conn.setHasDataToSend(false);
-	conn.setHasFinishedSending(true);
-	// setCanBeClosed(true) would not be the case only if we have a keep-alive connection or a chunked response
-	conn.setCanBeClosed(true);
+
+	if (conn.getResponseSizeSent() == 0)
+	{
+		conn.setResponseString(response.objToString());
+		conn.setResponseSize(response.objToString().size());
+		sendResponseCounter = 0;
+	}
+
+	if (conn.getResponseString().size() < SEND_BUFFER_SIZE)
+	{
+		tmpBufferSize = conn.getResponseString().size();
+		std::cout << GREEN << "Sending last part of the response" << RESET << std::endl;
+		isLastSend = true;
+	}
+
+	std::cout << GREEN << "sendResponseCounter: " << sendResponseCounter << RESET << std::endl;
+	int read = send(conn.getPollFd().fd, conn.getResponseString().c_str(), tmpBufferSize, 0);
+	if (read == -1)
+	{
+		perror("send");
+	}
+
+	sendResponseCounter++;
+	conn.setResponseSizeSent(conn.getResponseSizeSent() + tmpBufferSize);
+	if (isLastSend)
+	{
+		conn.setHasFinishedSending(true);
+		conn.setCanBeClosed(true);
+	}
+
+	conn.setResponseString(conn.getResponseString().substr(tmpBufferSize));
+	response.getBody().erase(0, SEND_BUFFER_SIZE);
 }
 
 void Server::closeClientConnection(Connection &conn, size_t &i)
 {
-	std::cout << "\033[1;36m"
-			  << "Entering closeClientConnection"
-			  << "\033[0m" << std::endl;
-	// if (response.getStatusCode() != 0)
-	// if (conn.getResponse().getStatusCode() != 0 && conn.getResponse().getStatusCode() != 499)
-	// {
-	// 	std::string responseString = conn.getResponse().objToString();
-	// 	send(conn.getPollFd().fd, responseString.c_str(), responseString.size(), 0);
-	// }
+	std::cout << "\033[1;36m" << "Entering closeClientConnection" << "\033[0m" << std::endl;
 	// TODO: should we close it with the Destructor of the Connection class?
 	close(conn.getPollFd().fd);
 	_FDs.erase(_FDs.begin() + i);
@@ -301,15 +332,13 @@ void Server::closeClientConnection(Connection &conn, size_t &i)
 
 void Server::handleConnection(Connection &conn, size_t &i, Parser &parser, HTTPRequest &request, HTTPResponse &response)
 {
+	std::cout << "\033[1;36m" << "Entering handleConnection" << "\033[0m" << std::endl;
 
-	// conn.printConnection();
-
-	// Why is it TRUE when I refresh a page?????
 	conn.setHasReadSocket(false);
 	std::cout << "Has finished reading: " << conn.getHasFinishedReading() << std::endl;
 	if (!conn.getHasFinishedReading())
 		readFromClient(conn, i, parser, request, response);
-	// TODO: add comments to explain
+
 	if (conn.getHasReadSocket() && !conn.getHasFinishedReading())
 	{
 		std::cout << "Has read socket: " << conn.getHasReadSocket() << std::endl;
@@ -318,12 +347,10 @@ void Server::handleConnection(Connection &conn, size_t &i, Parser &parser, HTTPR
 	std::cout << request << std::endl;
 	if (!conn.getCanBeClosed() && !conn.getHasDataToSend())
 		buildResponse(conn, i, request, response);
-	// std::cout << "Has data to send: " << conn.getHasDataToSend() << std::endl;
-	// std::cout << response << std::endl;
-	if (conn.getHasDataToSend())
+
+	if (conn.getHasDataToSend() && !conn.getHasReadSocket())
 		writeToClient(conn, i, response);
-	// std::cout << "Has finished sending: " << conn.getHasFinishedSending() << std::endl;
-	// std::cout << "Can be closed: " << conn.getCanBeClosed() << std::endl;
+
 	if (conn.getCanBeClosed())
 		closeClientConnection(conn, i);
 }
