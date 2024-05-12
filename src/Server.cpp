@@ -226,8 +226,16 @@ void Server::buildResponse(Connection &conn, size_t &i, HTTPRequest &request, HT
 		}
 		else
 		{
-			// if no server name is found, use the default server block
 			static StaticContentHandler staticContentInstance;
+			// if error already occurred, we don't want to overwrite it
+			if (response.getStatusCode() != 0)
+			{
+				Debug::log("Error response" + toString(response.getStatusCode()), Debug::NORMAL);
+				response.setErrorResponse(response.getStatusCode());
+				conn.setHasDataToSend(true);
+				return;
+			}
+			// if no server name is found, use the default server block
 			staticContentInstance.handleNotFound(response);
 			response.setStatusCode(404, "No server block is matching the request host");
 			conn.setHasDataToSend(true);
