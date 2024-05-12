@@ -63,7 +63,7 @@ void printVariablesHeadersBody(const HTTPRequest &obj)
 	{
 		std::cout << "Key: " << it->first << ", Value: " << it->second << std::endl;
 	}
-	std::cout << "Body: =>" << std::endl;
+	// std::cout << "Body: =>" << std::endl;
 	std::cout << c << std::endl;
 }
 
@@ -99,9 +99,8 @@ void printFDsVector(const std::vector<pollfd> &fds)
 	std::cout << "SIZE: " << fds.size() << std::endl;
 	for (size_t i = 0; i < fds.size(); ++i)
 	{
-		std::cout << " - #" << i << ": "
-				  << "fd: " << fds[i].fd << ", events: " << fds[i].events << ", revents: " << fds[i].revents
-				  << std::endl;
+		std::cout << " - #" << i << ": " << "fd: " << fds[i].fd << ", events: " << fds[i].events
+				  << ", revents: " << fds[i].revents << std::endl;
 	}
 	std::cout << CYAN << "++++++ PRINTING _FDs VECTOR END ++++++" << RESET << std::endl;
 }

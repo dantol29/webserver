@@ -28,7 +28,9 @@ bool Parser::preParseHeaders(HTTPResponse &res)
 		_headersBuffer = _buffer.substr(0, headersEnd + 4);
 		_headersComplete = true;
 		_buffer = _buffer.substr(headersEnd + 4);
-		std::cout << _buffer << std::endl;
+		// std::cout << _buffer << std::endl;
+		// std::cout << "\033[31m"
+		// 		  << "_buffer size " << _buffer.size() << "\033[0m" << std::endl;
 		return (true);
 	}
 	std::cout << "headers are not complete" << std::endl;

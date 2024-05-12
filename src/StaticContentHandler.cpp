@@ -55,8 +55,14 @@ void StaticContentHandler::handleRequest(const HTTPRequest &request, HTTPRespons
 	std::string host = request.getHost();
 
 	std::string path = request.getPath();
+	std::cout << "path: " << path << std::endl;
 	if (requestTarget == "/" || requestTarget == "")
-		requestTarget = "index.html";
+		requestTarget = "/index.html";
+	// if the last character of the path is a / and the first character of the request target is a /, we remove the
+	// first character of the request target
+	std::cout << "requestTarget: " << requestTarget << std::endl;
+	if (path[path.length() - 1] == '/' && requestTarget[0] == '/')
+		requestTarget = requestTarget.substr(1);
 	// TODO: consider streaming the file instead of loading it all in memory for large files
 	if (isDirectory(path))
 	{
@@ -84,7 +90,7 @@ void StaticContentHandler::handleRequest(const HTTPRequest &request, HTTPRespons
 	//  response.setHeader("Connection: ", "close");
 	//  response.setHeader("Server: ", "webserv");
 
-	std::cout << std::endl;
+	// std::cout << std::endl;
 	// std::cout << "_body : " << response.getBody() << std::endl;
 	file.close();
 	return;

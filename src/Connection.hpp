@@ -34,6 +34,9 @@ class Connection
 	bool _hasDataToSend;
 	bool _hasFinishedSending;
 	bool _canBeClosed;
+	size_t _responseSize;
+	size_t _responseSizeSent;
+	std::string _responseString;
 
   public:
 	Connection(struct pollfd &pollFd, Server &server);
@@ -54,9 +57,12 @@ class Connection
 
 	struct pollfd getPollFd() const;
 
+	std::string getResponseString() const;
 	enum ConnectionType getType() const;
 	std::string getServerIp() const;
 	unsigned short getServerPort() const;
+	size_t getResponseSize() const;
+	size_t getResponseSizeSent() const;
 
 	bool getHasReadSocket() const;
 	bool getHasFinishedReading() const;
@@ -67,9 +73,12 @@ class Connection
 	struct pollfd &getPollFd();
 
 	/* Setters */
+	void setResponseString(std::string responseString);
 	void setType(enum ConnectionType type);
 	void setServerIp(std::string serverIp);
 	void setServerPort(unsigned short serverPort);
+	void setResponseSize(size_t responseSize);
+	void setResponseSizeSent(size_t responseSizeSent);
 
 	void setHasReadSocket(bool value);
 	void setHasFinishedReading(bool value);
