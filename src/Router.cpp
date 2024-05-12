@@ -28,9 +28,11 @@ Router::~Router()
 {
 }
 
-void Router::adaptRequestForFirefox(HTTPRequest &request)
+// Modifies the HTTP request path:  removes host header and "http://" prefix
+// combines with root directory for standardized routing,
+void Router::adaptPathForFirefox(HTTPRequest &request)
 {
-	std::string _webRoot = _directive._root + request.getSingleHeader("host").second;
+	std::string path = _directive._root + request.getSingleHeader("host").second;
 	std::string requestTarget = request.getRequestTarget();
 	size_t hostPos = requestTarget.find(request.getSingleHeader("host").second);
 	if (hostPos != std::string::npos)
@@ -44,20 +46,24 @@ void Router::adaptRequestForFirefox(HTTPRequest &request)
 		std::string remove = "http://";
 		requestTarget.erase(hostPos2, remove.length());
 	}
-	_webRoot += requestTarget;
-	request.setPath(_webRoot);
+	std::cout << "requestTarget after adaptPathForFirefox: " << requestTarget << std::endl;
+	request.setRequestTarget(requestTarget);
+	path += requestTarget;
+	request.setPath(path);
 }
 
 void Router::routeRequest(HTTPRequest &request, HTTPResponse &response)
 {
 	Debug::log("Routing Request: host = " + request.getSingleHeader("host").second, Debug::NORMAL);
-	std::string _webRoot = _directive._root + request.getSingleHeader("host").second;
-
+	std::string root = _directive._root;
+	request.setRoot(root);
+	std::string path = root + request.getSingleHeader("host").second;
 	std::string requestTarget = request.getRequestTarget();
+	std::cout << YELLOW << "requestTarget: " << requestTarget << RESET << std::endl;
 
-	adaptRequestForFirefox(request);
+	adaptPathForFirefox(request);
 
-	std::cout << GREEN << "Routing request to path: " << _webRoot << RESET << std::endl;
+	std::cout << GREEN << "Routing request to path: " << root << RESET << std::endl;
 
 	// std::cout << request << std::endl;
 
@@ -121,20 +127,20 @@ std::string Router::getFileExtension(const std::string &fileName)
 	size_t queryStart = fileName.find("?", dotIndex);
 	if (queryStart == std::string::npos)
 	{
-		return fileName.substr(dotIndex + 1);
+		return fileName.substr(dotIndex);
 	}
 	else
 	{
-		return fileName.substr(dotIndex + 1, queryStart - dotIndex - 1);
+		return fileName.substr(dotIndex, queryStart - dotIndex - 1);
 	}
 }
 
 void Router::handleServerBlockError(HTTPRequest &request, HTTPResponse &response, int errorCode)
 {
+	Debug::log("handleServerBlockError: entering function", Debug::NORMAL);
 	// clang-format off
 	std::vector<std::pair<int, std::string> > errorPage = _directive._errorPage;
 	// clang-format on
-	// std::string errorPath;
 	size_t i = 0;
 	for (; i < errorPage.size(); i++)
 	{
@@ -145,7 +151,7 @@ void Router::handleServerBlockError(HTTPRequest &request, HTTPResponse &response
 			Debug::log("Path to error: " + errorPage[i].second, Debug::NORMAL);
 			// setting the path to the custom error page
 			request.setPath(_directive._root + request.getHost() + "/" + errorPage[i].second);
-			std::cout << RED << "         custom error page: " << request.getPath() << RESET << std::endl;
+			// std::cout << RED << "         custom error page: " << request.getPath() << RESET << std::endl;
 			// TODO: move here what is todo below
 			StaticContentHandler staticContentInstance;
 			staticContentInstance.handleRequest(request, response);
@@ -153,15 +159,19 @@ void Router::handleServerBlockError(HTTPRequest &request, HTTPResponse &response
 			return;
 		}
 	}
-
-	// TODO: BELOW IS THE LOGIC FOR CUSTOM ERROR PAGES, it should be move above and checked
-	//  errorPath = request.getPath();
-	//  if (errorPath.empty())
-	//  {
-	//  	std::cout << "handleServerBlockError: Error path is empty" << std::endl;
-	//  	return;
-	//  }
+	Debug::log("handleServerBlockError: No custom error page found", Debug::NORMAL);
 	StaticContentHandler staticContentInstance;
+	// if (errorCode == 404) // we have our own
+	// {
+	// 	staticContentInstance.handleNotFound(response);
+	// }
+	// else // we generate it
+	// {
+	response.setErrorResponse(errorCode);
+	// }
+	return;
+
+	// TODO: below will not be executed, doublecheck and cleanup
 
 	PathValidation pathResult = pathIsValid(response, request);
 	switch (pathResult)
@@ -183,8 +193,26 @@ void Router::handleServerBlockError(HTTPRequest &request, HTTPResponse &response
 bool Router::isCGI(const HTTPRequest &request)
 {
 	// TODO: check against config file, not this hardcoded version
-	std::string fileExtension = getFileExtension(request.getRequestTarget());
-	return (fileExtension == "cgi" || fileExtension == "pl" || fileExtension == "py" || fileExtension == "php");
+	std::vector<std::string> cgiExtensions = _directive._cgiExt;
+	std::cout << RED << "isCGI" << RESET << std::endl;
+	std::cout << "cgiExtensions: " << cgiExtensions.size() << std::endl;
+	std::cout << "request target: " << request.getRequestTarget() << std::endl;
+	if (!cgiExtensions.empty())
+	{
+		std::string fileExtension = getFileExtension(request.getRequestTarget());
+		std::cout << "fileExtension: " << fileExtension << std::endl;
+		for (size_t i = 0; i < cgiExtensions.size(); i++)
+		{
+			std::cout << "cgiExtensions[" << i << "]: " << cgiExtensions[i] << std::endl;
+			if (cgiExtensions[i] == fileExtension)
+			{
+				Debug::log("isCGI: CGI request detected", Debug::NORMAL);
+				return true;
+			}
+		}
+	}
+	Debug::log("isCGI: Not a CGI request", Debug::NORMAL);
+	return false;
 }
 
 void Router::splitTarget(const std::string &target)

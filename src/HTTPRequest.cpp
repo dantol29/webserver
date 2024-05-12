@@ -165,14 +165,14 @@ void HTTPRequest::setFileContent(const std::string &content)
 	_files.back().fileContent = content;
 }
 
-void HTTPRequest::setPath(const std::string &path)
+void HTTPRequest::setPath(const std::string path)
 {
 	this->_path = path;
 }
 
-void HTTPRequest::setRoot(const std::string &root)
+void HTTPRequest::setRoot(const std::string root)
 {
-	this->_path = root;
+	this->_root = root;
 }
 
 std::ostream &operator<<(std::ostream &out, const HTTPRequest &obj)
