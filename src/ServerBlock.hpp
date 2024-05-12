@@ -2,6 +2,7 @@
 #define SERVERBLOCK_HPP
 
 #include "webserv.hpp"
+#include "Debug.hpp"
 
 // a list of all accepted variables
 // ---------------------------------
@@ -22,6 +23,7 @@ struct Listen
 		_ip = "";
 		_port = 0;
 		_isIpv6 = false;
+		Debug::log("Listen default constructor called", Debug::OCF);
 	}
 
 	Listen(std::string ip, int port, bool ipv6)
@@ -29,6 +31,7 @@ struct Listen
 		_ip = ip;
 		_port = port;
 		_isIpv6 = ipv6;
+		Debug::log("Listen param (ip, port, ipv6) constructor called", Debug::OCF);
 	}
 
 	Listen(std::string str)
@@ -39,6 +42,8 @@ struct Listen
 		bool isIpAndPort = false;
 		struct addrinfo hints;
 		struct addrinfo *res;
+
+		Debug::log("Listen param (str) constructor called", Debug::OCF);
 
 		_isIpv6 = false;
 		memset(&hints, 0, sizeof(hints));
@@ -112,6 +117,7 @@ struct Listen
 		_ip = obj._ip;
 		_port = obj._port;
 		_isIpv6 = obj._isIpv6;
+		Debug::log("Listen copy constructor called", Debug::OCF);
 	}
 
 	Listen &operator=(const Listen &obj)
@@ -119,9 +125,17 @@ struct Listen
 		_ip = obj._ip;
 		_port = obj._port;
 		_isIpv6 = obj._isIpv6;
+		Debug::log("Listen assignment operator called", Debug::OCF);
 		return *this;
 	}
 };
+
+// Overload the << operator outside of the Listen struct
+std::ostream &operator<<(std::ostream &os, const Listen &l)
+{
+	os << "IP: " << l._ip << ", Port: " << l._port << ", IPv6: " << (l._isIpv6 ? "Yes" : "No");
+	return os;
+}
 
 struct Directives
 {
