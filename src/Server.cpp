@@ -2,6 +2,8 @@
 #include "Parser.hpp"
 #include "Connection.hpp"
 
+# define SEND_BUFFER_SIZE 1024 * 100 // 100 KB
+
 Server::Server()
 {
 	loadDefaultConfig();
@@ -270,76 +272,49 @@ void Server::buildResponse(Connection &conn, size_t &i, HTTPRequest &request, HT
 
 void Server::writeToClient(Connection &conn, size_t &i, HTTPResponse &response)
 {
-	std::cout << "\033[1;36m"
-			  << "Entering writeToClient"
-			  << "\033[0m" << std::endl;
+	std::cout << "\033[1;36m" << "Entering writeToClient" << "\033[0m" << std::endl;
 
 	static int sendResponseCounter = 0;
 	bool isLastSend = false;
-	size_t tmpBufferSize = BUFFER_SIZE;
+	size_t tmpBufferSize = SEND_BUFFER_SIZE;
 	(void)i;
 
 	if (conn.getResponseSizeSent() == 0)
 	{
-		// std::cout << RED << "string" << response.objToString() << RESET << std::endl;
 		conn.setResponseString(response.objToString());
 		conn.setResponseSize(response.objToString().size());
 		sendResponseCounter = 0;
 	}
 
-	// if (conn.getResponseSizeSent() == conn.getResponseSize())
-	//{
-	//	std::cout << "Response sent" << std::endl;
-	//	conn.setHasDataToSend(false);
-	//	conn.setHasFinishedSending(true);
-	//	conn.setCanBeClosed(true);
-	//	return;
-	// }
-	if (conn.getResponseString().size() < BUFFER_SIZE)
+	if (conn.getResponseString().size() < SEND_BUFFER_SIZE)
 	{
 		tmpBufferSize = conn.getResponseString().size();
 		std::cout << GREEN << "Sending last part of the response" << RESET << std::endl;
 		isLastSend = true;
 	}
-	std::cout << "Sending part of the response" << std::endl;
-	std::cout << "Response size: " << conn.getResponseString().size() << std::endl;
-	std::cout << "pollfd fd: " << conn.getPollFd().fd << std::endl;
-	// std::cout << "string to send: " << conn.getResponseString().c_str() << std::endl;
+
 	std::cout << GREEN << "sendResponseCounter: " << sendResponseCounter << RESET << std::endl;
 	int read = send(conn.getPollFd().fd, conn.getResponseString().c_str(), tmpBufferSize, 0);
-	sendResponseCounter++;
-	std::cout << "Read: " << read << std::endl;
 	if (read == -1)
 	{
 		perror("send");
 	}
-	std::cout << "Response size sent: " << conn.getResponseSizeSent() << std::endl;
-	std::cout << "Temp buffer size: " << tmpBufferSize << std::endl;
+
+	sendResponseCounter++;
 	conn.setResponseSizeSent(conn.getResponseSizeSent() + tmpBufferSize);
-	std::cout << "Response size sent: " << conn.getResponseSizeSent() << std::endl;
-	std::cout << "Temp buffer size: " << tmpBufferSize << std::endl;
 	if (isLastSend)
 	{
-		std::cout << RED << "isLstSend" << RESET << std::endl;
 		conn.setHasFinishedSending(true);
 		conn.setCanBeClosed(true);
 	}
 
 	conn.setResponseString(conn.getResponseString().substr(tmpBufferSize));
-	response.getBody().erase(0, BUFFER_SIZE);
+	response.getBody().erase(0, SEND_BUFFER_SIZE);
 }
 
 void Server::closeClientConnection(Connection &conn, size_t &i)
 {
-	std::cout << "\033[1;36m"
-			  << "Entering closeClientConnection"
-			  << "\033[0m" << std::endl;
-	// if (response.getStatusCode() != 0)
-	// if (conn.getResponse().getStatusCode() != 0 && conn.getResponse().getStatusCode() != 499)
-	// {
-	// 	std::string responseString = conn.getResponse().objToString();
-	// 	send(conn.getPollFd().fd, responseString.c_str(), responseString.size(), 0);
-	// }
+	std::cout << "\033[1;36m" << "Entering closeClientConnection" << "\033[0m" << std::endl;
 	// TODO: should we close it with the Destructor of the Connection class?
 	close(conn.getPollFd().fd);
 	_FDs.erase(_FDs.begin() + i);
