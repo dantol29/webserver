@@ -251,7 +251,7 @@ void Server::buildResponse(Connection &conn, size_t &i, HTTPRequest &request, HT
 	if (response.getStatusCode() != 0)
 	{
 		Debug::log("Error response" + toString(response.getStatusCode()), Debug::NORMAL);
-		response.setErrorResponse(response.getStatusCode());
+		// response.setErrorResponse(response.getStatusCode());
 		router.handleServerBlockError(request, response, response.getStatusCode());
 		conn.setHasDataToSend(true);
 		return;

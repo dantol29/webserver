@@ -136,10 +136,10 @@ std::string Router::getFileExtension(const std::string &fileName)
 
 void Router::handleServerBlockError(HTTPRequest &request, HTTPResponse &response, int errorCode)
 {
+	Debug::log("handleServerBlockError: entering function", Debug::NORMAL);
 	// clang-format off
 	std::vector<std::pair<int, std::string> > errorPage = _serverBlock.getErrorPage();
 	// clang-format on
-	// std::string errorPath;
 	size_t i = 0;
 	for (; i < errorPage.size(); i++)
 	{
@@ -150,7 +150,7 @@ void Router::handleServerBlockError(HTTPRequest &request, HTTPResponse &response
 			Debug::log("Path to error: " + errorPage[i].second, Debug::NORMAL);
 			// setting the path to the custom error page
 			request.setPath(_serverBlock.getRoot() + request.getHost() + "/" + errorPage[i].second);
-			std::cout << RED << "         custom error page: " << request.getPath() << RESET << std::endl;
+			// std::cout << RED << "         custom error page: " << request.getPath() << RESET << std::endl;
 			// TODO: move here what is todo below
 			StaticContentHandler staticContentInstance;
 			staticContentInstance.handleRequest(request, response);
@@ -158,8 +158,19 @@ void Router::handleServerBlockError(HTTPRequest &request, HTTPResponse &response
 			return;
 		}
 	}
-
+	Debug::log("handleServerBlockError: No custom error page found", Debug::NORMAL);
 	StaticContentHandler staticContentInstance;
+	// if (errorCode == 404) // we have our own
+	// {
+	// 	staticContentInstance.handleNotFound(response);
+	// }
+	// else // we generate it
+	// {
+	response.setErrorResponse(errorCode);
+	// }
+	return;
+
+	// TODO: below will not be executed, doublecheck and cleanup
 
 	PathValidation pathResult = pathIsValid(response, request);
 	switch (pathResult)
