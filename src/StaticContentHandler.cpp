@@ -69,7 +69,7 @@ void StaticContentHandler::handleRequest(const HTTPRequest &request, HTTPRespons
 		path += "index.html";
 	}
 	std::ifstream file(path.c_str());
-	if (!file)
+	if (!file) // TODO: this is wrong, it should return a false bool
 	{
 		Debug::log(" StaticContentHandler Error opening file: " + path, Debug::NORMAL);
 		response.setStatusCode(404, "Not Found");

@@ -12,13 +12,14 @@ HTTPResponse::HTTPResponse(const HTTPResponse &other)
 }
 void HTTPResponse::setErrorResponse(int statusCode)
 {
+	std::string statusMessage = getStatusMessage(statusCode);
+	std::string code = toString(statusCode);
 	std::cout << "\033[31m"
 			  << "Error " << statusCode << " in request"
 			  << "\033[0m" << std::endl;
-	std::string statusMessage = getStatusMessage(statusCode);
 	std::string body = "<html><head><title>Error</title></head>"
 					   "<body><h1>Error: " +
-					   toString(_statusCode) + " " + "</h1><p>" + statusMessage + "</p></body></html>";
+					   code + " " + "</h1><p>" + statusMessage + "</p></body></html>";
 
 	// print purple to identify a 0 status code
 	std::cout << PURPLE << "setErrorResponse: statusCode: " << statusCode << " statusMessage: " << statusMessage
