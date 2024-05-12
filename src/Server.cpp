@@ -30,32 +30,96 @@ void Server::startListening()
 	listen();
 }
 
+//             MINIMAL VERSION OF THE FUNCTION BELOW
+// void Server::CGIMonitor(Connection &conn)
+// {
+// 	(void)conn;
+
+// 	int status;
+// 	waitpid(-1, &status, WNOHANG);
+
+// 	// outer loop to check all the connections
+// 	for (size_t i = 0; i < _connections.size(); i++)
+// 	{
+// 		// inner loop to check all the connections that have CGI
+// 		if (_connections[i]._hasCGI)
+// 		{
+// 			// if the timer is expired, we send a signal to the process and we kill it
+// 			if (_connections[i].getTimestamp() + CGI_TIMEOUT < time(NULL))
+// 			{
+// 				kill(_connections[i].getPID(), SIGKILL);
+// 				_connections[i].setHasCGI(false);
+// 				_connections[i].setPID(NULL);
+// 				_CGICounter--;
+// 			}
+// 		}
+// 	}
+// }
+
 void Server::CGIMonitor(Connection &conn)
 {
 	(void)conn;
 
 	int status;
 	waitpid(-1, &status, WNOHANG);
-	if (WIFEXITED(status)) // returned pid of the child process that has exited
-	{
-		Debug::log("Child exited normally with status: " + toString(WEXITSTATUS(status)), Debug::OCF);
-		// TODO: locate the corresponding connection and finalize the CGI response.
 
-		if (_CGICounter > 0)
-		{
-			_CGICounter--; // TODO (you need to pass a reference to the Server at the same point where you set this,
-			if (_CGICounter == 0)
-				_hasCGI = false;
-			conn.setHasCGI(false);
-			conn.setPID(NULL);
-			Debug::log("CGI counter is now at 0, _hasCGI at false, PID got set to NULL", Debug::OCF);
-		}
-		else
-			Debug::log("CGI counter is already at 0", Debug::OCF);
-	}
-	else if (WIFSIGNALED(status)) // returned 0 : no child has exited, continue executing without blocking.
+	// check all the connections
+	for (size_t i = 0; i < _connections.size(); i++)
 	{
-		std::cout << "Child exited due to signal: " << WTERMSIG(status) << std::endl;
+		// check if has CGI
+		if (_connections[i].getHasCGI())
+		{
+			// TODO: check if the timer is expired, if so send a signal to the process and kill it
+			if (_connections[i].getTimestamp() + CGI_TIMEOUT < time(NULL))
+			{
+				kill(_connections[i].getPID(), SIGKILL);
+				// TODO: send respone to the client: 504 Gateway Timeout perhaps
+			}
+
+			if (status == 0)
+			{
+				// The child process did not terminate through an exit() call
+				// It means that we should not use WEXITSTATUS(status) to obtain an exit code
+				// because the exit code is undefined in this scenario.
+				Debug::log("Child did not terminate", Debug::NORMAL);
+				return;
+			}
+			else if (_hasCGI && WIFEXITED(status)) // returned pid of the child process that has exited
+			{
+				Debug::log("Child exited normally with status: " + toString(WEXITSTATUS(status)), Debug::OCF);
+				// TODO: locate the corresponding connection and finalize the CGI response.
+
+				// loop through connection vector, identify the connection with PID that returned
+				for (size_t i = 0; i < _connections.size(); i++)
+				{
+					if (_connections[i].getPID() == status)
+					{
+
+						// finalize the CGI response
+						// _connections[i].finalizeCGIResponse();
+
+						// Reset the value of PID and the hasCGI in Connection and all the other values.
+						if (_CGICounter > 0)
+						{
+							_CGICounter--; // TODO (you need to pass a reference to the Server at the same point
+										   // where you set this,
+							if (_CGICounter == 0)
+								_hasCGI = false;
+							conn.setHasCGI(false);
+							conn.setPID(NULL);
+							Debug::log("CGI counter is now at 0, _hasCGI at false, PID got set to NULL", Debug::OCF);
+						}
+						else
+							Debug::log("CGI counter is already at 0", Debug::OCF);
+						// break;
+					}
+				}
+			}
+			else if (WIFSIGNALED(status))
+			{
+				std::cout << "Child exited due to signal: " << WTERMSIG(status) << std::endl;
+			}
+		}
 	}
 }
 
@@ -67,8 +131,8 @@ void Server::startPollEventLoop()
 	{
 		// TODO:
 		//  Right before entering poll, we check if the Server.hasCGI is true, and if it is the case we switch the
-		//  timeout to the value of the macro WITH_CGI  that will be of some millisecond, this is the frequency we want
-		//  to go through waitpid. If the Server has no CGI the value go back to -1 and we block on poll
+		//  timeout to the value of the macro WITH_CGI  that will be of some millisecond, this is the frequency we
+		//  want to go through waitpid. If the Server has no CGI the value go back to -1 and we block on poll
 
 		// printConnections("BEFORE POLL", _FDs, _connections, true);
 		std::cout << CYAN << "++++++++++++++ #" << pollCounter
@@ -80,9 +144,9 @@ void Server::startPollEventLoop()
 		if (ret > 0)
 		{
 			size_t originalSize = _FDs.size();
-			// if _FDs becomes bigger than originalSize we don't want to loop over the new elements before we finish the
-			// old ones if _FDs becomes smaller than originalSize we don't want to loop over the old elements that are
-			// not in _FDs anymore
+			// if _FDs becomes bigger than originalSize we don't want to loop over the new elements before we finish
+			// the old ones if _FDs becomes smaller than originalSize we don't want to loop over the old elements
+			// that are not in _FDs anymore
 			for (size_t i = 0; i < originalSize && i < _FDs.size(); i++)
 			{
 				if (_FDs[i].revents & (POLLIN | POLLOUT))
@@ -184,7 +248,8 @@ void Server::readFromClient(Connection &conn, size_t &i, Parser &parser, HTTPReq
 				Debug::log("Error reading chunked body", Debug::OCF);
 				conn.setCanBeClosed(true);
 				conn.setHasFinishedReading(true);
-				// It could be that we had data that could be sent even if we have an error cause previous data was read
+				// It could be that we had data that could be sent even if we have an error cause previous data was
+				// read
 				return;
 			}
 			conn.setHasReadSocket(true);

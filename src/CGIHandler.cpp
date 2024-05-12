@@ -147,6 +147,8 @@ std::string CGIHandler::executeCGI(const MetaVariables &env)
 	_conn->setHasCGI(true);
 	_conn->setCGIexpired(false);
 	_conn->_cgiCounter++;
+	// TODO: start a timer :
+	// time_t, struct timeval, alarm, getitimer, timer_create, gettimeofday
 
 	if (pid == -1)
 	{
