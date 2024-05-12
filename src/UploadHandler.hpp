@@ -8,10 +8,11 @@
 #include <filesystem>
 #include "webserv.hpp"
 
-enum UploadStatus {
-    SUCCESS,
-    BAD_REQUEST,
-    INTERNAL_SERVER_ERROR,
+enum UploadStatus
+{
+	SUCCESS,
+	BAD_REQUEST,
+	INTERNAL_SERVER_ERROR,
 };
 
 class UploadHandler : public AResponseHandler

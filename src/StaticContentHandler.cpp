@@ -88,7 +88,7 @@ void StaticContentHandler::handleRequest(const HTTPRequest &request, HTTPRespons
 	//  response.setHeader("Connection: ", "close");
 	//  response.setHeader("Server: ", "webserv");
 
-	std::cout << std::endl;
+	// std::cout << std::endl;
 	// std::cout << "_body : " << response.getBody() << std::endl;
 	file.close();
 	return;
