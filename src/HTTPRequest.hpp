@@ -39,8 +39,8 @@ class HTTPRequest
 	void setUploadBoundary(const std::string &boundary);
 	void setFiles(struct File &file);
 	void setFileContent(const std::string &content);
-	void setPath(const std::string &path);
-	void setRoot(const std::string &root);
+	void setPath(const std::string path);
+	void setRoot(const std::string root);
 
   private:
 	// VARIABLES
