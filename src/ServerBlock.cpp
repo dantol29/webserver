@@ -191,10 +191,22 @@ void ServerBlock::setServerName(std::vector<std::string> str, bool isLocation)
 
 void ServerBlock::setErrorPage(std::pair<int, std::string> str, bool isLocation)
 {
-	if (!isLocation)
-		_directives._errorPage.push_back(str);
-	else
-		_locations.back()._errorPage.push_back(str);
+	if (isLocation)
+		throw("error_page directive not allowed in location block");
+	_directives._errorPage.push_back(str);
+	
+	for (unsigned int i = 0; i < _directives._errorPage.size(); ++i)
+	{
+		// remove slashes at the begginning
+		if ( _directives._errorPage[i].second[0] == '/')
+			_directives._errorPage[i].second = _directives._errorPage[i].second.substr(1);
+		
+		for (unsigned int j = 0; j < _directives._errorPage.size(); ++j)
+		{
+			if (i != j && _directives._errorPage[i].first == _directives._errorPage[j].first)
+				throw("Duplicate error_page directive");
+		}
+	}
 }
 
 void ServerBlock::setIndex(std::vector<std::string> str, bool isLocation)
