@@ -210,18 +210,25 @@ void Server::buildResponse(Connection &conn, size_t &i, HTTPRequest &request, HT
 
 	ServerBlock serverBlock;
 	Directives directive;
+	std::string serverName;
 	std::cout << GREEN << "Number of server blocks: " << _config.getServerBlocks().size() << RESET << std::endl;
+	std::cout << "Request host: " << request.getSingleHeader("host").second << std::endl;
+	std::cout << "Request target: " << request.getRequestTarget() << std::endl;
 
 	for (size_t i = 0; i < _config.getServerBlocks().size(); i++)
 	{
-		// why getServerName returns a vector ?
-		std::string serverName = _config.getServerBlocks()[i].getServerName()[0];
-		std::cout << RED << "Checking server name: " << serverName << RESET << std::endl;
-		std::cout << "Request host: " << request.getSingleHeader("host").second << std::endl;
-		std::cout << "Request target: " << request.getRequestTarget() << std::endl;
+		// loop through all server names in the server block
+		for (size_t j = 0; j < _config.getServerBlocks()[i].getServerName().size(); j++)
+		{
+			serverName = _config.getServerBlocks()[i].getServerName()[j];
+			std::cout << RED << "Checking server name: " << serverName << RESET << std::endl;
+			if (serverName == request.getSingleHeader("host").second){
+				std::cout << GREEN << "Server name found" << RESET << std::endl;
+				break ;
+			}
+		}
 		if (serverName == request.getSingleHeader("host").second)
 		{
-			std::cout << GREEN << "Server block and request host match" << RESET << std::endl;
 			// _config.setServerBlockIndex(i);
 			serverBlock = _config.getServerBlocks()[i];
 			directive = serverBlock.getDirectives();

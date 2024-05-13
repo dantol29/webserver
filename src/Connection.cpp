@@ -363,12 +363,19 @@ bool Connection::readBody(Parser &parser, HTTPRequest &req, HTTPResponse &res, C
 	std::cout << "\nEntering readBody" << std::endl;
 	size_t contentLength = req.getContentLength();
 	ServerBlock serverBlock;
+	std::string serverName;
 	bool locationFound = false;
 	
 	for (size_t i = 0; i < _config.getServerBlocks().size(); i++)
 	{
-		// TODO: serverName is a vector, we need to check if the request host is in the vector
-		std::string serverName = _config.getServerBlocks()[i].getServerName()[0];
+		// loop through the server names
+		for (size_t j = 0; j < _config.getServerBlocks()[i].getServerName().size(); j++)
+		{
+			serverName = _config.getServerBlocks()[i].getServerName()[j];
+			if (serverName == req.getSingleHeader("host").second)
+				break ;
+		}
+		
 		if (serverName == req.getSingleHeader("host").second)
 		{
 			serverBlock = _config.getServerBlocks()[i];
