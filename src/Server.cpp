@@ -736,13 +736,5 @@ void Server::checkSocketOptions()
 		{
 			// std::cout << "SO_REUSEADDR is " << (optval ? "enabled" : "disabled") << std::endl;
 		}
-
-		if (getsockopt(_serverFD, SOL_SOCKET, SO_REUSEPORT, &optval, &optlen) < 0)
-		{
-			perror("getsockopt SO_REUSEPORT failed");
-		}
-		else
-		{
-			// std::cout << "SO_REUSEPORT is " << (optval ? "enabled" : "disabled") << std::endl;
-		}
 	}
+}

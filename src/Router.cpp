@@ -32,7 +32,7 @@ Router::~Router()
 // combines with root directory for standardized routing,
 void Router::adaptPathForFirefox(HTTPRequest &request)
 {
-	std::string path = _serverBlock.getRoot() + request.getSingleHeader("host").second;
+	std::string path = _serverBlock.getDirectives().getRoot() + request.getSingleHeader("host").second;
 	std::string requestTarget = request.getRequestTarget();
 	size_t hostPos = requestTarget.find(request.getSingleHeader("host").second);
 	if (hostPos != std::string::npos)
@@ -194,7 +194,7 @@ void Router::handleServerBlockError(HTTPRequest &request, HTTPResponse &response
 bool Router::isCGI(const HTTPRequest &request)
 {
 	// TODO: check against config file, not this hardcoded version
-	std::vector<std::string> cgiExtensions = _serverBlock.getCgiExt();
+	std::vector<std::string> cgiExtensions = _serverBlock.getDirectives().getCgiExt();
 	std::cout << RED << "isCGI" << RESET << std::endl;
 	std::cout << "cgiExtensions: " << cgiExtensions.size() << std::endl;
 	std::cout << "request target: " << request.getRequestTarget() << std::endl;
@@ -324,12 +324,12 @@ enum PathValidation Router::pathIsValid(HTTPResponse &response, HTTPRequest &req
 			}
 		}
 
-		if (!_serverBlock.getIndex().empty()) // user provided one or more indexes
+		if (!_serverBlock.getDirectives().getIndex().empty()) // user provided one or more indexes
 		{
 			// TODO: implement several indexes
-			for (size_t i = 0; i < _serverBlock.getIndex().size(); i++)
+			for (size_t i = 0; i < _serverBlock.getDirectives().getIndex().size(); i++)
 			{
-				std::string index = _serverBlock.getIndex()[i];
+				std::string index = _serverBlock.getDirectives().getIndex()[i];
 				std::string requestedPath = request.getRequestTarget();
 				requestedPath += index;
 				if (stat(requestedPath.c_str(), &buffer) == 0)
@@ -340,10 +340,10 @@ enum PathValidation Router::pathIsValid(HTTPResponse &response, HTTPRequest &req
 				}
 			}
 		}
-		if (_serverBlock.detDgetIndex().empty()) // user did not provide any index
+		if (_serverBlock.getDirectives().getIndex().empty()) // user did not provide any index
 		{
 			Debug::log("User did not provided any index", Debug::NORMAL);
-			if (_serverBlock.getAutoIndex()) // autoindex is on
+			if (_serverBlock.getDirectives().getAutoIndex()) // autoindex is on
 			{
 				Debug::log("pathIsValid: Autoindex is on", Debug::NORMAL);
 				generateDirectoryListing(response, path, request.getRequestTarget());
