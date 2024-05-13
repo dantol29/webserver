@@ -2,22 +2,27 @@
 #define LISTEN_HPP
 
 #define DEFAULT_PORT 80
+#define DEFAULT_IP "0.0.0.0"
 
+#include <arpa/inet.h> // for inet_ntoa
 #include <webserv.hpp>
 #include <Debug.hpp>
+#include <netdb.h>
 
 class Listen
 {
   private:
 	std::string _ip;
 	int _port;
-	bool _isIpv6;
+	std::vector<std::string> _options;
+	bool _hasIpOrPort;
 	bool _hasPort;
 	bool _hasIP;
+	bool _isIpv6;
+	bool _hasOptions;
 
   public:
 	Listen();
-	Listen(std::string ip, int port, bool ipv6);
 	Listen(std::string str);
 
 	Listen(const Listen &obj);
@@ -37,7 +42,13 @@ class Listen
 	void setHasPort(bool hasPort);
 	void setHasIP(bool hasIP);
 
-	bool extractPort(std::string str, int &port, bool &isIpv6);
+	bool listenStrIsEmtpy(std::string &str);
+	void splitInputFromOptions(std::string &str);
+	void normalizeIPv6(std::string &ip);
+	// bool extractPort(std::string str, int &port, bool &isIpv6);
+	bool inputIsOnlyPort(std::string &str);
+	bool portIsValid(std::string &str);
+	bool setIpAndPort(std::string &str);
 };
 
 // Overload the << operator outside of the Listen struct

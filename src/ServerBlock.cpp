@@ -166,7 +166,7 @@ void Directives::setListenEntry(Listen listenEntry, bool isLocation)
 	{
 		for (unsigned int j = 0; j < _listen.size(); ++j)
 		{
-			if (i != j && _listen[i]._port == _listen[j]._port)
+			if (i != j && _listen[i].getPort() == _listen[j].getPort())
 				throw("Duplicate listen directive");
 		}
 	}
