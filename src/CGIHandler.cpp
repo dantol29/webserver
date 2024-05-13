@@ -33,7 +33,7 @@ void CGIHandler::handleRequest(const HTTPRequest &request, HTTPResponse &respons
 	// std::cout << env;
 	std::string cgiOutput = executeCGI(env);
 	CGIStringToResponse(cgiOutput, response);
-	std::cout << response;
+	// std::cout << response;
 
 	std::cout << "------------------CGIHandler::handleRequest-------------------" << std::endl;
 	std::cout << "CGIHandler: path: " << request.getPath() << std::endl;
@@ -100,7 +100,6 @@ void CGIHandler::CGIStringToResponse(const std::string &cgiOutput, HTTPResponse 
 	response.setBody(bodyPart);
 	response.setIsCGI(true);
 	response.setStatusCode(200, "");
-
 	return;
 }
 
@@ -172,15 +171,7 @@ std::string CGIHandler::executeCGI(const MetaVariables &env)
 		if (access(argvPointers[0], X_OK) == -1)
 		{
 			perror("access");
-			cgiOutput = "HTTP/1.1 500 Internal Server Error\r\n"
-						"Content-Type: text/html\r\n"
-						"Connection: close\r\n"
-						"\r\n"
-						"<html><body><h1>500 Internal Server Error</h1></body></html>"
-						"\r\n\r\n";
-			close(pipeFD[1]);
-			close(pipeFD[0]);
-			// _exit(EXIT_FAILURE);
+			// 	_exit(EXIT_FAILURE);
 		}
 		else
 		{
@@ -193,36 +184,32 @@ std::string CGIHandler::executeCGI(const MetaVariables &env)
 		// exit(EXIT_FAILURE);
 		// TODO: check if _exit isn't better
 	}
-	else
+
+	close(pipeFD[1]);
+
+	char readBuffer[256];
+	ssize_t bytesRead;
+	while ((bytesRead = read(pipeFD[0], readBuffer, sizeof(readBuffer) - 1)) > 0)
 	{
+		readBuffer[bytesRead] = '\0';
+		cgiOutput += readBuffer;
+	}
+	close(pipeFD[0]);
 
-		close(pipeFD[1]);
+	// int status;
+	// waitpid(pid, &status, WNOHANG);        this has been moved to CGIMonitor in startPollEventLoop
+	std::cout << "------------------CGI output prepared-------------------" << std::endl;
 
-		char readBuffer[256];
-		ssize_t bytesRead;
-		while ((bytesRead = read(pipeFD[0], readBuffer, sizeof(readBuffer) - 1)) > 0)
-		{
-			readBuffer[bytesRead] = '\0';
-			cgiOutput += readBuffer;
-		}
-		close(pipeFD[0]);
-
-		int status;
-		waitpid(pid, &status, WNOHANG);
-		// this has been moved to CGIMonitor in startPollEventLoop
-		// std::cout << "------------------CGI output prepared-------------------" << std::endl;
-
-		// std::cout << "\n\n\n\nCGI output: " << cgiOutput << std::endl;
-		// make a string formatted as http respopnse for 500 error
-		// if (WIFEXITED(status) && WEXITSTATUS(status) != 0)
-
-		// std::string errorResponse = "HTTP/1.1 500 Internal Server Error\r\nContent-Length: 0\r\n\r\n";
-		// std::cout << errorResponse;
-		// }
-		// if (cgiOutput.empty())
-		// {
-		// return errorResponse;
-		// }
+	// std::cout << "\n\n\n\nCGI output: " << cgiOutput << std::endl;
+	// make a string formatted as http respopnse for 500 error
+	// if (WIFEXITED(status) && WEXITSTATUS(status) != 0)
+	// {
+	std::string errorResponse = "HTTP/1.1 500 Internal Server Error\r\nContent-Length: 0\r\n\r\n";
+	std::cout << errorResponse;
+	// }
+	if (cgiOutput.empty())
+	{
+		return errorResponse;
 	}
 	return cgiOutput;
 }
