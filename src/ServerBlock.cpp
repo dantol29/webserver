@@ -90,6 +90,9 @@ void ServerBlock::deleteData()
 	_directives._allowedMethods.clear();
 	_directives._alias.clear();
 	_directives._path.clear();
+	_directives._cgiPath.clear();
+	_directives._cgiExt.clear();
+	_directives._return.clear();
 }
 
 Directives ServerBlock::getDirectives() const

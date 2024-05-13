@@ -56,7 +56,11 @@ void Router::routeRequest(HTTPRequest &request, HTTPResponse &response)
 	Debug::log("Routing Request: host = " + request.getSingleHeader("host").second, Debug::NORMAL);
 	
 	if (!_directive._return.empty())
-		(void)response;
+	{
+		response.setStatusCode(301, "Redirection");
+		response.setHeader("Location", _directive._return);
+		return;
+	}
 
 	std::string root = _directive._root;
 	if (root.empty())
