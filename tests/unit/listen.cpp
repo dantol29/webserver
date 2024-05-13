@@ -99,7 +99,10 @@ int main()
 		TestCase("2001:db8::1", "2001:db8::1", DEFAULT_PORT, true, "Test 3: IPv6 without port"),
 		TestCase("192.168.1.1", "192.168.1.1", DEFAULT_PORT, false, "Test 4: IPv4 without port"),
 		TestCase("", "0.0.0.0", DEFAULT_PORT, false, "Test 5: Default values"),
-		TestCase("192.168.1.1:70000", "", 0, false, "Test 6: Invalid port number", Fail) // Expected to fail or throw
+		TestCase("localhost", "localhost", DEFAULT_PORT, false, "Test 6: Localhost"),
+		TestCase("127.0.0.1:8080", "127.0.0.1", 8080, false, "Test 7: IPv4 with port"),
+		TestCase("[::1]:80", "::1", 80, true, "Test 8: IPv6 with port"),
+		TestCase("192.168.1.1:70000", "", 0, false, "Test 9: Invalid port number", Fail) // Expected to fail or throw
 	};
 
 	for (const auto &test : tests)
