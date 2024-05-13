@@ -16,7 +16,7 @@
 #define COLOR_GREEN "\033[32m"
 #define COLOR_RED "\033[31m"
 #define COLOR_RESET "\033[0m"
-#define PRINT_RESPONSE 1
+#define PRINT_RESPONSE 0
 
 bool is_error = false;
 
@@ -181,6 +181,28 @@ void salad(sockaddr_in serverAddress)
 	sendData(tests, serverAddress);
 }
 
+void cgi(sockaddr_in serverAdress)
+{
+	std::vector<HTTPTest> tests = {
+		// HTTPTest("GET /cgi-bin/hello.cgi HTTP/1.1\r\nHost: www.saladbook.xyz\r\n\r\n", "200"),
+		// HTTPTest("GET /cgi-bin/hello.cgi HTTP/1.1\r\nHost: www.saladbook.xyz\r\n\r\n", "200"),
+		// HTTPTest("GET /cgi-bin/hello.cgi HTTP/1.1\r\nHost: www.saladbook.xyz\r\n\r\n", "200"),
+		// HTTPTest("GET /cgi-bin/hello.cgi HTTP/1.1\r\nHost: www.saladbook.xyz\r\n\r\n", "200"),
+		// HTTPTest("GET /cgi-bin/hello.cgi HTTP/1.1\r\nHost: www.saladbook.xyz\r\n\r\n", "200"),
+		// HTTPTest("GET /cgi-bin/hello.cgi HTTP/1.1\r\nHost: www.saladbook.xyz\r\n\r\n", "200"),
+		// HTTPTest("GET / HTTP/1.1\r\nHost: www.example.com\r\n\r\n", "200"),
+		HTTPTest("GET /cgi-bin/hello.cgi HTTP/1.1\r\nHost: www.example.com\r\n\r\n", "200"),
+
+		// HTTPTest("GET /story/our_story.html HTTP/1.1\r\nHost: www.saladbook.xyz\r\n\r\n", "200"),
+		// HTTPTest("GET / HTTP/1.1\r\nHost: saladbook.xyz\r\n\r\n", "404"),
+		// HTTPTest("GET /fsdfsd HTTP/1.1\r\nHost: www.saladbook.xyz\r\n\r\n", "400"),
+		// HTTPTest("GET / HTTP/1.1\r\nHost: www.sgfgdf\r\n\r\n", "404"),
+		// HTTPTest("GET / HTXXXP/1.1\r\nHost: www.sgfgdf\r\n\r\n", "400"),
+
+	};
+	sendData(tests, serverAdress);
+}
+
 int main(void)
 {
 	sockaddr_in serverAddress;
@@ -188,7 +210,9 @@ int main(void)
 	serverAddress.sin_port = htons(PORT);
 	serverAddress.sin_addr.s_addr = INADDR_ANY;
 
-	salad(serverAddress);
+	// NOTE: when you run a test, configfile and dir structure should fit
+	// salad(serverAddress); // standard routing tests
+	cgi(serverAddress);
 
 	if (is_error)
 		exit(1);

@@ -179,7 +179,7 @@ void simple(sockaddr_in serverAddress)
 		// TODO: HTTPTest("POST / HTTP/1.1\r\nHost: www.example.com\r\n\r\n", "200"),
 		HTTPTest("GETT / HTTP/1.1\r\nHost: www.example.com\r\n\r\n", "501"),
 		HTTPTest("GET /random HTTP/1.1\r\nHost: www.example.com\r\n\r\n", "404"),
-		HTTPTest("GET / HTTP/9.9s\r\nHost: www.example.com\r\n\r\n", "400"),
+		HTTPTest("GET / HTTP/9.9s\r\nHost: www.example.com\r\n\r\n", "505"),
 		HTTPTest(" / HTTP/1.1\r\nHost: www.example.com\r\n\r\n", "501"),
 		HTTPTest("GET / HTTP/1.1\nHost: www.example.com\r\n\r\n", "400"),
 	};
@@ -191,13 +191,13 @@ void query(sockaddr_in serverAddress)
 	std::vector<HTTPTest> tests = {
 		// HTTPTest("GET /index.html?q=now&price=low HTTP/1.1\r\nHost: www.example.com\r\n\r\n", "200"), // TODO:
 		// Implement query parsing
-		HTTPTest("GET /search?q==now&price=low HTTP/1.1\r\nHost: www.example.com\r\n\r\n", "400"),
-		HTTPTest("GET /search??q=now&price=low HTTP/1.1\r\nHost: www.example.com\r\n\r\n", "400"),
-		HTTPTest("GET /search?now&price=low HTTP/1.1\r\nHost: www.example.com\r\n\r\n", "400"),
-		HTTPTest("GET /search?q=now&&price=low HTTP/1.1\r\nHost: www.example.com\r\n\r\n", "400"),
-		HTTPTest("GET /search?q=now&price=low= HTTP/1.1\r\nHost: www.example.com\r\n\r\n", "400"),
-		HTTPTest("GET /search?=now&price=low HTTP/1.1\r\nHost: www.example.com\r\n\r\n", "400"),
-		HTTPTest("GET /search?&q=now&price=low HTTP/1.1\r\nHost: www.example.com\r\n\r\n", "400"),
+		HTTPTest("GET /index.html?q==now&price=low HTTP/1.1\r\nHost: www.example.com\r\n\r\n", "400"),
+		HTTPTest("GET /index.html??q=now&price=low HTTP/1.1\r\nHost: www.example.com\r\n\r\n", "400"),
+		HTTPTest("GET /index.html?now&price=low HTTP/1.1\r\nHost: www.example.com\r\n\r\n", "400"),
+		HTTPTest("GET /index.html?q=now&&price=low HTTP/1.1\r\nHost: www.example.com\r\n\r\n", "400"),
+		HTTPTest("GET /index.html?q=now&price=low= HTTP/1.1\r\nHost: www.example.com\r\n\r\n", "400"),
+		HTTPTest("GET /index.html?=now&price=low HTTP/1.1\r\nHost: www.example.com\r\n\r\n", "400"),
+		HTTPTest("GET /index.html?&q=now&price=low HTTP/1.1\r\nHost: www.example.com\r\n\r\n", "400"),
 	};
 	sendData(tests, serverAddress);
 }
@@ -250,10 +250,10 @@ void body(sockaddr_in serverAddress)
 				 "400"), // 400 (Bad Request) -- - Missing content type}
 		HTTPTest("POST / HTTP/1.1\r\nHost: www.example.com\r\nContent-Type: text/plain\r\n\r\nThis\r\nis "
 				 "body\r\n\r\n",
-				 "400"), // 400 (Bad Request) -- - Missing content length}
+				 "411"), // 400 (Bad Request) -- - Missing content length}
 		HTTPTest("POST / HTTP/1.1\r\nHost: www.example.com\r\nContent-Length: 17\r\nContent-Type: "
 				 "text/notplain\r\n\r\nThis\r\nis body\r\n\r\n",
-				 "400"), // 400 (Bad Request) -- - Invalid content type}
+				 "415"), // 400 (Bad Request) -- - Invalid content type}
 		HTTPTest("POST / HTTP/1.1\r\nHost: www.example.com\r\nContent-Length: abcd\r\nContent-Type: "
 				 "text/plain\r\n\r\nThis\r\nis body\r\n\r\n",
 				 "400"), // 400 (Bad Request) -- - Invalid content length value}

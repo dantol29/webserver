@@ -16,6 +16,7 @@ HTTPRequest::HTTPRequest(const HTTPRequest &obj)
 	_uploadBoundary = obj._uploadBoundary;
 	_files = obj._files;
 	_path = obj._path;
+	_cookies = obj._cookies;
 }
 
 HTTPRequest &HTTPRequest::operator=(const HTTPRequest &obj)
@@ -31,6 +32,7 @@ HTTPRequest &HTTPRequest::operator=(const HTTPRequest &obj)
 	_uploadBoundary = obj._uploadBoundary;
 	_files = obj._files;
 	_path = obj._path;
+	_cookies = obj._cookies;
 	return (*this);
 }
 
@@ -116,6 +118,11 @@ std::string HTTPRequest::getRoot() const
 	return (_root);
 }
 
+std::map<std::string, std::string> HTTPRequest::getCookies() const
+{
+	return (_cookies);
+}
+
 void HTTPRequest::setMethod(std::string method)
 {
 	_method = method;
@@ -172,7 +179,12 @@ void HTTPRequest::setPath(const std::string &path)
 
 void HTTPRequest::setRoot(const std::string &root)
 {
-	this->_path = root;
+	this->_root = root;
+}
+
+void HTTPRequest::setCookies(const std::string &key, const std::string &value)
+{
+	_cookies.insert(std::make_pair(key, value));
 }
 
 std::ostream &operator<<(std::ostream &out, const HTTPRequest &obj)
@@ -206,5 +218,11 @@ std::ostream &operator<<(std::ostream &out, const HTTPRequest &obj)
 		std::cout << "Data: " << it->fileContent << std::endl;
 	}
 	out << "---------------------End--------------------------" << std::endl;
+
+	std::cout << "---------------------Cookies----------------------" << std::endl;
+	std::map<std::string, std::string> cookies = obj.getCookies();
+	for (std::map<std::string, std::string>::iterator it = cookies.begin(); it != cookies.end(); ++it)
+		std::cout << "Key: " << it->first << ", Value: " << it->second << std::endl;
+	std::cout << "---------------------End--------------------------" << std::endl;
 	return (out);
 }
