@@ -162,8 +162,8 @@ std::string CGIHandler::executeCGI(const MetaVariables &env)
 		}
 		close(pipeFD[0]);
 
-		int status;
-		waitpid(pid, &status, WNOHANG);
+		// int status;
+		//  waitpid(pid, &status, WNOHANG);
 		std::cout << "------------------CGI output prepared-------------------" << std::endl;
 	}
 

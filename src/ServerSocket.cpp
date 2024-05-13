@@ -56,14 +56,14 @@ void ServerSocket::prepareServerSocketAddr()
 {
 	struct addrinfo hints, *res;
 	memset(&hints, 0, sizeof(hints));
-	hints.ai_family = _listen._isIpv6 ? AF_INET6 : AF_INET;
+	hints.ai_family = _listen.getIsIpv6() ? AF_INET6 : AF_INET;
 	hints.ai_socktype = SOCK_STREAM;
 	hints.ai_flags = AI_PASSIVE;
 
-	std::string port = toString(_listen._port);
+	std::string port = toString(_listen.getPort());
 	char *ip = NULL;
-	if (!_listen._ip.empty() && _listen._ip != "any")
-		ip = const_cast<char *>(_listen._ip.c_str());
+	if (!_listen.getIp().empty() && _listen.getIp() != "any")
+		ip = const_cast<char *>(_listen.getIp().c_str());
 	int status = getaddrinfo(ip, port.c_str(), &hints, &res);
 	if (status != 0)
 	{

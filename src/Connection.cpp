@@ -129,6 +129,14 @@ bool Connection::getCanBeClosed() const
 {
 	return _canBeClosed;
 }
+bool Connection::getHasCGI() const
+{
+	return _hasCGI;
+}
+int Connection::getPID() const
+{
+	return _PID;
+}
 
 // SETTERS
 
@@ -174,6 +182,14 @@ void Connection::setHasFinishedSending(bool value)
 void Connection::setCanBeClosed(bool value)
 {
 	_canBeClosed = value;
+}
+void Connection::setHasCGI(bool value)
+{
+	_hasCGI = value;
+}
+void Connection::setPID(int value)
+{
+	_PID = value;
 }
 
 bool Connection::readHeaders(Parser &parser)

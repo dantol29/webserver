@@ -49,6 +49,12 @@ Listen::Listen(const Listen &obj)
 	_ip = obj._ip;
 	_port = obj._port;
 	_isIpv6 = obj._isIpv6;
+	_hasPort = obj._hasPort;
+	_hasIP = obj._hasIP;
+	_hasOptions = obj._hasOptions;
+	_options = obj._options;
+	_hasIpOrPort = obj._hasIpOrPort;
+
 	Debug::log("Listen copy constructor called", Debug::OCF);
 }
 
@@ -57,6 +63,11 @@ Listen &Listen::operator=(const Listen &obj)
 	_ip = obj._ip;
 	_port = obj._port;
 	_isIpv6 = obj._isIpv6;
+	_hasPort = obj._hasPort;
+	_hasIP = obj._hasIP;
+	_hasOptions = obj._hasOptions;
+	_options = obj._options;
+	_hasIpOrPort = obj._hasIpOrPort;
 	Debug::log("Listen assignment operator called", Debug::OCF);
 	return *this;
 }

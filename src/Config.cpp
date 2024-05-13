@@ -252,9 +252,9 @@ std::ostream &operator<<(std::ostream &out, const Config &a)
 
 		for (unsigned int i = 0; i < var._listen.size(); ++i)
 		{
-			std::cout << "listen: " << var._listen[i]._ip << std::endl;
-			std::cout << "port: " << var._listen[i]._port << std::endl;
-			std::cout << "isIpv6: " << var._listen[i]._isIpv6 << std::endl;
+			std::cout << "listen: " << var._listen[i].getIp() << std::endl;
+			std::cout << "port: " << var._listen[i].getPort() << std::endl;
+			std::cout << "isIpv6: " << var._listen[i].getIsIpv6() << std::endl;
 		}
 		std::cout << "server_name: ";
 		for (unsigned int i = 0; i < var._serverName.size(); ++i)
@@ -278,9 +278,9 @@ std::ostream &operator<<(std::ostream &out, const Config &a)
 			std::cout << "path: " << loc[i]._path << std::endl;
 			for (unsigned int i = 0; i < loc[i]._listen.size(); ++i)
 			{
-				std::cout << "ip: " << loc[i]._listen[i]._ip << std::endl;
-				std::cout << "port: " << loc[i]._listen[i]._port << std::endl;
-				std::cout << "isIpv6: " << loc[i]._listen[i]._isIpv6 << std::endl;
+				std::cout << "ip: " << loc[i]._listen[i].getIp() << std::endl;
+				std::cout << "port: " << loc[i]._listen[i].getPort() << std::endl;
+				std::cout << "isIpv6: " << loc[i]._listen[i].getIsIpv6() << std::endl;
 			}
 			std::cout << "server_name: ";
 			for (unsigned int i = 0; i < loc[i]._serverName.size(); ++i)

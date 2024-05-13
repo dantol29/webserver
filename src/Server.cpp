@@ -376,12 +376,12 @@ void Server::createServerSockets(std::vector<ServerBlock> &serverBlocks)
 	std::vector<Listen> uniqueListens;
 	for (std::vector<Listen>::iterator it = allListens.begin(); it != allListens.end(); ++it)
 	{
-		std::string normalizedIp = normalizeIPAddress(it->_ip, it->_isIpv6);
+		std::string normalizedIp = normalizeIPAddress(it->getIp(), it->getIsIpv6());
 		bool isUnique = true;
 		for (std::vector<Listen>::iterator it2 = uniqueListens.begin(); it2 != uniqueListens.end(); ++it2)
 		{
-			std::string normalizedIp2 = normalizeIPAddress(it2->_ip, it2->_isIpv6);
-			if (it->_port == it2->_port && normalizedIp == normalizedIp2)
+			std::string normalizedIp2 = normalizeIPAddress(it2->getIp(), it2->getIsIpv6());
+			if (it->getPort() == it2->getPort() && normalizedIp == normalizedIp2)
 			{
 				isUnique = false;
 				break;
@@ -456,7 +456,7 @@ void Server::bindToPort()
 		}
 		else
 		{
-			std::cout << "Server socket binded on port " << ntohs(it->getListen()._port) << std::endl;
+			std::cout << "Server socket binded on port " << ntohs(it->getListen().getPort()) << std::endl;
 		}
 		// if (bind(it->getServerFD(), serverSocketAddrPtr, sizeof(serverSocketAddr)) < 0)
 	}
@@ -471,7 +471,7 @@ void Server::listen()
 			perror("In listen");
 			continue; // just to remember that we aren not exiting
 		}
-		std::cout << "Server socket listening on port " << ntohs(it->getListen()._port) << std::endl;
+		std::cout << "Server socket listening on port " << ntohs(it->getListen().getPort()) << std::endl;
 	}
 }
 
@@ -497,8 +497,8 @@ void Server::addServerSocketsPollFdToVectors()
 		_FDs.push_back(serverPollFd);
 		Connection serverConnection(serverPollFd, *this);
 		serverConnection.setType(SERVER);
-		serverConnection.setServerIp(it->getListen()._ip);
-		serverConnection.setServerPort(it->getListen()._port);
+		serverConnection.setServerIp(it->getListen().getIp());
+		serverConnection.setServerPort(it->getListen().getPort());
 		if (VERBOSE)
 		{
 			std::cout << "Server Connection object created" << std::endl;
