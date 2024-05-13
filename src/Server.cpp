@@ -405,6 +405,18 @@ void Server::createServerSockets(std::vector<ServerBlock> &serverBlocks)
 			perror("setsockopt IPV6_V6ONLY: Protocol not available, continuing without IPV6_V6ONLY");
 			continue; // just to remember that we aren not exiting
 		}
+		// We check if IPV6_V6ONLY is NOT set
+		int ipv6only;
+		socklen_t len = sizeof(ipv6only);
+		if (getsockopt(serverFD, IPPROTO_IPV6, IPV6_V6ONLY, &ipv6only, &len) < 0)
+		{
+			perror("getsockopt IPV6_V6ONLY: Protocol not available, continuing without IPV6_V6ONLY");
+			continue; // just to remember that we aren not exiting
+		}
+		else
+		{
+			std::cout << "IPV6_V6ONLY: " << ipv6only << std::endl;
+		}
 		ServerSocket serverSocket(serverFD, *it);
 		_serverSockets.push_back(serverSocket);
 	}
@@ -419,8 +431,9 @@ void Server::setReuseAddrAndPort()
 			perror("setsockopt SO_REUSEADDR: Protocol not available, continuing without SO_REUSEADDR");
 		if (setsockopt(it->getServerFD(), SOL_SOCKET, SO_REUSEPORT, &opt, sizeof(opt)))
 			perror("setsockopt SO_REUSEPORT: Protocol not available, continuing without SO_REUSEPORT");
+
+		// std::cout << "SO_REUSEADDR and SO_REUSEPORT set" << std::endl;
 	}
-	// std::cout << "SO_REUSEADDR and SO_REUSEPORT set" << std::endl;
 }
 
 void Server::bindToPort()

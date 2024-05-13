@@ -52,19 +52,57 @@ struct sockaddr_storage ServerSocket::getServerSocketAddr() const
 	return _serverSocketAddr;
 }
 
+std::string mapIPv4ToIPv6(const std::string &ipv4Address)
+{
+	// Create a buffer for the IPv6 address
+	char ipv6Address[INET6_ADDRSTRLEN] = "::ffff:";
+
+	// Check if the input IPv4 address is valid
+	struct in_addr ipv4AddrStruct;
+	if (inet_pton(AF_INET, ipv4Address.c_str(), &ipv4AddrStruct) != 1)
+	{
+		std::cerr << "Invalid IPv4 address." << std::endl;
+		return "";
+	}
+
+	// Convert the binary IPv4 address to its string representation
+	char ipv4AddrStr[INET_ADDRSTRLEN];
+	if (inet_ntop(AF_INET, &ipv4AddrStruct, ipv4AddrStr, INET_ADDRSTRLEN) == NULL)
+	{
+		std::cerr << "Failed to convert IPv4 address to string." << std::endl;
+		return "";
+	}
+
+	// Append the IPv4 address to the IPv6 prefix
+	strcat(ipv6Address, ipv4AddrStr);
+	return std::string(ipv6Address);
+}
+
 void ServerSocket::prepareServerSocketAddr()
 {
+	std::cout << "Entering prepareServerSocketAddr" << std::endl;
 	struct addrinfo hints, *res;
 	memset(&hints, 0, sizeof(hints));
-	hints.ai_family = _listen.getIsIpv6() ? AF_INET6 : AF_INET;
+	// hints.ai_family = _listen.getIsIpv6() ? AF_INET6 : AF_INET;
+	hints.ai_family = AF_INET6;
+	std::cout << "hints.ai_family: " << hints.ai_family << std::endl;
 	hints.ai_socktype = SOCK_STREAM;
 	hints.ai_flags = AI_PASSIVE;
 
 	std::string port = toString(_listen.getPort());
 	char *ip = NULL;
-	if (!_listen.getIp().empty() && _listen.getIp() != "any")
+	if (!_listen.getIp().empty() && !_listen.getIsIpv6())
+	{
+		std::string ipv6Address = mapIPv4ToIPv6(_listen.getIp());
+		ip = const_cast<char *>(ipv6Address.c_str());
+	}
+	else
 		ip = const_cast<char *>(_listen.getIp().c_str());
+	std::cout << "ip: " << ip << std::endl;
+	// Map IPv4 to IPv6
+
 	int status = getaddrinfo(ip, port.c_str(), &hints, &res);
+	std::cout << "getaddrinfo status: " << status << std::endl;
 	if (status != 0)
 	{
 		std::cerr << "getaddrinfo: " << gai_strerror(status) << std::endl;
