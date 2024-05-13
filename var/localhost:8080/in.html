@@ -10,7 +10,7 @@
       formData.append('file', file);
 
       var xhr = new XMLHttpRequest();
-      xhr.open('POST', '/upload', true); // Adjust endpoint accordingly
+      xhr.open('POST', '/', true); // Adjust endpoint accordingly
       xhr.onreadystatechange = function() {
         if (xhr.readyState == 4) {
           var response = document.getElementById('response');

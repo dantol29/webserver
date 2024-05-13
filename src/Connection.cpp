@@ -362,6 +362,8 @@ bool Connection::readBody(Parser &parser, HTTPRequest &req, HTTPResponse &res, C
 {
 	std::cout << "\nEntering readBody" << std::endl;
 	size_t contentLength = req.getContentLength();
+	ServerBlock serverBlock;
+	bool locationFound = false;
 	
 	for (size_t i = 0; i < _config.getServerBlocks().size(); i++)
 	{
@@ -369,8 +371,25 @@ bool Connection::readBody(Parser &parser, HTTPRequest &req, HTTPResponse &res, C
 		std::string serverName = _config.getServerBlocks()[i].getServerName()[0];
 		if (serverName == req.getSingleHeader("host").second)
 		{
+			serverBlock = _config.getServerBlocks()[i];
+			for (size_t i = 0; i < serverBlock.getLocations().size(); i++)
+			{
+				std::cout << "Location: " << serverBlock.getLocations()[i]._path << " == " << req.getRequestTarget() << std::endl;
+				if (req.getRequestTarget() == serverBlock.getLocations()[i]._path)
+				{
+					std::cout << "Location found" << std::endl;
+					locationFound = true;
+					if (serverBlock.getLocations()[i]._clientMaxBodySize == 0)
+						break ;
+					if (contentLength > serverBlock.getLocations()[i]._clientMaxBodySize)
+					{
+						res.setStatusCode(413, "Payload Too Large");
+						return false;
+					}
+				}
+			}
 			// uninitialized value
-			if (_config.getServerBlocks()[i].getClientMaxBodySize() == 0)
+			if (locationFound || _config.getServerBlocks()[i].getClientMaxBodySize() == 0)
 				break ;
 			if (contentLength > _config.getServerBlocks()[i].getClientMaxBodySize())
 			{
