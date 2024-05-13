@@ -243,7 +243,7 @@ void ServerBlock::setRoot(std::string &str, bool isLocation)
 		if (_directives._root.size() > 0)
 			throw("root already set");
 		if (str[0] == '/')
-			str.substr(1);
+			str = str.substr(1);
 		_directives._root = str;
 	}
 	else
@@ -251,7 +251,7 @@ void ServerBlock::setRoot(std::string &str, bool isLocation)
 		if (_locations.back()._root.size() > 0)
 			throw("root already set");
 		if (str[0] == '/')
-			str.substr(1);
+			str = str.substr(1);
 		_locations.back()._root = str;
 	}
 }

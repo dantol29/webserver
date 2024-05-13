@@ -304,26 +304,34 @@ void Router::generateDirectoryListing(HTTPResponse &Response,
 	Response.setHeader("Content-Type", "text/html");
 }
 
+bool isDirectory(std::string& path) {
+    struct stat buffer;
+    if (stat(path.c_str(), &buffer) == 0) {
+        return S_ISDIR(buffer.st_mode);
+    }
+    return false; // Failed to get file information
+}
+
 enum PathValidation Router::pathIsValid(HTTPResponse &response, HTTPRequest &request)
 {
 	(void)response;
 	struct stat buffer;
 	std::string path = request.getPath();
-	if (stat(path.c_str(), &buffer) != 0 && !(S_ISDIR(buffer.st_mode)))
+	if (!isDirectory(path) && stat(path.c_str(), &buffer) == 0)
+	{
+		Debug::log("pathIsValid: stat success", Debug::NORMAL);
+		std::cout << " path :" << path << std::endl;
+		return PathValid;
+	}
+	else if (!isDirectory(path) && stat(path.c_str(), &buffer) != 0)
 	{
 		std::cout << "Failed to stat the file at path: " << path << std::endl;
 		Debug::log("webRoot: " + path, Debug::NORMAL);
 		Debug::log("pathIsValid: stat failed, path does not exist", Debug::NORMAL);
 		return PathInvalid;
 	}
-	else if (stat(path.c_str(), &buffer) == 0 && !(S_ISDIR(buffer.st_mode)))
-	{
-		Debug::log("pathIsValid: stat success", Debug::NORMAL);
-		std::cout << " path :" << path << std::endl;
-		return PathValid;
-	}
 
-	if (S_ISDIR(buffer.st_mode))
+	if (isDirectory(path))
 	{
 		Debug::log("pathIsValid: path is a directory", Debug::NORMAL);
 		// if user provided index in config
@@ -350,7 +358,7 @@ enum PathValidation Router::pathIsValid(HTTPResponse &response, HTTPRequest &req
 		// if user did not provide any index in config or index is not valid
 		if (!path.empty())
 		{
-			path += "index.html"; // append /index.html
+			path += "/index.html"; // append /index.html
 			std::cout << "path: " << path << std::endl;
 			if (stat(path.c_str(), &buffer) == 0)
 			{

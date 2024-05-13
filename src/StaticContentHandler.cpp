@@ -40,7 +40,7 @@ std::string getMimeType(const std::string &filePath)
 		return "application/octet-stream"; // Default binary type
 }
 
-bool isDirectory(const std::string &path)
+static bool isDirectory(const std::string &path)
 {
 	struct stat statbuf;
 	if (stat(path.c_str(), &statbuf) != 0)
