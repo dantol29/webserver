@@ -69,8 +69,6 @@ class Connection
 	bool getHasDataToSend() const;
 	bool getHasFinishedSending() const;
 	bool getCanBeClosed() const;
-	bool getHasCGI() const;
-	int getPID() const;
 
 	struct pollfd &getPollFd();
 
@@ -87,8 +85,6 @@ class Connection
 	void setCanBeClosed(bool value);
 	void setHasDataToSend(bool value);
 	void setHasFinishedSending(bool value);
-	void setHasCGI(bool value);
-	void setPID(int value);
 	/* Debugging */
 	void printConnection() const;
 };
