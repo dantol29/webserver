@@ -261,6 +261,9 @@ void Server::buildResponse(Connection &conn, size_t &i, HTTPRequest &request, HT
 	}
 
 	std::string root = directive._root;
+	
+	if (root[root.size() - 1] != '/')
+		root = root + "/";
 	std::cout << RED << "Root: " << root << RESET << std::endl;
 
 	Router router(directive);

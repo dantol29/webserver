@@ -329,6 +329,9 @@ enum PathValidation Router::pathIsValid(HTTPResponse &response, HTTPRequest &req
 				std::cout << "tmpPath: " << tmpPath << std::endl;
 				if (stat(tmpPath.c_str(), &buffer) == 0)
 				{
+					if (tmpPath.find("//") != std::string::npos)
+						tmpPath.replace(tmpPath.find("//"), 2, "/");
+
 					std::cout << "tmpPath: " << tmpPath << std::endl;
 					Debug::log("pathIsValid: using index from user: " + index, Debug::NORMAL);
 					request.setPath(tmpPath);
