@@ -32,6 +32,14 @@ void CGIHandler::handleRequest(const HTTPRequest &request, HTTPResponse &respons
 	env.HTTPRequestToMetaVars(request, env);
 	// std::cout << env;
 	std::string cgiOutput = executeCGI(env);
+	// if cgioutput == "HTTP/1.1 500 Internal Server Error\r\nContent-Length: 0\r\n\r\n";
+	// then we should return 500 error
+	if (cgiOutput == "HTTP/1.1 500 Internal Server Error\r\nContent-Length: 0\r\n\r\n")
+	{
+		response.setStatusCode(500, "");
+		response.setBody("500 Internal Server Error");
+		return;
+	}
 	CGIStringToResponse(cgiOutput, response);
 	// std::cout << response;
 
@@ -127,33 +135,32 @@ std::vector<char *> CGIHandler::convertToCStringArray(const std::vector<std::str
 	return pointers;
 }
 
+void handleTimeout(int sig)
+{
+	(void)sig;
+	std::cout << "CGIHandler: Timeout" << std::endl;
+}
+
 std::string CGIHandler::executeCGI(const MetaVariables &env)
 {
-	std::string cgiOutput = "";
+	std::string cgiOutput;
 	std::vector<std::string> argv = createArgvForExecve(env);
 	std::vector<std::string> envp = env.getForExecve();
 
-	// Debug::log("Executing CGI script: " + std::string(argv[0]), Debug::NORMAL);
 	int pipeFD[2];
 	if (pipe(pipeFD) == -1)
 	{
 		perror("pipe failed");
-		_exit(EXIT_FAILURE);
+		return "HTTP/1.1 500 Internal Server Error\r\nContent-Length: 0\r\n\r\n";
 	}
 
 	pid_t pid = fork();
-
-	// _conn->setPID(pid);
-	// _conn->setHasCGI(true);
-	// _conn->setCGIexpired(false);
-	// _conn->_cgiCounter++;
-	// TODO: start a timer :
-	// time_t, struct timeval, alarm, getitimer, timer_create, gettimeofday
-
 	if (pid == -1)
 	{
 		perror("fork failed");
-		_exit(EXIT_FAILURE);
+		close(pipeFD[0]);
+		close(pipeFD[1]);
+		return "HTTP/1.1 500 Internal Server Error\r\nContent-Length: 0\r\n\r\n";
 	}
 	else if (pid == 0)
 	{
@@ -166,26 +173,21 @@ std::string CGIHandler::executeCGI(const MetaVariables &env)
 		std::vector<char *> argvPointers = convertToCStringArray(argv);
 		std::vector<char *> envpPointers = convertToCStringArray(envp);
 
-		// Debug::log("Executing CGI script: " + std::string(argvPointers[0]), Debug::NORMAL);
-		// Debug::log("CGI script path: " + std::string(argvPointers[1]), Debug::NORMAL);
 		if (access(argvPointers[0], X_OK) == -1)
 		{
 			perror("access");
-			// 	_exit(EXIT_FAILURE);
-		}
-		else
-		{
-			std::cout << "access OK" << std::endl;
-			execve(argvPointers[0], &argvPointers[0], &envpPointers[0]);
+			_exit(EXIT_FAILURE);
 		}
 
+		execve(argvPointers[0], argvPointers.data(), envpPointers.data());
 		perror("execve");
-
-		// exit(EXIT_FAILURE);
-		// TODO: check if _exit isn't better
+		_exit(EXIT_FAILURE);
 	}
 
 	close(pipeFD[1]);
+
+	signal(SIGALRM, handleTimeout);
+	alarm(4);
 
 	char readBuffer[256];
 	ssize_t bytesRead;
@@ -196,21 +198,26 @@ std::string CGIHandler::executeCGI(const MetaVariables &env)
 	}
 	close(pipeFD[0]);
 
-	// int status;
-	// waitpid(pid, &status, WNOHANG);        this has been moved to CGIMonitor in startPollEventLoop
-	std::cout << "------------------CGI output prepared-------------------" << std::endl;
+	int status;
+	pid_t waitedPid = waitpid(pid, &status, 0);
+	alarm(0);
 
-	// std::cout << "\n\n\n\nCGI output: " << cgiOutput << std::endl;
-	// make a string formatted as http respopnse for 500 error
-	// if (WIFEXITED(status) && WEXITSTATUS(status) != 0)
-	// {
-	std::string errorResponse = "HTTP/1.1 500 Internal Server Error\r\nContent-Length: 0\r\n\r\n";
-	std::cout << errorResponse;
-	// }
+	if (waitedPid == -1)
+	{
+		perror("waitpid");
+		return "HTTP/1.1 500 Internal Server Error\r\nContent-Length: 0\r\n\r\n";
+	}
+
+	if (WIFEXITED(status) && WEXITSTATUS(status) != 0)
+	{
+		return "HTTP/1.1 500 Internal Server Error\r\nContent-Length: 0\r\n\r\n";
+	}
+
 	if (cgiOutput.empty())
 	{
-		return errorResponse;
+		return "HTTP/1.1 500 Internal Server Error\r\nContent-Length: 0\r\n\r\n";
 	}
+
 	return cgiOutput;
 }
 
