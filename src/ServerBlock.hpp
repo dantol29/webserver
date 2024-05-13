@@ -2,17 +2,14 @@
 #define SERVERBLOCK_HPP
 
 #include "webserv.hpp"
-#include "Debug.hpp"
 #include "Listen.hpp"
 
 // a list of all accepted variables
 // ---------------------------------
 // 1. listen, 2. server_name, 3. error_page,
-// 4. index, 5. root, 6. client_max_body_size, 7. autoindex,
+// 4. index, 5. root, 6. client_max_body_size, 7. autoindex, 
 // 8. allow_methods, 9. alias, 10. cgi_path, 11. cgi_ext
 // ---------------------------------
-
-class ServerBlock; // forward declaration
 
 struct Directives
 {
@@ -31,12 +28,14 @@ struct Directives
 		_cgiExt.clear();
 		_return = "";
 		_path = "";
+	
 	}
+
+	void setListenEntry(Listen listenEntry, bool isLocation);
+
 	std::vector<Listen> _listen;
 	std::vector<std::string> _serverName;
-	// clang-format off
-	std::vector<std::pair<int, std::string> > _errorPage;
-	// clang-format on
+	std::vector<std::pair<int, std::string> >_errorPage;
 	std::vector<std::string> _index;
 	std::string _root;
 	size_t _clientMaxBodySize;
@@ -47,37 +46,6 @@ struct Directives
 	std::string _cgiPath;
 	std::string _return;
 	std::string _path; // only for location blocks
-
-
-	// GETTERS AND SETTERS
-	std::vector<Listen> getListen() const;
-	std::vector<std::string> getServerName() const;
-	// clang-format off
-	std::vector<std::pair<int, std::string> > getErrorPage() const;
-	// clang-format on
-	std::vector<std::string> getIndex() const;
-	std::string getRoot() const;
-	size_t getClientMaxBodySize() const;
-	bool getAutoIndex() const;
-	std::vector<std::string> getAllowedMethods() const;
-	std::string getAlias() const;
-	std::vector<std::string> getCgiExt() const;
-	std::string getCgiPath() const;
-	std::string getReturn() const;
-
-	void setListenEntry(Listen listenEntry, bool isLocation);
-	void setServerName(std::vector<std::string> str, ServerBlock &block, bool isLocation);
-	void setErrorPage(std::pair<int, std::string> str, bool isLocation);
-	void setIndex(std::vector<std::string> str, ServerBlock &block, bool isLocation);
-	void setRoot(std::string &str, ServerBlock &block, bool isLocation);
-	void setClientMaxBodySize(std::string &str, ServerBlock &block, bool isLocation);
-	void setAutoIndex(std::string &str, ServerBlock &block, bool isLocation);
-	void setAllowedMethods(std::vector<std::string> str, ServerBlock &block, bool isLocation);
-	void setAlias(std::string &str, ServerBlock &block, bool isLocation);
-	void setCgiExt(std::vector<std::string> stringsVector, ServerBlock &block, bool isLocation);
-	void setCgiPath(std::string str, ServerBlock &block, bool isLocation);
-	void setReturn(std::string str, ServerBlock &block, bool isLocation);
-	void setLocationPath(std::string str);
 };
 
 class ServerBlock
@@ -88,28 +56,56 @@ class ServerBlock
 	ServerBlock &operator=(const ServerBlock &obj);
 	~ServerBlock();
 
-	Directives getDirectives() const;
-	std::vector<Directives> getLocations() const;
+		bool addDirective(std::string key, std::string& value, bool isLocation);
 
-	void setLocationPath(std::string str);
-	bool addDirective(std::string key, std::string &value, bool isLocation);
+		// GETTERS
+		Directives getDirectives() const; // variables outside of locations
+		std::vector<Directives> getLocations() const; // location / {} blocks
+		std::vector<Listen> getListen() const;
+		std::vector<std::string> getServerName() const;
+		std::vector<std::pair<int, std::string> > getErrorPage() const;
+		std::vector<std::string> getIndex() const;
+		std::string getRoot() const;
+		size_t getClientMaxBodySize() const;
+		bool getAutoIndex() const;
+		std::vector<std::string> getAllowedMethods() const;
+		std::string getAlias() const;
+		std::vector<std::string> getCgiExt() const;
+		std::string getCgiPath() const;
+		std::string getReturn() const;
 
-	// clear ServerBlock
-	void deleteData();
+		// SETTERS
+		void setListen(Listen str, bool isLocation);
+		void setServerName(std::vector<std::string> str, bool isLocation);
+		void setErrorPage(std::pair<int, std::string> str, bool isLocation);
+		void setIndex(std::vector<std::string> str, bool isLocation);
+		void setRoot(std::string& str, bool isLocation);
+		void setClientMaxBodySize(std::string& n, bool isLocation);
+		void setAutoIndex(std::string& str, bool isLocation);
+		void setAllowedMethods(std::vector<std::string> str, bool isLocation);
+		void setAlias(std::string& str, bool isLocation);
+		void setCgiExt(std::vector<std::string> str, bool isLocation);
+		void setCgiPath(std::string str, bool isLocation);
+		void setReturn(std::string str, bool isLocation);
+		void setLocationPath(std::string str);
+		
+		// clear ServerBlock
+		void deleteData();
+	private:
+		Directives _directives;
+		std::vector<Directives> _locations;
+		
+		// TRANSFORMERS
+		void transformServerListen(std::string& str, bool isLocation);
+		std::vector<std::string> transformServerName(std::string& str);
+		std::pair<int, std::string> transformErrorPage(std::string& str);
+		std::vector<std::string> transformIndex(std::string& str);
+		std::vector<std::string> transformAllowedMethods(std::string& str);
+		std::vector<std::string> transformCgiExt(std::string& str);
 
-  private:
-	Directives _directives;
-	std::vector<Directives> _locations;
+		Listen makeListenStruct(std::string& newStr);
+		
 
-	// TRANSFORMERS
-	void transformServerListen(std::string &str, bool isLocation);
-	std::vector<std::string> transformServerName(std::string &str);
-	std::pair<int, std::string> transformErrorPage(std::string &str);
-	std::vector<std::string> transformIndex(std::string &str);
-	std::vector<std::string> transformAllowedMethods(std::string &str);
-	std::vector<std::string> transformCgiExt(std::string &str);
-
-	// Listen buildListenStruct(std::string &newStr);
 };
 
 #endif

@@ -32,7 +32,7 @@ Router::~Router()
 // combines with root directory for standardized routing,
 void Router::adaptPathForFirefox(HTTPRequest &request)
 {
-	std::string path = _directive.getRoot() + request.getSingleHeader("host").second;
+	std::string path = request.getRoot() + request.getSingleHeader("host").second;
 
 	std::string requestTarget = request.getRequestTarget();
 	size_t hostPos = requestTarget.find(request.getSingleHeader("host").second);
@@ -166,7 +166,7 @@ void Router::handleServerBlockError(HTTPRequest &request, HTTPResponse &response
 {
 	Debug::log("handleServerBlockError: entering function", Debug::NORMAL);
 	// clang-format off
-	std::vector<std::pair<int, std::string> > errorPage = _directive.getErrorPage();
+	std::vector<std::pair<int, std::string> > errorPage = _directive._errorPage;
 
 	// clang-format on
 	size_t i = 0;
@@ -178,7 +178,7 @@ void Router::handleServerBlockError(HTTPRequest &request, HTTPResponse &response
 			Debug::log("Path requested: " + request.getPath(), Debug::NORMAL);
 			Debug::log("Path to error: " + errorPage[i].second, Debug::NORMAL);
 			// setting the path to the custom error page
-			request.setPath(_directive.getRoot() + request.getHost() + "/" + errorPage[i].second);
+			request.setPath(_directive._root + request.getHost() + "/" + errorPage[i].second);
 
 			// std::cout << RED << "         custom error page: " << request.getPath() << RESET << std::endl;
 			// TODO: move here what is todo below
@@ -222,8 +222,8 @@ void Router::handleServerBlockError(HTTPRequest &request, HTTPResponse &response
 bool Router::isCGI(const HTTPRequest &request)
 {
 	// TODO: check against config file, not this hardcoded version
-	std::vector<std::string> cgiExtensions = _directive.getCgiExt();
-	
+	std::vector<std::string> cgiExtensions = _directive._cgiExt;
+
 	std::cout << RED << "isCGI" << RESET << std::endl;
 	std::cout << "cgiExtensions: " << cgiExtensions.size() << std::endl;
 	std::cout << "request target: " << request.getRequestTarget() << std::endl;

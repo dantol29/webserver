@@ -367,9 +367,9 @@ bool Connection::readBody(Parser &parser, HTTPRequest &req, HTTPResponse &res, C
 	for (size_t i = 0; i < _config.getServerBlocks().size(); i++)
 	{
 		// loop through the server names
-		for (size_t j = 0; j < _config.getServerBlocks()[i].getDirectives().getServerName().size(); j++)
+		for (size_t j = 0; j < _config.getServerBlocks()[i].getServerName().size(); j++)
 		{
-			serverName = _config.getServerBlocks()[i].getDirectives().getServerName()[j];
+			serverName = _config.getServerBlocks()[i].getServerName()[j];
 			if (serverName == req.getSingleHeader("host").second)
 				break ;
 		}
@@ -394,9 +394,9 @@ bool Connection::readBody(Parser &parser, HTTPRequest &req, HTTPResponse &res, C
 				}
 			}
 			// uninitialized value
-			if (locationFound || _config.getServerBlocks()[i].getDirectives().getClientMaxBodySize() == 0)
+			if (locationFound || _config.getServerBlocks()[i].getClientMaxBodySize() == 0)
 				break ;
-			if (contentLength > _config.getServerBlocks()[i].getDirectives().getClientMaxBodySize())
+			if (contentLength > _config.getServerBlocks()[i].getClientMaxBodySize())
 			{
 				res.setStatusCode(413, "Payload Too Large");
 				return false;

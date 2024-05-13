@@ -231,9 +231,9 @@ void Server::buildResponse(Connection &conn, size_t &i, HTTPRequest &request, HT
 	for (size_t i = 0; i < _config.getServerBlocks().size(); i++)
 	{
 		// loop through all server names in the server block
-		for (size_t j = 0; j < _config.getServerBlocks()[i].getDirectives().getServerName().size(); j++)
+		for (size_t j = 0; j < _config.getServerBlocks()[i].getServerName().size(); j++)
 		{
-			serverName = _config.getServerBlocks()[i].getDirectives().getServerName()[j];
+			serverName = _config.getServerBlocks()[i].getServerName()[j];
 			std::cout << RED << "Checking server name: " << serverName << RESET << std::endl;
 			if (serverName == request.getSingleHeader("host").second){
 				std::cout << GREEN << "Server name found" << RESET << std::endl;
@@ -280,7 +280,7 @@ void Server::buildResponse(Connection &conn, size_t &i, HTTPRequest &request, HT
 		std::cout << "Index: " << i << std::endl;
 	}
 
-	std::string root =serverBlock.getDirectives().getRoot();
+	std::string root =serverBlock.getRoot();
 
 	std::cout << "Root: " << root << std::endl;
 	if (root[root.size() - 1] != '/')
@@ -421,7 +421,7 @@ void Server::createServerSockets(std::vector<ServerBlock> &serverBlocks)
 	std::vector<Listen> allListens;
 	for (std::vector<ServerBlock>::iterator it = serverBlocks.begin(); it != serverBlocks.end(); ++it)
 	{
-		std::vector<Listen> listens = it->getDirectives().getListen();
+		std::vector<Listen> listens = it->getListen();
 		allListens.insert(allListens.end(), listens.begin(), listens.end());
 	}
 

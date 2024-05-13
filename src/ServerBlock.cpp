@@ -50,27 +50,27 @@ bool ServerBlock::addDirective(std::string key, std::string &value, bool isLocat
 	if (key == "listen")
 		transformServerListen(value, isLocation);
 	else if (key == "server_name")
-		_directives.setServerName(transformServerName(value), *this, isLocation);
+		setServerName(transformServerName(value), isLocation);
 	else if (key == "error_page")
-		_directives.setErrorPage(transformErrorPage(value), isLocation);
+		setErrorPage(transformErrorPage(value), isLocation);
 	else if (key == "index")
-		_directives.setIndex(transformIndex(value), *this, isLocation);
+		setIndex(transformIndex(value), isLocation);
 	else if (key == "root")
-		_directives.setRoot(value, *this, isLocation);
+		setRoot(value, isLocation);
 	else if (key == "client_max_body_size")
-		_directives.setClientMaxBodySize(value, *this, isLocation);
+		setClientMaxBodySize(value, isLocation);
 	else if (key == "autoindex")
-		_directives.setAutoIndex(value, *this, isLocation);
+		setAutoIndex(value, isLocation);
 	else if (key == "allow_methods")
-		_directives.setAllowedMethods(transformAllowedMethods(value), *this, isLocation);
+		setAllowedMethods(transformAllowedMethods(value), isLocation);
 	else if (key == "alias")
-		_directives.setAlias(value, *this, isLocation);
+		setAlias(value, isLocation);
 	else if (key == "cgi_path")
-		_directives.setCgiPath(value, *this, isLocation);
+		setCgiPath(value, isLocation);
 	else if (key == "cgi_ext")
-		_directives.setCgiExt(transformCgiExt(value), *this, isLocation);
+		setCgiExt(transformCgiExt(value), isLocation);
 	else if (key == "return")
-		_directives.setReturn(value, *this, isLocation);
+		setReturn(value, isLocation);
 	else if (key == "path" && isLocation)
 		setLocationPath(value);
 
@@ -105,159 +105,159 @@ std::vector<Directives> ServerBlock::getLocations() const
 	return (_locations);
 }
 
-std::vector<Listen> Directives::getListen() const
+std::vector<Listen> ServerBlock::getListen() const
 {
-	return (_listen);
+	return (_directives._listen);
 }
 
-std::vector<std::string> Directives::getServerName() const
+std::vector<std::string> ServerBlock::getServerName() const
 {
-	return (_serverName);
+	return (_directives._serverName);
 }
+
 // clang-format off
-std::vector<std::pair<int, std::string> > Directives::getErrorPage() const
+std::vector<std::pair<int, std::string> > ServerBlock::getErrorPage() const
 // clang-format on
 {
-	return (_errorPage);
+	return (_directives._errorPage);
 }
 
-std::vector<std::string> Directives::getIndex() const
+std::vector<std::string> ServerBlock::getIndex() const
 {
-	return (_index);
+	return (_directives._index);
 }
 
-std::string Directives::getRoot() const
+std::string ServerBlock::getRoot() const
 {
-	return (_root);
+	return (_directives._root);
 }
 
-size_t Directives::getClientMaxBodySize() const
+size_t ServerBlock::getClientMaxBodySize() const
 {
-	return (_clientMaxBodySize);
+	return (_directives._clientMaxBodySize);
 }
 
-bool Directives::getAutoIndex() const
+bool ServerBlock::getAutoIndex() const
 {
-	return (_autoindex);
+	return (_directives._autoindex);
 }
 
-std::vector<std::string> Directives::getAllowedMethods() const
+std::vector<std::string> ServerBlock::getAllowedMethods() const
 {
-	return (_allowedMethods);
+	return (_directives._allowedMethods);
 }
 
-std::string Directives::getAlias() const
+std::string ServerBlock::getAlias() const
 {
-	return (_alias);
+	return (_directives._alias);
 }
 
-std::string Directives::getCgiPath() const
+std::string ServerBlock::getCgiPath() const
 {
-	return (_cgiPath);
+	return (_directives._cgiPath);
 }
 
-std::vector<std::string> Directives::getCgiExt() const
+std::vector<std::string> ServerBlock::getCgiExt() const
 {
-	return (_cgiExt);
+	return (_directives._cgiExt);
 }
 
-std::string Directives::getReturn() const
+std::string ServerBlock::getReturn() const
 {
-	return (_return);
+	return (_directives._return);
 }
 
-void Directives::setListenEntry(Listen listenEntry, bool isLocation)
+void ServerBlock::setListen(Listen str, bool isLocation)
 {
 	if (!isLocation)
-		_listen.push_back(listenEntry);
+		_directives._listen.push_back(str);
 	else
 		throw("listen directive not allowed in location block");
 
-	for (unsigned int i = 0; i < _listen.size(); ++i)
+	for (unsigned int i = 0; i < _directives._listen.size(); ++i)
 	{
-		for (unsigned int j = 0; j < _listen.size(); ++j)
+		for (unsigned int j = 0; j < _directives._listen.size(); ++j)
 		{
-			if (i != j && _listen[i].getPort() == _listen[j].getPort())
+			if (i != j && _directives._listen[i].getPort() == _directives._listen[j].getPort())
 				throw("Duplicate listen directive");
 		}
 	}
 }
 
-void Directives::setServerName(std::vector<std::string> str, ServerBlock &block, bool isLocation)
+void ServerBlock::setServerName(std::vector<std::string> str, bool isLocation)
 {
 	if (!isLocation)
 	{
-		if (_serverName.size() > 0)
+		if (_directives._serverName.size() > 0)
 			throw("server_name already set");
-		_serverName = str;
+		_directives._serverName = str;
 	}
 	else
 	{
-		if (block.getLocations().back()._serverName.size() > 0)
+		if (_locations.back()._serverName.size() > 0)
 			throw("server_name already set");
-		block.getLocations().back()._serverName = str;
+		_locations.back()._serverName = str;
 	}
 }
 
-void Directives::setErrorPage(std::pair<int, std::string> str, bool isLocation)
+void ServerBlock::setErrorPage(std::pair<int, std::string> str, bool isLocation)
 {
 	if (isLocation)
 		throw("error_page directive not allowed in location block");
-	_errorPage.push_back(str);
+	_directives._errorPage.push_back(str);
 	
-	for (unsigned int i = 0; i < _errorPage.size(); ++i)
+	for (unsigned int i = 0; i < _directives._errorPage.size(); ++i)
 	{
 		// remove slashes at the begginning
-		if ( _errorPage[i].second[0] == '/')
-			_errorPage[i].second = _errorPage[i].second.substr(1);
+		if ( _directives._errorPage[i].second[0] == '/')
+			_directives._errorPage[i].second = _directives._errorPage[i].second.substr(1);
 		
-		for (unsigned int j = 0; j < _errorPage.size(); ++j)
+		for (unsigned int j = 0; j < _directives._errorPage.size(); ++j)
 		{
-			if (i != j && _errorPage[i].first == _errorPage[j].first)
+			if (i != j && _directives._errorPage[i].first == _directives._errorPage[j].first)
 				throw("Duplicate error_page directive");
 		}
 	}
 }
 
-void Directives::setIndex(std::vector<std::string> stringsVector, ServerBlock &block, bool isLocation)
+void ServerBlock::setIndex(std::vector<std::string> str, bool isLocation)
 {
 	if (!isLocation)
 	{
-		if (_index.size() > 0)
+		if (_directives._index.size() > 0)
 			throw("index already set");
-		_index = stringsVector;
+		_directives._index = str;
 	}
 	else
 	{
-		if (block.getLocations().back()._index.size() > 0)
+		if (_locations.back()._index.size() > 0)
 			throw("index already set");
-		block.getLocations().back()._index = stringsVector;
+		_locations.back()._index = str;
 	}
 }
 
-void Directives::setRoot(std::string &str, ServerBlock &block, bool isLocation)
+void ServerBlock::setRoot(std::string &str, bool isLocation)
 {
 	if (!isLocation)
 	{
-		if (_root.size() > 0)
+		if (_directives._root.size() > 0)
 			throw("root already set");
 		if (str[0] == '/')
 			str = str.substr(1);
-		_root = str;
+		_directives._root = str;
 	}
 	else
 	{
-		if (block.getLocations().back()._root.size() > 0)
+		if (_locations.back()._root.size() > 0)
 			throw("root already set");
 		if (str[0] == '/')
 			str = str.substr(1);
-		block.getLocations().back()._root = str;
+		_locations.back()._root = str;
 	}
 }
 
-void Directives::setClientMaxBodySize(std::string &str, ServerBlock &block, bool isLocation)
+void ServerBlock::setClientMaxBodySize(std::string &str, bool isLocation)
 {
-	std::cout << "str: " << str << std::endl;
 	if (strToInt(str) < 1)
 		throw("Invalid client_max_body_size");
 
@@ -265,125 +265,122 @@ void Directives::setClientMaxBodySize(std::string &str, ServerBlock &block, bool
 
 	if (!isLocation)
 	{
-		if (_clientMaxBodySize > 0)
+		if (_directives._clientMaxBodySize > 0)
 			throw("client_max_body_size already set");
-		_clientMaxBodySize = n;
+		_directives._clientMaxBodySize = n;
 	}
 	else
 	{
-		if (block.getLocations().back()._clientMaxBodySize > 0)
+		if (_locations.back()._clientMaxBodySize > 0)
 			throw("client_max_body_size already set");
-		block.getLocations().back()._clientMaxBodySize = n;
+		_locations.back()._clientMaxBodySize = n;
 	}
 }
 
-void Directives::setAutoIndex(std::string &str, ServerBlock &block, bool isLocation)
+void ServerBlock::setAutoIndex(std::string &str, bool isLocation)
 {
-	bool autoIndexValue;
+	bool a;
 
 	if (str == "on")
-		autoIndexValue = true;
+		a = true;
 	else if (str == "off")
-		autoIndexValue = false;
+		a = false;
 	else
 		throw("Invalid autoindex value (on/off)");
 
 	if (!isLocation)
 	{
-		if (_autoindex)
+		if (_directives._autoindex)
 			throw("autoindex already set");
-		_autoindex = autoIndexValue;
+		_directives._autoindex = a;
 	}
 	else
 	{
-		if (block.getLocations().back()._autoindex)
+		if (_locations.back()._autoindex)
 			throw("autoindex already set");
-		block.getLocations().back()._autoindex = autoIndexValue;
+		_locations.back()._autoindex = a;
 	}
 }
 
-void Directives::setAllowedMethods(std::vector<std::string> str, ServerBlock &block, bool isLocation)
+void ServerBlock::setAllowedMethods(std::vector<std::string> str, bool isLocation)
 {
 	if (!isLocation)
 	{
-		if (_allowedMethods.size() > 0)
+		if (_directives._allowedMethods.size() > 0)
 			throw("allowed_methods already set");
-		_allowedMethods = str;
+		_directives._allowedMethods = str;
 	}
 	else
 	{
-		if (block.getLocations().back()._allowedMethods.size() > 0)
+		if (_locations.back()._allowedMethods.size() > 0)
 			throw("allowed_methods already set");
-		block.getLocations().back()._allowedMethods = str;
+		_locations.back()._allowedMethods = str;
 	}
 }
 
-void Directives::setAlias(std::string &str, ServerBlock &block, bool isLocation)
+void ServerBlock::setAlias(std::string &str, bool isLocation)
 {
 	if (!isLocation)
 	{
-		if (_alias.size() > 0)
+		if (_directives._alias.size() > 0)
 			throw("alias already set");
-		_alias = str;
+		_directives._alias = str;
 	}
 	else
 	{
-		if (block.getLocations().back()._alias.size() > 0)
+		if (_locations.back()._alias.size() > 0)
 			throw("alias already set");
-		block.getLocations().back()._alias = str;
+		_locations.back()._alias = str;
 	}
 }
-
-void Directives::setCgiExt(std::vector<std::string> stringsVector, ServerBlock &block, bool isLocation)
+void ServerBlock::setCgiExt(std::vector<std::string> str, bool isLocation)
 {
 	if (!isLocation)
 	{
-		if (_cgiExt.size() > 0)
+		if (_directives._cgiExt.size() > 0)
 			throw("cgi_ext already set");
-		_cgiExt = stringsVector;
+		_directives._cgiExt = str;
 	}
 	else
 	{
-		// if (_locations.back()._cgiExt.size() > 0)
-		if (block.getLocations().back()._cgiExt.size() > 0)
+		if (_locations.back()._cgiExt.size() > 0)
 			throw("cgi_ext already set");
-		// _locations.back()._cgiExt = str;
-		block.getLocations().back()._cgiExt = stringsVector;
+		_locations.back()._cgiExt = str;
 	}
 }
 
-void Directives::setCgiPath(std::string str, ServerBlock &block, bool isLocation)
+void ServerBlock::setCgiPath(std::string str, bool isLocation)
 {
 	if (!isLocation)
 	{
-		if (_cgiPath.size() > 0)
+		if (_directives._cgiPath.size() > 0)
 			throw("cgi_path already set");
-		_cgiPath = str;
+		_directives._cgiPath = str;
 	}
 	else
 	{
-		if (block.getLocations().back()._cgiPath.size() > 0)
+		if (_locations.back()._cgiPath.size() > 0)
 			throw("cgi_path already set");
-		block.getLocations().back()._cgiPath = str;
+		_locations.back()._cgiPath = str;
 	}
 }
 
-void Directives::setReturn(std::string str, ServerBlock &block, bool isLocation)
+void ServerBlock::setReturn(std::string str, bool isLocation)
 {
 	// if there is a space in the string or if there is no http in the string
 	if (str.find(" ") != std::string::npos || str.find("http") == std::string::npos)
 		throw("Invalid return directive");
 	if (!isLocation)
 	{
-		if (_return.size() > 0)
+		if (_directives._return.size() > 0)
 			throw("return already set");
-		_return = str;
+		_directives._return = str;
 	}
 	else
 	{
-		if (block.getLocations().back()._return.size() > 0)
+		if (_locations.back()._return.size() > 0)
 			throw("return already set");
-		block.getLocations().back()._return = str;
+		_locations.back()._return = str;
 	}
 }
 
@@ -407,7 +404,7 @@ std::vector<std::string> ServerBlock::transformServerName(std::string &str)
 	return (newStr);
 }
 
-// Listen ServerBlock::buildListenStruct(std::string &newStr)
+// Listen ServerBlock::makeListenStruct(std::string &newStr)
 // {
 // 	Listen listen;
 // 	int port;
@@ -441,42 +438,42 @@ std::vector<std::string> ServerBlock::transformServerName(std::string &str)
 // 			isIpAndPort = true;
 // 		}
 
-// 	port = strToInt(portStr);
-// 	if (port >= 1 && port <= 65535)
-// 	{
-// 		listen._port = port;
-// 		if (!isIpAndPort)
+// 		port = strToInt(portStr);
+// 		if (port >= 1 && port <= 65535)
 // 		{
-// 			listen._ip = "Any";
-// 			return (listen);
+// 			listen._port = port;
+// 			if (!isIpAndPort)
+// 			{
+// 				listen._ip = "Any";
+// 				return (listen);
+// 			}
 // 		}
+// 		// is incorrect integer
+// 		else if ((port < 1 || port > 65535) && port != -1)
+// 			throw("Invalid port");
+
+// 		ip = newStr;
+// 		// (IPv6:port)
+// 		if (isIpAndPort)
+// 			ip = newStr.substr(0, newStr.find_last_of(':'));
+// 		listen._ip = ip;
+// 		listen.isIpv6 = true;
 // 	}
-// 	// is incorrect integer
-// 	else if ((port < 1 || port > 65535) && port != -1)
-// 		throw("Invalid port");
-
-// 	ip = newStr;
-// 	// (IPv6:port)
-// 	if (isIpAndPort)
+// 	// (IPv4:port)
+// 	else
+// 	{
 // 		ip = newStr.substr(0, newStr.find_last_of(':'));
-// 	listen._ip = ip;
-// 	listen.isIpv6 = true;
-// }
-// (IPv4:port)
-// else
-// {
-// 	ip = newStr.substr(0, newStr.find_last_of(':'));
-// 	portStr = newStr.substr(newStr.find_last_of(':') + 1);
-// 	port = strToInt(portStr);
-// 	if (port < 1 || port > 65535)
-// 		throw("Invalid port");
-// 	listen._ip = ip;
+// 		portStr = newStr.substr(newStr.find_last_of(':') + 1);
+// 		port = strToInt(portStr);
+// 		if (port < 1 || port > 65535)
+// 			throw("Invalid port");
+// 		listen._ip = ip;
 
-// 	if (getaddrinfo(ip.c_str(), NULL, &hints, &res) != 0)
-// 		throw("Invalid ip");
-// 	freeaddrinfo(res);
-// 	listen._port = port;
-// }
+// 		if (getaddrinfo(ip.c_str(), NULL, &hints, &res) != 0)
+// 			throw("Invalid ip");
+// 		freeaddrinfo(res);
+// 		listen._port = port;
+// 	}
 
 // 	if (listen._ip.empty())
 // 		listen._ip = "Any";
@@ -485,6 +482,23 @@ std::vector<std::string> ServerBlock::transformServerName(std::string &str)
 
 // 	return (listen);
 // }
+
+void Directives::setListenEntry(Listen listenEntry, bool isLocation)
+{
+	if (!isLocation)
+		_listen.push_back(listenEntry);
+	else
+		throw("listen directive not allowed in location block");
+
+	for (unsigned int i = 0; i < _listen.size(); ++i)
+	{
+		for (unsigned int j = 0; j < _listen.size(); ++j)
+		{
+			if (i != j && _listen[i].getPort() == _listen[j].getPort())
+				throw("Duplicate listen directive");
+		}
+	}
+}
 
 void ServerBlock::transformServerListen(std::string &str, bool isLocation)
 {
@@ -501,7 +515,6 @@ void ServerBlock::transformServerListen(std::string &str, bool isLocation)
 	if (newStr.empty())
 		newStr.push_back(str);
 	for (unsigned int i = 0; i < newStr.size(); ++i)
-		// _directives.setListenEntry(buildListenStruct(newStr[i]), false);
 		_directives.setListenEntry(Listen(newStr[i]), false);
 }
 
@@ -571,20 +584,14 @@ std::vector<std::string> ServerBlock::transformCgiExt(std::string &str)
 		if (std::find(extensions, extensions + sizeof(extensions) / sizeof(extensions[0]), name) ==
 			extensions + sizeof(extensions) / sizeof(extensions[0]))
 			throw("Invalid CGI extension");
-		while (std::getline(ss, name, ' '))
-		{
-			if (std::find(extensions, extensions + sizeof(extensions) / sizeof(extensions[0]), name) ==
-				extensions + sizeof(extensions) / sizeof(extensions[0]))
-				throw("Invalid CGI extension");
-			newStr.push_back(name);
-		}
-		if (newStr.empty())
-		{
-			if (std::find(extensions, extensions + sizeof(extensions) / sizeof(extensions[0]), str) ==
-				extensions + sizeof(extensions) / sizeof(extensions[0]))
-				throw("Invalid CGI extension");
-			newStr.push_back(str);
-		}
+		newStr.push_back(name);
+	}
+	if (newStr.empty())
+	{
+		if (std::find(extensions, extensions + sizeof(extensions) / sizeof(extensions[0]), str) ==
+			extensions + sizeof(extensions) / sizeof(extensions[0]))
+			throw("Invalid CGI extension");
+		newStr.push_back(str);
 	}
 	return (newStr);
 }
