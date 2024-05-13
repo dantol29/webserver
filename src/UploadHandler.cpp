@@ -90,14 +90,16 @@ bool UploadHandler::checkFiles(const HTTPRequest &request)
 
 void createFile(HTTPRequest &request)
 {
-	const std::string uploadDir = "upload/";
+	const std::string uploadDir = request.getRoot() + request.getHost();
+
+	std::cout << "Creating file at " << uploadDir << std::endl;
 	std::vector<File> files = request.getFiles();
 	std::vector<File>::iterator it;
 
 	for (it = files.begin(); it != files.end(); ++it)
 	{
-		std::string filePath = uploadDir + (it->headers.find("filename"))->second;
-
+		std::string filePath = uploadDir + "/" + (it->headers.find("filename"))->second;
+		std::cout << "Creating file at " << filePath << std::endl;
 		std::ofstream outfile(filePath.c_str());
 		if (outfile.is_open())
 		{
