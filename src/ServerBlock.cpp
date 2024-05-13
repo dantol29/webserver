@@ -37,7 +37,8 @@ bool ServerBlock::addDirective(std::string key, std::string &value, bool isLocat
 						 "alias",
 						 "path",
 						 "cgi_path",
-						 "cgi_ext"};
+						 "cgi_ext",
+						 "return"};
 	std::list<std::string> validVar(var, var + sizeof(var) / sizeof(var[0]));
 
 	if (std::find(validVar.begin(), validVar.end(), key) == validVar.end())
@@ -68,6 +69,8 @@ bool ServerBlock::addDirective(std::string key, std::string &value, bool isLocat
 		setCgiPath(value, isLocation);
 	else if (key == "cgi_ext")
 		setCgiExt(transformCgiExt(value), isLocation);
+	else if (key == "return")
+		setReturn(value, isLocation);
 	else if (key == "path" && isLocation)
 		setLocationPath(value);
 
@@ -154,6 +157,11 @@ std::string ServerBlock::getCgiPath() const
 std::vector<std::string> ServerBlock::getCgiExt() const
 {
 	return (_directives._cgiExt);
+}
+
+std::string ServerBlock::getReturn() const
+{
+	return (_directives._return);
 }
 
 void ServerBlock::setListen(Listen str, bool isLocation)
@@ -351,6 +359,25 @@ void ServerBlock::setCgiPath(std::string str, bool isLocation)
 		if (_locations.back()._cgiPath.size() > 0)
 			throw("cgi_path already set");
 		_locations.back()._cgiPath = str;
+	}
+}
+
+void ServerBlock::setReturn(std::string str, bool isLocation)
+{
+	// if there is a space in the string or if there is no http in the string
+	if (str.find(" ") != std::string::npos || str.find("http") == std::string::npos)
+		throw("Invalid return directive");
+	if (!isLocation)
+	{
+		if (_directives._return.size() > 0)
+			throw("return already set");
+		_directives._return = str;
+	}
+	else
+	{
+		if (_locations.back()._return.size() > 0)
+			throw("return already set");
+		_locations.back()._return = str;
 	}
 }
 

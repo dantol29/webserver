@@ -54,6 +54,10 @@ void Router::adaptPathForFirefox(HTTPRequest &request)
 void Router::routeRequest(HTTPRequest &request, HTTPResponse &response)
 {
 	Debug::log("Routing Request: host = " + request.getSingleHeader("host").second, Debug::NORMAL);
+	
+	if (!_directive._return.empty())
+		(void)response;
+
 	std::string root = _directive._root;
 	if (root.empty())
 		root = "var/";
