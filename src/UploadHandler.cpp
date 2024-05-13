@@ -138,15 +138,15 @@ void UploadHandler::handleRequest(const HTTPRequest &request, HTTPResponse &resp
 {
 	if (!checkFiles(request))
 	{
-		handleResponse(response, SUCCESS);
+		std::cout << PURPLE << "calling handle response" << RESET << std::endl;
 		handleResponse(response, BAD_REQUEST);
 		return;
 	}
 	if (!request.getUploadBoundary().empty())
 	{
+		std::cout << PURPLE << "calling upload boundary" << RESET << std::endl;
 		handleResponse(response, SUCCESS);
 		createFile(const_cast<HTTPRequest &>(request));
-		handleResponse(response, SUCCESS);
 	}
 	else
 	{
