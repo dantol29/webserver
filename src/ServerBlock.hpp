@@ -29,6 +29,7 @@ struct Directives
 		_alias = "";
 		_cgiPath = "";
 		_cgiExt.clear();
+		_return = "";
 		_path = "";
 	}
 	std::vector<Listen> _listen;
@@ -44,8 +45,10 @@ struct Directives
 	std::string _alias;
 	std::vector<std::string> _cgiExt;
 	std::string _cgiPath;
+	std::string _return;
 	std::string _path; // only for location blocks
 
+	
 	// GETTERS AND SETTERS
 	std::vector<Listen> getListen() const;
 	std::vector<std::string> getServerName() const;
@@ -60,6 +63,7 @@ struct Directives
 	std::string getAlias() const;
 	std::vector<std::string> getCgiExt() const;
 	std::string getCgiPath() const;
+	std::string getReturn() const;
 
 	void setListenEntry(Listen listenEntry, bool isLocation);
 	void setServerName(std::vector<std::string> str, ServerBlock &block, bool isLocation);
@@ -72,6 +76,8 @@ struct Directives
 	void setAlias(std::string &str, ServerBlock &block, bool isLocation);
 	void setCgiExt(std::vector<std::string> stringsVector, ServerBlock &block, bool isLocation);
 	void setCgiPath(std::string str, ServerBlock &block, bool isLocation);
+	void setReturn(std::string str, bool isLocation);
+	void setLocationPath(std::string str);
 };
 
 class ServerBlock

@@ -356,10 +356,55 @@ bool Connection::readChunk(size_t chunkSize, std::string &chunkData, HTTPRespons
 	return true;
 }
 
-bool Connection::readBody(Parser &parser, HTTPRequest &req, HTTPResponse &res)
+bool Connection::readBody(Parser &parser, HTTPRequest &req, HTTPResponse &res, Config& _config)
 {
 	std::cout << "\nEntering readBody" << std::endl;
 	size_t contentLength = req.getContentLength();
+	ServerBlock serverBlock;
+	std::string serverName;
+	bool locationFound = false;
+	
+	for (size_t i = 0; i < _config.getServerBlocks().size(); i++)
+	{
+		// loop through the server names
+		for (size_t j = 0; j < _config.getServerBlocks()[i].getServerName().size(); j++)
+		{
+			serverName = _config.getServerBlocks()[i].getServerName()[j];
+			if (serverName == req.getSingleHeader("host").second)
+				break ;
+		}
+		
+		if (serverName == req.getSingleHeader("host").second)
+		{
+			serverBlock = _config.getServerBlocks()[i];
+			for (size_t i = 0; i < serverBlock.getLocations().size(); i++)
+			{
+				std::cout << "Location: " << serverBlock.getLocations()[i]._path << " == " << req.getRequestTarget() << std::endl;
+				if (req.getRequestTarget() == serverBlock.getLocations()[i]._path)
+				{
+					std::cout << "Location found" << std::endl;
+					locationFound = true;
+					if (serverBlock.getLocations()[i]._clientMaxBodySize == 0)
+						break ;
+					if (contentLength > serverBlock.getLocations()[i]._clientMaxBodySize)
+					{
+						res.setStatusCode(413, "Payload Too Large");
+						return false;
+					}
+				}
+			}
+			// uninitialized value
+			if (locationFound || _config.getServerBlocks()[i].getClientMaxBodySize() == 0)
+				break ;
+			if (contentLength > _config.getServerBlocks()[i].getClientMaxBodySize())
+			{
+				res.setStatusCode(413, "Payload Too Large");
+				return false;
+			}
+			break;
+		}
+	}
+
 	char buffer[BUFFER_SIZE];
 	// We could also use _bodyTotalBytesRead from the parser
 	size_t bytesRead = parser.getBuffer().size();
@@ -367,7 +412,6 @@ bool Connection::readBody(Parser &parser, HTTPRequest &req, HTTPResponse &res)
 	std::cout << "bytesRead: " << bytesRead << std::endl;
 	if (bytesRead < contentLength)
 	{
-		// TODO: check if this is blocking
 		ssize_t read = recv(_pollFd.fd, buffer, BUFFER_SIZE, 0);
 		if (read > 0)
 		{

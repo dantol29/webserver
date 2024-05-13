@@ -5,11 +5,11 @@ Router::Router()
 {
 }
 
-Router::Router(ServerBlock serverBlock) : _serverBlock(serverBlock), _FDsRef(NULL), _pollFd(NULL)
+Router::Router(Directives& directive) : _directive(directive), _FDsRef(NULL), _pollFd(NULL)
 {
 }
 
-Router::Router(const Router &obj) : _serverBlock(obj._serverBlock), _path(obj._path), _FDsRef(NULL), _pollFd(NULL)
+Router::Router(const Router &obj) : _directive(obj._directive), _path(obj._path), _FDsRef(NULL), _pollFd(NULL)
 {
 }
 
@@ -17,7 +17,7 @@ Router &Router::operator=(const Router &obj)
 {
 	if (this == &obj)
 		return *this;
-	_serverBlock = obj._serverBlock;
+	_directive = obj._directive;
 	_path = obj._path;
 	_FDsRef = obj._FDsRef;
 	_pollFd = obj._pollFd;
@@ -32,7 +32,8 @@ Router::~Router()
 // combines with root directory for standardized routing,
 void Router::adaptPathForFirefox(HTTPRequest &request)
 {
-	std::string path = _serverBlock.getDirectives().getRoot() + request.getSingleHeader("host").second;
+	std::string path = _directive.getRoot() + request.getSingleHeader("host").second;
+
 	std::string requestTarget = request.getRequestTarget();
 	size_t hostPos = requestTarget.find(request.getSingleHeader("host").second);
 	if (hostPos != std::string::npos)
@@ -46,7 +47,6 @@ void Router::adaptPathForFirefox(HTTPRequest &request)
 		std::string remove = "http://";
 		requestTarget.erase(hostPos2, remove.length());
 	}
-	std::cout << "requestTarget after adaptPathForFirefox: " << requestTarget << std::endl;
 	request.setRequestTarget(requestTarget);
 	path += requestTarget;
 	request.setPath(path);
@@ -55,7 +55,17 @@ void Router::adaptPathForFirefox(HTTPRequest &request)
 void Router::routeRequest(HTTPRequest &request, HTTPResponse &response)
 {
 	Debug::log("Routing Request: host = " + request.getSingleHeader("host").second, Debug::NORMAL);
-	std::string root = _serverBlock.getDirectives().getRoot();
+	
+	if (!_directive._return.empty())
+	{
+		response.setStatusCode(301, "Redirection");
+		response.setHeader("Location", _directive._return);
+		return;
+	}
+
+	std::string root = _directive._root;
+	if (root.empty())
+		root = "var/";
 	request.setRoot(root);
 	std::string path = root + request.getSingleHeader("host").second;
 	std::string requestTarget = request.getRequestTarget();
@@ -63,7 +73,7 @@ void Router::routeRequest(HTTPRequest &request, HTTPResponse &response)
 
 	adaptPathForFirefox(request);
 
-	std::cout << GREEN << "Routing request to path: " << root << RESET << std::endl;
+	std::cout << GREEN << "Routing request to path: " << request.getPath() << RESET << std::endl;
 
 	// std::cout << request << std::endl;
 
@@ -73,6 +83,23 @@ void Router::routeRequest(HTTPRequest &request, HTTPResponse &response)
 	switch (pathResult)
 	{
 	case PathValid:
+		// check if method is allowed
+		if (!_directive._allowedMethods.empty())
+		{		
+			for (size_t i = 0; i < _directive._allowedMethods.size(); i++)
+			{
+				if (_directive._allowedMethods[i] == request.getMethod())
+				{
+					break;
+				}
+				if (i == _directive._allowedMethods.size() - 1)
+				{
+					response.setStatusCode(405, "Method Not Allowed");
+					handleServerBlockError(request, response, 405);
+					return;
+				}
+			}
+		}
 		if (isCGI(request))
 		{
 			CGIHandler cgiHandler;
@@ -139,8 +166,8 @@ void Router::handleServerBlockError(HTTPRequest &request, HTTPResponse &response
 {
 	Debug::log("handleServerBlockError: entering function", Debug::NORMAL);
 	// clang-format off
-	// std::vector<std::pair<int, std::string> > errorPage = _serverBlock.getErrorPage();
-	std::vector<std::pair<int, std::string> > errorPage = _serverBlock.getDirectives().getErrorPage();
+	std::vector<std::pair<int, std::string> > errorPage = _directive.getErrorPage();
+
 	// clang-format on
 	size_t i = 0;
 	for (; i < errorPage.size(); i++)
@@ -151,7 +178,8 @@ void Router::handleServerBlockError(HTTPRequest &request, HTTPResponse &response
 			Debug::log("Path requested: " + request.getPath(), Debug::NORMAL);
 			Debug::log("Path to error: " + errorPage[i].second, Debug::NORMAL);
 			// setting the path to the custom error page
-			request.setPath(_serverBlock.getDirectives().getRoot() + request.getHost() + "/" + errorPage[i].second);
+			request.setPath(_directive.getRoot() + request.getHost() + "/" + errorPage[i].second);
+
 			// std::cout << RED << "         custom error page: " << request.getPath() << RESET << std::endl;
 			// TODO: move here what is todo below
 			StaticContentHandler staticContentInstance;
@@ -194,7 +222,8 @@ void Router::handleServerBlockError(HTTPRequest &request, HTTPResponse &response
 bool Router::isCGI(const HTTPRequest &request)
 {
 	// TODO: check against config file, not this hardcoded version
-	std::vector<std::string> cgiExtensions = _serverBlock.getDirectives().getCgiExt();
+	std::vector<std::string> cgiExtensions = _directive.getCgiExt();
+	
 	std::cout << RED << "isCGI" << RESET << std::endl;
 	std::cout << "cgiExtensions: " << cgiExtensions.size() << std::endl;
 	std::cout << "request target: " << request.getRequestTarget() << std::endl;
@@ -279,84 +308,79 @@ void Router::generateDirectoryListing(HTTPResponse &Response,
 	Response.setHeader("Content-Type", "text/html");
 }
 
+bool isDirectory(std::string& path) {
+    struct stat buffer;
+    if (stat(path.c_str(), &buffer) == 0) {
+        return S_ISDIR(buffer.st_mode);
+    }
+    return false; // Failed to get file information
+}
+
 enum PathValidation Router::pathIsValid(HTTPResponse &response, HTTPRequest &request)
 {
 	(void)response;
 	struct stat buffer;
 	std::string path = request.getPath();
-	if (stat(path.c_str(), &buffer) != 0 && !(S_ISDIR(buffer.st_mode)))
+	if (!isDirectory(path) && stat(path.c_str(), &buffer) == 0)
+	{
+		Debug::log("pathIsValid: stat success", Debug::NORMAL);
+		std::cout << " path :" << path << std::endl;
+		return PathValid;
+	}
+	else if (!isDirectory(path) && stat(path.c_str(), &buffer) != 0)
 	{
 		std::cout << "Failed to stat the file at path: " << path << std::endl;
 		Debug::log("webRoot: " + path, Debug::NORMAL);
 		Debug::log("pathIsValid: stat failed, path does not exist", Debug::NORMAL);
 		return PathInvalid;
 	}
-	else if (stat(path.c_str(), &buffer) == 0 && !(S_ISDIR(buffer.st_mode)))
-	{
-		Debug::log("pathIsValid: stat success", Debug::NORMAL);
-		std::cout << " path :" << path << std::endl;
-		return PathValid;
-	}
 
-	if (S_ISDIR(buffer.st_mode))
+	if (isDirectory(path))
 	{
 		Debug::log("pathIsValid: path is a directory", Debug::NORMAL);
-		if (!path.empty() && path[path.length()] != '/') // we will append /index.html
+		// if user provided index in config
+		if (!path.empty() && !_directive._index.empty())
 		{
-			Debug::log("pathIsValid: path does not end with /, appending /index.html", Debug::NORMAL);
-			path += "index.html";
-			if (stat(path.c_str(), &buffer) == 0)
+			for (size_t i = 0; i < _directive._index.size(); i++)
 			{
-				request.setPath(path);
-				return PathValid;
-			}
-		}
-		if (!path.empty() && path[path.length()] == '/') // we will append index.html
-		{
-			Debug::log("pathIsValid: path is a directory, appending index.html", Debug::NORMAL);
-			std::string requestedPath = request.getRequestTarget();
-			requestedPath += "index.html";
-			if (stat(requestedPath.c_str(), &buffer) == 0)
-			{
-				request.setPath(requestedPath);
-				Debug::log("pathIsValid: returning boolean true : path is valid", Debug::NORMAL);
-				return PathValid;
-			}
-		}
-
-		if (!_serverBlock.getDirectives().getIndex().empty()) // user provided one or more indexes
-		{
-			// TODO: implement several indexes
-			for (size_t i = 0; i < _serverBlock.getDirectives().getIndex().size(); i++)
-			{
-				std::string index = _serverBlock.getDirectives().getIndex()[i];
-				std::string requestedPath = request.getRequestTarget();
-				requestedPath += index;
-				if (stat(requestedPath.c_str(), &buffer) == 0)
+				std::string index = _directive._index[i];
+				std::string tmpPath = request.getPath();
+				tmpPath = tmpPath + "/" + index;
+				std::cout << "tmpPath: " << tmpPath << std::endl;
+				if (stat(tmpPath.c_str(), &buffer) == 0)
 				{
+					if (tmpPath.find("//") != std::string::npos)
+						tmpPath.replace(tmpPath.find("//"), 2, "/");
+
+					std::cout << "tmpPath: " << tmpPath << std::endl;
 					Debug::log("pathIsValid: using index from user: " + index, Debug::NORMAL);
-					request.setPath(requestedPath);
+					request.setPath(tmpPath);
 					return PathValid;
 				}
 			}
 		}
-		if (_serverBlock.getDirectives().getIndex().empty()) // user did not provide any index
+		// if user did not provide any index in config or index is not valid
+		if (!path.empty())
 		{
-			Debug::log("User did not provided any index", Debug::NORMAL);
-			if (_serverBlock.getDirectives().getAutoIndex()) // autoindex is on
+			path += "/index.html"; // append /index.html
+			std::cout << "path: " << path << std::endl;
+			if (stat(path.c_str(), &buffer) == 0)
 			{
-				Debug::log("pathIsValid: Autoindex is on", Debug::NORMAL);
-				generateDirectoryListing(response, path, request.getRequestTarget());
-				std::cout << "Directory listing generated for " << path << std::endl;
-				return IsDirectoryListing;
-				std::cout << std::endl;
-			}
-			else
-			{
-				Debug::log("pathIsValid: Autoindex is off", Debug::NORMAL);
-				return PathInvalid;
+				Debug::log("pathIsValid: using default index.html", Debug::NORMAL);
+				request.setPath(path);
+				return PathValid;
 			}
 		}
+		// if autoindex is on
+		if (_directive._autoindex)
+		{
+			Debug::log("pathIsValid: Autoindex is on", Debug::NORMAL);
+			generateDirectoryListing(response, path, request.getRequestTarget());
+			std::cout << "Directory listing generated for " << path << std::endl;
+			return IsDirectoryListing;
+		}
+		Debug::log("pathIsValid: invalid path", Debug::NORMAL);
+		return PathInvalid;
 	}
 	request.setPath(path);
 	return PathValid;
