@@ -3,10 +3,13 @@
 #include "Connection.hpp"
 
 #define SEND_BUFFER_SIZE 1024 * 100 // 100 KB
+#include "ServerBlock.hpp"			// for the Listen struct (to be implemented)
+#include "Debug.hpp"
 
 Server::Server()
 {
 	loadDefaultConfig();
+	Debug::log("Server created with defaut constructor", Debug::OCF);
 }
 
 Server::Server(const Config &config)
@@ -14,25 +17,29 @@ Server::Server(const Config &config)
 	_config = config;
 	// while we don't have a config file
 	loadDefaultConfig();
+	Debug::log("Server created with config constructor", Debug::OCF);
 }
 
 Server::~Server()
 {
+	Debug::log("Server destroyed", Debug::OCF);
 }
 
 void Server::startListening()
 {
-
-	createServerSocket();
+	// We need this extra line to get serverBlocks cause the argument in createServerSockets is a reference
+	// i.e. we can't call getServerBlocks() directly in the function call
+	std::vector<ServerBlock> serverBlocks = _config.getServerBlocks();
+	createServerSockets(serverBlocks);
 	setReuseAddrAndPort();
 	checkSocketOptions();
-	bindToPort(_port);
+	bindToPort();
 	listen();
 }
 
 void Server::startPollEventLoop()
 {
-	addServerSocketPollFdToVectors();
+	addServerSocketsPollFdToVectors();
 	int pollCounter = 0;
 	while (1)
 	{
@@ -54,7 +61,8 @@ void Server::startPollEventLoop()
 				if (_FDs[i].revents & (POLLIN | POLLOUT))
 				{
 					Debug::log("Enters revents", Debug::OCF);
-					if (i == 0)
+					// if (i == 0)
+					if (_connections[i].getType() == SERVER)
 					{
 						// printFrame("SERVER SOCKET EVENT", true);
 						acceptNewConnection(_connections[i]);
@@ -272,7 +280,7 @@ void Server::buildResponse(Connection &conn, size_t &i, HTTPRequest &request, HT
 		std::cout << "Index: " << i << std::endl;
 	}
 
-	std::string root = directive._root;
+	std::string root =serverBlock.getRoot();
 
 	std::cout << "Root: " << root << std::endl;
 	if (root[root.size() - 1] != '/')
@@ -394,92 +402,192 @@ void Server::loadDefaultConfig()
 
 /* startListening */
 
-void Server::createServerSocket()
+std::string normalizeIPAddress(const std::string &ip, bool isIpV6)
 {
-	if ((_serverFD = socket(AF_INET, SOCK_STREAM, 0)) == 0)
-		perrorAndExit("Failed to create server socket");
-	// std::cout << "Server socket created" << std::endl;
-	// std::cout << "Server socket file descriptor: " << _serverFD << std::endl;
+	if (isIpV6)
+	{
+		size_t pos = ip.find("::ffff:");
+		if (pos != std::string::npos)
+			return ip.substr(pos + 7); // Remove the ::ffff:
+		pos = ip.find("::");
+		if (pos != std::string::npos && ip.length() - pos == 7)
+			return ip.substr(pos + 2); // Remove the ::
+	}
+	return ip;
+}
+
+void Server::createServerSockets(std::vector<ServerBlock> &serverBlocks)
+{
+	std::vector<Listen> allListens;
+	for (std::vector<ServerBlock>::iterator it = serverBlocks.begin(); it != serverBlocks.end(); ++it)
+	{
+		std::vector<Listen> listens = it->getListen();
+		allListens.insert(allListens.end(), listens.begin(), listens.end());
+	}
+
+	std::vector<Listen> uniqueListens;
+	for (std::vector<Listen>::iterator it = allListens.begin(); it != allListens.end(); ++it)
+	{
+		std::string normalizedIp = normalizeIPAddress(it->getIp(), it->getIsIpv6());
+		bool isUnique = true;
+		for (std::vector<Listen>::iterator it2 = uniqueListens.begin(); it2 != uniqueListens.end(); ++it2)
+		{
+			std::string normalizedIp2 = normalizeIPAddress(it2->getIp(), it2->getIsIpv6());
+			if (it->getPort() == it2->getPort() && normalizedIp == normalizedIp2)
+			{
+				isUnique = false;
+				break;
+			}
+		}
+		if (isUnique)
+			uniqueListens.push_back(*it);
+	}
+	for (std::vector<Listen>::iterator it = uniqueListens.begin(); it != uniqueListens.end(); ++it)
+	{
+		int serverFD;
+
+		if ((serverFD = socket(AF_INET6, SOCK_STREAM, 0)) < 0)
+		{
+			perror("Failed to create server socket");
+			continue; // just to remember that we aren not exiting
+		}
+		int no = 0;
+		if (setsockopt(serverFD, IPPROTO_IPV6, IPV6_V6ONLY, (void *)&no, sizeof(no)) < 0)
+		{
+			perror("setsockopt IPV6_V6ONLY: Protocol not available, continuing without IPV6_V6ONLY");
+			continue; // just to remember that we aren not exiting
+		}
+		// We check if IPV6_V6ONLY is NOT set
+		int ipv6only;
+		socklen_t len = sizeof(ipv6only);
+		if (getsockopt(serverFD, IPPROTO_IPV6, IPV6_V6ONLY, &ipv6only, &len) < 0)
+		{
+			perror("getsockopt IPV6_V6ONLY: Protocol not available, continuing without IPV6_V6ONLY");
+			continue; // just to remember that we aren not exiting
+		}
+		else
+		{
+			std::cout << "IPV6_V6ONLY: " << ipv6only << std::endl;
+		}
+		ServerSocket serverSocket(serverFD, *it);
+		_serverSockets.push_back(serverSocket);
+	}
 }
 
 void Server::setReuseAddrAndPort()
 {
 	int opt = 1;
-	if (setsockopt(_serverFD, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)))
-		perror("setsockopt SO_REUSEADDR: Protocol not available, continuing without SO_REUSEADDR");
-	if (setsockopt(_serverFD, SOL_SOCKET, SO_REUSEPORT, &opt, sizeof(opt)))
-		perror("setsockopt SO_REUSEPORT: Protocol not available, continuing without SO_REUSEPORT");
-	// std::cout << "SO_REUSEADDR and SO_REUSEPORT set" << std::endl;
+	for (std::vector<ServerSocket>::iterator it = _serverSockets.begin(); it != _serverSockets.end(); ++it)
+	{
+		if (setsockopt(it->getServerFD(), SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)))
+			perror("setsockopt SO_REUSEADDR: Protocol not available, continuing without SO_REUSEADDR");
+		if (setsockopt(it->getServerFD(), SOL_SOCKET, SO_REUSEPORT, &opt, sizeof(opt)))
+			perror("setsockopt SO_REUSEPORT: Protocol not available, continuing without SO_REUSEPORT");
+
+		// std::cout << "SO_REUSEADDR and SO_REUSEPORT set" << std::endl;
+	}
 }
 
-void Server::bindToPort(int port)
+void Server::bindToPort()
 {
-	_serverAddr.sin_family = AF_INET;
-	_serverAddr.sin_addr.s_addr = INADDR_ANY;
-	_serverAddr.sin_port = htons(port);
-	std::memset(_serverAddr.sin_zero, '\0', sizeof _serverAddr.sin_zero);
+	for (std::vector<ServerSocket>::iterator it = _serverSockets.begin(); it != _serverSockets.end(); ++it)
+	{
+		it->prepareServerSocketAddr();
 
-	if (bind(_serverFD, (struct sockaddr *)&_serverAddr, sizeof(_serverAddr)) < 0)
-		perrorAndExit("In bind");
-	// std::cout << "Server socket bound to port " << port << std::endl;
-	// std::cout << "Server socket address: " << inet_ntoa(_serverAddr.sin_addr) << std::endl;
-	// std::cout << "Server socket port: " << ntohs(_serverAddr.sin_port) << std::endl;
+		struct sockaddr_in6 serverSocketAddr = it->getServerSocketAddr();
+		const sockaddr *serverSocketAddrPtr = reinterpret_cast<const sockaddr *>(&serverSocketAddr);
+
+		// Print the sockaddr and address family
+		const sockaddr_in *debugAddrIn = reinterpret_cast<const sockaddr_in *>(serverSocketAddrPtr);
+		std::cout << "IP Address: " << inet_ntoa(debugAddrIn->sin_addr) << std::endl;
+		std::cout << "Port: " << ntohs(debugAddrIn->sin_port) << std::endl;
+		std::cout << "Address Family: " << debugAddrIn->sin_family << std::endl;
+
+		// Retrieve the prepared socket address
+		// We retrieve the sockaddr_storage struct from the ServerSocket object
+		serverSocketAddr = it->getServerSocketAddr();
+		// We cast the sockaddr_storage struct to sockaddr struct, cause bind() needs a sockaddr struct
+		serverSocketAddrPtr = reinterpret_cast<const sockaddr *>(&serverSocketAddr);
+		std::cout << "serverFd: " << it->getServerFD() << std::endl;
+		std::cout << "serverSocketAddrPtr: " << serverSocketAddrPtr << std::endl;
+		std::cout << "serverSocketAddr: " << &serverSocketAddr << std::endl;
+		std::cout << "serverSocketAddr size: " << sizeof(serverSocketAddr) << std::endl;
+		int bindResult = bind(it->getServerFD(), serverSocketAddrPtr, sizeof(serverSocketAddr));
+		std::cout << "Bind result: " << bindResult << std::endl;
+		if (bindResult < 0)
+		{
+			perror("In bind");
+			continue; // just to remember that we aren not exiting
+		}
+		else
+		{
+			std::cout << "Server socket binded on port " << ntohs(it->getListen().getPort()) << std::endl;
+		}
+		// if (bind(it->getServerFD(), serverSocketAddrPtr, sizeof(serverSocketAddr)) < 0)
+	}
 }
 
 void Server::listen()
 {
-	if (::listen(_serverFD, _maxClients) < 0)
-		perrorAndExit("In listen");
-	std::cout << "Server socket listening on port " << ntohs(_serverAddr.sin_port) << std::endl;
+	for (std::vector<ServerSocket>::iterator it = _serverSockets.begin(); it != _serverSockets.end(); ++it)
+	{
+		if (::listen(it->getServerFD(), _maxClients) < 0)
+		{
+			perror("In listen");
+			continue; // just to remember that we aren not exiting
+		}
+		std::cout << "Server socket listening on port " << ntohs(it->getListen().getPort()) << std::endl;
+	}
 }
 
 /* startPollEventsLoop */
 
-void Server::addServerSocketPollFdToVectors()
+void Server::addServerSocketsPollFdToVectors()
 {
-	// In this function we also create the struct pollfd for the server socket
-	struct pollfd serverPollFd;
-	memset(&serverPollFd, 0, sizeof(serverPollFd));
-	serverPollFd.fd = _serverFD;
-	serverPollFd.events = POLLIN;
-	serverPollFd.revents = 0;
-	if (VERBOSE)
+	for (std::vector<ServerSocket>::iterator it = _serverSockets.begin(); it != _serverSockets.end(); ++it)
 	{
-		std::cout << "pollfd struct for Server socket created" << std::endl;
-		std::cout << std::endl;
-		std::cout << "Printing serverPollFd (struct pollfd) before push_back into _FDs" << std::endl;
-		std::cout << "fd: " << serverPollFd.fd << ", events: " << serverPollFd.events
-				  << ", revents: " << serverPollFd.revents << std::endl;
-	}
-	_FDs.push_back(serverPollFd);
-	Connection serverConnection(serverPollFd, *this);
-	serverConnection.setType(SERVER);
-	serverConnection.setServerIp(inet_ntoa(_serverAddr.sin_addr));
-	serverConnection.setServerPort(ntohs(_serverAddr.sin_port));
-	if (VERBOSE)
-	{
-		std::cout << "Server Connection object created" << std::endl;
-		std::cout << MAGENTA << "Printing serverConnection before push_back" << std::endl << RESET;
-		serverConnection.printConnection();
-	}
-	_connections.push_back(serverConnection);
-	if (VERBOSE)
-	{
-		std::cout << MAGENTA << "Printing serverConnection after push_back" << RESET << std::endl;
-		_connections.back().printConnection();
-		std::cout << "Server socket pollfd added to vectors" << std::endl;
+		struct pollfd serverPollFd;
+		memset(&serverPollFd, 0, sizeof(serverPollFd));
+		serverPollFd.fd = it->getServerFD();
+		serverPollFd.events = POLLIN;
+		serverPollFd.revents = 0;
+		if (VERBOSE)
+		{
+			std::cout << "pollfd struct for Server socket created" << std::endl;
+			std::cout << std::endl;
+			std::cout << "Printing serverPollFd (struct pollfd) before push_back into _FDs" << std::endl;
+			std::cout << "fd: " << serverPollFd.fd << ", events: " << serverPollFd.events
+					  << ", revents: " << serverPollFd.revents << std::endl;
+		}
+		_FDs.push_back(serverPollFd);
+		Connection serverConnection(serverPollFd, *this);
+		serverConnection.setType(SERVER);
+		serverConnection.setServerIp(it->getListen().getIp());
+		serverConnection.setServerPort(it->getListen().getPort());
+		if (VERBOSE)
+		{
+			std::cout << "Server Connection object created" << std::endl;
+			std::cout << MAGENTA << "Printing serverConnection before push_back" << std::endl << RESET;
+			serverConnection.printConnection();
+		}
+		_connections.push_back(serverConnection);
+		if (VERBOSE)
+		{
+			std::cout << MAGENTA << "Printing serverConnection after push_back" << RESET << std::endl;
+			_connections.back().printConnection();
+			std::cout << "Server socket pollfd added to vectors" << std::endl;
+		}
 	}
 }
 
 void Server::acceptNewConnection(Connection &conn)
 {
-	// TODO: think about naming.
-	// We have 4 different names for kind of the same thing: clientAddress, newSocket, newSocketPoll,
-	// newConnection
-	struct sockaddr_in clientAddress;
+
+	// struct sockaddr_in clientAddress;
+	// We choose sockaddr_storage to be able to handle both IPv4 and IPv6
+	struct sockaddr_storage clientAddress;
 	socklen_t ClientAddrLen = sizeof(clientAddress);
-	std::cout << "New connection detected" << std::endl;
-	// int newSocket = accept(_serverFD, (struct sockaddr *)&clientAddress, (socklen_t *)&ClientAddrLen);
+	Debug::log("New connection detected", Debug::SERVER);
 	int newSocket = accept(conn.getPollFd().fd, (struct sockaddr *)&clientAddress, (socklen_t *)&ClientAddrLen);
 	if (newSocket >= 0)
 	{
@@ -519,9 +627,24 @@ void Server::acceptNewConnection(Connection &conn)
 			print_connectionsVector(_connections);
 			printFDsVector(_FDs);
 		}
-		char clientIP[INET_ADDRSTRLEN];
-		inet_ntop(AF_INET, &clientAddress.sin_addr, clientIP, INET_ADDRSTRLEN);
-		std::cout << "New connection from " << clientIP << std::endl;
+		char clientIP[INET6_ADDRSTRLEN];
+		if (clientAddress.ss_family == AF_INET)
+		{
+			struct sockaddr_in *s = (struct sockaddr_in *)&clientAddress;
+			// TODO: inet_ntop is forbidden in the subject.
+			inet_ntop(AF_INET, &s->sin_addr, clientIP, sizeof clientIP);
+			std::cout << "New connection from (IPv4): " << clientIP << std::endl;
+		}
+		else if (clientAddress.ss_family == AF_INET6)
+		{
+			struct sockaddr_in6 *s = (struct sockaddr_in6 *)&clientAddress;
+			inet_ntop(AF_INET6, &s->sin6_addr, clientIP, sizeof clientIP);
+			std::cout << "New connection from (IPv6): " << clientIP << std::endl;
+		}
+		else
+		{
+			std::cerr << "Unknown address family" << std::endl;
+		}
 	}
 	else
 	{
@@ -624,21 +747,15 @@ void Server::checkSocketOptions()
 	int optval;
 	socklen_t optlen = sizeof(optval);
 
-	if (getsockopt(_serverFD, SOL_SOCKET, SO_REUSEADDR, &optval, &optlen) < 0)
+	for (std::vector<ServerSocket>::iterator it = _serverSockets.begin(); it != _serverSockets.end(); ++it)
 	{
-		perror("getsockopt SO_REUSEADDR failed");
-	}
-	else
-	{
-		// std::cout << "SO_REUSEADDR is " << (optval ? "enabled" : "disabled") << std::endl;
-	}
-
-	if (getsockopt(_serverFD, SOL_SOCKET, SO_REUSEPORT, &optval, &optlen) < 0)
-	{
-		perror("getsockopt SO_REUSEPORT failed");
-	}
-	else
-	{
-		// std::cout << "SO_REUSEPORT is " << (optval ? "enabled" : "disabled") << std::endl;
+		if (getsockopt(it->getServerFD(), SOL_SOCKET, SO_REUSEADDR, &optval, &optlen) < 0)
+		{
+			perror("getsockopt SO_REUSEADDR failed for server socket");
+		}
+		else
+		{
+			// std::cout << "SO_REUSEADDR is " << (optval ? "enabled" : "disabled") << std::endl;
+		}
 	}
 }

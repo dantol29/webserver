@@ -2,6 +2,7 @@
 #define SERVERBLOCK_HPP
 
 #include "webserv.hpp"
+#include "Listen.hpp"
 
 // a list of all accepted variables
 // ---------------------------------
@@ -9,13 +10,6 @@
 // 4. index, 5. root, 6. client_max_body_size, 7. autoindex, 
 // 8. allow_methods, 9. alias, 10. cgi_path, 11. cgi_ext
 // ---------------------------------
-
-struct Listen
-{
-	std::string _ip;
-	int _port;
-	bool isIpv6;
-};
 
 struct Directives
 {
@@ -36,6 +30,9 @@ struct Directives
 		_path = "";
 	
 	}
+
+	void setListenEntry(Listen listenEntry, bool isLocation);
+
 	std::vector<Listen> _listen;
 	std::vector<std::string> _serverName;
 	std::vector<std::pair<int, std::string> >_errorPage;

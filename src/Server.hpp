@@ -18,6 +18,7 @@
 #include "webserv.hpp"
 #include "Parser.hpp"
 #include "Config.hpp"
+#include "ServerSocket.hpp"
 
 #define VERBOSE 0
 
@@ -48,13 +49,12 @@ class Server
   private:
 	/* Private Attributes */
 	int _port;
-	int _serverFD;
+	std::vector<ServerSocket> _serverSockets;
 	size_t _clientMaxHeadersSize;
 	int _clientMaxBodySize;
 	int _maxClients; // i.e. max number of pending connections
 	std::string _configFilePath;
 	std::string _webRoot;
-	struct sockaddr_in _serverAddr;
 	std::vector<struct pollfd> _FDs;
 	std::vector<Connection> _connections;
 	Config _config;
@@ -64,12 +64,12 @@ class Server
 	void loadConfig();
 	void loadDefaultConfig();
 	/* for startListening */
-	void createServerSocket();
+	void createServerSockets(std::vector<ServerBlock> &serverBlocks);
 	void setReuseAddrAndPort();
-	void bindToPort(int port);
+	void bindToPort();
 	void listen();
-	/* for startPollEventLoop */
-	void addServerSocketPollFdToVectors();
+	// void addServerSocketPollFdToVectors();
+	void addServerSocketsPollFdToVectors();
 	void acceptNewConnection(Connection &conn);
 	void handleConnection(Connection &conn, size_t &i, Parser &parser, HTTPRequest &request, HTTPResponse &response);
 	void handleServerSocketError();

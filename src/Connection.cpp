@@ -152,7 +152,6 @@ bool Connection::getCanBeClosed() const
 {
 	return _canBeClosed;
 }
-
 // SETTERS
 
 void Connection::setResponseSize(size_t responseSize)
@@ -213,7 +212,6 @@ void Connection::setCanBeClosed(bool value)
 {
 	_canBeClosed = value;
 }
-
 bool Connection::readHeaders(Parser &parser)
 {
 	// std::cout << "\nEntering readHeaders" << std::endl;
