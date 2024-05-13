@@ -21,6 +21,7 @@ server {
 - alias
 - cgi_path
 - cgi_ext
+- return
 
 ### 1. LISTEN
 - Can be written multiple times per _server block_
@@ -110,6 +111,14 @@ server {
 - Can be written only once per _server block_
 - A list of extensions that web server accepts(.py, .php, ...) 
 - is stored in the `std::vector<std::string>`
+- _OUR PROTECTION:_
+	1. no protection
+- _DEFAULT VALUE_
+
+### 11. RETURN
+- Can be written only once per _server block_
+- Redirects user to a certain URL 
+- is stored in the `std::string>`
 - _OUR PROTECTION:_
 	1. no protection
 - _DEFAULT VALUE_

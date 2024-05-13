@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>The Saladbook</title>
+  <script>
+    function uploadFile() {
+      var fileInput = document.getElementById('fileInput');
+      var file = fileInput.files[0];
+      var formData = new FormData();
+      formData.append('file', file);
+
+      var xhr = new XMLHttpRequest();
+      xhr.open('POST', '/upload', true); // Adjust endpoint accordingly
+      xhr.onreadystatechange = function() {
+        if (xhr.readyState == 4) {
+          var response = document.getElementById('response');
+          if (xhr.status == 200) {
+            response.innerHTML = "File uploaded successfully!";
+          } else {
+            response.innerHTML = "File upload failed!";
+          }
+        }
+      };
+      xhr.send(formData);
+    }
+  </script>
+</head>
+<body>
+  <h1>ADMIN </h1>
+  <p1>This baddass social dynamic website relies on a disruptive technology, AJAX, (oh yeah) so you can upload pictures of your best salads </p1>
+
+  <input type="file" id="fileInput" />
+  <button onclick="uploadFile()">Upload my salad to this amazing webserver</button>
+  <div id="response"></div>
+</body>
+</html>

@@ -37,7 +37,8 @@ bool ServerBlock::addDirective(std::string key, std::string &value, bool isLocat
 						 "alias",
 						 "path",
 						 "cgi_path",
-						 "cgi_ext"};
+						 "cgi_ext",
+						 "return"};
 	std::list<std::string> validVar(var, var + sizeof(var) / sizeof(var[0]));
 
 	if (std::find(validVar.begin(), validVar.end(), key) == validVar.end())
@@ -68,6 +69,8 @@ bool ServerBlock::addDirective(std::string key, std::string &value, bool isLocat
 		setCgiPath(value, isLocation);
 	else if (key == "cgi_ext")
 		setCgiExt(transformCgiExt(value), isLocation);
+	else if (key == "return")
+		setReturn(value, isLocation);
 	else if (key == "path" && isLocation)
 		setLocationPath(value);
 
@@ -87,6 +90,9 @@ void ServerBlock::deleteData()
 	_directives._allowedMethods.clear();
 	_directives._alias.clear();
 	_directives._path.clear();
+	_directives._cgiPath.clear();
+	_directives._cgiExt.clear();
+	_directives._return.clear();
 }
 
 Directives ServerBlock::getDirectives() const
@@ -156,6 +162,11 @@ std::vector<std::string> ServerBlock::getCgiExt() const
 	return (_directives._cgiExt);
 }
 
+std::string ServerBlock::getReturn() const
+{
+	return (_directives._return);
+}
+
 void ServerBlock::setListen(Listen str, bool isLocation)
 {
 	if (!isLocation)
@@ -191,10 +202,22 @@ void ServerBlock::setServerName(std::vector<std::string> str, bool isLocation)
 
 void ServerBlock::setErrorPage(std::pair<int, std::string> str, bool isLocation)
 {
-	if (!isLocation)
-		_directives._errorPage.push_back(str);
-	else
-		_locations.back()._errorPage.push_back(str);
+	if (isLocation)
+		throw("error_page directive not allowed in location block");
+	_directives._errorPage.push_back(str);
+	
+	for (unsigned int i = 0; i < _directives._errorPage.size(); ++i)
+	{
+		// remove slashes at the begginning
+		if ( _directives._errorPage[i].second[0] == '/')
+			_directives._errorPage[i].second = _directives._errorPage[i].second.substr(1);
+		
+		for (unsigned int j = 0; j < _directives._errorPage.size(); ++j)
+		{
+			if (i != j && _directives._errorPage[i].first == _directives._errorPage[j].first)
+				throw("Duplicate error_page directive");
+		}
+	}
 }
 
 void ServerBlock::setIndex(std::vector<std::string> str, bool isLocation)
@@ -219,12 +242,16 @@ void ServerBlock::setRoot(std::string &str, bool isLocation)
 	{
 		if (_directives._root.size() > 0)
 			throw("root already set");
+		if (str[0] == '/')
+			str = str.substr(1);
 		_directives._root = str;
 	}
 	else
 	{
 		if (_locations.back()._root.size() > 0)
 			throw("root already set");
+		if (str[0] == '/')
+			str = str.substr(1);
 		_locations.back()._root = str;
 	}
 }
@@ -335,6 +362,25 @@ void ServerBlock::setCgiPath(std::string str, bool isLocation)
 		if (_locations.back()._cgiPath.size() > 0)
 			throw("cgi_path already set");
 		_locations.back()._cgiPath = str;
+	}
+}
+
+void ServerBlock::setReturn(std::string str, bool isLocation)
+{
+	// if there is a space in the string or if there is no http in the string
+	if (str.find(" ") != std::string::npos || str.find("http") == std::string::npos)
+		throw("Invalid return directive");
+	if (!isLocation)
+	{
+		if (_directives._return.size() > 0)
+			throw("return already set");
+		_directives._return = str;
+	}
+	else
+	{
+		if (_locations.back()._return.size() > 0)
+			throw("return already set");
+		_locations.back()._return = str;
 	}
 }
 
@@ -478,6 +524,12 @@ std::vector<std::string> ServerBlock::transformIndex(std::string &str)
 		newStr.push_back(name);
 	if (newStr.empty())
 		newStr.push_back(str);
+	// remove slashes at the begginning
+	for (unsigned int i = 0; i < newStr.size(); ++i)
+	{
+		if (newStr[i][0] == '/')
+			newStr[i] = newStr[i].substr(1);
+	}
 	return (newStr);
 }
 
