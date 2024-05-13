@@ -13,12 +13,12 @@ class ServerSocket
 	ServerSocket &operator=(const ServerSocket &obj);
 	int getServerFD() const;
 	Listen getListen() const;
-	struct sockaddr_storage getServerSocketAddr() const;
+	struct sockaddr_in6 getServerSocketAddr() const;
 	void prepareServerSocketAddr();
 
   private:
 	int _serverFD;
 	Listen _listen;
-	struct sockaddr_storage _serverSocketAddr;
+	struct sockaddr_in6 _serverSocketAddr;
 };
 #endif

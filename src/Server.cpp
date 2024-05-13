@@ -473,7 +473,7 @@ void Server::bindToPort()
 	{
 		it->prepareServerSocketAddr();
 
-		struct sockaddr_storage serverSocketAddr = it->getServerSocketAddr();
+		struct sockaddr_in6 serverSocketAddr = it->getServerSocketAddr();
 		const sockaddr *serverSocketAddrPtr = reinterpret_cast<const sockaddr *>(&serverSocketAddr);
 
 		// Print the sockaddr and address family
