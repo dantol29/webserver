@@ -229,7 +229,7 @@ void Server::buildResponse(Connection &conn, size_t &i, HTTPRequest &request, HT
 			
 			for (size_t i = 0; i < serverBlock.getLocations().size(); i++)
 			{
-				std::cout << "Location: " << serverBlock.getLocations()[i]._path << std::endl;
+				std::cout << "Location: " << serverBlock.getLocations()[i]._path << " == " << request.getRequestTarget() << std::endl;
 				if (request.getRequestTarget() == serverBlock.getLocations()[i]._path)
 				{
 					std::cout << "Location found" << std::endl;

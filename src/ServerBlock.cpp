@@ -478,6 +478,12 @@ std::vector<std::string> ServerBlock::transformIndex(std::string &str)
 		newStr.push_back(name);
 	if (newStr.empty())
 		newStr.push_back(str);
+	// remove slashes at the begginning
+	for (unsigned int i = 0; i < newStr.size(); ++i)
+	{
+		if (newStr[i][0] == '/')
+			newStr[i] = newStr[i].substr(1);
+	}
 	return (newStr);
 }
 

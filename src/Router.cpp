@@ -74,6 +74,23 @@ void Router::routeRequest(HTTPRequest &request, HTTPResponse &response)
 	switch (pathResult)
 	{
 	case PathValid:
+		// check if method is allowed
+		if (!_directive._allowedMethods.empty())
+		{		
+			for (size_t i = 0; i < _directive._allowedMethods.size(); i++)
+			{
+				if (_directive._allowedMethods[i] == request.getMethod())
+				{
+					break;
+				}
+				if (i == _directive._allowedMethods.size() - 1)
+				{
+					response.setStatusCode(405, "Method Not Allowed");
+					handleServerBlockError(request, response, 405);
+					return;
+				}
+			}
+		}
 		if (isCGI(request))
 		{
 			CGIHandler cgiHandler;
@@ -308,13 +325,10 @@ enum PathValidation Router::pathIsValid(HTTPResponse &response, HTTPRequest &req
 			{
 				std::string index = _directive._index[i];
 				std::string tmpPath = request.getPath();
-				tmpPath += index;
+				tmpPath = tmpPath + "/" + index;
 				std::cout << "tmpPath: " << tmpPath << std::endl;
 				if (stat(tmpPath.c_str(), &buffer) == 0)
 				{
-					// if "//" remove one "/"
-					if (tmpPath.find("//") != std::string::npos)
-						tmpPath.replace(tmpPath.find("//"), 2, "/");
 					std::cout << "tmpPath: " << tmpPath << std::endl;
 					Debug::log("pathIsValid: using index from user: " + index, Debug::NORMAL);
 					request.setPath(tmpPath);

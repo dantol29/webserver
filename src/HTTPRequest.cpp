@@ -123,6 +123,8 @@ void HTTPRequest::setMethod(std::string method)
 
 void HTTPRequest::setRequestTarget(std::string requestTarget)
 {
+	if (requestTarget != "/" && requestTarget[requestTarget.size() - 1] == '/')
+		requestTarget = requestTarget.substr(0, requestTarget.size() - 1);
 	_requestTarget = requestTarget;
 }
 
