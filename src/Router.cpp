@@ -321,6 +321,10 @@ enum PathValidation Router::pathIsValid(HTTPResponse &response, HTTPRequest &req
 	(void)response;
 	struct stat buffer;
 	std::string path = request.getPath();
+
+	if (request.getUploadBoundary() != "")
+		return PathValid;
+
 	if (!isDirectory(path) && stat(path.c_str(), &buffer) == 0)
 	{
 		Debug::log("pathIsValid: stat success", Debug::NORMAL);

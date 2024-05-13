@@ -310,7 +310,7 @@ void Server::buildResponse(Connection &conn, size_t &i, HTTPRequest &request, HT
 void Server::writeToClient(Connection &conn, size_t &i, HTTPResponse &response)
 {
 	std::cout << "\033[1;36m" << "Entering writeToClient" << "\033[0m" << std::endl;
-
+	std::cout << response << std::endl;
 	static int sendResponseCounter = 0;
 	bool isLastSend = false;
 	size_t tmpBufferSize = SEND_BUFFER_SIZE;
