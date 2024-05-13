@@ -52,7 +52,7 @@ bool ServerBlock::addDirective(std::string key, std::string &value, bool isLocat
 	else if (key == "server_name")
 		_directives.setServerName(transformServerName(value), *this, isLocation);
 	else if (key == "error_page")
-		_directives.setErrorPage(transformErrorPage(value), *this, isLocation);
+		_directives.setErrorPage(transformErrorPage(value), isLocation);
 	else if (key == "index")
 		_directives.setIndex(transformIndex(value), *this, isLocation);
 	else if (key == "root")
@@ -199,7 +199,7 @@ void Directives::setServerName(std::vector<std::string> str, ServerBlock &block,
 	}
 }
 
-void Directives::setErrorPage(std::pair<int, std::string> str, ServerBlock &block, bool isLocation)
+void Directives::setErrorPage(std::pair<int, std::string> str, bool isLocation)
 {
 	if (isLocation)
 		throw("error_page directive not allowed in location block");
