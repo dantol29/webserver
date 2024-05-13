@@ -32,7 +32,7 @@ Router::~Router()
 // combines with root directory for standardized routing,
 void Router::adaptPathForFirefox(HTTPRequest &request)
 {
-	std::string path = _directive._root + request.getSingleHeader("host").second;
+	std::string path = request.getRoot() + request.getSingleHeader("host").second;
 	std::string requestTarget = request.getRequestTarget();
 	size_t hostPos = requestTarget.find(request.getSingleHeader("host").second);
 	if (hostPos != std::string::npos)
@@ -46,7 +46,6 @@ void Router::adaptPathForFirefox(HTTPRequest &request)
 		std::string remove = "http://";
 		requestTarget.erase(hostPos2, remove.length());
 	}
-	std::cout << "requestTarget after adaptPathForFirefox: " << requestTarget << std::endl;
 	request.setRequestTarget(requestTarget);
 	path += requestTarget;
 	request.setPath(path);
@@ -56,6 +55,8 @@ void Router::routeRequest(HTTPRequest &request, HTTPResponse &response)
 {
 	Debug::log("Routing Request: host = " + request.getSingleHeader("host").second, Debug::NORMAL);
 	std::string root = _directive._root;
+	if (root.empty())
+		root = "var/";
 	request.setRoot(root);
 	std::string path = root + request.getSingleHeader("host").second;
 	std::string requestTarget = request.getRequestTarget();
@@ -63,7 +64,7 @@ void Router::routeRequest(HTTPRequest &request, HTTPResponse &response)
 
 	adaptPathForFirefox(request);
 
-	std::cout << GREEN << "Routing request to path: " << root << RESET << std::endl;
+	std::cout << GREEN << "Routing request to path: " << request.getPath() << RESET << std::endl;
 
 	// std::cout << request << std::endl;
 
@@ -300,62 +301,49 @@ enum PathValidation Router::pathIsValid(HTTPResponse &response, HTTPRequest &req
 	if (S_ISDIR(buffer.st_mode))
 	{
 		Debug::log("pathIsValid: path is a directory", Debug::NORMAL);
-		if (!path.empty() && path[path.length()] != '/') // we will append /index.html
+		// if user provided index in config
+		if (!path.empty() && !_directive._index.empty())
 		{
-			Debug::log("pathIsValid: path does not end with /, appending /index.html", Debug::NORMAL);
-			path += "index.html";
-			if (stat(path.c_str(), &buffer) == 0)
-			{
-				request.setPath(path);
-				return PathValid;
-			}
-		}
-		if (!path.empty() && path[path.length()] == '/') // we will append index.html
-		{
-			Debug::log("pathIsValid: path is a directory, appending index.html", Debug::NORMAL);
-			std::string requestedPath = request.getRequestTarget();
-			requestedPath += "index.html";
-			if (stat(requestedPath.c_str(), &buffer) == 0)
-			{
-				request.setPath(requestedPath);
-				Debug::log("pathIsValid: returning boolean true : path is valid", Debug::NORMAL);
-				return PathValid;
-			}
-		}
-
-		if (!_directive._index.empty()) // user provided one or more indexes
-		{
-			// TODO: implement several indexes
 			for (size_t i = 0; i < _directive._index.size(); i++)
 			{
 				std::string index = _directive._index[i];
-				std::string requestedPath = request.getRequestTarget();
-				requestedPath += index;
-				if (stat(requestedPath.c_str(), &buffer) == 0)
+				std::string tmpPath = request.getPath();
+				tmpPath += index;
+				std::cout << "tmpPath: " << tmpPath << std::endl;
+				if (stat(tmpPath.c_str(), &buffer) == 0)
 				{
+					// if "//" remove one "/"
+					if (tmpPath.find("//") != std::string::npos)
+						tmpPath.replace(tmpPath.find("//"), 2, "/");
+					std::cout << "tmpPath: " << tmpPath << std::endl;
 					Debug::log("pathIsValid: using index from user: " + index, Debug::NORMAL);
-					request.setPath(requestedPath);
+					request.setPath(tmpPath);
 					return PathValid;
 				}
 			}
 		}
-		if (_directive._index.empty()) // user did not provide any index
+		// if user did not provide any index in config or index is not valid
+		if (!path.empty())
 		{
-			Debug::log("User did not provided any index", Debug::NORMAL);
-			if (_directive._autoindex) // autoindex is on
+			path += "index.html"; // append /index.html
+			std::cout << "path: " << path << std::endl;
+			if (stat(path.c_str(), &buffer) == 0)
 			{
-				Debug::log("pathIsValid: Autoindex is on", Debug::NORMAL);
-				generateDirectoryListing(response, path, request.getRequestTarget());
-				std::cout << "Directory listing generated for " << path << std::endl;
-				return IsDirectoryListing;
-				std::cout << std::endl;
-			}
-			else
-			{
-				Debug::log("pathIsValid: Autoindex is off", Debug::NORMAL);
-				return PathInvalid;
+				Debug::log("pathIsValid: using default index.html", Debug::NORMAL);
+				request.setPath(path);
+				return PathValid;
 			}
 		}
+		// if autoindex is on
+		if (_directive._autoindex)
+		{
+			Debug::log("pathIsValid: Autoindex is on", Debug::NORMAL);
+			generateDirectoryListing(response, path, request.getRequestTarget());
+			std::cout << "Directory listing generated for " << path << std::endl;
+			return IsDirectoryListing;
+		}
+		Debug::log("pathIsValid: invalid path", Debug::NORMAL);
+		return PathInvalid;
 	}
 	request.setPath(path);
 	return PathValid;
