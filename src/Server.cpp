@@ -8,11 +8,8 @@
 Server::Server(const Config &config)
 {
 	_config = config;
-	_webRoot = "var/www";
 	_maxClients = 10;
 	_clientMaxHeadersSize = CLIENT_MAX_HEADERS_SIZE;
-	_clientMaxBodySize = CLIENT_MAX_BODY_SIZE;
-	_port = 8080;
 	Debug::log("Server created with config constructor", Debug::OCF);
 }
 
@@ -711,22 +708,6 @@ void Server::AlertAdminAndTryToRecover()
 /* for handleConnection */
 
 /* Others */
-
-size_t Server::getClientMaxHeadersSize() const
-{
-	return _clientMaxHeadersSize;
-}
-
-std::string Server::getWebRoot() const
-{
-	return _webRoot;
-}
-
-void Server::setWebRoot(const std::string &webRoot)
-{
-	_webRoot = webRoot;
-}
-
 void Server::checkSocketOptions()
 {
 	int optval;
