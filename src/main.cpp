@@ -4,6 +4,8 @@
 
 int main(int argc, char **argv)
 {
+	Debug::enable(true);
+	Debug::setLevel(Debug::NORMAL);
 
 	if (argc > 2)
 	{
@@ -14,10 +16,8 @@ int main(int argc, char **argv)
 	Config config(argv[1]);
 	if (!config.getErrorMessage().empty())
 		return 1;
-	
-	//std::cout << config << std::endl; // should be in the DEBUG?
-	Debug::enable(true);
-	Debug::setLevel(Debug::NORMAL);
+
+	std::cout << config << std::endl; // should be in the DEBUG?
 	Server webserv(config);
 	webserv.startListening();
 	webserv.startPollEventLoop();
