@@ -2,21 +2,17 @@
 #include "Parser.hpp"
 #include "Connection.hpp"
 
-#define SEND_BUFFER_SIZE 1024 * 100 // 100 KB
-#include "ServerBlock.hpp"			// for the Listen struct (to be implemented)
+#include "ServerBlock.hpp" // for the Listen struct (to be implemented)
 #include "Debug.hpp"
-
-Server::Server()
-{
-	loadDefaultConfig();
-	Debug::log("Server created with defaut constructor", Debug::OCF);
-}
 
 Server::Server(const Config &config)
 {
 	_config = config;
-	// while we don't have a config file
-	loadDefaultConfig();
+	_webRoot = "var/www";
+	_maxClients = 10;
+	_clientMaxHeadersSize = CLIENT_MAX_HEADERS_SIZE;
+	_clientMaxBodySize = CLIENT_MAX_BODY_SIZE;
+	_port = 8080;
 	Debug::log("Server created with config constructor", Debug::OCF);
 }
 
@@ -224,7 +220,8 @@ void Server::buildResponse(Connection &conn, size_t &i, HTTPRequest &request, HT
 	std::cout << "Request target: " << request.getRequestTarget() << std::endl;
 
 	// if there is "?" in the request target, we need to remove it
-	if (std::find(request.getRequestTarget().begin(), request.getRequestTarget().end(), '?') != request.getRequestTarget().end())
+	if (std::find(request.getRequestTarget().begin(), request.getRequestTarget().end(), '?') !=
+		request.getRequestTarget().end())
 		request.setRequestTarget(request.getRequestTarget().substr(0, request.getRequestTarget().find("?")));
 	std::cout << "Request target: " << request.getRequestTarget() << std::endl;
 
@@ -235,9 +232,10 @@ void Server::buildResponse(Connection &conn, size_t &i, HTTPRequest &request, HT
 		{
 			serverName = _config.getServerBlocks()[i].getServerName()[j];
 			std::cout << RED << "Checking server name: " << serverName << RESET << std::endl;
-			if (serverName == request.getSingleHeader("host").second){
+			if (serverName == request.getSingleHeader("host").second)
+			{
 				std::cout << GREEN << "Server name found" << RESET << std::endl;
-				break ;
+				break;
 			}
 		}
 		if (serverName == request.getSingleHeader("host").second)
@@ -246,10 +244,11 @@ void Server::buildResponse(Connection &conn, size_t &i, HTTPRequest &request, HT
 			serverBlock = _config.getServerBlocks()[i];
 			directive = serverBlock.getDirectives();
 			std::cout << "Request target in block: " << request.getRequestTarget() << std::endl;
-			
+
 			for (size_t i = 0; i < serverBlock.getLocations().size(); i++)
 			{
-				std::cout << "Location: " << serverBlock.getLocations()[i]._path << " == " << request.getRequestTarget() << std::endl;
+				std::cout << "Location: " << serverBlock.getLocations()[i]._path << " == " << request.getRequestTarget()
+						  << std::endl;
 				if (request.getRequestTarget() == serverBlock.getLocations()[i]._path)
 				{
 					std::cout << "Location found" << std::endl;
@@ -280,7 +279,7 @@ void Server::buildResponse(Connection &conn, size_t &i, HTTPRequest &request, HT
 		std::cout << "Index: " << i << std::endl;
 	}
 
-	std::string root =serverBlock.getRoot();
+	std::string root = serverBlock.getRoot();
 
 	std::cout << "Root: " << root << std::endl;
 	if (root[root.size() - 1] != '/')
@@ -309,7 +308,9 @@ void Server::buildResponse(Connection &conn, size_t &i, HTTPRequest &request, HT
 
 void Server::writeToClient(Connection &conn, size_t &i, HTTPResponse &response)
 {
-	std::cout << "\033[1;36m" << "Entering writeToClient" << "\033[0m" << std::endl;
+	std::cout << "\033[1;36m"
+			  << "Entering writeToClient"
+			  << "\033[0m" << std::endl;
 	std::cout << response << std::endl;
 	static int sendResponseCounter = 0;
 	bool isLastSend = false;
@@ -351,7 +352,9 @@ void Server::writeToClient(Connection &conn, size_t &i, HTTPResponse &response)
 
 void Server::closeClientConnection(Connection &conn, size_t &i)
 {
-	std::cout << "\033[1;36m" << "Entering closeClientConnection" << "\033[0m" << std::endl;
+	std::cout << "\033[1;36m"
+			  << "Entering closeClientConnection"
+			  << "\033[0m" << std::endl;
 	// TODO: should we close it with the Destructor of the Connection class?
 	close(conn.getPollFd().fd);
 	_FDs.erase(_FDs.begin() + i);
@@ -361,7 +364,9 @@ void Server::closeClientConnection(Connection &conn, size_t &i)
 
 void Server::handleConnection(Connection &conn, size_t &i, Parser &parser, HTTPRequest &request, HTTPResponse &response)
 {
-	std::cout << "\033[1;36m" << "Entering handleConnection" << "\033[0m" << std::endl;
+	std::cout << "\033[1;36m"
+			  << "Entering handleConnection"
+			  << "\033[0m" << std::endl;
 
 	conn.setHasReadSocket(false);
 	std::cout << "Has finished reading: " << conn.getHasFinishedReading() << std::endl;
@@ -385,21 +390,6 @@ void Server::handleConnection(Connection &conn, size_t &i, Parser &parser, HTTPR
 }
 
 /*** Private Methods ***/
-
-void Server::loadConfig()
-{
-	// Add logic to load config from file
-}
-
-void Server::loadDefaultConfig()
-{
-	_webRoot = "var/www";
-	_maxClients = 10;
-	_clientMaxHeadersSize = CLIENT_MAX_HEADERS_SIZE;
-	_clientMaxBodySize = CLIENT_MAX_BODY_SIZE;
-	_port = 8080;
-}
-
 /* startListening */
 
 std::string normalizeIPAddress(const std::string &ip, bool isIpV6)
@@ -735,11 +725,6 @@ std::string Server::getWebRoot() const
 void Server::setWebRoot(const std::string &webRoot)
 {
 	_webRoot = webRoot;
-}
-
-std::string Server::getConfigFilePath() const
-{
-	return _configFilePath;
 }
 
 void Server::checkSocketOptions()

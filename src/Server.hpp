@@ -21,13 +21,13 @@
 #include "ServerSocket.hpp"
 
 #define VERBOSE 0
+#define SEND_BUFFER_SIZE 1024 * 100 // 100 KB
 
 class Connection; // Forward declaration for circular dependency
 
 class Server
 {
   public:
-	Server();
 	Server(const Config &config);
 	~Server();
 
@@ -53,15 +53,14 @@ class Server
 	size_t _clientMaxHeadersSize;
 	int _clientMaxBodySize;
 	int _maxClients; // i.e. max number of pending connections
-	std::string _configFilePath;
 	std::string _webRoot;
 	std::vector<struct pollfd> _FDs;
 	std::vector<Connection> _connections;
 	Config _config;
 
 	/*** Private Methods ***/
+	Server();
 	/* for Constructors */
-	void loadConfig();
 	void loadDefaultConfig();
 	/* for startListening */
 	void createServerSockets(std::vector<ServerBlock> &serverBlocks);
