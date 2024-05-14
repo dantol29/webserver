@@ -4,7 +4,7 @@ Single-threaded web server implemented in C++98 for School 42’s core curriculu
 
 # Introduction
 
-This project is currently in development and it's developed by [Daniil)](https://github.com/dantol29), and [Leo](https://github.com/lmangall) and [Stefano](https://github.com/552020).
+Developed by [Daniil](https://github.com/dantol29), [Leo](https://github.com/lmangall) and [Stefano](https://github.com/552020). Work in progress.
 
 ## Usage
 
