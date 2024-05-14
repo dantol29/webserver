@@ -4,7 +4,7 @@ on:
   push: # Trigger on push events
   pull_request: # Trigger on pull request events
     types: [opened, synchronize] # Trigger on PR opened and PR synchronize events
-	workflow_dispatch: # Allows the workflow to be manually triggered
+  workflow_dispatch: # Allows the workflow to be manually triggered
 jobs:
   Explore-GitHub-Actions:
     runs-on: ubuntu-latest
