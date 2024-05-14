@@ -10,6 +10,7 @@ Server::Server(const Config &config)
 	_config = config;
 	_maxClients = 10;
 	_clientMaxHeadersSize = CLIENT_MAX_HEADERS_SIZE;
+	_serverBlocks = _config.getServerBlocks();
 	Debug::log("Server created with config constructor", Debug::OCF);
 }
 
@@ -22,8 +23,7 @@ void Server::startListening()
 {
 	// We need this extra line to get serverBlocks cause the argument in createServerSockets is a reference
 	// i.e. we can't call getServerBlocks() directly in the function call
-	std::vector<ServerBlock> serverBlocks = _config.getServerBlocks();
-	createServerSockets(serverBlocks);
+	createServerSockets(_serverBlocks);
 	setReuseAddrAndPort();
 	checkSocketOptions();
 	bindToPort();

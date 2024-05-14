@@ -33,12 +33,14 @@ class Server
 
 	void startListening();
 	void startPollEventLoop();
+
   private:
 	/* Private Attributes */
 	Config _config;
 	int _maxClients; // i.e. max number of pending connections
-	std::vector<ServerSocket> _serverSockets;
 	size_t _clientMaxHeadersSize;
+	std::vector<ServerBlock> _serverBlocks;
+	std::vector<ServerSocket> _serverSockets;
 	std::vector<struct pollfd> _FDs;
 	std::vector<Connection> _connections;
 
