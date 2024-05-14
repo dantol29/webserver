@@ -4,8 +4,6 @@ StaticContentHandler::StaticContentHandler()
 {
 }
 
-StaticContentHandler::StaticContentHandler(const std::string &webRoot) : _webRoot(webRoot) {};
-
 StaticContentHandler::~StaticContentHandler()
 {
 }
