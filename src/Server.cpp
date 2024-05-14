@@ -1,8 +1,7 @@
 #include "Server.hpp"
 #include "Parser.hpp"
 #include "Connection.hpp"
-
-#include "ServerBlock.hpp" // for the Listen struct (to be implemented)
+#include "ServerBlock.hpp"
 #include "Debug.hpp"
 
 Server::Server(const Config &config)
@@ -21,8 +20,6 @@ Server::~Server()
 
 void Server::startListening()
 {
-	// We need this extra line to get serverBlocks cause the argument in createServerSockets is a reference
-	// i.e. we can't call getServerBlocks() directly in the function call
 	createServerSockets(_serverBlocks);
 	setReuseAddrAndPort();
 	checkSocketOptions();
