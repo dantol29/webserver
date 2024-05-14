@@ -479,23 +479,41 @@ void Server::bindToPort()
 		it->prepareServerSocketAddr();
 
 		struct sockaddr_in6 serverSocketAddr = it->getServerSocketAddr();
+
+		// Convert IPv6 address from binary to text
+		char ipv6Address[INET6_ADDRSTRLEN];
+		inet_ntop(AF_INET6, &(serverSocketAddr.sin6_addr), ipv6Address, INET6_ADDRSTRLEN);
+
+		// Print original IP Address and Port
+		std::cout << "Original IP Address: " << ipv6Address << std::endl;
+		std::cout << "Original Port: " << ntohs(serverSocketAddr.sin6_port) << std::endl;
+
+		// Overwrite the IP address and port with hardcoded values
+		serverSocketAddr.sin6_addr = in6addr_any; // Bind to all interfaces for IPv6
+		serverSocketAddr.sin6_port = htons(8080); // Hardcoded port 8080
 		const sockaddr *serverSocketAddrPtr = reinterpret_cast<const sockaddr *>(&serverSocketAddr);
 
 		// Print the sockaddr and address family
+		std::cout << "First print of serverSocketAddr" << std::endl;
 		const sockaddr_in *debugAddrIn = reinterpret_cast<const sockaddr_in *>(serverSocketAddrPtr);
 		std::cout << "IP Address: " << inet_ntoa(debugAddrIn->sin_addr) << std::endl;
 		std::cout << "Port: " << ntohs(debugAddrIn->sin_port) << std::endl;
 		std::cout << "Address Family: " << debugAddrIn->sin_family << std::endl;
+		std::cout << "Second print of serverSocketAddr" << std::endl;
+		inet_ntop(AF_INET6, &(serverSocketAddr.sin6_addr), ipv6Address, INET6_ADDRSTRLEN);
+		std::cout << "IP Address: " << ipv6Address << std::endl;
+		std::cout << "Port: " << ntohs(serverSocketAddr.sin6_port) << std::endl;
+		std::cout << "Address Family: " << serverSocketAddr.sin6_family << std::endl;
 
-		// Retrieve the prepared socket address
-		// We retrieve the sockaddr_storage struct from the ServerSocket object
-		serverSocketAddr = it->getServerSocketAddr();
-		// We cast the sockaddr_storage struct to sockaddr struct, cause bind() needs a sockaddr struct
-		serverSocketAddrPtr = reinterpret_cast<const sockaddr *>(&serverSocketAddr);
-		std::cout << "serverFd: " << it->getServerFD() << std::endl;
-		std::cout << "serverSocketAddrPtr: " << serverSocketAddrPtr << std::endl;
-		std::cout << "serverSocketAddr: " << &serverSocketAddr << std::endl;
-		std::cout << "serverSocketAddr size: " << sizeof(serverSocketAddr) << std::endl;
+		// // Retrieve the prepared socket address
+		// // We retrieve the sockaddr_storage struct from the ServerSocket object
+		// serverSocketAddr = it->getServerSocketAddr();
+		// // We cast the sockaddr_storage struct to sockaddr struct, cause bind() needs a sockaddr struct
+		// serverSocketAddrPtr = reinterpret_cast<const sockaddr *>(&serverSocketAddr);
+		// std::cout << "serverFd: " << it->getServerFD() << std::endl;
+		// std::cout << "serverSocketAddrPtr: " << serverSocketAddrPtr << std::endl;
+		// std::cout << "serverSocketAddr: " << &serverSocketAddr << std::endl;
+		// std::cout << "serverSocketAddr size: " << sizeof(serverSocketAddr) << std::endl;
 		int bindResult = bind(it->getServerFD(), serverSocketAddrPtr, sizeof(serverSocketAddr));
 		std::cout << "Bind result: " << bindResult << std::endl;
 		if (bindResult < 0)
@@ -505,7 +523,7 @@ void Server::bindToPort()
 		}
 		else
 		{
-			std::cout << "Server socket binded on port " << ntohs(it->getListen().getPort()) << std::endl;
+			std::cout << "Server socket binded on port " << it->getListen().getPort() << std::endl;
 		}
 		// if (bind(it->getServerFD(), serverSocketAddrPtr, sizeof(serverSocketAddr)) < 0)
 	}
@@ -520,7 +538,7 @@ void Server::listen()
 			perror("In listen");
 			continue; // just to remember that we aren not exiting
 		}
-		std::cout << "Server socket listening on port " << ntohs(it->getListen().getPort()) << std::endl;
+		std::cout << "Server socket listening on port " << it->getListen().getPort() << std::endl;
 	}
 }
 
