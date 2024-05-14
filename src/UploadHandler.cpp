@@ -5,8 +5,6 @@ UploadHandler::UploadHandler()
 {
 }
 
-UploadHandler::UploadHandler(const std::string &webRoot) : _webRoot(webRoot) {};
-
 UploadHandler::~UploadHandler()
 {
 }

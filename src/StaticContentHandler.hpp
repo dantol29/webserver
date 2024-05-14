@@ -25,7 +25,6 @@ class StaticContentHandler : public AResponseHandler
 	void handleNotFound(HTTPResponse &response);
 
   private:
-	std::string _webRoot;
 	StaticContentHandler(const StaticContentHandler &other);
 	StaticContentHandler &operator=(const StaticContentHandler &other);
 };
