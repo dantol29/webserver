@@ -301,9 +301,3 @@ bool Listen::portIsValid(std::string &str)
 	}
 	return true;
 }
-
-inline std::ostream &operator<<(std::ostream &os, const Listen &l)
-{
-	os << "IP: " << l.getIp() << ", Port: " << l.getPort() << ", IPv6: " << (l.getIsIpv6() ? "Yes" : "No");
-	return os;
-}
