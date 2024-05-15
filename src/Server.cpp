@@ -541,7 +541,8 @@ void Server::listen()
 {
 	for (std::vector<ServerSocket>::iterator it = _serverSockets.begin(); it != _serverSockets.end(); ++it)
 	{
-		if (::listen(it->getServerFD(), _maxClients) < 0)
+		// listen return 0 on success and -1 on error (Linux and MacOS) - Errno is set
+		if (::listen(it->getServerFD(), _maxClients) == -1)
 		{
 			perror("In listen");
 			continue; // just to remember that we aren not exiting
