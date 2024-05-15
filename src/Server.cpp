@@ -10,6 +10,7 @@ Server::Server(const Config &config)
 	_maxClients = 10;
 	_clientMaxHeadersSize = CLIENT_MAX_HEADERS_SIZE;
 	_serverBlocks = _config.getServerBlocks();
+	_serverSockets = std::vector<ServerSocket>();
 	Debug::log("Server created with config constructor", Debug::OCF);
 }
 
@@ -21,6 +22,7 @@ Server::~Server()
 void Server::startListening()
 {
 	createServerSockets(_serverBlocks);
+	printServerSockets();
 	setReuseAddrAndPort();
 	checkSocketOptions();
 	bindToPort();
@@ -388,6 +390,7 @@ void Server::handleConnection(Connection &conn, size_t &i, Parser &parser, HTTPR
 
 std::string normalizeIPAddress(const std::string &ip, bool isIpV6)
 {
+	// We use this function to normalize the IPv4 adresses mapped to IPv6
 	if (isIpV6)
 	{
 		size_t pos = ip.find("::ffff:");
@@ -402,6 +405,7 @@ std::string normalizeIPAddress(const std::string &ip, bool isIpV6)
 
 void Server::createServerSockets(std::vector<ServerBlock> &serverBlocks)
 {
+	std::cout << BLUE << "Entering createServerSockets" << RESET << std::endl;
 	std::vector<Listen> allListens;
 	for (std::vector<ServerBlock>::iterator it = serverBlocks.begin(); it != serverBlocks.end(); ++it)
 	{
@@ -435,13 +439,14 @@ void Server::createServerSockets(std::vector<ServerBlock> &serverBlocks)
 			perror("Failed to create server socket");
 			continue; // just to remember that we aren not exiting
 		}
+		// We set the socket option IPV6_V6ONLY to 0
 		int no = 0;
 		if (setsockopt(serverFD, IPPROTO_IPV6, IPV6_V6ONLY, (void *)&no, sizeof(no)) < 0)
 		{
 			perror("setsockopt IPV6_V6ONLY: Protocol not available, continuing without IPV6_V6ONLY");
 			continue; // just to remember that we aren not exiting
 		}
-		// We check if IPV6_V6ONLY is NOT set
+		// We check if IPV6_V6ONLY is set to 0
 		int ipv6only;
 		socklen_t len = sizeof(ipv6only);
 		if (getsockopt(serverFD, IPPROTO_IPV6, IPV6_V6ONLY, &ipv6only, &len) < 0)
@@ -456,6 +461,8 @@ void Server::createServerSockets(std::vector<ServerBlock> &serverBlocks)
 		ServerSocket serverSocket(serverFD, *it);
 		_serverSockets.push_back(serverSocket);
 	}
+	std::cout << BLUE << "Server socket(s) created" << RESET << std::endl;
+	std::cout << "\n\n";
 }
 
 void Server::setReuseAddrAndPort()
@@ -488,42 +495,43 @@ void Server::bindToPort()
 		std::cout << "Original IP Address: " << ipv6Address << std::endl;
 		std::cout << "Original Port: " << ntohs(serverSocketAddr.sin6_port) << std::endl;
 
-		// Overwrite the IP address and port with hardcoded values
-		serverSocketAddr.sin6_addr = in6addr_any; // Bind to all interfaces for IPv6
-		serverSocketAddr.sin6_port = htons(8080); // Hardcoded port 8080
+		// Overwrite the IP address and port with hardcoded values for test
+		// serverSocketAddr.sin6_addr = in6addr_any; // Bind to all interfaces for IPv6
+		// serverSocketAddr.sin6_port = htons(8080); // Hardcoded port 8080
+		// We need to cast it to sockaddr to be able to use it in bind()
 		const sockaddr *serverSocketAddrPtr = reinterpret_cast<const sockaddr *>(&serverSocketAddr);
 
 		// Print the sockaddr and address family
-		std::cout << "First print of serverSocketAddr" << std::endl;
-		const sockaddr_in *debugAddrIn = reinterpret_cast<const sockaddr_in *>(serverSocketAddrPtr);
-		std::cout << "IP Address: " << inet_ntoa(debugAddrIn->sin_addr) << std::endl;
-		std::cout << "Port: " << ntohs(debugAddrIn->sin_port) << std::endl;
-		std::cout << "Address Family: " << debugAddrIn->sin_family << std::endl;
-		std::cout << "Second print of serverSocketAddr" << std::endl;
+		// We reuse the ipv6Address buffer to store the new IP address
 		inet_ntop(AF_INET6, &(serverSocketAddr.sin6_addr), ipv6Address, INET6_ADDRSTRLEN);
+		std::cout << "First print of serverSocketAddr" << std::endl;
 		std::cout << "IP Address: " << ipv6Address << std::endl;
 		std::cout << "Port: " << ntohs(serverSocketAddr.sin6_port) << std::endl;
 		std::cout << "Address Family: " << serverSocketAddr.sin6_family << std::endl;
 
-		// // Retrieve the prepared socket address
-		// // We retrieve the sockaddr_storage struct from the ServerSocket object
-		// serverSocketAddr = it->getServerSocketAddr();
-		// // We cast the sockaddr_storage struct to sockaddr struct, cause bind() needs a sockaddr struct
-		// serverSocketAddrPtr = reinterpret_cast<const sockaddr *>(&serverSocketAddr);
-		// std::cout << "serverFd: " << it->getServerFD() << std::endl;
-		// std::cout << "serverSocketAddrPtr: " << serverSocketAddrPtr << std::endl;
-		// std::cout << "serverSocketAddr: " << &serverSocketAddr << std::endl;
-		// std::cout << "serverSocketAddr size: " << sizeof(serverSocketAddr) << std::endl;
 		int bindResult = bind(it->getServerFD(), serverSocketAddrPtr, sizeof(serverSocketAddr));
 		std::cout << "Bind result: " << bindResult << std::endl;
 		if (bindResult < 0)
 		{
+			std::cout << YELLOW << "Server socket failed to bind to IP " << ipv6Address << " on port "
+					  << ntohs(serverSocketAddr.sin6_port) << RESET << std::endl;
 			perror("In bind");
 			continue; // just to remember that we aren not exiting
 		}
 		else
 		{
-			std::cout << "Server socket binded on port " << it->getListen().getPort() << std::endl;
+			// Convert IPv6 address from binary to text for display
+			char ipv6AddressBound[INET6_ADDRSTRLEN];
+			if (inet_ntop(AF_INET6, &(serverSocketAddr.sin6_addr), ipv6AddressBound, INET6_ADDRSTRLEN))
+			{
+				std::cout << YELLOW << "Server socket bound to IP " << ipv6AddressBound << " on port "
+						  << ntohs(serverSocketAddr.sin6_port) << RESET << std::endl;
+			}
+			else
+			{
+				std::cerr << "Error converting bound IPv6 address to text." << std::endl;
+			}
+			std::cout << "***" << std::endl;
 		}
 		// if (bind(it->getServerFD(), serverSocketAddrPtr, sizeof(serverSocketAddr)) < 0)
 	}
@@ -538,7 +546,20 @@ void Server::listen()
 			perror("In listen");
 			continue; // just to remember that we aren not exiting
 		}
-		std::cout << "Server socket listening on port " << it->getListen().getPort() << std::endl;
+
+		struct sockaddr_in6 addr = it->getServerSocketAddr(); // Assume this function exists and retrieves the address
+		char ipv6Address[INET6_ADDRSTRLEN];
+
+		// Convert IPv6 address from binary to text
+		if (inet_ntop(AF_INET6, &addr.sin6_addr, ipv6Address, INET6_ADDRSTRLEN))
+		{
+			std::cout << "Server socket listening on IP " << ipv6Address << " and port " << ntohs(addr.sin6_port)
+					  << std::endl;
+		}
+		else
+		{
+			std::cerr << "Error converting IPv6 address to text." << std::endl;
+		}
 	}
 }
 
@@ -738,5 +759,14 @@ void Server::checkSocketOptions()
 		{
 			// std::cout << "SO_REUSEADDR is " << (optval ? "enabled" : "disabled") << std::endl;
 		}
+	}
+}
+
+void Server::printServerSockets() const
+{
+	std::cout << "Server sockets:" << std::endl;
+	for (std::vector<ServerSocket>::const_iterator it = _serverSockets.begin(); it != _serverSockets.end(); ++it)
+	{
+		std::cout << *it << std::endl;
 	}
 }

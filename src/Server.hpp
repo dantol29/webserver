@@ -34,6 +34,8 @@ class Server
 	void startListening();
 	void startPollEventLoop();
 
+	void printServerSockets() const;
+
   private:
 	/* Private Attributes */
 	Config _config;
