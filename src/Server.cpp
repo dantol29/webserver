@@ -215,11 +215,11 @@ void Server::buildResponse(Connection &conn, size_t &i, HTTPRequest &request, HT
 	std::cout << "Request host: " << request.getSingleHeader("host").second << std::endl;
 	std::cout << "Request target: " << request.getRequestTarget() << std::endl;
 
+	std::string requestTarget = request.getRequestTarget();
 	// if there is "?" in the request target, we need to remove it
-	if (std::find(request.getRequestTarget().begin(), request.getRequestTarget().end(), '?') !=
-		request.getRequestTarget().end())
-		request.setRequestTarget(request.getRequestTarget().substr(0, request.getRequestTarget().find("?")));
-	std::cout << "Request target: " << request.getRequestTarget() << std::endl;
+	if (std::find(requestTarget.begin(), requestTarget.end(), '?') != requestTarget.end())
+		requestTarget = requestTarget.substr(0, requestTarget.find("?"));
+	std::cout << "Request target: " << requestTarget << std::endl;
 
 	for (size_t i = 0; i < _config.getServerBlocks().size(); i++)
 	{
