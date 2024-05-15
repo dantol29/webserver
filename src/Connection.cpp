@@ -40,7 +40,7 @@ Connection::Connection(const Connection &other)
 	_responseSizeSent = other._responseSizeSent;
 	_responseString = other._responseString;
 
-	std::cout << "Connection object copied" << std::endl;
+	// std::cout << "Connection object copied" << std::endl;
 }
 
 Connection &Connection::operator=(const Connection &other)
@@ -69,7 +69,7 @@ Connection &Connection::operator=(const Connection &other)
 
 Connection::~Connection()
 {
-	std::cout << "Connection object destroyed" << std::endl;
+	// std::cout << "Connection object destroyed" << std::endl;
 }
 
 // GETTERS AND SETTERS
@@ -356,14 +356,14 @@ bool Connection::readChunk(size_t chunkSize, std::string &chunkData, HTTPRespons
 	return true;
 }
 
-bool Connection::readBody(Parser &parser, HTTPRequest &req, HTTPResponse &res, Config& _config)
+bool Connection::readBody(Parser &parser, HTTPRequest &req, HTTPResponse &res, Config &_config)
 {
 	std::cout << "\nEntering readBody" << std::endl;
 	size_t contentLength = req.getContentLength();
 	ServerBlock serverBlock;
 	std::string serverName;
 	bool locationFound = false;
-	
+
 	for (size_t i = 0; i < _config.getServerBlocks().size(); i++)
 	{
 		// loop through the server names
@@ -371,21 +371,22 @@ bool Connection::readBody(Parser &parser, HTTPRequest &req, HTTPResponse &res, C
 		{
 			serverName = _config.getServerBlocks()[i].getServerName()[j];
 			if (serverName == req.getSingleHeader("host").second)
-				break ;
+				break;
 		}
-		
+
 		if (serverName == req.getSingleHeader("host").second)
 		{
 			serverBlock = _config.getServerBlocks()[i];
 			for (size_t i = 0; i < serverBlock.getLocations().size(); i++)
 			{
-				std::cout << "Location: " << serverBlock.getLocations()[i]._path << " == " << req.getRequestTarget() << std::endl;
+				std::cout << "Location: " << serverBlock.getLocations()[i]._path << " == " << req.getRequestTarget()
+						  << std::endl;
 				if (req.getRequestTarget() == serverBlock.getLocations()[i]._path)
 				{
 					std::cout << "Location found" << std::endl;
 					locationFound = true;
 					if (serverBlock.getLocations()[i]._clientMaxBodySize == 0)
-						break ;
+						break;
 					if (contentLength > serverBlock.getLocations()[i]._clientMaxBodySize)
 					{
 						res.setStatusCode(413, "Payload Too Large");
@@ -395,7 +396,7 @@ bool Connection::readBody(Parser &parser, HTTPRequest &req, HTTPResponse &res, C
 			}
 			// uninitialized value
 			if (locationFound || _config.getServerBlocks()[i].getClientMaxBodySize() == 0)
-				break ;
+				break;
 			if (contentLength > _config.getServerBlocks()[i].getClientMaxBodySize())
 			{
 				res.setStatusCode(413, "Payload Too Large");
