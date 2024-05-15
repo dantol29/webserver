@@ -35,6 +35,13 @@ class Server
 	void startPollEventLoop();
 
 	void printServerSockets() const;
+	/* for CGI */
+	void setHasCGI(bool hasCGI);
+	void setCGICounter(int counter);
+	bool getHasCGI() const;
+	int getCGICounter() const;
+
+	void addCGI(int eventID);
 
   private:
 	/* Private Attributes */
@@ -45,6 +52,8 @@ class Server
 	std::vector<ServerSocket> _serverSockets;
 	std::vector<struct pollfd> _FDs;
 	std::vector<Connection> _connections;
+	bool _hasCGI;
+	int _CGICounter;
 
 	/*** Private Methods ***/
 	Server();

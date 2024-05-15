@@ -11,6 +11,8 @@ Server::Server(const Config &config)
 	_clientMaxHeadersSize = CLIENT_MAX_HEADERS_SIZE;
 	_serverBlocks = _config.getServerBlocks();
 	_serverSockets = std::vector<ServerSocket>();
+	_hasCGI = false;
+	_CGICounter = 0;
 	Debug::log("Server created with config constructor", Debug::OCF);
 }
 
@@ -18,6 +20,30 @@ Server::~Server()
 {
 	Debug::log("Server destroyed", Debug::OCF);
 }
+
+// GETTERS AND SETTERS
+
+void Server::setHasCGI(bool hasCGI)
+{
+	_hasCGI = hasCGI;
+}
+
+void Server::setCGICounter(int counter)
+{
+	_CGICounter = counter;
+}
+
+bool Server::getHasCGI() const
+{
+	return _hasCGI;
+}
+
+int Server::getCGICounter() const
+{
+	return _CGICounter;
+}
+
+// METHODS
 
 void Server::startListening()
 {
@@ -770,4 +796,13 @@ void Server::printServerSockets() const
 	{
 		std::cout << *it << std::endl;
 	}
+}
+
+/* for CGI */
+void Server::addCGI(int eventID)
+{
+	(void)eventID;
+	setHasCGI(true);
+	setCGICounter(getCGICounter() + 1);
+	std::cout << "CGI added: _hasCGI set to " << _hasCGI << ", _CGICounter is now " << _CGICounter << std::endl;
 }
