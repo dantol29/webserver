@@ -12,6 +12,7 @@ Config::Config(const char *file)
 		configFile.open(file);
 	else
 		configFile.open(CONFIG_FILE_DEFAULT_PATH);
+	_fileName = (file) ? file : CONFIG_FILE_DEFAULT_PATH;
 
 	try
 	{
@@ -61,6 +62,11 @@ bool Config::setError(std::string message)
 {
 	_errorMessage = message;
 	return (false);
+}
+
+std::string Config::getFileName() const
+{
+	return (_fileName);
 }
 
 // [TAB][KEY][SP][VALUE][;]
@@ -233,28 +239,31 @@ bool Config::pathExists(std::map<std::string, std::string> list, std::string var
 	return (true);
 }
 
-std::ostream &operator<<(std::ostream &out, const Config &a)
+std::ostream &operator<<(std::ostream &out, const Config &file)
 {
-	if (!a.getErrorMessage().empty())
+	if (!file.getErrorMessage().empty())
 	{
-		out << a.getErrorMessage();
+		out << file.getErrorMessage();
 		return (out);
 	}
 
-	std::vector<ServerBlock> server = a.getServerBlocks();
+	std::vector<ServerBlock> server = file.getServerBlocks();
+	int serverBlockCounter = 0;
 
 	for (std::vector<ServerBlock>::iterator it = server.begin(); it != server.end(); ++it)
 	{
 		Directives var = it->getDirectives();
 		std::vector<Directives> loc = it->getLocations();
+		serverBlockCounter++;
+		std::cout << "Config file: " << file.getFileName() << std::endl;
 
-		std::cout << "------------------Server-Block------------------------" << std::endl;
+		std::cout << "------------------Server-Block #" << serverBlockCounter << "----------------------" << std::endl;
 
 		for (unsigned int i = 0; i < var._listen.size(); ++i)
 		{
-			std::cout << "listen: " << var._listen[i].getIp() << std::endl;
+			std::cout << "ip: " << var._listen[i].getIp() << std::endl;
 			std::cout << "port: " << var._listen[i].getPort() << std::endl;
-			std::cout << "isIpv6: " << var._listen[i].getIsIpv6() << std::endl;
+			std::cout << "isIpv6: " << (var._listen[i].getIsIpv6() ? "true" : "false") << std::endl;
 		}
 		std::cout << "server_name: ";
 		for (unsigned int i = 0; i < var._serverName.size(); ++i)
@@ -270,6 +279,7 @@ std::ostream &operator<<(std::ostream &out, const Config &a)
 		std::cout << "allowed_methods: ";
 		for (unsigned int i = 0; i < var._allowedMethods.size(); ++i)
 			std::cout << var._allowedMethods[i] << " ";
+		std::cout << std::endl;
 		std::cout << "alias: " << var._alias << std::endl;
 
 		for (unsigned int i = 0; i < loc.size(); ++i)
@@ -295,6 +305,7 @@ std::ostream &operator<<(std::ostream &out, const Config &a)
 			std::cout << "allowed_methods: ";
 			for (unsigned int i = 0; i < loc[i]._allowedMethods.size(); ++i)
 				std::cout << loc[i]._allowedMethods[i] << " ";
+			std::cout << std::endl;
 			std::cout << "alias: " << loc[i]._alias << std::endl;
 		}
 		std::cout << "------------------END---------------------------------" << std::endl;

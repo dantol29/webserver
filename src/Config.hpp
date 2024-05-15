@@ -17,6 +17,7 @@ class Config
 	std::vector<ServerBlock> getServerBlocks() const;
 	std::string getErrorMessage() const;
 	bool parse(std::ifstream &config); // main method
+	std::string getFileName() const;
 
   private:
 	std::vector<ServerBlock> _serverBlocks;
@@ -28,6 +29,7 @@ class Config
 	bool pathExists(std::map<std::string, std::string> list, std::string variable);
 
 	// internal variables for parsing
+	std::string _fileName;
 	std::string _errorMessage;
 	std::string _tmpPath;
 	ServerBlock _tmpServerBlock;

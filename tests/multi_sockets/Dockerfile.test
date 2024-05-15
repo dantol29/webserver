@@ -1,0 +1,17 @@
+# Use a base image with C++ and necessary tools installed
+FROM ubuntu:20.04
+
+# Install necessary packages
+RUN apt-get update && apt-get install -y build-essential curl
+
+# Set the working directory
+WORKDIR /app
+
+# Copy the entire project into the container
+COPY . .
+
+# List the contents of the /app directory to verify the presence of the Makefile
+RUN echo "Contents of /app:" && ls -al /app
+
+# Start an interactive session
+CMD ["/bin/bash"]

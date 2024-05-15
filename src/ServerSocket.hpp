@@ -12,7 +12,7 @@ class ServerSocket
 	ServerSocket(const ServerSocket &obj);
 	ServerSocket &operator=(const ServerSocket &obj);
 	int getServerFD() const;
-	Listen getListen() const;
+	const Listen getListen() const;
 	struct sockaddr_in6 getServerSocketAddr() const;
 	void prepareServerSocketAddr();
 
@@ -21,4 +21,7 @@ class ServerSocket
 	Listen _listen;
 	struct sockaddr_in6 _serverSocketAddr;
 };
+
+std::ostream &operator<<(std::ostream &out, const ServerSocket &socket);
+
 #endif

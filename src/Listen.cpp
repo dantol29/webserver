@@ -42,8 +42,7 @@ Listen::Listen(std::string str)
 		std::cerr << "Throwing exception" << std::endl;
 		throw("Invalid ip or port");
 	}
-	std::cout << "IP: " << _ip << std::endl;
-	std::cout << "Port: " << _port << std::endl;
+	std::cout << "Listen object created. IP: " << _ip << ", Port: " << _port << std::endl;
 }
 
 Listen::Listen(const Listen &obj)
@@ -300,10 +299,4 @@ bool Listen::portIsValid(std::string &str)
 		return false;
 	}
 	return true;
-}
-
-inline std::ostream &operator<<(std::ostream &os, const Listen &l)
-{
-	os << "IP: " << l.getIp() << ", Port: " << l.getPort() << ", IPv6: " << (l.getIsIpv6() ? "Yes" : "No");
-	return os;
 }

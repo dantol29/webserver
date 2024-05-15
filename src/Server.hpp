@@ -20,7 +20,7 @@
 #include "Config.hpp"
 #include "ServerSocket.hpp"
 
-#define VERBOSE 0
+#define VERBOSE 1
 #define SEND_BUFFER_SIZE 1024 * 100 // 100 KB
 
 class Connection; // Forward declaration for circular dependency
@@ -33,6 +33,8 @@ class Server
 
 	void startListening();
 	void startPollEventLoop();
+
+	void printServerSockets() const;
 
   private:
 	/* Private Attributes */
