@@ -188,6 +188,7 @@ std::string CGIHandler::executeCGI(const MetaVariables &env)
 	}
 
 	close(pipeFD[1]);
+	_eventManager.emit(1); // Emit event indicating a CGI process has started
 
 	signal(SIGALRM, handleTimeout);
 	alarm(4);
