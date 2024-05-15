@@ -42,6 +42,7 @@ class Server
 	int getCGICounter() const;
 
 	void addCGI(int eventID);
+	void removeCGI();
 
   private:
 	/* Private Attributes */

@@ -806,3 +806,10 @@ void Server::addCGI(int eventID)
 	setCGICounter(getCGICounter() + 1);
 	std::cout << "CGI added: _hasCGI set to " << _hasCGI << ", _CGICounter is now " << _CGICounter << std::endl;
 }
+
+void Server::removeCGI()
+{
+	setCGICounter(getCGICounter() - 1);
+	if (getCGICounter() == 0)
+		setHasCGI(false);
+}
