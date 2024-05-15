@@ -799,9 +799,10 @@ void Server::printServerSockets() const
 }
 
 /* for CGI */
-void Server::addCGI(int eventID)
+// void Server::addCGI(int eventID)
+void Server::addCGI(const EventData &eventData)
 {
-	(void)eventID;
+	(void)eventData;
 	setHasCGI(true);
 	setCGICounter(getCGICounter() + 1);
 	std::cout << "CGI added: _hasCGI set to " << _hasCGI << ", _CGICounter is now " << _CGICounter << std::endl;

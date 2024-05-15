@@ -29,11 +29,12 @@ void EventManager::unsubscribe(IEventListener *observer)
 }
 
 // Emit an event to all registered observers
-void EventManager::emit(int eventID)
+// void EventManager::emit(int eventID)
+void EventManager::emit(const EventData &eventData)
 {
 	// Notify all observers about the event
 	for (std::vector<IEventListener *>::iterator it = observers.begin(); it != observers.end(); ++it)
 	{
-		(*it)->handleEvent(eventID);
+		(*it)->handleEvent(eventData);
 	}
 }

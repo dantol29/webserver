@@ -15,7 +15,8 @@ class EventManager
 
 	void subscribe(IEventListener *observer);
 	void unsubscribe(IEventListener *observer);
-	void emit(int eventID);
+	// void emit(int eventID);
+	void emit(const EventData &eventData);
 };
 
 #endif // EVENT_MANAGER_HPP

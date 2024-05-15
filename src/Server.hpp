@@ -42,7 +42,7 @@ class Server
 	bool getHasCGI() const;
 	int getCGICounter() const;
 
-	void addCGI(int eventID);
+	void addCGI(const EventData &eventData);
 	void removeCGI();
 
   private:

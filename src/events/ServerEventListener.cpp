@@ -5,9 +5,9 @@ ServerEventListener::ServerEventListener(Server &srv) : server(srv)
 {
 }
 
-void ServerEventListener::handleEvent(int eventID)
+void ServerEventListener::handleEvent(const EventData &eventData)
 {
 	// TODO; Create eventually enum for eventID
-	if (eventID == 1)
-		server.addCGI(eventID);
+	if (eventData.eventType == 1)
+		server.addCGI(eventData);
 }
