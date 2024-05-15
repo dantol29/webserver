@@ -3,10 +3,10 @@
 #include "Connection.hpp"
 #include "ServerBlock.hpp"
 #include "Debug.hpp"
+#include "EventManager.hpp"
 
-Server::Server(const Config &config)
+Server::Server(const Config &config, EventManager &eventManager) : _config(config), _eventManager(eventManager)
 {
-	_config = config;
 	_maxClients = 10;
 	_clientMaxHeadersSize = CLIENT_MAX_HEADERS_SIZE;
 	_serverBlocks = _config.getServerBlocks();
@@ -308,7 +308,7 @@ void Server::buildResponse(Connection &conn, size_t &i, HTTPRequest &request, HT
 		root = root + "/";
 	std::cout << RED << "Root: " << root << RESET << std::endl;
 
-	Router router(directive);
+	Router router(directive, _eventManager);
 
 	if (response.getStatusCode() != 0)
 	{

@@ -1,6 +1,8 @@
 #include "Server.hpp"
 #include "Config.hpp"
 #include "webserv.hpp"
+#include "EventManager.hpp"
+#include "ServerEventListener.hpp"
 
 int main(int argc, char **argv)
 {
@@ -18,7 +20,12 @@ int main(int argc, char **argv)
 		return 1;
 
 	std::cout << config << std::endl; // should be in the DEBUG?
-	Server webserv(config);
+	EventManager eventManager;
+	Server webserv(config, eventManager);
+
+	ServerEventListener serverEventListener(webserv);
+	eventManager.subscribe(&serverEventListener);
+
 	webserv.startListening();
 	webserv.startPollEventLoop();
 

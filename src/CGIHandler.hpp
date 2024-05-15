@@ -1,6 +1,7 @@
 #ifndef CGIHANDLER_HPP
 #define CGIHANDLER_HPP
 
+#include "EventManager.hpp"
 #include "AResponseHandler.hpp"
 #include "HTTPRequest.hpp"
 #include "MetaVariables.hpp"
@@ -14,7 +15,9 @@
 class CGIHandler : public AResponseHandler
 {
   public:
-	CGIHandler();
+	CGIHandler(EventManager &eventManager);
+	CGIHandler(const CGIHandler &other);
+	CGIHandler &operator=(const CGIHandler &other);
 	virtual ~CGIHandler();
 	void handleRequest(const HTTPRequest &request, HTTPResponse &response);
 	std::vector<std::string> createArgvForExecve(const MetaVariables &env);
@@ -25,11 +28,10 @@ class CGIHandler : public AResponseHandler
 	void setPollFd(struct pollfd *pollFd);
 
   private:
-	CGIHandler(const CGIHandler &other);
-	CGIHandler &operator=(const CGIHandler &other);
 	void closeAllSocketFDs();
 	std::vector<pollfd> *_FDsRef;
 	struct pollfd *_pollFd;
+	EventManager &_eventManager;
 };
 
 #endif

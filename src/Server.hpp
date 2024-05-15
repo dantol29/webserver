@@ -19,16 +19,17 @@
 #include "Parser.hpp"
 #include "Config.hpp"
 #include "ServerSocket.hpp"
+#include "EventManager.hpp"
 
 #define VERBOSE 1
 #define SEND_BUFFER_SIZE 1024 * 100 // 100 KB
 
-class Connection; // Forward declaration for circular dependency
+class Connection; // Forward declaration for circular dependencyA
 
 class Server
 {
   public:
-	Server(const Config &config);
+	Server(const Config &config, EventManager &eventManager);
 	~Server();
 
 	void startListening();
@@ -53,6 +54,8 @@ class Server
 	std::vector<ServerSocket> _serverSockets;
 	std::vector<struct pollfd> _FDs;
 	std::vector<Connection> _connections;
+	EventManager _eventManager;
+
 	bool _hasCGI;
 	int _CGICounter;
 

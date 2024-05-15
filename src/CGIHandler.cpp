@@ -1,32 +1,35 @@
 #include "CGIHandler.hpp"
 
-CGIHandler::CGIHandler()
+CGIHandler::CGIHandler(EventManager &eventManager) : _eventManager(eventManager)
 {
 }
 
+// Copy Constructor
+CGIHandler::CGIHandler(const CGIHandler &other)
+	: _FDsRef(other._FDsRef), _pollFd(other._pollFd), _eventManager(other._eventManager)
+{
+	// TODO: do we need deep copy here?
+}
+
+// Destructor
 CGIHandler::~CGIHandler()
 {
 }
 
-// CGIHandler::CGIHandler(Connection *conn)
-// {
-// 	_conn = conn;
-// }
-
-// CGIHandler &CGIHandler::operator=(const CGIHandler &other)
-// {
-// 	if (this != &other)
-// 	{
-// 		_conn = other._conn;
-// 		_FDsRef = other._FDsRef;
-// 		_pollFd = other._pollFd;
-// 	}
-// 	return *this;
-// }
+CGIHandler &CGIHandler::operator=(const CGIHandler &other)
+{
+	if (this != &other)
+	{
+		_eventManager = other._eventManager;
+		_FDsRef = other._FDsRef;
+		_pollFd = other._pollFd;
+	}
+	return *this;
+}
 
 void CGIHandler::handleRequest(const HTTPRequest &request, HTTPResponse &response)
 {
-	CGIHandler cgiInstance;
+	// CGIHandler cgiInstance(_eventManager);
 	// cgiInstance.setFDsRef(_FDsRef); // here we set the FDs to close later unused ones
 	MetaVariables env;
 	env.HTTPRequestToMetaVars(request, env);
