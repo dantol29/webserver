@@ -39,6 +39,7 @@ class Connection
 	size_t _responseSizeSent;
 	std::string _responseString;
 	bool _hasCGI;
+	bool _CGIHasExited;
 	pid_t _CGIPid;
 	int _CGIExitStatus;
 	time_t _CGIStartTime;

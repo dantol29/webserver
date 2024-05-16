@@ -130,6 +130,7 @@ void Server::startPollEventLoop()
 					{
 						_connections[i].removeCGI(status);
 						// We assume that the CGI has been executed and we can set the FD to POLLOUT and has data to
+						// Mind theat the buffer needs to be read before we can send the response
 						// send kill(_connections[i].getCGIPid(), SIGKILL);
 						_FDs[i].events = POLLOUT;
 						break;
@@ -147,6 +148,8 @@ void Server::startPollEventLoop()
 					{
 						// kill CGI process
 						std::cout << "CGI timeout" << std::endl;
+						// probably we need here also removeCGI and go back to hanldeRequest and stuff
+						_FDs[i].events = POLLOUT;
 						kill(_connections[i].getCGIPid(), SIGKILL);
 						// give a response back that the CGI timeout
 					}

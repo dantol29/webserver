@@ -19,6 +19,7 @@ Connection::Connection(struct pollfd &pollFd, Server &server)
 	_responseSizeSent = 0;
 	_responseString = "";
 	_hasCGI = false;
+	_CGIHasExited = false;
 	_CGIPid = 0;
 	_CGIStartTime = 0;
 }
@@ -43,6 +44,7 @@ Connection::Connection(const Connection &other)
 	_responseSizeSent = other._responseSizeSent;
 	_responseString = other._responseString;
 	_hasCGI = other._hasCGI;
+	_CGIHasExited = other._CGIHasExited;
 	_CGIPid = other._CGIPid;
 	_CGIStartTime = other._CGIStartTime;
 
@@ -69,6 +71,7 @@ Connection &Connection::operator=(const Connection &other)
 		_responseSizeSent = other._responseSizeSent;
 		_responseString = other._responseString;
 		_hasCGI = other._hasCGI;
+		_CGIHasExited = other._CGIHasExited;
 		_CGIPid = other._CGIPid;
 		_CGIStartTime = other._CGIStartTime;
 	}
@@ -499,7 +502,9 @@ void Connection::addCGI(pid_t pid)
 
 void Connection::removeCGI(int status)
 {
-	_hasCGI = false;
+	// _hasCGI = false;
+	// maybe better to set it to false after we have finished sending the response
+	_CGIHasExited = true;
 	_CGIPid = 0;
 	_CGIStartTime = 0;
 	_CGIExitStatus = status;
