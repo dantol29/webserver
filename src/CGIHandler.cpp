@@ -1,13 +1,12 @@
 #include "CGIHandler.hpp"
 
 CGIHandler::CGIHandler(EventManager &eventManager, Connection &connection)
-	: _connection(connection), _eventManager(eventManager)
+	: AResponseHandler(), _connection(connection), _eventManager(eventManager)
 {
 }
 
 // Copy Constructor
-CGIHandler::CGIHandler(const CGIHandler &other)
-	: _FDsRef(other._FDsRef), _pollFd(other._pollFd), _connection(other._connection), _eventManager(other._eventManager)
+CGIHandler::CGIHandler(const CGIHandler &other) : AResponseHandler(other), _FDsRef(other._FDsRef), _pollFd(other._pollFd), _connection(other._connection), _eventManager(other._eventManager)
 {
 	// TODO: do we need deep copy here?
 }
@@ -21,6 +20,7 @@ CGIHandler &CGIHandler::operator=(const CGIHandler &other)
 {
 	if (this != &other)
 	{
+		AResponseHandler::operator=(other);
 		_eventManager = other._eventManager;
 		_FDsRef = other._FDsRef;
 		_pollFd = other._pollFd;
