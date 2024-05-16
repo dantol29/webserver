@@ -22,7 +22,6 @@
 #include "EventManager.hpp"
 
 #define VERBOSE 1
-#define SEND_BUFFER_SIZE 1024 * 100 // 100 KB
 
 class Connection; // Forward declaration for circular dependencyA
 
@@ -57,6 +56,7 @@ class Server
 	EventManager _eventManager;
 
 	bool _hasCGI;
+
 	int _CGICounter;
 
 	/*** Private Methods ***/

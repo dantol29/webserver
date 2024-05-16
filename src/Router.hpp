@@ -1,16 +1,18 @@
 #ifndef ROUTER_HPP
 #define ROUTER_HPP
 
+#include "CGIHandler.hpp"
 #include "EventManager.hpp"
 #include "HTTPRequest.hpp"
 #include "HTTPResponse.hpp"
 #include "StaticContentHandler.hpp"
-#include "CGIHandler.hpp"
 #include "UploadHandler.hpp"
 #include "ServerBlock.hpp"
 #include "Debug.hpp"
 #include "sys/stat.h"
 #include <dirent.h> // POSIX lib for DIR
+
+class Connection;
 
 struct resourcePath
 {
@@ -28,7 +30,7 @@ enum PathValidation
 class Router
 {
   public:
-	Router(Directives &directive, EventManager &eventManager);
+	Router(Directives &directive, EventManager &eventManager, Connection &connection);
 	~Router();
 	void routeRequest(HTTPRequest &request, HTTPResponse &response);
 
@@ -40,6 +42,7 @@ class Router
 	void handleServerBlockError(HTTPRequest &request, HTTPResponse &response, int errorCode);
 
   private:
+	Connection &_connection;
 	Directives _directive;
 	Router(const Router &other);
 	Router &operator=(const Router &other);

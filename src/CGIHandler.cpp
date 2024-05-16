@@ -1,12 +1,13 @@
 #include "CGIHandler.hpp"
 
-CGIHandler::CGIHandler(EventManager &eventManager) : _eventManager(eventManager)
+CGIHandler::CGIHandler(EventManager &eventManager, Connection &connection)
+	: _connection(connection), _eventManager(eventManager)
 {
 }
 
 // Copy Constructor
 CGIHandler::CGIHandler(const CGIHandler &other)
-	: _FDsRef(other._FDsRef), _pollFd(other._pollFd), _eventManager(other._eventManager)
+	: _FDsRef(other._FDsRef), _pollFd(other._pollFd), _connection(other._connection), _eventManager(other._eventManager)
 {
 	// TODO: do we need deep copy here?
 }
@@ -186,14 +187,16 @@ std::string CGIHandler::executeCGI(const MetaVariables &env)
 		perror("execve");
 		_exit(EXIT_FAILURE);
 	}
-
+	// This is executed if the CGI is started successfully
 	close(pipeFD[1]);
 	EventData data = {1, pid}; // Assuming 1 is the event type for CGI started
 	_eventManager.emit(data);  // Emit event indicating a CGI process has started
-
+	// conn.addCGI(pid);
+	_connection.addCGI(pid);
+	// TODO: is this used? To which process to you want to send this signal/ @Leo
 	signal(SIGALRM, handleTimeout);
 	alarm(4);
-
+	// This will be executed only if the CGI process returned (before the timeout)
 	char readBuffer[256];
 	ssize_t bytesRead;
 	while ((bytesRead = read(pipeFD[0], readBuffer, sizeof(readBuffer) - 1)) > 0)
@@ -206,7 +209,7 @@ std::string CGIHandler::executeCGI(const MetaVariables &env)
 	int status;
 	pid_t waitedPid = waitpid(pid, &status, 0);
 	alarm(0);
-
+	//
 	if (waitedPid == -1)
 	{
 		perror("waitpid");

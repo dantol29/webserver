@@ -4,6 +4,7 @@
 #include "ServerBlock.hpp"
 #include "Debug.hpp"
 #include "EventManager.hpp"
+#include "signal.h"
 
 Server::Server(const Config &config, EventManager &eventManager) : _config(config), _eventManager(eventManager)
 {
@@ -59,12 +60,17 @@ void Server::startPollEventLoop()
 {
 	addServerSocketsPollFdToVectors();
 	int pollCounter = 0;
+	int timeout = -1;
 	while (1)
 	{
+		if (_hasCGI)
+			timeout = 500;
+		else
+			timeout = -1;
 		// printConnections("BEFORE POLL", _FDs, _connections, true);
 		std::cout << CYAN << "++++++++++++++ #" << pollCounter
 				  << " Waiting for new connection or Polling +++++++++++++++" << RESET << std::endl;
-		int ret = poll(_FDs.data(), _FDs.size(), -1);
+		int ret = poll(_FDs.data(), _FDs.size(), timeout);
 		pollCounter++;
 		// printFrame("POLL EVENT DETECTED", true);
 		// printConnections("AFTER POLL", _FDs, _connections, true);
@@ -110,9 +116,47 @@ void Server::startPollEventLoop()
 			handleSocketTimeoutIfAny();
 		else
 			handlePollError();
+		if (_hasCGI)
+		{
+			size_t originalSize = _FDs.size();
+			int status;
+			pid_t pid = waitpid(-1, &status, WNOHANG);
+			if (pid > 0)
+			{
+				// TODo: has at this point the CGI been executed?
+				for (size_t i = 0; i < originalSize && i < _FDs.size(); i++)
+				{
+					if (_connections[i].getHasCGI() && _connections[i].getCGIPid() == pid)
+					{
+						_connections[i].removeCGI();
+						// We assume that the CGI has been executed and we can set the FD to POLLOUT and has data to
+						// send kill(_connections[i].getCGIPid(), SIGKILL);
+						_FDs[i].events = POLLOUT;
+						break;
+					}
+				}
+				// We deccrement the CGI counter by 1 on the server and if it 0 we set _hasCGI to false
+				removeCGI();
+			}
+			else if (pid == 0)
+			{
+				// Check if the CGI has timed out
+				for (size_t i = 0; i < originalSize && i < _FDs.size(); i++)
+				{
+					if (_connections[i].getHasCGI() && _connections[i].getCGIStartTime() + CGI_TIMEOUT_MS > time(NULL))
+					{
+						// kill CGI process
+						std::cout << "CGI timeout" << std::endl;
+						kill(_connections[i].getCGIPid(), SIGKILL);
+						// give a response back that the CGI timeout
+					}
+				}
+			}
+			else
+				perror("waitpid");
+		}
 	}
 }
-
 void Server::readFromClient(Connection &conn, size_t &i, Parser &parser, HTTPRequest &request, HTTPResponse &response)
 {
 	(void)i;
@@ -175,7 +219,8 @@ void Server::readFromClient(Connection &conn, size_t &i, Parser &parser, HTTPReq
 				Debug::log("Error reading chunked body", Debug::OCF);
 				conn.setCanBeClosed(true);
 				conn.setHasFinishedReading(true);
-				// It could be that we had data that could be sent even if we have an error cause previous data was read
+				// It could be that we had data that could be sent even if we have an error cause previous data
+				// was read
 				return;
 			}
 			conn.setHasReadSocket(true);
@@ -308,7 +353,7 @@ void Server::buildResponse(Connection &conn, size_t &i, HTTPRequest &request, HT
 		root = root + "/";
 	std::cout << RED << "Root: " << root << RESET << std::endl;
 
-	Router router(directive, _eventManager);
+	Router router(directive, _eventManager, conn);
 
 	if (response.getStatusCode() != 0)
 	{

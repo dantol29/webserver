@@ -18,6 +18,9 @@ Connection::Connection(struct pollfd &pollFd, Server &server)
 	_responseSize = 0;
 	_responseSizeSent = 0;
 	_responseString = "";
+	_hasCGI = false;
+	_CGIPid = 0;
+	_CGIStartTime = 0;
 }
 
 Connection::Connection(const Connection &other)
@@ -39,6 +42,9 @@ Connection::Connection(const Connection &other)
 	_responseSize = other._responseSize;
 	_responseSizeSent = other._responseSizeSent;
 	_responseString = other._responseString;
+	_hasCGI = other._hasCGI;
+	_CGIPid = other._CGIPid;
+	_CGIStartTime = other._CGIStartTime;
 
 	// std::cout << "Connection object copied" << std::endl;
 }
@@ -62,6 +68,9 @@ Connection &Connection::operator=(const Connection &other)
 		_responseSize = other._responseSize;
 		_responseSizeSent = other._responseSizeSent;
 		_responseString = other._responseString;
+		_hasCGI = other._hasCGI;
+		_CGIPid = other._CGIPid;
+		_CGIStartTime = other._CGIStartTime;
 	}
 	std::cout << "Connection object assigned" << std::endl;
 	return *this;
@@ -152,6 +161,21 @@ bool Connection::getCanBeClosed() const
 {
 	return _canBeClosed;
 }
+
+bool Connection::getHasCGI() const
+{
+	return _hasCGI;
+}
+
+pid_t Connection::getCGIPid() const
+{
+	return _CGIPid;
+}
+
+time_t Connection::getCGIStartTime() const
+{
+	return _CGIStartTime;
+}
 // SETTERS
 
 void Connection::setResponseSize(size_t responseSize)
@@ -212,6 +236,24 @@ void Connection::setCanBeClosed(bool value)
 {
 	_canBeClosed = value;
 }
+
+void Connection::setHasCGI(bool value)
+{
+	_hasCGI = value;
+}
+
+void Connection::setCGIPid(pid_t pid)
+{
+	_CGIPid = pid;
+}
+
+void Connection::setCGIStartTime(time_t time)
+{
+	_CGIStartTime = time;
+}
+
+// METHODS
+
 bool Connection::readHeaders(Parser &parser)
 {
 	// std::cout << "\nEntering readHeaders" << std::endl;
@@ -445,6 +487,22 @@ bool Connection::readBody(Parser &parser, HTTPRequest &req, HTTPResponse &res, C
 		parser.setBodyComplete(true);
 	std::cout << "Exiting readBody" << std::endl;
 	return true;
+}
+
+/* CGI */
+void Connection::addCGI(pid_t pid)
+{
+	_hasCGI = true;
+	_CGIPid = pid;
+	_CGIStartTime = time(NULL);
+}
+
+void Connection::removeCGI(int status)
+{
+	_hasCGI = false;
+	_CGIPid = 0;
+	_CGIStartTime = 0;
+	_CGIExitStatus = status;
 }
 
 /* Debugging */

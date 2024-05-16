@@ -5,6 +5,7 @@
 #include "AResponseHandler.hpp"
 #include "HTTPRequest.hpp"
 #include "MetaVariables.hpp"
+#include "Connection.hpp"
 #include <unistd.h>
 #include <sys/wait.h>
 #include <fcntl.h>
@@ -15,7 +16,7 @@
 class CGIHandler : public AResponseHandler
 {
   public:
-	CGIHandler(EventManager &eventManager);
+	CGIHandler(EventManager &eventManager, Connection &connection);
 	CGIHandler(const CGIHandler &other);
 	CGIHandler &operator=(const CGIHandler &other);
 	virtual ~CGIHandler();
@@ -31,6 +32,7 @@ class CGIHandler : public AResponseHandler
 	void closeAllSocketFDs();
 	std::vector<pollfd> *_FDsRef;
 	struct pollfd *_pollFd;
+	Connection &_connection;
 	EventManager &_eventManager;
 };
 

@@ -4,7 +4,7 @@
 #include <string>	// for std::string and memset
 #include <poll.h>	// For struct pollfd
 #include <unistd.h> // For close
-#include "Server.hpp"
+// #include "Server.hpp"
 #include "webserv.hpp"
 #include "HTTPResponse.hpp" // Assuming existence of HTTPResponse class
 #include "Parser.hpp"		// Assuming existence of Parser class
@@ -38,6 +38,10 @@ class Connection
 	size_t _responseSize;
 	size_t _responseSizeSent;
 	std::string _responseString;
+	bool _hasCGI;
+	pid_t _CGIPid;
+	int _CGIExitStatus;
+	time_t _CGIStartTime;
 
   public:
 	Connection(struct pollfd &pollFd, Server &server);
@@ -49,14 +53,16 @@ class Connection
 	bool readChunkedBody(Parser &parser);
 	bool readChunkSize(std::string &line);
 	bool readChunk(size_t chunkSize, std::string &chunkedData, HTTPResponse &response);
-	bool readBody(Parser &parser, HTTPRequest &req, HTTPResponse &res, Config& config);
+	bool readBody(Parser &parser, HTTPRequest &req, HTTPResponse &res, Config &config);
 
 	/* Getters */
 	Parser &getParser();
 	HTTPRequest &getRequest();
 	HTTPResponse &getResponse();
 
+	// TODO: @leo do we need them both?
 	struct pollfd getPollFd() const;
+	struct pollfd &getPollFd();
 
 	std::string getResponseString() const;
 	enum ConnectionType getType() const;
@@ -70,8 +76,9 @@ class Connection
 	bool getHasDataToSend() const;
 	bool getHasFinishedSending() const;
 	bool getCanBeClosed() const;
-
-	struct pollfd &getPollFd();
+	bool getHasCGI() const;
+	pid_t getCGIPid() const;
+	time_t getCGIStartTime() const;
 
 	/* Setters */
 	void setResponseString(std::string responseString);
@@ -86,6 +93,14 @@ class Connection
 	void setCanBeClosed(bool value);
 	void setHasDataToSend(bool value);
 	void setHasFinishedSending(bool value);
+
+	void setHasCGI(bool value);
+	void setCGIPid(pid_t pid);
+
+	void setCGIStartTime(time_t now);
+	/* CGI */
+	void addCGI(pid_t pid);
+	void removeCGI(int status);
 	/* Debugging */
 	void printConnection() const;
 };

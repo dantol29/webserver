@@ -1,8 +1,13 @@
 #include "Router.hpp"
 #include <string>
 
-Router::Router(Directives &directive, EventManager &eventManager)
-	: _directive(directive), _cgiHandler(eventManager), _eventManager(eventManager), _FDsRef(NULL), _pollFd(NULL)
+Router::Router(Directives &directive, EventManager &eventManager, Connection &connection)
+	: _connection(connection)
+	, _directive(directive)
+	, _cgiHandler(eventManager, connection)
+	, _eventManager(eventManager)
+	, _FDsRef(NULL)
+	, _pollFd(NULL)
 {
 	// Constructor body, if needed
 }
@@ -85,7 +90,7 @@ void Router::routeRequest(HTTPRequest &request, HTTPResponse &response)
 		}
 		if (isCGI(request))
 		{
-			CGIHandler cgiHandler(_eventManager);
+			CGIHandler cgiHandler(_eventManager, _connection);
 			cgiHandler.setFDsRef(_FDsRef);
 			cgiHandler.setPollFd(_pollFd);
 			cgiHandler.handleRequest(request, response);
