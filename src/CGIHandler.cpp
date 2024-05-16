@@ -6,7 +6,12 @@ CGIHandler::CGIHandler(EventManager &eventManager, Connection &connection)
 }
 
 // Copy Constructor
-CGIHandler::CGIHandler(const CGIHandler &other) : AResponseHandler(other), _FDsRef(other._FDsRef), _pollFd(other._pollFd), _connection(other._connection), _eventManager(other._eventManager)
+CGIHandler::CGIHandler(const CGIHandler &other)
+	: AResponseHandler(other)
+	, _FDsRef(other._FDsRef)
+	, _pollFd(other._pollFd)
+	, _connection(other._connection)
+	, _eventManager(other._eventManager)
 {
 	// TODO: do we need deep copy here?
 }
@@ -38,6 +43,7 @@ void CGIHandler::handleRequest(const HTTPRequest &request, HTTPResponse &respons
 	std::string cgiOutput = executeCGI(env);
 	// if cgioutput == "HTTP/1.1 500 Internal Server Error\r\nContent-Length: 0\r\n\r\n";
 	// then we should return 500 error
+	// TODO: @leo is this working?
 	if (cgiOutput == "HTTP/1.1 500 Internal Server Error\r\nContent-Length: 0\r\n\r\n")
 	{
 		response.setStatusCode(500, "");
