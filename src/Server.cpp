@@ -128,7 +128,7 @@ void Server::startPollEventLoop()
 				{
 					if (_connections[i].getHasCGI() && _connections[i].getCGIPid() == pid)
 					{
-						_connections[i].removeCGI();
+						_connections[i].removeCGI(status);
 						// We assume that the CGI has been executed and we can set the FD to POLLOUT and has data to
 						// send kill(_connections[i].getCGIPid(), SIGKILL);
 						_FDs[i].events = POLLOUT;
