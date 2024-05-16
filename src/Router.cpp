@@ -88,7 +88,7 @@ void Router::routeRequest(HTTPRequest &request, HTTPResponse &response)
 				}
 			}
 		}
-		if (isCGI(request))
+		if (requestIsCGI(request))
 		{
 			CGIHandler cgiHandler(_eventManager, _connection);
 			cgiHandler.setFDsRef(_FDsRef);
@@ -207,12 +207,12 @@ void Router::handleServerBlockError(HTTPRequest &request, HTTPResponse &response
 	}
 }
 
-bool Router::isCGI(const HTTPRequest &request)
+bool Router::requestIsCGI(const HTTPRequest &request)
 {
 	// TODO: check against config file, not this hardcoded version
 	std::vector<std::string> cgiExtensions = _directive._cgiExt;
 
-	std::cout << RED << "isCGI" << RESET << std::endl;
+	std::cout << RED << "requestIsCGI" << RESET << std::endl;
 	std::cout << "cgiExtensions: " << cgiExtensions.size() << std::endl;
 	std::cout << "request target: " << request.getRequestTarget() << std::endl;
 	if (!cgiExtensions.empty())
@@ -224,12 +224,12 @@ bool Router::isCGI(const HTTPRequest &request)
 			std::cout << "cgiExtensions[" << i << "]: " << cgiExtensions[i] << std::endl;
 			if (cgiExtensions[i] == fileExtension)
 			{
-				Debug::log("isCGI: CGI request detected", Debug::NORMAL);
+				Debug::log("requestIsCGI: CGI request detected", Debug::NORMAL);
 				return true;
 			}
 		}
 	}
-	Debug::log("isCGI: Not a CGI request", Debug::NORMAL);
+	Debug::log("requestIsCGI: Not a CGI request", Debug::NORMAL);
 	return false;
 }
 

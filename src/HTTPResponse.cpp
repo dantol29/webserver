@@ -114,14 +114,14 @@ std::string HTTPResponse::getHeader(const std::string &name) const
 	return "";
 }
 
-bool HTTPResponse::isCGI() const
+bool HTTPResponse::getIsCGI() const
 {
 	return _isCGI;
 }
 
-void HTTPResponse::setIsCGI(bool isCGI)
+void HTTPResponse::setIsCGI(bool value)
 {
-	_isCGI = isCGI;
+	_isCGI = value;
 }
 
 std::string HTTPResponse::getStatusMessage(int statusCode) const

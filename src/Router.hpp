@@ -56,7 +56,7 @@ class Router
 	void generateDirectoryListing(HTTPResponse &Response,
 								  const std::string &directoryPath,
 								  const std::string &requestedPath);
-	bool isCGI(const HTTPRequest &request);
+	bool requestIsCGI(const HTTPRequest &request);
 	// We want a reference, cause there is only one instance of the EventManager, which is created in the main function
 	void adaptPathForFirefox(HTTPRequest &request);
 };
