@@ -12,6 +12,7 @@
 #include <algorithm>
 #include <sys/socket.h>
 #include <netdb.h>
+#include <cstdio>
 #include "Debug.hpp"
 
 #define SEND_BUFFER_SIZE 1024 * 100 // 100 KB
