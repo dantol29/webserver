@@ -218,8 +218,16 @@ void Server::buildResponse(Connection &conn, size_t &i, HTTPRequest &request, HT
 	std::string requestTarget = request.getRequestTarget();
 	// if there is "?" in the request target, we need to remove it
 	if (std::find(requestTarget.begin(), requestTarget.end(), '?') != requestTarget.end())
-		requestTarget = requestTarget.substr(0, requestTarget.find("?"));
-	std::cout << "Request target: " << requestTarget << std::endl;
+		requestTarget = (requestTarget.substr(0, requestTarget.find("?")));
+	
+	size_t http = requestTarget.find("http://");
+	if (http != std::string::npos)
+	{
+		std::string remove = "http://";
+		requestTarget.erase(http, remove.length());
+	}
+	request.setRequestTarget(requestTarget);
+	std::cout << "Request target: " << request.getRequestTarget() << std::endl;
 
 	for (size_t i = 0; i < _config.getServerBlocks().size(); i++)
 	{
