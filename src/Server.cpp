@@ -373,7 +373,12 @@ void Server::buildResponse(Connection &conn, size_t &i, HTTPRequest &request, HT
 		router.routeRequest(request, response);
 	}
 	// TODO: check if the listen in the server block is matching port and ip from connection
-	conn.setHasDataToSend(true);
+	// This wiill not be true, if the response _isCGI is true
+	if (!response.getIsCGI())
+	{
+		conn.setHasDataToSend(true);
+		return;
+	}
 }
 
 void Server::writeToClient(Connection &conn, size_t &i, HTTPResponse &response)

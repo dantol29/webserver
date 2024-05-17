@@ -124,6 +124,54 @@ void HTTPResponse::setIsCGI(bool value)
 	_isCGI = value;
 }
 
+int (&HTTPResponse::getCGIpipeFD())[2]
+{
+	return _CGIpipeFD;
+}
+
+void HTTPResponse::setCGIpipeFD(int (&pipe)[2])
+{
+	_CGIpipeFD[0] = pipe[0];
+	_CGIpipeFD[1] = pipe[1];
+}
+
+void HTTPResponse::CGIStringToResponse(const std::string &cgiOutput, HTTPResponse &response)
+{
+	std::size_t headerEndPos = cgiOutput.find("\r\n\r\n");
+	if (headerEndPos == std::string::npos)
+	{
+		headerEndPos = cgiOutput.find("\n\n");
+	}
+
+	std::string headersPart = cgiOutput.substr(0, headerEndPos);
+	std::string bodyPart = cgiOutput.substr(headerEndPos);
+
+	std::cout << "------------------CGIStringToResponse-------------------" << std::endl;
+
+	std::istringstream headerStream(headersPart);
+	std::string headerLine;
+	while (std::getline(headerStream, headerLine))
+	{
+		if (!headerLine.empty() && headerLine[headerLine.size() - 1] == '\r')
+		{
+			headerLine.erase(headerLine.size() - 1); // carriage return
+		}
+
+		std::size_t separatorPos = headerLine.find(": ");
+		if (separatorPos != std::string::npos)
+		{
+			std::string headerName = headerLine.substr(0, separatorPos);
+			std::string headerValue = headerLine.substr(separatorPos + 2);
+			response.setHeader(headerName, headerValue);
+		}
+	}
+
+	response.setBody(bodyPart);
+	response.setIsCGI(true);
+	response.setStatusCode(200, "");
+	return;
+}
+
 std::string HTTPResponse::getStatusMessage(int statusCode) const
 {
 	switch (statusCode)
