@@ -51,3 +51,4 @@ testers/myenv/
 testers/testsvenv/
 tests/my_venv/
 !*.conf
+!Dockerfile
