@@ -115,13 +115,16 @@ void Server::readFromClient(Connection &conn, size_t &i, Parser &parser, HTTPReq
 			return;
 		}
 	}
+	
 	if (!parser.getHeadersComplete())
 	{
 		Debug::log("Headers incomplete yet, exiting readFromClient.", Debug::NORMAL);
 		return;
 	}
+	
 	if (parser.getHeadersComplete() && !parser.getHeadersAreParsed())
 		parser.parseRequestLineAndHeaders(parser.getHeadersBuffer().c_str(), request, response);
+	
 	if (response.getStatusCode() != 0)
 	{
 		conn.setCanBeClosed(false);
@@ -130,76 +133,84 @@ void Server::readFromClient(Connection &conn, size_t &i, Parser &parser, HTTPReq
 		Debug::log("Error parsing headers or request line", Debug::OCF);
 		return;
 	}
-	std::cout << parser.getHeadersComplete() << " ," << request.getMethod() << std::endl;
+	
 	if (parser.getHeadersComplete() && request.getMethod() == "GET")
 		conn.setHasFinishedReading(true);
 
 	if (response.getStatusCode() != 0)
 		Debug::log(toString(response.getStatusCode()), Debug::NORMAL);
-	if (request.getMethod() == "GET")
+	
+	if (request.getMethod() == "GET" || request.getMethod() == "DELETE" \
+		|| request.getMethod() == "SALAD")
 		Debug::log("GET request, no body to read", Debug::NORMAL);
 	else
+		handlePostRequest(conn, i, parser, request, response);
+}
+
+void Server::handlePostRequest(Connection &conn, size_t &i, Parser &parser, HTTPRequest &request, HTTPResponse &response)
+{
+	if (parser.getIsChunked() && !conn.getHasReadSocket())
 	{
-		if (parser.getIsChunked() && !conn.getHasReadSocket())
+		Debug::log("Chunked body", Debug::NORMAL);
+		// TODO: double check this condition, logic
+		if (!conn.readChunkedBody(parser))
 		{
-			Debug::log("Chunked body", Debug::NORMAL);
-			if (!conn.readChunkedBody(parser))
-			{
-				// Case of error while reading chunked body
-				Debug::log("Error reading chunked body", Debug::OCF);
-				conn.setCanBeClosed(true);
-				conn.setHasFinishedReading(true);
-				// It could be that we had data that could be sent even if we have an error cause previous data was read
-				return;
-			}
-			conn.setHasReadSocket(true);
+			Debug::log("Error reading chunked body", Debug::OCF);
+			conn.setCanBeClosed(true);
+			conn.setHasFinishedReading(true);
+			// It could be that we had data that could be sent even if we have an error cause previous data was read
+			return;
 		}
-		else if (!conn.getHasReadSocket())
+		//-----------------------------//
+		conn.setHasReadSocket(true);
+	}
+	else if (!conn.getHasReadSocket())
+	{
+		Debug::log("\033[1;33mReading body\033[0m", Debug::NORMAL);
+		// TODO: double check this condition, logic
+		if (!parser.getBodyComplete() && parser.getBuffer().size() == request.getContentLength())
 		{
-			Debug::log("\033[1;33mReading body\033[0m", Debug::NORMAL);
-			// TODO: add comments
-			if (!parser.getBodyComplete() && parser.getBuffer().size() == request.getContentLength())
-			{
-				// TODO: in the new design we will return here and go to the function where the response is
-				parser.setBodyComplete(true);
-				conn.setHasFinishedReading(true);
-				conn.setHasDataToSend(true);
-			}
-			else if (!conn.getHasReadSocket() && !conn.readBody(parser, request, response, _config))
-			{
-				Debug::log("Error reading body", Debug::OCF);
-				conn.setCanBeClosed(false);
-				conn.setHasFinishedReading(true);
-				conn.setHasDataToSend(false);
-				return;
-			}
-		}
-		if (!parser.getBodyComplete() && request.getContentLength() != 0 &&
-			parser.getBuffer().size() == request.getContentLength())
-		{
-			// TODO: in the new design we will return here and go to the function where the response is
 			parser.setBodyComplete(true);
 			conn.setHasFinishedReading(true);
+			conn.setHasDataToSend(true);
+		}
+		//-----------------------------//
+
+		else if (!conn.readBody(parser, request, response, _config))
+		{
+			Debug::log("Error reading body", Debug::OCF);
 			conn.setCanBeClosed(false);
+			conn.setHasFinishedReading(true);
 			conn.setHasDataToSend(false);
 			return;
 		}
-		if (!parser.getBodyComplete())
-		{
-			Debug::log("Body still incomplete, exiting readFromClient.", Debug::NORMAL);
-			conn.setHasFinishedReading(false);
-			conn.setHasReadSocket(true);
-			return;
-		}
-		//  std::cout << parser.getBuffer() << std::endl;
-		if (!request.getUploadBoundary().empty())
-			parser.parseFileUpload(parser.getBuffer(), request, response);
-		else if (request.getMethod() != "GET")
-		{
-			request.setBody(parser.getBuffer());
-			conn.setHasFinishedReading(true);
-		}
 	}
+	// TODO: double check this condition, logic
+	if (!parser.getBodyComplete() && request.getContentLength() != 0 &&
+		parser.getBuffer().size() == request.getContentLength())
+	{
+		// TODO: in the new design we will return here and go to the function where the response is
+		parser.setBodyComplete(true);
+		conn.setHasFinishedReading(true);
+		conn.setCanBeClosed(false);
+		conn.setHasDataToSend(false);
+		return;
+	}
+	//-----------------------------//
+
+	if (!parser.getBodyComplete())
+	{
+		Debug::log("Body still incomplete, exiting readFromClient.", Debug::NORMAL);
+		conn.setHasFinishedReading(false);
+		conn.setHasReadSocket(true);
+		return;
+	}
+
+	if (!request.getUploadBoundary().empty())
+		parser.parseFileUpload(parser.getBuffer(), request, response);
+	
+	request.setBody(parser.getBuffer());
+	conn.setHasFinishedReading(true);
 }
 
 void Server::buildResponse(Connection &conn, size_t &i, HTTPRequest &request, HTTPResponse &response)
@@ -210,7 +221,7 @@ void Server::buildResponse(Connection &conn, size_t &i, HTTPRequest &request, HT
 
 	ServerBlock serverBlock;
 	Directives directive;
-	std::string serverName;
+
 	std::cout << GREEN << "Number of server blocks: " << _config.getServerBlocks().size() << RESET << std::endl;
 	std::cout << "Request host: " << request.getSingleHeader("host").second << std::endl;
 
@@ -218,18 +229,7 @@ void Server::buildResponse(Connection &conn, size_t &i, HTTPRequest &request, HT
 
 	for (size_t i = 0; i < _config.getServerBlocks().size(); i++)
 	{
-		// loop through all server names in the server block
-		for (size_t j = 0; j < _config.getServerBlocks()[i].getServerName().size(); j++)
-		{
-			serverName = _config.getServerBlocks()[i].getServerName()[j];
-			std::cout << RED << "Checking server name: " << serverName << RESET << std::endl;
-			if (serverName == request.getSingleHeader("host").second)
-			{
-				std::cout << GREEN << "Server name found" << RESET << std::endl;
-				break;
-			}
-		}
-		if (serverName == request.getSingleHeader("host").second)
+		if (findServerName(request, _config.getServerBlocks()[i]) == request.getSingleHeader("host").second)
 		{
 			findLocationBlock(request, _config.getServerBlocks()[i], directive);
 			break;
@@ -783,4 +783,21 @@ void Server::handleServerBlockError(Connection& conn, HTTPResponse &response)
 	response.setStatusCode(404, "No server block is matching the request host");
 	conn.setHasDataToSend(true);
 	return;
+}
+
+std::string Server::findServerName(HTTPRequest& request, ServerBlock& serverBlock)
+{
+	std::string serverName;
+
+	for (size_t j = 0; j < serverBlock.getServerName().size(); j++)
+	{
+		serverName = serverBlock.getServerName()[j];
+		std::cout << RED << "Checking server name: " << serverName << RESET << std::endl;
+		if (serverName == request.getSingleHeader("host").second)
+		{
+			std::cout << GREEN << "Server name found" << RESET << std::endl;
+			break;
+		}
+	}
+	return serverName;
 }
