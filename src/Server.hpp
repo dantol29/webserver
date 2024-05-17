@@ -70,6 +70,11 @@ class Server
 	void writeToClient(Connection &conn, size_t &i, HTTPResponse &response);
 	void closeClientConnection(Connection &conn, size_t &i);
 
+	/* for buildResponse */
+	void formRequestTarget(HTTPRequest &request);
+	void findLocationBlock(HTTPRequest &request, ServerBlock& serverBlock, Directives &directive);
+	void handleServerBlockError(Connection& conn, HTTPResponse &response);
+
 	/* Not avaiable constructors */
 	// Copy constructor
 	Server(const Server &other);

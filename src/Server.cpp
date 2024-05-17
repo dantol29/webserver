@@ -213,21 +213,8 @@ void Server::buildResponse(Connection &conn, size_t &i, HTTPRequest &request, HT
 	std::string serverName;
 	std::cout << GREEN << "Number of server blocks: " << _config.getServerBlocks().size() << RESET << std::endl;
 	std::cout << "Request host: " << request.getSingleHeader("host").second << std::endl;
-	std::cout << "Request target: " << request.getRequestTarget() << std::endl;
 
-	std::string requestTarget = request.getRequestTarget();
-	// if there is "?" in the request target, we need to remove it
-	if (std::find(requestTarget.begin(), requestTarget.end(), '?') != requestTarget.end())
-		requestTarget = (requestTarget.substr(0, requestTarget.find("?")));
-	
-	size_t http = requestTarget.find("http://");
-	if (http != std::string::npos)
-	{
-		std::string remove = "http://";
-		requestTarget.erase(http, remove.length());
-	}
-	request.setRequestTarget(requestTarget);
-	std::cout << "Request target: " << request.getRequestTarget() << std::endl;
+	formRequestTarget(request);
 
 	for (size_t i = 0; i < _config.getServerBlocks().size(); i++)
 	{
@@ -244,51 +231,14 @@ void Server::buildResponse(Connection &conn, size_t &i, HTTPRequest &request, HT
 		}
 		if (serverName == request.getSingleHeader("host").second)
 		{
-			// _config.setServerBlockIndex(i);
-			serverBlock = _config.getServerBlocks()[i];
-			directive = serverBlock.getDirectives();
-			std::cout << "Request target in block: " << request.getRequestTarget() << std::endl;
-
-			for (size_t i = 0; i < serverBlock.getLocations().size(); i++)
-			{
-				std::cout << "Location: " << serverBlock.getLocations()[i]._path << " == " << request.getRequestTarget()
-						  << std::endl;
-				if (request.getRequestTarget() == serverBlock.getLocations()[i]._path)
-				{
-					std::cout << "Location found" << std::endl;
-					directive = serverBlock.getLocations()[i];
-					break;
-				}
-			}
+			findLocationBlock(request, _config.getServerBlocks()[i], directive);
 			break;
 		}
 		else if (i == _config.getServerBlocks().size() - 1)
-		{
-			static StaticContentHandler staticContentInstance;
-			// if error already occurred, we don't want to overwrite it
-			if (response.getStatusCode() != 0)
-			{
-				Debug::log("Error response" + toString(response.getStatusCode()), Debug::NORMAL);
-				response.setErrorResponse(response.getStatusCode());
-				conn.setHasDataToSend(true);
-				return;
-			}
-			// if no server name is found, use the default server block
-			staticContentInstance.handleNotFound(response);
-			response.setStatusCode(404, "No server block is matching the request host");
-			conn.setHasDataToSend(true);
-			Debug::log("Exiting buildResponse", Debug::NORMAL);
-			return;
-		}
-		std::cout << "Index: " << i << std::endl;
+			return (handleServerBlockError(conn, response));
 	}
 
-	std::string root = serverBlock.getRoot();
-
-	std::cout << "Root: " << root << std::endl;
-	if (root[root.size() - 1] != '/')
-		root = root + "/";
-	std::cout << RED << "Root: " << root << RESET << std::endl;
+	std::cout << RED << "Root: " << directive._root << RESET << std::endl;
 
 	Router router(directive);
 
@@ -778,4 +728,59 @@ void Server::printServerSockets() const
 	{
 		std::cout << *it << std::endl;
 	}
+}
+
+void Server::formRequestTarget(HTTPRequest &request)
+{
+	std::string requestTarget = request.getRequestTarget();
+
+	// if there is "?" in the request target, we need to remove it
+	if (std::find(requestTarget.begin(), requestTarget.end(), '?') != requestTarget.end())
+		requestTarget = (requestTarget.substr(0, requestTarget.find("?")));
+	
+	// if there is "http://" in the request target, we need to remove it
+	size_t http = requestTarget.find("http://");
+	if (http != std::string::npos)
+	{
+		std::string remove = "http://";
+		requestTarget.erase(http, remove.length());
+	}
+	request.setRequestTarget(requestTarget);
+	std::cout << "Request target: " << request.getRequestTarget() << std::endl;
+}
+
+void Server::findLocationBlock(HTTPRequest &request, ServerBlock& serverBlock, Directives &directive)
+{
+	directive = serverBlock.getDirectives();
+
+	for (size_t i = 0; i < serverBlock.getLocations().size(); i++)
+	{
+		std::cout << "Location: " << serverBlock.getLocations()[i]._path << " == " << request.getRequestTarget()
+					<< std::endl;
+		if (request.getRequestTarget() == serverBlock.getLocations()[i]._path)
+		{
+			std::cout << "Location found" << std::endl;
+			directive = serverBlock.getLocations()[i];
+			break;
+		}
+	}
+}
+
+void Server::handleServerBlockError(Connection& conn, HTTPResponse &response)
+{
+	// if error already occurred, we don't want to overwrite it
+	if (response.getStatusCode() != 0)
+	{
+		Debug::log("Error response" + toString(response.getStatusCode()), Debug::NORMAL);
+		response.setErrorResponse(response.getStatusCode());
+		conn.setHasDataToSend(true);
+		return;
+	}
+
+	static StaticContentHandler staticContentInstance;
+
+	staticContentInstance.handleNotFound(response);
+	response.setStatusCode(404, "No server block is matching the request host");
+	conn.setHasDataToSend(true);
+	return;
 }
