@@ -16,8 +16,8 @@
 #include "Debug.hpp"
 
 #define SEND_BUFFER_SIZE 1024 * 100 // 100 KB
-const int BUFFER_SIZE = 1025;
-static const int CGI_TIMEOUT_MS = 10000; // 10 seconds
+#define BUFFER_SIZE 1025
+#define CGI_TIMEOUT_MS 10000 // 10 seconds
 
 #define CONFIG_FILE_DEFAULT_PATH "./webserv_default.conf"
 #define RED "\033[1;31m"

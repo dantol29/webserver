@@ -270,9 +270,10 @@ void Connection::setCGIExitStatus(int status)
 bool Connection::readHeaders(Parser &parser)
 {
 	// std::cout << "\nEntering readHeaders" << std::endl;
-	char buffer[BUFFER_SIZE] = {0};
+	const int bufferSize = BUFFER_SIZE;
+	char buffer[bufferSize] = {0};
 	std::cout << "buffers size: " << sizeof(buffer) << std::endl;
-	ssize_t bytesRead = recv(_pollFd.fd, buffer, BUFFER_SIZE, 0);
+	ssize_t bytesRead = recv(_pollFd.fd, buffer, bufferSize, 0);
 	std::cout << "bytesRead: " << bytesRead << std::endl;
 	if (bytesRead > 0)
 	{
