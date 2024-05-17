@@ -3,6 +3,13 @@ CXX = c++
 CXXFLAGS = -Wall -Wextra -Werror -std=c++98 -I. -Iinclude -Isrc -g
 DEPFLAGS = -MMD -MP
 
+UNAME_S := $(shell uname -s)
+# Additional Flags for macOS
+ifeq ($(UNAME_S), Darwin)
+    CXXFLAGS += -fsanitize=address
+    LDFLAGS += -fsanitize=address
+endif
+
 # Source and Object Files
 SRCS = src/main.cpp \
 	src/Parser.cpp \

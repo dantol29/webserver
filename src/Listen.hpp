@@ -53,6 +53,10 @@ class Listen
 
 // Overload the << operator outside of the Listen struct
 // The inline keyword is used to avoid multiple definitions of the operator
-inline std::ostream &operator<<(std::ostream &os, const Listen &l);
-
+// And it needs to be in the header file
+inline std::ostream &operator<<(std::ostream &os, const Listen &l)
+{
+	os << "IP: " << l.getIp() << ", Port: " << l.getPort() << ", IPv6: " << (l.getIsIpv6() ? "Yes" : "No");
+	return os;
+}
 #endif

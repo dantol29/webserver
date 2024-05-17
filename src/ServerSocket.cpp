@@ -6,6 +6,7 @@ ServerSocket::ServerSocket()
 	_serverFD = -1;
 	_listen = Listen();
 	memset(&_serverSocketAddr, 0, sizeof(_serverSocketAddr));
+	std::cout << "ServerSocket default constructor" << std::endl;
 }
 
 ServerSocket::ServerSocket(int serverFD, Listen listen)
@@ -42,7 +43,7 @@ int ServerSocket::getServerFD() const
 	return _serverFD;
 }
 
-Listen ServerSocket::getListen() const
+const Listen ServerSocket::getListen() const
 {
 	return _listen;
 }
@@ -123,5 +124,12 @@ void ServerSocket::prepareServerSocketAddr()
 	std::cout << "After memcpy, port: " << ntohs(((struct sockaddr_in *)&_serverSocketAddr)->sin_port) << std::endl;
 	std::cout << "After memcpy, ip: " << inet_ntoa(((struct sockaddr_in *)&_serverSocketAddr)->sin_addr) << std::endl;
 	freeaddrinfo(res);
-	
+}
+
+std::ostream &operator<<(std::ostream &out, const ServerSocket &socket)
+{
+	out << "Fd: " << socket.getServerFD() << std::endl;
+	out << "Listen: " << socket.getListen() << std::endl;
+	// out << "ServerSocketAddr: " << socket.getServerSocketAddr() << std::endl;
+	return out;
 }

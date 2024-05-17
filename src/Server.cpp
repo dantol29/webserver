@@ -1,22 +1,16 @@
 #include "Server.hpp"
 #include "Parser.hpp"
 #include "Connection.hpp"
-
-#define SEND_BUFFER_SIZE 1024 * 100 // 100 KB
-#include "ServerBlock.hpp"			// for the Listen struct (to be implemented)
+#include "ServerBlock.hpp"
 #include "Debug.hpp"
-
-Server::Server()
-{
-	loadDefaultConfig();
-	Debug::log("Server created with defaut constructor", Debug::OCF);
-}
 
 Server::Server(const Config &config)
 {
 	_config = config;
-	// while we don't have a config file
-	loadDefaultConfig();
+	_maxClients = 10;
+	_clientMaxHeadersSize = CLIENT_MAX_HEADERS_SIZE;
+	_serverBlocks = _config.getServerBlocks();
+	_serverSockets = std::vector<ServerSocket>();
 	Debug::log("Server created with config constructor", Debug::OCF);
 }
 
@@ -27,10 +21,8 @@ Server::~Server()
 
 void Server::startListening()
 {
-	// We need this extra line to get serverBlocks cause the argument in createServerSockets is a reference
-	// i.e. we can't call getServerBlocks() directly in the function call
-	std::vector<ServerBlock> serverBlocks = _config.getServerBlocks();
-	createServerSockets(serverBlocks);
+	createServerSockets(_serverBlocks);
+	printServerSockets();
 	setReuseAddrAndPort();
 	checkSocketOptions();
 	bindToPort();
@@ -223,10 +215,11 @@ void Server::buildResponse(Connection &conn, size_t &i, HTTPRequest &request, HT
 	std::cout << "Request host: " << request.getSingleHeader("host").second << std::endl;
 	std::cout << "Request target: " << request.getRequestTarget() << std::endl;
 
+	std::string requestTarget = request.getRequestTarget();
 	// if there is "?" in the request target, we need to remove it
-	if (std::find(request.getRequestTarget().begin(), request.getRequestTarget().end(), '?') != request.getRequestTarget().end())
-		request.setRequestTarget(request.getRequestTarget().substr(0, request.getRequestTarget().find("?")));
-	std::cout << "Request target: " << request.getRequestTarget() << std::endl;
+	if (std::find(requestTarget.begin(), requestTarget.end(), '?') != requestTarget.end())
+		requestTarget = requestTarget.substr(0, requestTarget.find("?"));
+	std::cout << "Request target: " << requestTarget << std::endl;
 
 	for (size_t i = 0; i < _config.getServerBlocks().size(); i++)
 	{
@@ -235,9 +228,10 @@ void Server::buildResponse(Connection &conn, size_t &i, HTTPRequest &request, HT
 		{
 			serverName = _config.getServerBlocks()[i].getServerName()[j];
 			std::cout << RED << "Checking server name: " << serverName << RESET << std::endl;
-			if (serverName == request.getSingleHeader("host").second){
+			if (serverName == request.getSingleHeader("host").second)
+			{
 				std::cout << GREEN << "Server name found" << RESET << std::endl;
-				break ;
+				break;
 			}
 		}
 		if (serverName == request.getSingleHeader("host").second)
@@ -246,10 +240,11 @@ void Server::buildResponse(Connection &conn, size_t &i, HTTPRequest &request, HT
 			serverBlock = _config.getServerBlocks()[i];
 			directive = serverBlock.getDirectives();
 			std::cout << "Request target in block: " << request.getRequestTarget() << std::endl;
-			
+
 			for (size_t i = 0; i < serverBlock.getLocations().size(); i++)
 			{
-				std::cout << "Location: " << serverBlock.getLocations()[i]._path << " == " << request.getRequestTarget() << std::endl;
+				std::cout << "Location: " << serverBlock.getLocations()[i]._path << " == " << request.getRequestTarget()
+						  << std::endl;
 				if (request.getRequestTarget() == serverBlock.getLocations()[i]._path)
 				{
 					std::cout << "Location found" << std::endl;
@@ -280,7 +275,7 @@ void Server::buildResponse(Connection &conn, size_t &i, HTTPRequest &request, HT
 		std::cout << "Index: " << i << std::endl;
 	}
 
-	std::string root =serverBlock.getRoot();
+	std::string root = serverBlock.getRoot();
 
 	std::cout << "Root: " << root << std::endl;
 	if (root[root.size() - 1] != '/')
@@ -309,7 +304,9 @@ void Server::buildResponse(Connection &conn, size_t &i, HTTPRequest &request, HT
 
 void Server::writeToClient(Connection &conn, size_t &i, HTTPResponse &response)
 {
-	std::cout << "\033[1;36m" << "Entering writeToClient" << "\033[0m" << std::endl;
+	std::cout << "\033[1;36m"
+			  << "Entering writeToClient"
+			  << "\033[0m" << std::endl;
 	std::cout << response << std::endl;
 	static int sendResponseCounter = 0;
 	bool isLastSend = false;
@@ -351,7 +348,9 @@ void Server::writeToClient(Connection &conn, size_t &i, HTTPResponse &response)
 
 void Server::closeClientConnection(Connection &conn, size_t &i)
 {
-	std::cout << "\033[1;36m" << "Entering closeClientConnection" << "\033[0m" << std::endl;
+	std::cout << "\033[1;36m"
+			  << "Entering closeClientConnection"
+			  << "\033[0m" << std::endl;
 	// TODO: should we close it with the Destructor of the Connection class?
 	close(conn.getPollFd().fd);
 	_FDs.erase(_FDs.begin() + i);
@@ -361,7 +360,9 @@ void Server::closeClientConnection(Connection &conn, size_t &i)
 
 void Server::handleConnection(Connection &conn, size_t &i, Parser &parser, HTTPRequest &request, HTTPResponse &response)
 {
-	std::cout << "\033[1;36m" << "Entering handleConnection" << "\033[0m" << std::endl;
+	std::cout << "\033[1;36m"
+			  << "Entering handleConnection"
+			  << "\033[0m" << std::endl;
 
 	conn.setHasReadSocket(false);
 	std::cout << "Has finished reading: " << conn.getHasFinishedReading() << std::endl;
@@ -385,25 +386,11 @@ void Server::handleConnection(Connection &conn, size_t &i, Parser &parser, HTTPR
 }
 
 /*** Private Methods ***/
-
-void Server::loadConfig()
-{
-	// Add logic to load config from file
-}
-
-void Server::loadDefaultConfig()
-{
-	_webRoot = "var/www";
-	_maxClients = 10;
-	_clientMaxHeadersSize = CLIENT_MAX_HEADERS_SIZE;
-	_clientMaxBodySize = CLIENT_MAX_BODY_SIZE;
-	_port = 8080;
-}
-
 /* startListening */
 
 std::string normalizeIPAddress(const std::string &ip, bool isIpV6)
 {
+	// We use this function to normalize the IPv4 adresses mapped to IPv6
 	if (isIpV6)
 	{
 		size_t pos = ip.find("::ffff:");
@@ -418,6 +405,7 @@ std::string normalizeIPAddress(const std::string &ip, bool isIpV6)
 
 void Server::createServerSockets(std::vector<ServerBlock> &serverBlocks)
 {
+	std::cout << BLUE << "Entering createServerSockets" << RESET << std::endl;
 	std::vector<Listen> allListens;
 	for (std::vector<ServerBlock>::iterator it = serverBlocks.begin(); it != serverBlocks.end(); ++it)
 	{
@@ -451,13 +439,14 @@ void Server::createServerSockets(std::vector<ServerBlock> &serverBlocks)
 			perror("Failed to create server socket");
 			continue; // just to remember that we aren not exiting
 		}
+		// We set the socket option IPV6_V6ONLY to 0
 		int no = 0;
 		if (setsockopt(serverFD, IPPROTO_IPV6, IPV6_V6ONLY, (void *)&no, sizeof(no)) < 0)
 		{
 			perror("setsockopt IPV6_V6ONLY: Protocol not available, continuing without IPV6_V6ONLY");
 			continue; // just to remember that we aren not exiting
 		}
-		// We check if IPV6_V6ONLY is NOT set
+		// We check if IPV6_V6ONLY is set to 0
 		int ipv6only;
 		socklen_t len = sizeof(ipv6only);
 		if (getsockopt(serverFD, IPPROTO_IPV6, IPV6_V6ONLY, &ipv6only, &len) < 0)
@@ -472,6 +461,8 @@ void Server::createServerSockets(std::vector<ServerBlock> &serverBlocks)
 		ServerSocket serverSocket(serverFD, *it);
 		_serverSockets.push_back(serverSocket);
 	}
+	std::cout << BLUE << "Server socket(s) created" << RESET << std::endl;
+	std::cout << "\n\n";
 }
 
 void Server::setReuseAddrAndPort()
@@ -495,33 +486,52 @@ void Server::bindToPort()
 		it->prepareServerSocketAddr();
 
 		struct sockaddr_in6 serverSocketAddr = it->getServerSocketAddr();
+
+		// Convert IPv6 address from binary to text
+		char ipv6Address[INET6_ADDRSTRLEN];
+		inet_ntop(AF_INET6, &(serverSocketAddr.sin6_addr), ipv6Address, INET6_ADDRSTRLEN);
+
+		// Print original IP Address and Port
+		std::cout << "Original IP Address: " << ipv6Address << std::endl;
+		std::cout << "Original Port: " << ntohs(serverSocketAddr.sin6_port) << std::endl;
+
+		// Overwrite the IP address and port with hardcoded values for test
+		// serverSocketAddr.sin6_addr = in6addr_any; // Bind to all interfaces for IPv6
+		// serverSocketAddr.sin6_port = htons(8080); // Hardcoded port 8080
+		// We need to cast it to sockaddr to be able to use it in bind()
 		const sockaddr *serverSocketAddrPtr = reinterpret_cast<const sockaddr *>(&serverSocketAddr);
 
 		// Print the sockaddr and address family
-		const sockaddr_in *debugAddrIn = reinterpret_cast<const sockaddr_in *>(serverSocketAddrPtr);
-		std::cout << "IP Address: " << inet_ntoa(debugAddrIn->sin_addr) << std::endl;
-		std::cout << "Port: " << ntohs(debugAddrIn->sin_port) << std::endl;
-		std::cout << "Address Family: " << debugAddrIn->sin_family << std::endl;
+		// We reuse the ipv6Address buffer to store the new IP address
+		inet_ntop(AF_INET6, &(serverSocketAddr.sin6_addr), ipv6Address, INET6_ADDRSTRLEN);
+		std::cout << "First print of serverSocketAddr" << std::endl;
+		std::cout << "IP Address: " << ipv6Address << std::endl;
+		std::cout << "Port: " << ntohs(serverSocketAddr.sin6_port) << std::endl;
+		std::cout << "Address Family: " << serverSocketAddr.sin6_family << std::endl;
 
-		// Retrieve the prepared socket address
-		// We retrieve the sockaddr_storage struct from the ServerSocket object
-		serverSocketAddr = it->getServerSocketAddr();
-		// We cast the sockaddr_storage struct to sockaddr struct, cause bind() needs a sockaddr struct
-		serverSocketAddrPtr = reinterpret_cast<const sockaddr *>(&serverSocketAddr);
-		std::cout << "serverFd: " << it->getServerFD() << std::endl;
-		std::cout << "serverSocketAddrPtr: " << serverSocketAddrPtr << std::endl;
-		std::cout << "serverSocketAddr: " << &serverSocketAddr << std::endl;
-		std::cout << "serverSocketAddr size: " << sizeof(serverSocketAddr) << std::endl;
 		int bindResult = bind(it->getServerFD(), serverSocketAddrPtr, sizeof(serverSocketAddr));
 		std::cout << "Bind result: " << bindResult << std::endl;
 		if (bindResult < 0)
 		{
+			std::cout << YELLOW << "Server socket failed to bind to IP " << ipv6Address << " on port "
+					  << ntohs(serverSocketAddr.sin6_port) << RESET << std::endl;
 			perror("In bind");
 			continue; // just to remember that we aren not exiting
 		}
 		else
 		{
-			std::cout << "Server socket binded on port " << ntohs(it->getListen().getPort()) << std::endl;
+			// Convert IPv6 address from binary to text for display
+			char ipv6AddressBound[INET6_ADDRSTRLEN];
+			if (inet_ntop(AF_INET6, &(serverSocketAddr.sin6_addr), ipv6AddressBound, INET6_ADDRSTRLEN))
+			{
+				std::cout << YELLOW << "Server socket bound to IP " << ipv6AddressBound << " on port "
+						  << ntohs(serverSocketAddr.sin6_port) << RESET << std::endl;
+			}
+			else
+			{
+				std::cerr << "Error converting bound IPv6 address to text." << std::endl;
+			}
+			std::cout << "***" << std::endl;
 		}
 		// if (bind(it->getServerFD(), serverSocketAddrPtr, sizeof(serverSocketAddr)) < 0)
 	}
@@ -531,12 +541,26 @@ void Server::listen()
 {
 	for (std::vector<ServerSocket>::iterator it = _serverSockets.begin(); it != _serverSockets.end(); ++it)
 	{
-		if (::listen(it->getServerFD(), _maxClients) < 0)
+		// listen return 0 on success and -1 on error (Linux and MacOS) - Errno is set
+		if (::listen(it->getServerFD(), _maxClients) == -1)
 		{
 			perror("In listen");
 			continue; // just to remember that we aren not exiting
 		}
-		std::cout << "Server socket listening on port " << ntohs(it->getListen().getPort()) << std::endl;
+
+		struct sockaddr_in6 addr = it->getServerSocketAddr(); // Assume this function exists and retrieves the address
+		char ipv6Address[INET6_ADDRSTRLEN];
+
+		// Convert IPv6 address from binary to text
+		if (inet_ntop(AF_INET6, &addr.sin6_addr, ipv6Address, INET6_ADDRSTRLEN))
+		{
+			std::cout << "Server socket listening on IP " << ipv6Address << " and port " << ntohs(addr.sin6_port)
+					  << std::endl;
+		}
+		else
+		{
+			std::cerr << "Error converting IPv6 address to text." << std::endl;
+		}
 	}
 }
 
@@ -721,27 +745,6 @@ void Server::AlertAdminAndTryToRecover()
 /* for handleConnection */
 
 /* Others */
-
-size_t Server::getClientMaxHeadersSize() const
-{
-	return _clientMaxHeadersSize;
-}
-
-std::string Server::getWebRoot() const
-{
-	return _webRoot;
-}
-
-void Server::setWebRoot(const std::string &webRoot)
-{
-	_webRoot = webRoot;
-}
-
-std::string Server::getConfigFilePath() const
-{
-	return _configFilePath;
-}
-
 void Server::checkSocketOptions()
 {
 	int optval;
@@ -757,5 +760,14 @@ void Server::checkSocketOptions()
 		{
 			// std::cout << "SO_REUSEADDR is " << (optval ? "enabled" : "disabled") << std::endl;
 		}
+	}
+}
+
+void Server::printServerSockets() const
+{
+	std::cout << "Server sockets:" << std::endl;
+	for (std::vector<ServerSocket>::const_iterator it = _serverSockets.begin(); it != _serverSockets.end(); ++it)
+	{
+		std::cout << *it << std::endl;
 	}
 }
