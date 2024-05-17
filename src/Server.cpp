@@ -144,10 +144,10 @@ void Server::readFromClient(Connection &conn, size_t &i, Parser &parser, HTTPReq
 		|| request.getMethod() == "SALAD")
 		Debug::log("GET request, no body to read", Debug::NORMAL);
 	else
-		handlePostRequest(conn, i, parser, request, response);
+		handlePostRequest(conn, parser, request, response);
 }
 
-void Server::handlePostRequest(Connection &conn, size_t &i, Parser &parser, HTTPRequest &request, HTTPResponse &response)
+void Server::handlePostRequest(Connection &conn, Parser &parser, HTTPRequest &request, HTTPResponse &response)
 {
 	if (parser.getIsChunked() && !conn.getHasReadSocket())
 	{
