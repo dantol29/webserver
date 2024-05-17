@@ -162,39 +162,6 @@ bool CGIHandler::executeCGI(const MetaVariables &env, HTTPResponse &response)
 	// alarm(4);
 
 	return true;
-
-	/* TO BE PLACED SOMEWHERE ELSE! */
-	// This will be executed only if the CGI process returned (before the timeout)
-	char readBuffer[256];
-	ssize_t bytesRead;
-	while ((bytesRead = read(pipeFD[0], readBuffer, sizeof(readBuffer) - 1)) > 0)
-	{
-		readBuffer[bytesRead] = '\0';
-		cgiOutput += readBuffer;
-	}
-	close(pipeFD[0]);
-
-	int status;
-	pid_t waitedPid = waitpid(pid, &status, 0);
-	alarm(0);
-	//
-	if (waitedPid == -1)
-	{
-		perror("waitpid");
-		return "HTTP/1.1 500 Internal Server Error\r\nContent-Length: 0\r\n\r\n";
-	}
-
-	if (WIFEXITED(status) && WEXITSTATUS(status) != 0)
-	{
-		return "HTTP/1.1 500 Internal Server Error\r\nContent-Length: 0\r\n\r\n";
-	}
-
-	if (cgiOutput.empty())
-	{
-		return "HTTP/1.1 500 Internal Server Error\r\nContent-Length: 0\r\n\r\n";
-	}
-
-	// return cgiOutput;
 }
 
 void CGIHandler::setFDsRef(std::vector<struct pollfd> *FDsRef)

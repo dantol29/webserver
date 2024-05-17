@@ -135,7 +135,7 @@ void HTTPResponse::setCGIpipeFD(int (&pipe)[2])
 	_CGIpipeFD[1] = pipe[1];
 }
 
-void HTTPResponse::CGIStringToResponse(const std::string &cgiOutput, HTTPResponse &response)
+void HTTPResponse::CGIStringToResponse(const std::string &cgiOutput)
 {
 	std::size_t headerEndPos = cgiOutput.find("\r\n\r\n");
 	if (headerEndPos == std::string::npos)
@@ -162,13 +162,14 @@ void HTTPResponse::CGIStringToResponse(const std::string &cgiOutput, HTTPRespons
 		{
 			std::string headerName = headerLine.substr(0, separatorPos);
 			std::string headerValue = headerLine.substr(separatorPos + 2);
-			response.setHeader(headerName, headerValue);
+			setHeader(headerName, headerValue);
 		}
 	}
 
-	response.setBody(bodyPart);
-	response.setIsCGI(true);
-	response.setStatusCode(200, "");
+	setBody(bodyPart);
+	// At his point we are done with the CGI so setIsCGI(false)
+	// setIsCGI(true);
+	setStatusCode(200, "");
 	return;
 }
 

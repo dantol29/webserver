@@ -80,6 +80,7 @@ class Connection
 	bool getHasCGI() const;
 	pid_t getCGIPid() const;
 	time_t getCGIStartTime() const;
+	int getCGIExitStatus() const;
 
 	/* Setters */
 	void setResponseString(std::string responseString);
@@ -99,6 +100,7 @@ class Connection
 	void setCGIPid(pid_t pid);
 
 	void setCGIStartTime(time_t now);
+	void setCGIExitStatus(int status);
 	/* CGI */
 	void addCGI(pid_t pid);
 	void removeCGI(int status);

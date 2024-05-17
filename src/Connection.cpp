@@ -179,6 +179,11 @@ time_t Connection::getCGIStartTime() const
 {
 	return _CGIStartTime;
 }
+
+int Connection::getCGIExitStatus() const
+{
+	return _CGIExitStatus;
+}
 // SETTERS
 
 void Connection::setResponseSize(size_t responseSize)
@@ -253,6 +258,11 @@ void Connection::setCGIPid(pid_t pid)
 void Connection::setCGIStartTime(time_t time)
 {
 	_CGIStartTime = time;
+}
+
+void Connection::setCGIExitStatus(int status)
+{
+	_CGIExitStatus = status;
 }
 
 // METHODS

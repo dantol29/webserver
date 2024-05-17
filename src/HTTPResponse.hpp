@@ -46,7 +46,7 @@ class HTTPResponse
 	// void setCGIpipeFD(int CGIpipeFD[2]);
 
 	// Member functions
-	void CGIStringToResponse(const std::string &cgiOutput, HTTPResponse &response);
+	void CGIStringToResponse(const std::string &cgiOutput);
 
 	friend std::ostream &operator<<(std::ostream &out, const HTTPResponse &response);
 
