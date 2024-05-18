@@ -30,7 +30,9 @@ RUN make
 WORKDIR /app/tests/multi_sockets
 
 # Make the test script executable
-RUN chmod +x test.sh
+RUN chmod +x testIPv4.sh
+RUN chmod +x testIPv6.sh
+RUN chmod +x testIPv4+IPv6.sh 
 
-# Command to start the server and run tests
-CMD ["./test.sh"]
+# Just start the shell
+CMD ["/bin/bash"]

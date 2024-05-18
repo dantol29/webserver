@@ -14,12 +14,12 @@ fi
 echo "Starting test script..."
 
 # Modify /etc/hosts to add the new localhost aliases
-echo "127.0.0.2 localhost2" >> /etc/hosts
-echo "127.0.0.3 localhost3" >> /etc/hosts
+echo "::2 localhost2" >> /etc/hosts
+echo "::3 localhost3" >> /etc/hosts
 
 # Start the server
 echo "Starting the server..."
-./../../webserv ./../../multi.conf &
+./../../webserv ./../../multiIPv6.conf &
 SERVER_PID=$!
 sleep 2  # Wait for the server to start
 
@@ -42,12 +42,12 @@ store_response() {
 }
 
 # Run curl commands and store responses
-store_response "127.0.0.1:8080" "404"
-store_response "0.0.0.0:8081" "404"
-store_response "127.0.0.1:8082" "404"
-store_response "127.0.0.2:8080" "000"
-store_response "127.0.0.3:8080" "000"
-store_response "127.0.0.1:8081" "404"
+store_response "[::1]:8080" "404"
+store_response "[::]:8081" "404"
+store_response "[::1]:8082" "404"
+store_response "[::2]:8080" "000"
+store_response "[::3]:8080" "000"
+store_response "[::1]:8081" "404"
 
 # Stop the server
 echo "Stopping the server..."

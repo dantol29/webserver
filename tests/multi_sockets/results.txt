@@ -1,0 +1,9 @@
+127.0.0.1:8080 - Expected 404 - HTTP status code: 404 [0;32m✔[0m
+0.0.0.0:8081 - Expected 404 - HTTP status code: 404 [0;32m✔[0m
+127.0.0.1:8082 - Expected 404 - HTTP status code: 404 [0;32m✔[0m
+127.0.0.1:8080 - Expected 404 - HTTP status code: 404 [0;32m✔[0m
+0.0.0.0:8081 - Expected 404 - HTTP status code: 404 [0;32m✔[0m
+127.0.0.1:8082 - Expected 404 - HTTP status code: 404 [0;32m✔[0m
+127.0.0.1:8080 - Expected 404 - HTTP status code: 404 [0;32m✔[0m
+0.0.0.0:8081 - Expected 404 - HTTP status code: 404 [0;32m✔[0m
+127.0.0.1:8082 - Expected 404 - HTTP status code: 404 [0;32m✔[0m
