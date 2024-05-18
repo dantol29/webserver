@@ -5,7 +5,7 @@ Router::Router()
 {
 }
 
-Router::Router(Directives& directive) : _directive(directive), _FDsRef(NULL), _pollFd(NULL)
+Router::Router(Directives &directive) : _directive(directive), _FDsRef(NULL), _pollFd(NULL)
 {
 }
 
@@ -55,7 +55,7 @@ void Router::adaptPathForFirefox(HTTPRequest &request)
 void Router::routeRequest(HTTPRequest &request, HTTPResponse &response)
 {
 	Debug::log("Routing Request: host = " + request.getSingleHeader("host").second, Debug::NORMAL);
-	
+
 	if (!_directive._return.empty())
 	{
 		response.setStatusCode(301, "Redirection");
@@ -85,7 +85,7 @@ void Router::routeRequest(HTTPRequest &request, HTTPResponse &response)
 	case PathValid:
 		// check if method is allowed
 		if (!_directive._allowedMethods.empty())
-		{		
+		{
 			for (size_t i = 0; i < _directive._allowedMethods.size(); i++)
 			{
 				if (_directive._allowedMethods[i] == request.getMethod())
@@ -229,6 +229,7 @@ bool Router::isCGI(const HTTPRequest &request)
 	std::cout << "request target: " << request.getRequestTarget() << std::endl;
 	if (!cgiExtensions.empty())
 	{
+		std::cout << "request target: " << request.getRequestTarget() << std::endl;
 		std::string fileExtension = getFileExtension(request.getRequestTarget());
 		std::cout << "fileExtension: " << fileExtension << std::endl;
 		for (size_t i = 0; i < cgiExtensions.size(); i++)
@@ -308,12 +309,14 @@ void Router::generateDirectoryListing(HTTPResponse &Response,
 	Response.setHeader("Content-Type", "text/html");
 }
 
-bool isDirectory(std::string& path) {
-    struct stat buffer;
-    if (stat(path.c_str(), &buffer) == 0) {
-        return S_ISDIR(buffer.st_mode);
-    }
-    return false; // Failed to get file information
+bool isDirectory(std::string &path)
+{
+	struct stat buffer;
+	if (stat(path.c_str(), &buffer) == 0)
+	{
+		return S_ISDIR(buffer.st_mode);
+	}
+	return false; // Failed to get file information
 }
 
 enum PathValidation Router::pathIsValid(HTTPResponse &response, HTTPRequest &request)
