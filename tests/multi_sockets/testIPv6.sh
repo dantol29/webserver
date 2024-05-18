@@ -5,6 +5,12 @@ GREEN='\033[0;32m'
 RED='\033[0;31m'
 NC='\033[0m' # No Color
 
+# Install net-tools if not present
+if ! command -v netstat &> /dev/null; then
+    echo "Installing net-tools..."
+    apt-get update && apt-get install -y net-tools
+fi
+
 # Check if the webserv binary exists
 if [ ! -f ./../../webserv ]; then
     echo -e "${RED}Error: webserv binary not found!${NC}"
@@ -29,6 +35,18 @@ if ! ps -p $SERVER_PID > /dev/null; then
     exit 1
 fi
 
+# Verify server is listening on the expected address and port
+echo "Checking server listening ports..."
+netstat -tuln | grep 8081 >> netstat_results.txt
+netstat -tuln | grep 8080 >> netstat_results.txt
+netstat -tuln | grep 8082 >> netstat_results.txt
+
+# Check IPv6 configuration
+echo "IPv6 configuration:"
+ip -6 addr > ipv6_config.txt
+ip -6 route >> ipv6_config.txt
+
+
 # Function to store response
 store_response() {
     local url=$1
@@ -43,7 +61,8 @@ store_response() {
 
 # Run curl commands and store responses
 store_response "[::1]:8080" "404"
-store_response "[::]:8081" "404"
+# store_response "[::]:8081" "404"
+store_response "[::0]:8081" "404"
 store_response "[::1]:8082" "404"
 store_response "[::2]:8080" "000"
 store_response "[::3]:8080" "000"
@@ -57,5 +76,17 @@ kill $SERVER_PID
 echo "Test results:"
 cat results.txt
 rm results.txt
+
+# Print netstat results
+echo "Netstat results:"
+cat netstat_results.txt
+rm netstat_results.txt
+
+# Print IPv6 configuration
+echo "IPv6 configuration:"
+cat ipv6_config.txt
+rm ipv6_config.txt
+
+
 
 echo "Test script completed."
