@@ -38,34 +38,41 @@ std::string getMimeType(const std::string &filePath)
 		return "application/octet-stream"; // Default binary type
 }
 
-static bool isDirectory(const std::string &path)
-{
-	struct stat statbuf;
-	if (stat(path.c_str(), &statbuf) != 0)
-		return false;
-	return S_ISDIR(statbuf.st_mode);
-}
+// static bool isDirectory(const std::string &path)
+// {
+// 	struct stat statbuf;
+// 	if (stat(path.c_str(), &statbuf) != 0)
+// 		return false;
+// 	return S_ISDIR(statbuf.st_mode);
+// }
 
 void StaticContentHandler::handleRequest(const HTTPRequest &request, HTTPResponse &response)
 {
-	std::string requestTarget = request.getRequestTarget();
 	std::string webRoot = "var/www";
 	std::string host = request.getHost();
 
 	std::string path = request.getPath();
 	std::cout << "path: " << path << std::endl;
-	if (requestTarget == "/" || requestTarget == "")
-		requestTarget = "/index.html";
+	
+	// this is totally wrong
+	// if (requestTarget == "/" || requestTarget == "")
+	// 	requestTarget = "/index.html";
+	
+	// is this necessary?
 	// if the last character of the path is a / and the first character of the request target is a /, we remove the
 	// first character of the request target
-	std::cout << "requestTarget: " << requestTarget << std::endl;
-	if (path[path.length() - 1] == '/' && requestTarget[0] == '/')
-		requestTarget = requestTarget.substr(1);
+	// std::cout << "requestTarget: " << request.getRequestTarget() << std::endl;
+	// if (path[path.length() - 1] == '/' && request.getRequestTarget()[0] == '/')
+	// 	request.setRequestTarget(request.getRequestTarget().substr(1));
+	
 	// TODO: consider streaming the file instead of loading it all in memory for large files
-	if (isDirectory(path))
-	{
-		path += "index.html";
-	}
+	
+	// this is totally wrong
+	// if (isDirectory(path))
+	// {
+	// 	path += "index.html";
+	// }
+
 	std::ifstream file(path.c_str());
 	if (!file) // TODO: this is wrong, it should return a false bool
 	{

@@ -68,10 +68,11 @@ void Router::routeRequest(HTTPRequest &request, HTTPResponse &response)
 		root = "var/";
 	request.setRoot(root);
 	std::string path = root + request.getSingleHeader("host").second;
-	std::string requestTarget = request.getRequestTarget();
-	std::cout << YELLOW << "requestTarget: " << requestTarget << RESET << std::endl;
+	std::cout << YELLOW << "requestTarget: " << request.getRequestTarget() << RESET << std::endl;
 
 	adaptPathForFirefox(request);
+
+	std::cout << YELLOW << "requestTarget after firefox: " << request.getRequestTarget() << RESET << std::endl;
 
 	std::cout << GREEN << "Routing request to path: " << request.getPath() << RESET << std::endl;
 
