@@ -242,7 +242,7 @@ void ServerBlock::setRoot(std::string &str, bool isLocation)
 	if (str.size() > 1 && str[str.size() - 1] != '/')
 		str = str + "/";
 	// remove slash at the beginning
-	if (str.size() < 1 && str[0] == '/')
+	if (str.size() > 1 && str[0] == '/')
 		str = str.substr(1);
 
 	if (!isLocation)

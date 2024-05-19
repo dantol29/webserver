@@ -47,6 +47,10 @@ void Router::adaptPathForFirefox(HTTPRequest &request)
 		std::string remove = "http://";
 		requestTarget.erase(hostPos2, remove.length());
 	}
+	// remove trailing slash
+	if (!requestTarget.empty() && requestTarget[requestTarget.length() - 1] == '/')
+		requestTarget = requestTarget.substr(0, requestTarget.length() - 1);
+
 	request.setRequestTarget(requestTarget);
 	path += requestTarget;
 	request.setPath(path);
@@ -334,7 +338,6 @@ enum PathValidation Router::pathIsValid(HTTPResponse &response, HTTPRequest &req
 	else if (!isDirectory(path) && stat(path.c_str(), &buffer) != 0)
 	{
 		std::cout << "Failed to stat the file at path: " << path << std::endl;
-		Debug::log("webRoot: " + path, Debug::NORMAL);
 		Debug::log("pathIsValid: stat failed, path does not exist", Debug::NORMAL);
 		return PathInvalid;
 	}
