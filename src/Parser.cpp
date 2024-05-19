@@ -238,6 +238,10 @@ bool Parser::hasMandatoryHeaders(HTTPRequest &req, HTTPResponse& res)
 		{
 			if (!isValidHost(it->second))
 				return (res.setStatusCode(400, "Invalid host"), false);
+
+			// remove port from host
+			if (it->second.find(':') != std::string::npos)
+				req.replaceHeader("host", it->second.substr(0, it->second.find(':')));
 			isHost++;
 		}
 		else if (it->first == "content-length")
