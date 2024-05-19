@@ -206,7 +206,7 @@ bool Config::parse(std::ifstream &config)
 			if (isLocation(line)) // start of location block
 				parseLocation(line, config);
 			else if (!saveDirective(line)) // variables outside of location
-				return (setError("Config file: Syntax error (invalid var in the root)"));
+				return (setError("Config file: Syntax error (invalid directive)"));
 		}
 		_tmpServerBlock.deleteData(); // delete saved data
 	}
