@@ -319,34 +319,65 @@ bool isDirectory(std::string &path)
 	return false; // Failed to get file information
 }
 
+// Function to resolve the correct absolute path
+std::string resolvePath(const std::string &path)
+{
+	const std::string projectRoot = "/Users/stefano/Documents/Code/42/cursus/webserv/team";
+	if (path[0] == '/')
+	{
+		return projectRoot + path;
+	}
+	else
+	{
+		return projectRoot + "/" + path;
+	}
+}
+
 enum PathValidation Router::pathIsValid(HTTPResponse &response, HTTPRequest &request)
 {
 	(void)response;
 	struct stat buffer;
 	std::string path = request.getPath();
+	std::string resolvedPath = resolvePath(request.getPath());
+
+	std::cout << "Entering pathIsValid" << std::endl;
+	std::cout << "resolvedPath: " << resolvedPath << std::endl;
+	std::cout << "path: " << path << std::endl;
 
 	if (request.getUploadBoundary() != "")
 		return PathValid;
 
-	if (!isDirectory(path) && stat(path.c_str(), &buffer) == 0)
+	// Debugging: Check permissions on path
+	if (access(path.c_str(), F_OK) == 0)
 	{
-		Debug::log("pathIsValid: stat success", Debug::NORMAL);
-		std::cout << " path :" << path << std::endl;
+		std::cout << "Debug: File exists: " << path << std::endl;
+	}
+	else
+	{
+		std::cout << "Debug: File does not exist or permission denied: " << path << std::endl;
+	}
+
+	if (!isDirectory(resolvedPath) && stat(resolvedPath.c_str(), &buffer) == 0)
+	{
+		Debug::log("stat success", Debug::NORMAL);
+		std::cout << " resolvedPath :" << resolvedPath << std::endl;
 		return PathValid;
 	}
-	else if (!isDirectory(path) && stat(path.c_str(), &buffer) != 0)
+
+	else if (!isDirectory(resolvedPath) && stat(resolvedPath.c_str(), &buffer) != 0)
 	{
-		std::cout << "Failed to stat the file at path: " << path << std::endl;
-		Debug::log("webRoot: " + path, Debug::NORMAL);
+		std::cout << "resolvedPath.c_str(): " << resolvedPath.c_str() << std::endl;
+		std::cout << "Failed to stat the file at resolvedPath: " << resolvedPath << std::endl;
+		Debug::log("webRoot: " + resolvedPath, Debug::NORMAL);
 		Debug::log("pathIsValid: stat failed, path does not exist", Debug::NORMAL);
 		return PathInvalid;
 	}
 
-	if (isDirectory(path))
+	if (isDirectory(resolvedPath))
 	{
 		Debug::log("pathIsValid: path is a directory", Debug::NORMAL);
 		// if user provided index in config
-		if (!path.empty() && !_directive._index.empty())
+		if (!resolvedPath.empty() && !_directive._index.empty())
 		{
 			for (size_t i = 0; i < _directive._index.size(); i++)
 			{
@@ -367,14 +398,14 @@ enum PathValidation Router::pathIsValid(HTTPResponse &response, HTTPRequest &req
 			}
 		}
 		// if user did not provide any index in config or index is not valid
-		if (!path.empty())
+		if (!resolvedPath.empty())
 		{
-			path += "/index.html"; // append /index.html
-			std::cout << "path: " << path << std::endl;
-			if (stat(path.c_str(), &buffer) == 0)
+			resolvedPath += "/index.html"; // append /index.html
+			std::cout << "resolvedPath: " << resolvedPath << std::endl;
+			if (stat(resolvedPath.c_str(), &buffer) == 0)
 			{
 				Debug::log("pathIsValid: using default index.html", Debug::NORMAL);
-				request.setPath(path);
+				request.setPath(resolvedPath);
 				return PathValid;
 			}
 		}
@@ -382,14 +413,14 @@ enum PathValidation Router::pathIsValid(HTTPResponse &response, HTTPRequest &req
 		if (_directive._autoindex)
 		{
 			Debug::log("pathIsValid: Autoindex is on", Debug::NORMAL);
-			generateDirectoryListing(response, path, request.getRequestTarget());
-			std::cout << "Directory listing generated for " << path << std::endl;
+			generateDirectoryListing(response, resolvedPath, request.getRequestTarget());
+			std::cout << "Directory listing generated for " << resolvedPath << std::endl;
 			return IsDirectoryListing;
 		}
 		Debug::log("pathIsValid: invalid path", Debug::NORMAL);
 		return PathInvalid;
 	}
-	request.setPath(path);
+	request.setPath(resolvedPath);
 	return PathValid;
 }
 

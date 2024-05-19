@@ -143,17 +143,18 @@ void handleTimeout(int sig)
 
 std::string CGIHandler::executeCGI(const MetaVariables &env)
 {
+	std::cout << RED << "------------------executeCGI-------------------" << RESET << std::endl;
 	std::string cgiOutput;
 	std::vector<std::string> argv = createArgvForExecve(env);
 	std::vector<std::string> envp = env.getForExecve();
-
+	std::cout << "executeCGI: argv[0]: " << argv[0] << std::endl;
 	int pipeFD[2];
 	if (pipe(pipeFD) == -1)
 	{
 		perror("pipe failed");
 		return "HTTP/1.1 500 Internal Server Error\r\nContent-Length: 0\r\n\r\n";
 	}
-
+	std::cout << "Forking" << std::endl;
 	pid_t pid = fork();
 	if (pid == -1)
 	{
@@ -164,6 +165,7 @@ std::string CGIHandler::executeCGI(const MetaVariables &env)
 	}
 	else if (pid == 0)
 	{
+		std::cerr << "Child process" << std::endl;
 		close(pipeFD[0]);
 		dup2(pipeFD[1], STDOUT_FILENO);
 		close(pipeFD[1]);
@@ -173,8 +175,13 @@ std::string CGIHandler::executeCGI(const MetaVariables &env)
 		std::vector<char *> argvPointers = convertToCStringArray(argv);
 		std::vector<char *> envpPointers = convertToCStringArray(envp);
 
+		std::cerr << "argvPointers[0] " << argvPointers[0] << std::endl;
+
+		// build absolute path to the script
+
 		if (access(argvPointers[0], X_OK) == -1)
 		{
+			std::cout << "access failed" << std::endl;
 			perror("access");
 			_exit(EXIT_FAILURE);
 		}
