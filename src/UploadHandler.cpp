@@ -132,7 +132,7 @@ void createFileChunked(HTTPRequest &request)
 	}
 }
 
-void UploadHandler::handleRequest(const HTTPRequest &request, HTTPResponse &response)
+void UploadHandler::handleRequest(HTTPRequest &request, HTTPResponse &response)
 {
 	if (!checkFiles(request))
 	{

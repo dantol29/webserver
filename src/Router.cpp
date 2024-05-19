@@ -51,6 +51,10 @@ void Router::adaptPathForFirefox(HTTPRequest &request)
 	if (!requestTarget.empty() && requestTarget[requestTarget.length() - 1] == '/')
 		requestTarget = requestTarget.substr(0, requestTarget.length() - 1);
 
+	// remove port number
+	if (requestTarget.find(':') != std::string::npos)
+		requestTarget = requestTarget.substr(0, requestTarget.find(':'));
+
 	request.setRequestTarget(requestTarget);
 	path += requestTarget;
 	request.setPath(path);

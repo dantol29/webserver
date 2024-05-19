@@ -9,6 +9,7 @@
 #include "HTTPResponse.hpp" // Assuming existence of HTTPResponse class
 #include "Parser.hpp"		// Assuming existence of Parser class
 #include "Config.hpp"
+#include "ServerBlock.hpp"
 
 enum ConnectionType
 {
@@ -25,6 +26,7 @@ class Connection
 	Parser _parser;
 	HTTPRequest _request;
 	HTTPResponse _response;
+	ServerBlock _serverBlock;
 
 	struct pollfd _pollFd;
 	enum ConnectionType _type;
@@ -35,6 +37,7 @@ class Connection
 	bool _hasDataToSend;
 	bool _hasFinishedSending;
 	bool _canBeClosed;
+	bool _hasServerBlock;
 	size_t _responseSize;
 	size_t _responseSizeSent;
 	std::string _responseString;
@@ -49,7 +52,7 @@ class Connection
 	bool readChunkedBody(Parser &parser);
 	bool readChunkSize(std::string &line);
 	bool readChunk(size_t chunkSize, std::string &chunkedData, HTTPResponse &response);
-	bool readBody(Parser &parser, HTTPRequest &req, HTTPResponse &res, Config& config);
+	bool readBody(Parser &parser, HTTPRequest &req, HTTPResponse &res);
 
 	/* Getters */
 	Parser &getParser();
@@ -70,6 +73,8 @@ class Connection
 	bool getHasDataToSend() const;
 	bool getHasFinishedSending() const;
 	bool getCanBeClosed() const;
+	bool getHasServerBlock() const;
+	ServerBlock &getServerBlock();
 
 	struct pollfd &getPollFd();
 
@@ -80,7 +85,8 @@ class Connection
 	void setServerPort(unsigned short serverPort);
 	void setResponseSize(size_t responseSize);
 	void setResponseSizeSent(size_t responseSizeSent);
-
+	void setServerBlock(ServerBlock& serverBlock);
+	
 	void setHasReadSocket(bool value);
 	void setHasFinishedReading(bool value);
 	void setCanBeClosed(bool value);
@@ -88,6 +94,8 @@ class Connection
 	void setHasFinishedSending(bool value);
 	/* Debugging */
 	void printConnection() const;
+	
+	bool findServerBlock(const std::vector<ServerBlock>& _serverBlocks);
 };
 
 #endif

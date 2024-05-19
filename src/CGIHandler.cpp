@@ -24,7 +24,7 @@ CGIHandler::~CGIHandler()
 // 	return *this;
 // }
 
-void CGIHandler::handleRequest(const HTTPRequest &request, HTTPResponse &response)
+void CGIHandler::handleRequest(HTTPRequest &request, HTTPResponse &response)
 {
 	CGIHandler cgiInstance;
 	// cgiInstance.setFDsRef(_FDsRef); // here we set the FDs to close later unused ones

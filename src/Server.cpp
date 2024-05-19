@@ -123,17 +123,21 @@ void Server::readFromClient(Connection &conn, size_t &i, Parser &parser, HTTPReq
 	}
 	
 	if (parser.getHeadersComplete() && !parser.getHeadersAreParsed())
+	{
 		parser.parseRequestLineAndHeaders(parser.getHeadersBuffer().c_str(), request, response);
+		if (parser.getHeadersAreParsed() && !conn.findServerBlock(_config.getServerBlocks()))
+			Debug::log("Error finding server block", Debug::NORMAL);
+	}
 	
 	if (response.getStatusCode() != 0)
 	{
 		conn.setCanBeClosed(false);
 		conn.setHasFinishedReading(true);
 		conn.setHasDataToSend(false);
-		Debug::log("Error parsing headers or request line", Debug::OCF);
+		Debug::log("Error parsing headers or request line", Debug::NORMAL);
 		return;
 	}
-	
+
 	if (parser.getHeadersComplete() && request.getMethod() == "GET")
 		conn.setHasFinishedReading(true);
 
@@ -176,7 +180,7 @@ void Server::handlePostRequest(Connection &conn, Parser &parser, HTTPRequest &re
 		}
 		//-----------------------------//
 
-		else if (!conn.readBody(parser, request, response, _config))
+		else if (!conn.readBody(parser, request, response))
 		{
 			Debug::log("Error reading body", Debug::OCF);
 			conn.setCanBeClosed(false);
@@ -227,16 +231,10 @@ void Server::buildResponse(Connection &conn, size_t &i, HTTPRequest &request, HT
 
 	formRequestTarget(request);
 
-	for (size_t i = 0; i < _config.getServerBlocks().size(); i++)
-	{
-		if (findServerName(request, _config.getServerBlocks()[i]) == request.getSingleHeader("host").second)
-		{
-			findLocationBlock(request, _config.getServerBlocks()[i], directive);
-			break;
-		}
-		else if (i == _config.getServerBlocks().size() - 1)
-			return (handleServerBlockError(conn, response));
-	}
+	if (!conn.getHasServerBlock())
+		return (handleServerBlockError(conn, response));
+
+	findLocationBlock(request, conn.getServerBlock(), directive);
 
 	std::cout << RED << "Root: " << directive._root << RESET << std::endl;
 
@@ -785,19 +783,19 @@ void Server::handleServerBlockError(Connection& conn, HTTPResponse &response)
 	return;
 }
 
-std::string Server::findServerName(HTTPRequest& request, ServerBlock& serverBlock)
-{
-	std::string serverName;
+// std::string Server::findServerName(HTTPRequest& request, ServerBlock& serverBlock)
+// {
+// 	std::string serverName;
 
-	for (size_t j = 0; j < serverBlock.getServerName().size(); j++)
-	{
-		serverName = serverBlock.getServerName()[j];
-		std::cout << RED << "Checking server name: " << serverName << RESET << std::endl;
-		if (serverName == request.getSingleHeader("host").second)
-		{
-			std::cout << GREEN << "Server name found" << RESET << std::endl;
-			break;
-		}
-	}
-	return serverName;
-}
+// 	for (size_t j = 0; j < serverBlock.getServerName().size(); j++)
+// 	{
+// 		serverName = serverBlock.getServerName()[j];
+// 		std::cout << RED << "Checking server name: " << serverName << RESET << std::endl;
+// 		if (serverName == request.getSingleHeader("host").second)
+// 		{
+// 			std::cout << GREEN << "Server name found" << RESET << std::endl;
+// 			break;
+// 		}
+// 	}
+// 	return serverName;
+// }

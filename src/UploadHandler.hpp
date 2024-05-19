@@ -21,7 +21,7 @@ class UploadHandler : public AResponseHandler
 	UploadHandler();
 	UploadHandler(const std::string &webRoot);
 	UploadHandler &operator=(const UploadHandler &other);
-	void handleRequest(const HTTPRequest &request, HTTPResponse &response);
+	void handleRequest(HTTPRequest &request, HTTPResponse &response);
 	~UploadHandler();
 
   private:
