@@ -427,14 +427,34 @@ void Server::buildCGIResponse(Connection &conn, HTTPResponse &response)
 	int *pipeFD;
 	pipeFD = response.getCGIpipeFD();
 	char readBuffer[256];
-	ssize_t bytesRead;
 	// TODO: this is blokcing - we need to make it non-blocking
 	// I.e. read 1 buffer and then go back to poll
-	while ((bytesRead = read(pipeFD[0], readBuffer, sizeof(readBuffer) - 1)) > 0)
+	std::cout << "Reading from pipe" << std::endl;
+	ssize_t bytesRead;
+	do
 	{
-		readBuffer[bytesRead] = '\0';
-		cgiOutput += readBuffer;
-	}
+		std::cout << "Into the do while loop" << std::endl;
+		bytesRead = read(pipeFD[0], readBuffer, sizeof(readBuffer) - 1);
+		std::cout << "Bytes read: " << bytesRead << std::endl;
+		if (bytesRead > 0)
+		{
+			std::cout << "Bytes read: " << bytesRead << std::endl;
+			readBuffer[bytesRead] = '\0';
+			cgiOutput += readBuffer;
+		}
+		else if (bytesRead == 0)
+		{
+			std::cout << "End of data stream reached." << std::endl;
+			break; // Optional: Explicitly break if you need to perform additional cleanup.
+		}
+		else
+		{
+			std::cerr << "Error reading data: " << strerror(errno) << std::endl;
+			break; // Break or handle the error as needed.
+		}
+	} while (bytesRead > 0);
+
+	std::cout << "CGI output: " << cgiOutput << std::endl;
 	close(pipeFD[0]);
 
 	int status = conn.getCGIExitStatus();
@@ -469,9 +489,7 @@ void Server::buildCGIResponse(Connection &conn, HTTPResponse &response)
 }
 void Server::writeToClient(Connection &conn, size_t &i, HTTPResponse &response)
 {
-	std::cout << "\033[1;36m"
-			  << "Entering writeToClient"
-			  << "\033[0m" << std::endl;
+	std::cout << "\033[1;36m" << "Entering writeToClient" << "\033[0m" << std::endl;
 	std::cout << response << std::endl;
 	static int sendResponseCounter = 0;
 	bool isLastSend = false;
@@ -513,9 +531,7 @@ void Server::writeToClient(Connection &conn, size_t &i, HTTPResponse &response)
 
 void Server::closeClientConnection(Connection &conn, size_t &i)
 {
-	std::cout << "\033[1;36m"
-			  << "Entering closeClientConnection"
-			  << "\033[0m" << std::endl;
+	std::cout << "\033[1;36m" << "Entering closeClientConnection" << "\033[0m" << std::endl;
 	// TODO: should we close it with the Destructor of the Connection class?
 	close(conn.getPollFd().fd);
 	_FDs.erase(_FDs.begin() + i);
@@ -525,9 +541,7 @@ void Server::closeClientConnection(Connection &conn, size_t &i)
 
 void Server::handleConnection(Connection &conn, size_t &i, Parser &parser, HTTPRequest &request, HTTPResponse &response)
 {
-	std::cout << "\033[1;36m"
-			  << "Entering handleConnection"
-			  << "\033[0m" << std::endl;
+	std::cout << "\033[1;36m" << "Entering handleConnection" << "\033[0m" << std::endl;
 
 	conn.setHasReadSocket(false);
 	std::cout << "Has finished reading: " << conn.getHasFinishedReading() << std::endl;

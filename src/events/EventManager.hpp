@@ -3,6 +3,7 @@
 #define EVENT_MANAGER_HPP
 
 #include <vector>
+#include "webserv.hpp"
 #include "IEventListener.hpp"
 
 // EventManager class declaration

@@ -24,6 +24,8 @@ int main(int argc, char **argv)
 	Server webserv(config, eventManager);
 
 	ServerEventListener serverEventListener(webserv);
+	std::cout << "Subscribing serverEventListener" << std::endl;
+	std::cout << "Pointer to serverEventListener: " << &serverEventListener << std::endl;
 	eventManager.subscribe(&serverEventListener);
 
 	webserv.startListening();

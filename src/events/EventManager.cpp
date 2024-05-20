@@ -1,24 +1,30 @@
 // EventManager.cpp
 #include "EventManager.hpp"
+#include "webserv.hpp"
 #include <algorithm> // For std::remove
 #include <iostream>	 // For std::cout
 
 // Constructor
 EventManager::EventManager()
 {
-	// Constructor code here (if needed)
+	Debug::log("EventManager created", Debug::OCF);
 }
 
 // Destructor
 EventManager::~EventManager()
 {
-	// Cleanup code here (if needed)
+	Debug::log("EventManager destroyed", Debug::OCF);
 }
 
 // Subscribe an observer to this manager
 void EventManager::subscribe(IEventListener *observer)
 {
+	std::cout << YELLOW << "Subscribing observer" << RESET << std::endl;
 	_observers.push_back(observer);
+	for (std::vector<IEventListener *>::iterator it = _observers.begin(); it != _observers.end(); ++it)
+	{
+		std::cout << "Observer: " << *it << std::endl;
+	}
 }
 
 // Unsubscribe an observer from this manager
@@ -33,8 +39,9 @@ void EventManager::unsubscribe(IEventListener *observer)
 // void EventManager::emit(int eventID)
 void EventManager::emit(const EventData &eventData)
 {
-	std::cout << "Event emitted: " << eventData << std::endl;
+	std::cout << YELLOW << "Event emitted: " << eventData << RESET << std::endl;
 	// Notify all observers about the event
+	std::cout << "Size of observers: " << _observers.size() << std::endl;
 	for (std::vector<IEventListener *>::iterator it = _observers.begin(); it != _observers.end(); ++it)
 	{
 		(*it)->handleEvent(eventData);
