@@ -16,20 +16,20 @@ class Debug
 		CGI = 1 << 4,	 // 0000 1000
 		EVENTS = 1 << 5, // 0001 0000
 		EVAL = 1 << 6,	 // 0010 0000
-		ALL = 1 << 7	 // 0100 0000
+		ALL = 0xFF		 ///  1111 1111
 	};
 
   private:
+	Debug();
+	Debug(const Debug &);
+	Debug &operator=(const Debug &);
+	~Debug();
 	static bool debugEnabled;
 	static Level debugLevel;
 
   public:
-	Debug();
-	Debug(const Debug &);
-	Debug &operator=(const Debug &);
-	virtual ~Debug();
-
-	static void enable(bool on);
+	static void enable(bool value);
+	static void disable(bool off);
 	static void setLevel(Level level);
 	static void addLevel(Level level);
 	static void removeLevel(Level leve);
