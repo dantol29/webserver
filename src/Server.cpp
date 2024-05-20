@@ -342,6 +342,54 @@ void Server::buildResponse(Connection &conn, size_t &i, HTTPRequest &request, HT
 		buildCGIResponse(conn, response);
 }
 
+void Server::buildCGIResponse(Connection &conn, HTTPResponse &response)
+{
+	std::cout << RED << "Entering buildCGIResponse" << RESET << std::endl;
+	std::string cgiOutput;
+	int *pipeFD;
+	pipeFD = response.getCGIpipeFD();
+	char readBuffer[256];
+	ssize_t bytesRead;
+	// TODO: this is blokcing - we need to make it non-blocking
+	// I.e. read 1 buffer and then go back to poll
+	while ((bytesRead = read(pipeFD[0], readBuffer, sizeof(readBuffer) - 1)) > 0)
+	{
+		readBuffer[bytesRead] = '\0';
+		cgiOutput += readBuffer;
+	}
+	close(pipeFD[0]);
+
+	int status = conn.getCGIExitStatus();
+	//
+	// if (waitedPid == -1)
+	// {
+	// 	perror("waitpid");
+	// 	return "HTTP/1.1 500 Internal Server Error\r\nContent-Length: 0\r\n\r\n";
+	// }
+
+	if (WIFEXITED(status) && WEXITSTATUS(status) != 0)
+	{
+		response.setStatusCode(500, "Internal Server Error");
+		conn.setHasDataToSend(true);
+		response.setIsCGI(false);
+		// TODO: should we set other flags here?
+		return;
+	}
+
+	if (cgiOutput.empty())
+	{
+		response.setStatusCode(500, "Internal Server Error");
+		conn.setHasDataToSend(true);
+		response.setIsCGI(false);
+		return;
+	}
+	response.CGIStringToResponse(cgiOutput);
+	response.setIsCGI(false);
+	conn.setHasDataToSend(true);
+
+	// return cgiOutput;
+}
+
 void Server::writeToClient(Connection &conn, size_t &i, HTTPResponse &response)
 {
 	std::cout << "\033[1;36m" << "Entering writeToClient" << "\033[0m" << std::endl;
