@@ -231,10 +231,8 @@ void Server::buildResponse(Connection &conn, size_t &i, HTTPRequest &request, HT
 
 	formRequestTarget(request);
 
-	if (!conn.getHasServerBlock())
-		return (handleServerBlockError(conn, response));
-
-	findLocationBlock(request, conn.getServerBlock(), directive);
+	if (conn.getHasServerBlock() != NOT_FOUND)
+		findLocationBlock(request, conn.getServerBlock(), directive);
 
 	std::cout << RED << "Root: " << directive._root << RESET << std::endl;
 
@@ -242,8 +240,11 @@ void Server::buildResponse(Connection &conn, size_t &i, HTTPRequest &request, HT
 
 	if (response.getStatusCode() != 0)
 	{
-		Debug::log("Error response" + toString(response.getStatusCode()), Debug::NORMAL);
-		// response.setErrorResponse(response.getStatusCode());
+		Debug::log("Error response " + toString(response.getStatusCode()), Debug::NORMAL);
+		
+		if (conn.getHasServerBlock() == DEFAULT)
+			request.replaceHeader("host", directive._serverName[0]);
+
 		router.handleServerBlockError(request, response, response.getStatusCode());
 		conn.setHasDataToSend(true);
 		return;
@@ -254,7 +255,6 @@ void Server::buildResponse(Connection &conn, size_t &i, HTTPRequest &request, HT
 		router.setPollFd(&conn.getPollFd());
 		router.routeRequest(request, response);
 	}
-	// TODO: check if the listen in the server block is matching port and ip from connection
 	conn.setHasDataToSend(true);
 }
 
@@ -764,24 +764,24 @@ void Server::findLocationBlock(HTTPRequest &request, ServerBlock& serverBlock, D
 	}
 }
 
-void Server::handleServerBlockError(Connection& conn, HTTPResponse &response)
-{
-	// if error already occurred, we don't want to overwrite it
-	if (response.getStatusCode() != 0)
-	{
-		Debug::log("Error response" + toString(response.getStatusCode()), Debug::NORMAL);
-		response.setErrorResponse(response.getStatusCode());
-		conn.setHasDataToSend(true);
-		return;
-	}
+// void Server::handleServerBlockError(Connection& conn, HTTPResponse &response)
+// {
+// 	// if error already occurred, we don't want to overwrite it
+// 	if (response.getStatusCode() != 0)
+// 	{
+// 		Debug::log("Error response" + toString(response.getStatusCode()), Debug::NORMAL);
+// 		response.setErrorResponse(response.getStatusCode());
+// 		conn.setHasDataToSend(true);
+// 		return;
+// 	}
 
-	static StaticContentHandler staticContentInstance;
+// 	static StaticContentHandler staticContentInstance;
 
-	staticContentInstance.handleNotFound(response);
-	response.setStatusCode(404, "No server block is matching the request host");
-	conn.setHasDataToSend(true);
-	return;
-}
+// 	staticContentInstance.handleNotFound(response);
+// 	response.setStatusCode(404, "No server block is matching the request host");
+// 	conn.setHasDataToSend(true);
+// 	return;
+// }
 
 // std::string Server::findServerName(HTTPRequest& request, ServerBlock& serverBlock)
 // {

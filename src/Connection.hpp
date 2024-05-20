@@ -18,6 +18,13 @@ enum ConnectionType
 	SERVER,
 };
 
+enum serverBlockStatus
+{
+	FOUND,
+	NOT_FOUND,
+	DEFAULT,
+};
+
 class Server; // Forward declaration for circular dependency
 
 class Connection
@@ -37,7 +44,7 @@ class Connection
 	bool _hasDataToSend;
 	bool _hasFinishedSending;
 	bool _canBeClosed;
-	bool _hasServerBlock;
+	int _hasServerBlock;
 	size_t _responseSize;
 	size_t _responseSizeSent;
 	std::string _responseString;
@@ -73,7 +80,7 @@ class Connection
 	bool getHasDataToSend() const;
 	bool getHasFinishedSending() const;
 	bool getCanBeClosed() const;
-	bool getHasServerBlock() const;
+	int getHasServerBlock() const;
 	ServerBlock &getServerBlock();
 
 	struct pollfd &getPollFd();

@@ -18,7 +18,7 @@ Connection::Connection(struct pollfd &pollFd, Server &server)
 	_responseSize = 0;
 	_responseSizeSent = 0;
 	_responseString = "";
-	_hasServerBlock = false;
+	_hasServerBlock = NOT_FOUND;
 }
 
 Connection::Connection(const Connection &other)
@@ -163,7 +163,7 @@ bool Connection::getCanBeClosed() const
 	return _canBeClosed;
 }
 
-bool Connection::getHasServerBlock() const
+int Connection::getHasServerBlock() const
 {
 	return _hasServerBlock;
 }
@@ -471,18 +471,34 @@ bool Connection::findServerBlock(const std::vector<ServerBlock>& serverBlocks)
 							_response.setStatusCode(413, "Payload Too Large");
 							return false;
 						}
-						_hasServerBlock = true;
+						_hasServerBlock = FOUND;
 						return (_serverBlock = serverBlocks[i], true);
 					}
 			}
 		}
 	}
-	// check if default server block exists
-	if (serverBlocks.size() > 0)
+
+	// check if default server block exists for error_pages
+	for (size_t i = 0; i < serverBlocks.size(); i++)
 	{
-		_hasServerBlock = true;
-		Debug::log("Default server block found", Debug::NORMAL);
-		return (_serverBlock = serverBlocks[0], true);
+		// loop through the listen entries
+		for (size_t k = 0; k < serverBlocks[i].getListen().size(); k++)
+		{
+			if (serverBlocks[i].getListen()[k].getPort() == _serverPort && \
+				serverBlocks[i].getListen()[k].getIp() == _serverIp)
+				{
+					if (_request.getMethod() == "POST" &&_serverBlock.getClientMaxBodySize() != 0 && \
+					_request.getContentLength() > _serverBlock.getClientMaxBodySize())
+					{
+						_response.setStatusCode(413, "Payload Too Large");
+						return false;
+					}
+					Debug::log("Default server block found", Debug::NORMAL);
+					_hasServerBlock = DEFAULT;
+					_response.setStatusCode(404, "Not Found");
+					return (_serverBlock = serverBlocks[i], true);
+				}
+		}
 	}
 
 	Debug::log("Server block not found", Debug::NORMAL);
