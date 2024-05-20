@@ -16,7 +16,7 @@ class CGIHandler : public AResponseHandler
   public:
 	CGIHandler();
 	virtual ~CGIHandler();
-	void handleRequest(const HTTPRequest &request, HTTPResponse &response);
+	void handleRequest(HTTPRequest &request, HTTPResponse &response);
 	std::vector<std::string> createArgvForExecve(const MetaVariables &env);
 	std::vector<char *> convertToCStringArray(const std::vector<std::string> &input);
 	std::string executeCGI(const MetaVariables &env);

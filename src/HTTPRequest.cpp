@@ -130,7 +130,7 @@ void HTTPRequest::setMethod(std::string method)
 
 void HTTPRequest::setRequestTarget(std::string requestTarget)
 {
-	if (requestTarget != "/" && requestTarget[requestTarget.size() - 1] == '/')
+	if (!requestTarget.empty() && requestTarget != "/" && requestTarget[requestTarget.size() - 1] == '/')
 		requestTarget = requestTarget.substr(0, requestTarget.size() - 1);
 	_requestTarget = requestTarget;
 }
@@ -187,6 +187,18 @@ void HTTPRequest::setRoot(const std::string &root)
 void HTTPRequest::setCookies(const std::string &key, const std::string &value)
 {
 	_cookies.insert(std::make_pair(key, value));
+}
+
+void HTTPRequest::replaceHeader(const std::string &key, const std::string &value)
+{
+	std::string lowerKey = key;
+	for (size_t i = 0; i < lowerKey.size(); ++i)
+		lowerKey[i] = std::tolower(static_cast<unsigned char>(lowerKey[i]));
+	std::cout << "Replacing header: " << key << " with value: " << lowerKey << std::endl;
+	std::multimap<std::string, std::string>::iterator it = _headers.find(lowerKey);
+	if (it != _headers.end())
+		_headers.erase(it);
+	_headers.insert(std::make_pair(lowerKey, value));
 }
 
 std::ostream &operator<<(std::ostream &out, const HTTPRequest &obj)
