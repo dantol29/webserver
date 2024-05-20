@@ -88,26 +88,27 @@ void Router::routeRequest(HTTPRequest &request, HTTPResponse &response)
 	PathValidation pathResult = pathIsValid(response, request);
 	std::cout << BLUE << "path: " << request.getPath() << RESET << std::endl;
 	std::cout << BLUE << "PathValidation: " << pathResult << RESET << std::endl;
+	
+	// check if method is allowed
+	if (!_directive._allowedMethods.empty())
+	{		
+		for (size_t i = 0; i < _directive._allowedMethods.size(); i++)
+		{
+			std::cout << "allowed method: " << _directive._allowedMethods[i] << std::endl;
+			if (_directive._allowedMethods[i] == request.getMethod())
+				break;
+			if (i == _directive._allowedMethods.size() - 1)
+			{
+				response.setStatusCode(405, "Method Not Allowed");
+				handleServerBlockError(request, response, 405);
+				return;
+			}
+		}
+	}
+
 	switch (pathResult)
 	{
 	case PathValid:
-		// check if method is allowed
-		if (!_directive._allowedMethods.empty())
-		{		
-			for (size_t i = 0; i < _directive._allowedMethods.size(); i++)
-			{
-				if (_directive._allowedMethods[i] == request.getMethod())
-				{
-					break;
-				}
-				if (i == _directive._allowedMethods.size() - 1)
-				{
-					response.setStatusCode(405, "Method Not Allowed");
-					handleServerBlockError(request, response, 405);
-					return;
-				}
-			}
-		}
 		if (isCGI(request))
 		{
 			CGIHandler cgiHandler;

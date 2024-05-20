@@ -265,7 +265,6 @@ void ServerBlock::setClientMaxBodySize(std::string &str, bool isLocation)
 		throw("Invalid client_max_body_size");
 
 	size_t n = strToInt(str);
-
 	if (!isLocation)
 	{
 		if (_directives._clientMaxBodySize > 0)
@@ -273,11 +272,7 @@ void ServerBlock::setClientMaxBodySize(std::string &str, bool isLocation)
 		_directives._clientMaxBodySize = n;
 	}
 	else
-	{
-		if (_locations.back()._clientMaxBodySize > 0)
-			throw("client_max_body_size already set");
-		_locations.back()._clientMaxBodySize = n;
-	}
+		throw("client_max_body_size not allowed in location block");
 }
 
 void ServerBlock::setAutoIndex(std::string &str, bool isLocation)

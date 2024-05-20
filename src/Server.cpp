@@ -743,6 +743,17 @@ void Server::formRequestTarget(HTTPRequest &request)
 		std::string remove = "http://";
 		requestTarget.erase(http, remove.length());
 	}
+	
+	// delete host from request target
+	if (requestTarget.find(request.getHost()) != std::string::npos)
+	{
+		size_t host = requestTarget.find(request.getHost());
+		requestTarget.erase(host, request.getHost().length());
+	}
+
+	if (requestTarget.empty())
+		requestTarget = "/";
+
 	request.setRequestTarget(requestTarget);
 	std::cout << "Request target: " << request.getRequestTarget() << std::endl;
 }

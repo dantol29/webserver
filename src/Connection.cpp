@@ -465,14 +465,14 @@ bool Connection::findServerBlock(const std::vector<ServerBlock>& serverBlocks)
 				if (serverBlocks[i].getListen()[k].getPort() == _serverPort && \
 					serverBlocks[i].getListen()[k].getIp() == _serverIp)
 					{
+						_serverBlock = serverBlocks[i];
+
 						if (_request.getMethod() == "POST" &&_serverBlock.getClientMaxBodySize() != 0 && \
 						_request.getContentLength() > _serverBlock.getClientMaxBodySize())
-						{
 							_response.setStatusCode(413, "Payload Too Large");
-							return false;
-						}
+						
 						_hasServerBlock = FOUND;
-						return (_serverBlock = serverBlocks[i], true);
+						return (true);
 					}
 			}
 		}
