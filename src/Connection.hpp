@@ -9,12 +9,20 @@
 #include "HTTPResponse.hpp" // Assuming existence of HTTPResponse class
 #include "Parser.hpp"		// Assuming existence of Parser class
 #include "Config.hpp"
+#include "ServerBlock.hpp"
 
 enum ConnectionType
 {
 	UNDEFINED,
 	CLIENT,
 	SERVER,
+};
+
+enum serverBlockStatus
+{
+	FOUND,
+	NOT_FOUND,
+	DEFAULT,
 };
 
 class Server; // Forward declaration for circular dependency
@@ -25,6 +33,7 @@ class Connection
 	Parser _parser;
 	HTTPRequest _request;
 	HTTPResponse _response;
+	ServerBlock _serverBlock;
 
 	struct pollfd _pollFd;
 	enum ConnectionType _type;
@@ -35,6 +44,7 @@ class Connection
 	bool _hasDataToSend;
 	bool _hasFinishedSending;
 	bool _canBeClosed;
+	int _hasServerBlock;
 	size_t _responseSize;
 	size_t _responseSizeSent;
 	std::string _responseString;
@@ -55,6 +65,7 @@ class Connection
 	bool readChunkSize(std::string &line);
 	bool readChunk(size_t chunkSize, std::string &chunkedData, HTTPResponse &response);
 	bool readBody(Parser &parser, HTTPRequest &req, HTTPResponse &res, Config &config);
+	bool readBody(Parser &parser, HTTPRequest &req, HTTPResponse &res);
 
 	/* Getters */
 	Parser &getParser();
@@ -77,6 +88,8 @@ class Connection
 	bool getHasDataToSend() const;
 	bool getHasFinishedSending() const;
 	bool getCanBeClosed() const;
+	int getHasServerBlock() const;
+	ServerBlock &getServerBlock();
 	bool getHasCGI() const;
 	pid_t getCGIPid() const;
 	time_t getCGIStartTime() const;
@@ -89,6 +102,7 @@ class Connection
 	void setServerPort(unsigned short serverPort);
 	void setResponseSize(size_t responseSize);
 	void setResponseSizeSent(size_t responseSizeSent);
+	void setServerBlock(ServerBlock &serverBlock);
 
 	void setHasReadSocket(bool value);
 	void setHasFinishedReading(bool value);
@@ -106,6 +120,8 @@ class Connection
 	void removeCGI(int status);
 	/* Debugging */
 	void printConnection() const;
+
+	bool findServerBlock(const std::vector<ServerBlock> &_serverBlocks);
 };
 
 #endif

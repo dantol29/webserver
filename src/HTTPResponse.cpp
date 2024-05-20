@@ -311,6 +311,11 @@ std::string HTTPResponse::getStatusMessage(int statusCode) const
 	}
 }
 
+const std::string &HTTPResponse::getStatusMessage() const
+{
+	return _statusMessage;
+}
+
 std::ostream &operator<<(std::ostream &out, const HTTPResponse &response)
 {
 	std::cout << "HTTPResponse operator<< called" << std::endl;
