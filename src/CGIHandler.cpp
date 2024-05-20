@@ -35,6 +35,8 @@ CGIHandler &CGIHandler::operator=(const CGIHandler &other)
 
 void CGIHandler::handleRequest(const HTTPRequest &request, HTTPResponse &response)
 {
+
+	std::cout << RED << "Entering CGIHandler::handleRequest" << RESET << std::endl;
 	MetaVariables env;
 	env.HTTPRequestToMetaVars(request, env);
 	if (!executeCGI(env, response))
@@ -42,6 +44,7 @@ void CGIHandler::handleRequest(const HTTPRequest &request, HTTPResponse &respons
 		response.setStatusCode(500, "");
 		response.setBody("500 Internal Server Error");
 	}
+	std::cout << RED << "Exiting CGIHandler::handleRequest" << RESET << std::endl;
 	return;
 }
 
@@ -100,6 +103,7 @@ void handleTimeout(int sig)
 
 bool CGIHandler::executeCGI(const MetaVariables &env, HTTPResponse &response)
 {
+	std::cout << RED << "Entering CGIHandler::executeCGI" << RESET << std::endl;
 	std::string cgiOutput;
 	std::vector<std::string> argv = createArgvForExecve(env);
 	std::vector<std::string> envp = env.getForExecve();
@@ -154,13 +158,14 @@ bool CGIHandler::executeCGI(const MetaVariables &env, HTTPResponse &response)
 
 	close(pipeFD[1]);
 	EventData data = {1, pid}; // Assuming 1 is the event type for CGI started
-	_eventManager.emit(data);  // Emit event indicating a CGI process has started
+	std::cout << "CGIHandler: Emitting event indicating a CGI process has started" << std::endl;
+	_eventManager.emit(data); // Emit event indicating a CGI process has started
 	// conn.addCGI(pid);
 	_connection.addCGI(pid);
 	// TODO: is this used? To which process to you want to send this signal/ @Leo
 	// signal(SIGALRM, handleTimeout);
 	// alarm(4);
-
+	std::cout << RED << "Exiting CGIHandler::executeCGI with true" << RESET << std::endl;
 	return true;
 }
 
