@@ -9,6 +9,11 @@ UploadHandler::~UploadHandler()
 {
 }
 
+void UploadHandler::setUploadDir(const std::string &uploadDir)
+{
+	_uploadDir = uploadDir;
+}
+
 bool UploadHandler::isHarmfulExtension(const std::string &extension)
 {
 	const char *executableFilesArr[] = {"exe", "com", "bat", "cmd", "msi", "scr", "pif", "ps1"};
@@ -86,17 +91,21 @@ bool UploadHandler::checkFiles(const HTTPRequest &request)
 	return true;
 }
 
-void createFile(HTTPRequest &request)
+bool UploadHandler::createFile(HTTPRequest &request)
 {
-	const std::string uploadDir = request.getRoot() + request.getHost();
+	if (_uploadDir.empty())
+		_uploadDir = request.getRoot() + request.getHost();
+	else
+		_uploadDir = request.getRoot() + request.getHost() + "/" + _uploadDir;
 
-	std::cout << "Creating file at " << uploadDir << std::endl;
+	
+	std::cout << "Creating file at " << _uploadDir << std::endl;
 	std::vector<File> files = request.getFiles();
 	std::vector<File>::iterator it;
 
 	for (it = files.begin(); it != files.end(); ++it)
 	{
-		std::string filePath = uploadDir + "/" + (it->headers.find("filename"))->second;
+		std::string filePath = _uploadDir + (it->headers.find("filename"))->second;
 		std::cout << "Creating file at " << filePath << std::endl;
 		std::ofstream outfile(filePath.c_str());
 		if (outfile.is_open())
@@ -108,28 +117,35 @@ void createFile(HTTPRequest &request)
 		else
 		{
 			std::cout << "422 Unprocessable Entity (Error creating a file at " << filePath << ")" << std::endl;
+			return (false);
 		}
 	}
+	return (true);
 }
 
-void createFileChunked(HTTPRequest &request)
+bool UploadHandler::createFileChunked(HTTPRequest &request)
 {
-	std::string uploadDir = "upload/";
+	if (_uploadDir.empty())
+		_uploadDir = request.getRoot() + request.getHost();
+	else
+		_uploadDir = request.getRoot() + request.getHost() + "/" + _uploadDir;
 	std::string filepath = "chunked_upload.jpg";
-	uploadDir += filepath;
+	_uploadDir += filepath;
 
-	std::ofstream outfile(uploadDir.c_str());
+	std::ofstream outfile(_uploadDir.c_str());
 	if (outfile.is_open())
 	{
 		outfile << request.getBody();
 		outfile.close();
-		std::cout << "File created successfully at " << uploadDir << std::endl;
+		std::cout << "File created successfully at " << _uploadDir << std::endl;
 	}
 	else
 	{
 
-		std::cout << "422 Unprocessable Entity (Error creating a file at " << uploadDir << ")" << std::endl;
+		std::cout << "422 Unprocessable Entity (Error creating a file at " << _uploadDir << ")" << std::endl;
+		return (false);
 	}
+	return (true);
 }
 
 void UploadHandler::handleRequest(HTTPRequest &request, HTTPResponse &response)
@@ -143,15 +159,17 @@ void UploadHandler::handleRequest(HTTPRequest &request, HTTPResponse &response)
 	if (!request.getUploadBoundary().empty())
 	{
 		std::cout << PURPLE << "calling upload boundary" << RESET << std::endl;
+		if (!createFile(const_cast<HTTPRequest &>(request)))
+			response.setStatusCode(422, "Unprocessable Entity");
 		handleResponse(response, SUCCESS);
-		createFile(const_cast<HTTPRequest &>(request));
 	}
 	else
 	{
 		// logic is incorrect here in case of chunked request
 		// temporary solution
 		std::cout << PURPLE << "calling create file chunked" << RESET << std::endl;
-		createFileChunked(const_cast<HTTPRequest &>(request));
+		if (!createFileChunked(const_cast<HTTPRequest &>(request)))
+			response.setStatusCode(422, "Unprocessable Entity");
 		handleResponse(response, SUCCESS);
 		// std::cout << "415 Unsupported Media Type" << std::endl;
 		// handleResponse(response, BAD_REQUEST);

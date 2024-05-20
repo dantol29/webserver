@@ -119,6 +119,7 @@ void Router::routeRequest(HTTPRequest &request, HTTPResponse &response)
 		else if (request.getMethod() == "POST" || request.getUploadBoundary() != "")
 		{
 			UploadHandler uploadHandler;
+			uploadHandler.setUploadDir(_directive._uploadPath);
 			uploadHandler.handleRequest(request, response);
 		}
 		else
@@ -134,13 +135,16 @@ void Router::routeRequest(HTTPRequest &request, HTTPResponse &response)
 	case PathInvalid:
 		std::cout << "Path is not valid, handling as error" << std::endl;
 		handleServerBlockError(request, response, 404);
-		break;
+		return ;
 	}
 
 	if (request.getMethod() == "SALAD")
 	{
 		std::cout << "🥬 + 🍅 + 🐟 = 🥗" << std::endl;
 	}
+
+	if (response.getStatusCode() > 299)
+		handleServerBlockError(request, response, response.getStatusCode());
 }
 
 bool Router::isDynamicRequest(const HTTPRequest &request)
