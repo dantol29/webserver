@@ -35,6 +35,14 @@ void Router::adaptPathForFirefox(HTTPRequest &request)
 		std::string remove = "http://";
 		requestTarget.erase(hostPos2, remove.length());
 	}
+	// remove trailing slash
+	if (!requestTarget.empty() && requestTarget[requestTarget.length() - 1] == '/')
+		requestTarget = requestTarget.substr(0, requestTarget.length() - 1);
+
+	// remove port number
+	if (requestTarget.find(':') != std::string::npos)
+		requestTarget = requestTarget.substr(0, requestTarget.find(':'));
+
 	request.setRequestTarget(requestTarget);
 	path += requestTarget;
 	request.setPath(path);
@@ -68,26 +76,27 @@ void Router::routeRequest(HTTPRequest &request, HTTPResponse &response)
 	PathValidation pathResult = pathIsValid(response, request);
 	std::cout << BLUE << "path: " << request.getPath() << RESET << std::endl;
 	std::cout << BLUE << "PathValidation: " << pathResult << RESET << std::endl;
+
+	// check if method is allowed
+	if (!_directive._allowedMethods.empty())
+	{
+		for (size_t i = 0; i < _directive._allowedMethods.size(); i++)
+		{
+			std::cout << "allowed method: " << _directive._allowedMethods[i] << std::endl;
+			if (_directive._allowedMethods[i] == request.getMethod())
+				break;
+			if (i == _directive._allowedMethods.size() - 1)
+			{
+				response.setStatusCode(405, "Method Not Allowed");
+				handleServerBlockError(request, response, 405);
+				return;
+			}
+		}
+	}
+
 	switch (pathResult)
 	{
 	case PathValid:
-		// check if method is allowed
-		if (!_directive._allowedMethods.empty())
-		{
-			for (size_t i = 0; i < _directive._allowedMethods.size(); i++)
-			{
-				if (_directive._allowedMethods[i] == request.getMethod())
-				{
-					break;
-				}
-				if (i == _directive._allowedMethods.size() - 1)
-				{
-					response.setStatusCode(405, "Method Not Allowed");
-					handleServerBlockError(request, response, 405);
-					return;
-				}
-			}
-		}
 		if (requestIsCGI(request))
 		{
 			CGIHandler cgiHandler(_eventManager, _connection);
@@ -98,6 +107,7 @@ void Router::routeRequest(HTTPRequest &request, HTTPResponse &response)
 		else if (request.getMethod() == "POST" || request.getUploadBoundary() != "")
 		{
 			UploadHandler uploadHandler;
+			uploadHandler.setUploadDir(_directive._uploadPath);
 			uploadHandler.handleRequest(request, response);
 		}
 		else
@@ -113,13 +123,16 @@ void Router::routeRequest(HTTPRequest &request, HTTPResponse &response)
 	case PathInvalid:
 		std::cout << "Path is not valid, handling as error" << std::endl;
 		handleServerBlockError(request, response, 404);
-		break;
+		return;
 	}
 
 	if (request.getMethod() == "SALAD")
 	{
 		std::cout << "🥬 + 🍅 + 🐟 = 🥗" << std::endl;
 	}
+
+	if (response.getStatusCode() > 299)
+		handleServerBlockError(request, response, response.getStatusCode());
 }
 
 bool Router::isDynamicRequest(const HTTPRequest &request)
@@ -324,7 +337,6 @@ enum PathValidation Router::pathIsValid(HTTPResponse &response, HTTPRequest &req
 	else if (!isDirectory(path) && stat(path.c_str(), &buffer) != 0)
 	{
 		std::cout << "Failed to stat the file at path: " << path << std::endl;
-		Debug::log("webRoot: " + path, Debug::NORMAL);
 		Debug::log("pathIsValid: stat failed, path does not exist", Debug::NORMAL);
 		return PathInvalid;
 	}

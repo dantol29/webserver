@@ -33,7 +33,7 @@ CGIHandler &CGIHandler::operator=(const CGIHandler &other)
 	return *this;
 }
 
-void CGIHandler::handleRequest(const HTTPRequest &request, HTTPResponse &response)
+void CGIHandler::handleRequest(HTTPRequest &request, HTTPResponse &response)
 {
 	MetaVariables env;
 	env.HTTPRequestToMetaVars(request, env);

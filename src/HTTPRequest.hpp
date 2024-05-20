@@ -44,6 +44,8 @@ class HTTPRequest
 	void setPath(const std::string &path);
 	void setRoot(const std::string &root);
 
+	void replaceHeader(const std::string &key, const std::string &value);
+
   private:
 	// VARIABLES
 	std::string _method;
