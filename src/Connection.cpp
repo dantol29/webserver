@@ -25,6 +25,7 @@ Connection::Connection(struct pollfd &pollFd, Server &server)
 	_CGIStartTime = 0;
 	_CGIExitStatus = 0;
 	_CGIHasCompleted = false;
+	_CGIHasTimedOut = false;
 }
 
 Connection::Connection(const Connection &other)
@@ -54,7 +55,7 @@ Connection::Connection(const Connection &other)
 	_CGIStartTime = other._CGIStartTime;
 	_CGIExitStatus = other._CGIExitStatus;
 	_CGIHasCompleted = other._CGIHasCompleted;
-
+	_CGIHasTimedOut = other._CGIHasTimedOut;
 	// std::cout << "Connection object copied" << std::endl;
 }
 
@@ -85,6 +86,7 @@ Connection &Connection::operator=(const Connection &other)
 		_CGIStartTime = other._CGIStartTime;
 		_CGIExitStatus = other._CGIExitStatus;
 		_CGIHasCompleted = other._CGIHasCompleted;
+		_CGIHasTimedOut = other._CGIHasTimedOut;
 	}
 	std::cout << "Connection object assigned" << std::endl;
 	return *this;
@@ -98,6 +100,12 @@ Connection::~Connection()
 // GETTERS AND SETTERS
 
 // GETTERS
+
+bool Connection::getCGIHasTimedOut() const
+{
+	return _CGIHasTimedOut;
+}
+
 size_t Connection::getResponseSize() const
 {
 	return _responseSize;
@@ -241,6 +249,11 @@ void Connection::setServerIp(std::string serverIp)
 void Connection::setServerPort(unsigned short serverPort)
 {
 	_serverPort = serverPort;
+}
+
+void Connection::setCGIHasTimedOut(bool value)
+{
+	_CGIHasTimedOut = value;
 }
 
 void Connection::setHasReadSocket(bool value)

@@ -69,7 +69,7 @@ void Server::startPollEventLoop()
 	while (1)
 	{
 		if (_hasCGI)
-			timeout = 500;
+			timeout = 1000; // 1 seconds
 		else
 			timeout = -1;
 		// printConnections("BEFORE POLL", _FDs, _connections, true);
@@ -175,16 +175,21 @@ void Server::startPollEventLoop()
 				// Check if the CGI has timed out
 				for (size_t i = 0; i < originalSize && i < _FDs.size(); i++)
 				{
-					_connections[i].setCGIExitStatus(1);
-					if (_connections[i].getHasCGI() && _connections[i].getCGIStartTime() + CGI_TIMEOUT_MS < time(NULL))
+					double elapsed = difftime(time(NULL), _connections[i].getCGIStartTime());
+					std::cout << "Elapsed time: " << elapsed << " seconds" << std::endl;
+					//_connections[i].setCGIExitStatus(1);
+					if (_connections[i].getHasCGI() && elapsed > 1)
 					{
-						std::cout << _connections[i].getCGIStartTime() << ", " << time(NULL) << std::endl;
+						std::cout << _connections[i].getCGIStartTime() << ", " << clock() << std::endl;
 						// kill CGI process
 						std::cout << "CGI timeout" << std::endl;
 						// probably we need here also removeCGI and go back to hanldeRequest and stuff
 						_FDs[i].events = POLLOUT;
+						_connections[i].setCGIExitStatus(status);
+						_connections[i].setCGIHasCompleted(true);
+						_connections[i].setCGIHasTimedOut(true);
 						kill(_connections[i].getCGIPid(), SIGKILL);
-						_connections[i].removeCGI(status);
+						//_connections[i].removeCGI(status);
 						// give a response back that the CGI timeout
 					}
 				}
@@ -387,6 +392,14 @@ void Server::buildCGIResponse(Connection &conn, HTTPResponse &response)
 	// I.e. read 1 buffer and then go back to poll
 	std::cout << "Reading from pipe" << std::endl;
 	ssize_t bytesRead;
+
+	if (conn.getCGIHasTimedOut())
+	{
+		std::cout << "CGI timed out" << std::endl;
+		response.setStatusCode(500, "Internal Server Error");
+		response.setIsCGI(false);
+		return;
+	}
 	do
 	{
 		std::cout << "Into the do while loop" << std::endl;

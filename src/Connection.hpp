@@ -54,6 +54,7 @@ class Connection
 	int _CGIExitStatus;
 	time_t _CGIStartTime;
 	bool _CGIHasCompleted;
+	bool _CGIHasTimedOut;
 
   public:
 	Connection(struct pollfd &pollFd, Server &server);
@@ -96,6 +97,7 @@ class Connection
 	time_t getCGIStartTime() const;
 	int getCGIExitStatus() const;
 	bool getCGIHasCompleted() const;
+	bool getCGIHasTimedOut() const;
 
 	/* Setters */
 	void setResponseString(std::string responseString);
@@ -118,6 +120,7 @@ class Connection
 	void setCGIStartTime(time_t now);
 	void setCGIExitStatus(int status);
 	void setCGIHasCompleted(bool value);
+	void setCGIHasTimedOut(bool value);
 	/* CGI */
 	void addCGI(pid_t pid);
 	void removeCGI(int status);
