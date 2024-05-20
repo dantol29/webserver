@@ -7,6 +7,13 @@ struct EventData
 	int pid;
 };
 
+// Overload << operator for easy printing
+std::ostream &operator<<(std::ostream &os, const EventData &eventData)
+{
+	os << "Event type: " << eventData.eventType << ", PID: " << eventData.pid;
+	return os;
+}
+
 class IEventListener
 {
   public:

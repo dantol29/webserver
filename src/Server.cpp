@@ -99,8 +99,19 @@ void Server::startPollEventLoop()
 										 _connections[i].getParser(),
 										 _connections[i].getRequest(),
 										 _connections[i].getResponse());
-						if (_connections[i].getHasFinishedReading() && _connections[i].getHasDataToSend())
+						std::cout << "Has finished reading: " << _connections[i].getHasFinishedReading() << std::endl;
+						std::cout << "Has data to send: " << _connections[i].getHasDataToSend() << std::endl;
+						std::cout << "Has CGI: " << _connections[i].getHasCGI() << std::endl;
+						// If a Connection has a CGI it means it has already finished reading, cuase the hasCGI is set
+						// after
+						// if ((_connections[i].getHasFinishedReading() && _connections[i].getHasDataToSend()) ||
+						// 	_connections[i].getHasCGI())
+						_FDs[i].events = POLLOUT;
+						if ((_connections[i].getHasFinishedReading() && _connections[i].getHasDataToSend()))
+						{
+							std::cout << "Setting POLLOUT" << std::endl;
 							_FDs[i].events = POLLOUT;
+						}
 					}
 				}
 				else if (_FDs[i].revents & (POLLERR | POLLHUP | POLLNVAL))
@@ -116,11 +127,16 @@ void Server::startPollEventLoop()
 			handleSocketTimeoutIfAny();
 		else
 			handlePollError();
+		std::cout << "Before if(_hasCGI)" << std::endl;
+		// We are checking if the server has CGI. And it should be true. Is our event handler working?
+		std::cout << "Has CGI: " << (_hasCGI ? "true" : "false") << std::endl;
 		if (_hasCGI)
 		{
+			std::cout << "We enter the hasCGI loop" << std::endl;
 			size_t originalSize = _FDs.size();
 			int status;
 			pid_t pid = waitpid(-1, &status, WNOHANG);
+			std::cout << "PID: " << pid << std::endl;
 			if (pid > 0)
 			{
 				// TODo: has at this point the CGI been executed?
@@ -134,6 +150,7 @@ void Server::startPollEventLoop()
 						// We assume that the CGI has been executed and we can set the FD to POLLOUT and has data to
 						// Mind theat the buffer needs to be read before we can send the response
 						// send kill(_connections[i].getCGIPid(), SIGKILL);
+						std::cout << "Setting POLLOUT" << std::endl;
 						_FDs[i].events = POLLOUT;
 						break;
 					}
@@ -387,17 +404,25 @@ void Server::buildResponse(Connection &conn, size_t &i, HTTPRequest &request, HT
 		}
 		// TODO: check if the listen in the server block is matching port and ip from connection
 		// This wiill not be true, if the response _isCGI is true
+		std::cout << "Is Response CGI? " << response.getIsCGI() << std::endl;
 		if (!response.getIsCGI())
 		{
+			std::cout << "Setting setHasDataToSend to true" << std::endl;
 			conn.setHasDataToSend(true);
 			return;
 		}
 	}
 	else
+	{
+		// We want to build the response from the CGI only after we went through the poll and we have the data from the
+		// CGI.
 		buildCGIResponse(conn, response);
+	}
+	std::cout << "Exiting buildResponse" << std::endl;
 }
 void Server::buildCGIResponse(Connection &conn, HTTPResponse &response)
 {
+	std::cout << RED << "Entering buildCGIResponse" << RESET << std::endl;
 	std::string cgiOutput;
 	int *pipeFD;
 	pipeFD = response.getCGIpipeFD();
@@ -519,11 +544,14 @@ void Server::handleConnection(Connection &conn, size_t &i, Parser &parser, HTTPR
 		buildResponse(conn, i, request, response);
 	// MInd that after the last read from the pipe of the CGI getHasReadSocket will be false but we will have a read
 	// operation on the pipe, if we want to write just after going through poll we need an extra flag or something.
+	std::cout << "Has read socket: " << conn.getHasReadSocket() << std::endl;
+	std::cout << "Has data to send: " << conn.getHasDataToSend() << std::endl;
 	if (conn.getHasDataToSend() && !conn.getHasReadSocket())
 		writeToClient(conn, i, response);
-
+	std::cout << "Can be closed: " << conn.getCanBeClosed() << std::endl;
 	if (conn.getCanBeClosed())
 		closeClientConnection(conn, i);
+	std::cout << RED << "Exiting handleConnection" << RESET << std::endl;
 }
 
 /*** Private Methods ***/

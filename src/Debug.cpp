@@ -33,7 +33,7 @@ void Debug::log(const std::string &message, Debug::Level paramLevel)
 	{
 		return;
 	}
-	if (debugEnabled && (debugLevel >= paramLevel))
+	if (debugEnabled && (debugLevel == paramLevel))
 	{
 		std::cout << message << std::endl;
 	}

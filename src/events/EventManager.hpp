@@ -8,7 +8,8 @@
 // EventManager class declaration
 class EventManager
 {
-	std::vector<IEventListener *> observers; // List of observers
+  private:
+	std::vector<IEventListener *> _observers; // List of observers
   public:
 	EventManager();
 	~EventManager();

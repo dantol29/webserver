@@ -94,6 +94,7 @@ void Router::routeRequest(HTTPRequest &request, HTTPResponse &response)
 			cgiHandler.setFDsRef(_FDsRef);
 			cgiHandler.setPollFd(_pollFd);
 			cgiHandler.handleRequest(request, response);
+			std::cout << "CGI request handled" << std::endl;
 		}
 		else if (request.getMethod() == "POST" || request.getUploadBoundary() != "")
 		{
@@ -115,7 +116,7 @@ void Router::routeRequest(HTTPRequest &request, HTTPResponse &response)
 		handleServerBlockError(request, response, 404);
 		break;
 	}
-
+	std::cout << "Before SALAD method check" << std::endl;
 	if (request.getMethod() == "SALAD")
 	{
 		std::cout << "🥬 + 🍅 + 🐟 = 🥗" << std::endl;
