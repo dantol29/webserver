@@ -21,6 +21,40 @@ We send requests to:
 - `127.0.0.3:8080`: "000"
 - `127.0.0.1:8081`: "404"
 
+### Docker IPv6 Setup Guide
+
+#### 0. Enable IPv6 in Docker
+
+To enable IPv6 support in Docker, follow these steps:
+
+1. **Edit Docker daemon configuration**:
+   Edit the `/etc/docker/daemon.json` file to include the necessary IPv6 parameters:
+
+   ```json
+   {
+     "ipv6": true,
+     "fixed-cidr-v6": "2001:db8:1::/64",
+     "experimental": true,
+     "ip6tables": true
+   }
+   ```
+
+   Step 1 on Mac needs to be done in the Desktop app > Settings > Engine
+
+2. **Restart Docker**:
+   Save the configuration file and restart the Docker daemon for the changes to take effect:
+
+   ```sh
+   sudo systemctl restart docker
+   ```
+
+3. **Create an IPv6 network**:
+   Create a Docker network that uses IPv6:
+
+   ```sh
+   docker network create --ipv6 --subnet 2001:db8:1::/64 ip6net
+   ```
+
 #### 1. Build the Docker Image
 
 From the root of `webserv`:
