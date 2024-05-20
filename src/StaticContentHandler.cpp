@@ -46,7 +46,7 @@ static bool isDirectory(const std::string &path)
 	return S_ISDIR(statbuf.st_mode);
 }
 
-void StaticContentHandler::handleRequest(const HTTPRequest &request, HTTPResponse &response)
+void StaticContentHandler::handleRequest(HTTPRequest &request, HTTPResponse &response)
 {
 	std::string requestTarget = request.getRequestTarget();
 	std::string webRoot = "var/www";
@@ -58,9 +58,11 @@ void StaticContentHandler::handleRequest(const HTTPRequest &request, HTTPRespons
 		requestTarget = "/index.html";
 	// if the last character of the path is a / and the first character of the request target is a /, we remove the
 	// first character of the request target
-	std::cout << "requestTarget: " << requestTarget << std::endl;
 	if (path[path.length() - 1] == '/' && requestTarget[0] == '/')
 		requestTarget = requestTarget.substr(1);
+
+	request.setRequestTarget(requestTarget);
+	std::cout << "requestTarget: " << request.getRequestTarget() << std::endl;
 	// TODO: consider streaming the file instead of loading it all in memory for large files
 	if (isDirectory(path))
 	{
