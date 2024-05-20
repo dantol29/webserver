@@ -446,7 +446,6 @@ void Connection::printConnection() const
 bool Connection::findServerBlock(const std::vector<ServerBlock>& serverBlocks)
 {
 	std::string serverName;
-	int defaultServerBlock = -1;
 
 	for (size_t i = 0; i < serverBlocks.size(); i++)
 	{
@@ -454,8 +453,6 @@ bool Connection::findServerBlock(const std::vector<ServerBlock>& serverBlocks)
 		for (size_t j = 0; j < serverBlocks[i].getServerName().size(); j++)
 		{
 			serverName = serverBlocks[i].getServerName()[j];
-			if (serverName == "_" && defaultServerBlock == -1)
-				defaultServerBlock = i;
 			if (serverName == _request.getSingleHeader("host").second)
 				break;
 		}
@@ -481,38 +478,14 @@ bool Connection::findServerBlock(const std::vector<ServerBlock>& serverBlocks)
 		}
 	}
 	// check if default server block exists
-	if (defaultServerBlock != -1)
+	if (serverBlocks.size() > 0)
 	{
 		_hasServerBlock = true;
-		return (_serverBlock = serverBlocks[defaultServerBlock], true);
+		Debug::log("Default server block found", Debug::NORMAL);
+		return (_serverBlock = serverBlocks[0], true);
 	}
-	
+
 	Debug::log("Server block not found", Debug::NORMAL);
 	_response.setStatusCode(404, "Not Found");
 	return (false);
 }
-			// for (size_t i = 0; i < serverBlock.getLocations().size(); i++)
-			// {
-				// std::cout << "Location: " << serverBlock.getLocations()[i]._path << " == " << req.getRequestTarget()
-						//   << std::endl;
-				// if (req.getRequestTarget() == serverBlock.getLocations()[i]._path)
-				// {
-					// std::cout << "Location found" << std::endl;
-					// locationFound = true;
-					// if (serverBlock.getLocations()[i]._clientMaxBodySize == 0)
-					// 	break;
-					// if (contentLength > serverBlock.getLocations()[i]._clientMaxBodySize)
-					// {
-					// 	res.setStatusCode(413, "Payload Too Large");
-					// 	return false;
-					// }
-				// }
-			// }
-			// uninitialized value
-			// if (locationFound || _config.getServerBlocks()[i].getClientMaxBodySize() == 0)
-			// 	break;
-			// if (contentLength > _config.getServerBlocks()[i].getClientMaxBodySize())
-			// {
-			// 	res.setStatusCode(413, "Payload Too Large");
-			// 	return false;
-			// }
