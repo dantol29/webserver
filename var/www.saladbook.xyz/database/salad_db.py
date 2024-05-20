@@ -48,6 +48,8 @@ def main():
     print(f"DEBUG: Loaded data: {data}<br>")
 
     # Simulating CGI environment for demonstration
+    form = cgi.FieldStorage(fp=None, headers=None, environ={'REQUEST_METHOD':'GET', 'CONTENT_TYPE':'application/x-www-form-urlencoded', 'QUERY_STRING': query_string})
+
     action = form.getvalue('action')
     name = form.getvalue('name')
     salad = form.getvalue('salad')

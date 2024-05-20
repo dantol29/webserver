@@ -60,6 +60,8 @@ std::vector<std::string> CGIHandler::createArgvForExecve(const MetaVariables &en
 	std::cout << "createArgvForExecve: pathTranslated: " << pathTranslated << std::endl;
 	std::string scriptPath = pathTranslated;
 	std::cout << "createArgvForExecve: scriptPath: " << scriptPath << std::endl;
+	std::string queryString = env.getVar("QUERY_STRING");
+	std::cout << "createArgvForExecve: queryString: " << queryString << std::endl;
 
 	if (env.getVar("X_INTERPRETER_PATH") != "")
 	{
@@ -71,6 +73,7 @@ std::vector<std::string> CGIHandler::createArgvForExecve(const MetaVariables &en
 	{
 		argv.push_back(scriptPath);
 	}
+
 	return argv;
 }
 
