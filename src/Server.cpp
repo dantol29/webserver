@@ -44,6 +44,11 @@ int Server::getCGICounter() const
 	return _CGICounter;
 }
 
+const EventManager &Server::getEventManager() const
+{
+	return _eventManager;
+}
+
 // METHODS
 
 void Server::startListening()
@@ -99,6 +104,7 @@ void Server::startPollEventLoop()
 										 _connections[i].getParser(),
 										 _connections[i].getRequest(),
 										 _connections[i].getResponse());
+						std::cout << GREEN << _connections[i].getCGIPid() << RESET << std::endl;
 						std::cout << "Has finished reading: " << _connections[i].getHasFinishedReading() << std::endl;
 						std::cout << "Has data to send: " << _connections[i].getHasDataToSend() << std::endl;
 						std::cout << "Has CGI: " << _connections[i].getHasCGI() << std::endl;
@@ -137,19 +143,25 @@ void Server::startPollEventLoop()
 			int status;
 			pid_t pid = waitpid(-1, &status, WNOHANG);
 			std::cout << "PID: " << pid << std::endl;
+
+			for (size_t i = 0; i < originalSize && i < _FDs.size(); i++)
+			{
+				std::cout << _connections[i].getCGIPid() << ", " << _connections[i].getHasCGI() << std::endl;
+			}
+
 			if (pid > 0)
 			{
+				std::cout << "PID > 0: " << pid << std::endl;
 				// TODo: has at this point the CGI been executed?
 				for (size_t i = 0; i < originalSize && i < _FDs.size(); i++)
 				{
+					std::cout << _connections[i].getCGIPid() << " == " << pid << ", " << _connections[i].getHasCGI()
+							  << std::endl;
 					if (_connections[i].getHasCGI() && _connections[i].getCGIPid() == pid)
 					{
+						std::cout << "REMOVE THIS TRASH: " << pid << std::endl;
 						_connections[i].setCGIExitStatus(status);
-						_connections[i].removeCGI(status);
-						// We still need to read the buffer before we can send the response
-						// We assume that the CGI has been executed and we can set the FD to POLLOUT and has data to
-						// Mind theat the buffer needs to be read before we can send the response
-						// send kill(_connections[i].getCGIPid(), SIGKILL);
+						_connections[i].setCGIHasCompleted(true);
 						std::cout << "Setting POLLOUT" << std::endl;
 						_FDs[i].events = POLLOUT;
 						break;
@@ -164,13 +176,15 @@ void Server::startPollEventLoop()
 				for (size_t i = 0; i < originalSize && i < _FDs.size(); i++)
 				{
 					_connections[i].setCGIExitStatus(1);
-					if (_connections[i].getHasCGI() && _connections[i].getCGIStartTime() + CGI_TIMEOUT_MS > time(NULL))
+					if (_connections[i].getHasCGI() && _connections[i].getCGIStartTime() + CGI_TIMEOUT_MS < time(NULL))
 					{
+						std::cout << _connections[i].getCGIStartTime() << ", " << time(NULL) << std::endl;
 						// kill CGI process
 						std::cout << "CGI timeout" << std::endl;
 						// probably we need here also removeCGI and go back to hanldeRequest and stuff
 						_FDs[i].events = POLLOUT;
 						kill(_connections[i].getCGIPid(), SIGKILL);
+						_connections[i].removeCGI(status);
 						// give a response back that the CGI timeout
 					}
 				}
@@ -348,6 +362,7 @@ void Server::buildResponse(Connection &conn, size_t &i, HTTPRequest &request, HT
 			router.setFDsRef(&_FDs);
 			router.setPollFd(&conn.getPollFd());
 			router.routeRequest(request, response);
+			std::cout << GREEN << conn.getCGIPid() << RESET << std::endl;
 		}
 		std::cout << "Is Response CGI? " << response.getIsCGI() << std::endl;
 		if (!response.getIsCGI())
@@ -357,12 +372,8 @@ void Server::buildResponse(Connection &conn, size_t &i, HTTPRequest &request, HT
 			return;
 		}
 	}
-	else
-	{
-		// We want to build the response from the CGI only after we went through the poll and we have the data from the
-		// CGI.
+	else if (conn.getCGIHasCompleted())
 		buildCGIResponse(conn, response);
-	}
 }
 
 void Server::buildCGIResponse(Connection &conn, HTTPResponse &response)

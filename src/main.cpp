@@ -28,6 +28,9 @@ int main(int argc, char **argv)
 	std::cout << "Pointer to serverEventListener: " << &serverEventListener << std::endl;
 	eventManager.subscribe(&serverEventListener);
 
+	std::cout << &webserv.getEventManager() << std::endl;
+	std::cout << &eventManager << std::endl;
+	std::cout << "SIZE: " << webserv.getEventManager().getObservers().size() << std::endl;
 	webserv.startListening();
 	webserv.startPollEventLoop();
 

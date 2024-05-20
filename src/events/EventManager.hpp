@@ -15,6 +15,8 @@ class EventManager
 	EventManager();
 	~EventManager();
 
+	std::vector<IEventListener *> getObservers() const;
+
 	void subscribe(IEventListener *observer);
 	void unsubscribe(IEventListener *observer);
 	// void emit(int eventID);

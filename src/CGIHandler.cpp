@@ -26,6 +26,7 @@ CGIHandler &CGIHandler::operator=(const CGIHandler &other)
 	if (this != &other)
 	{
 		AResponseHandler::operator=(other);
+		_connection = other._connection;
 		_eventManager = other._eventManager;
 		_FDsRef = other._FDsRef;
 		_pollFd = other._pollFd;
@@ -44,6 +45,7 @@ void CGIHandler::handleRequest(HTTPRequest &request, HTTPResponse &response)
 		response.setStatusCode(500, "");
 		response.setBody("500 Internal Server Error");
 	}
+	std::cout << GREEN << _connection.getCGIPid() << RESET << std::endl;
 	std::cout << RED << "Exiting CGIHandler::handleRequest" << RESET << std::endl;
 	return;
 }
@@ -162,6 +164,7 @@ bool CGIHandler::executeCGI(const MetaVariables &env, HTTPResponse &response)
 	_eventManager.emit(data); // Emit event indicating a CGI process has started
 	// conn.addCGI(pid);
 	_connection.addCGI(pid);
+	std::cout << GREEN << _connection.getCGIPid() << RESET << std::endl;
 	// TODO: is this used? To which process to you want to send this signal/ @Leo
 	// signal(SIGALRM, handleTimeout);
 	// alarm(4);

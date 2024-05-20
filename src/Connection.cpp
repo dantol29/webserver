@@ -23,6 +23,8 @@ Connection::Connection(struct pollfd &pollFd, Server &server)
 	_CGIHasExited = false;
 	_CGIPid = 0;
 	_CGIStartTime = 0;
+	_CGIExitStatus = 0;
+	_CGIHasCompleted = false;
 }
 
 Connection::Connection(const Connection &other)
@@ -50,6 +52,8 @@ Connection::Connection(const Connection &other)
 	_CGIHasExited = other._CGIHasExited;
 	_CGIPid = other._CGIPid;
 	_CGIStartTime = other._CGIStartTime;
+	_CGIExitStatus = other._CGIExitStatus;
+	_CGIHasCompleted = other._CGIHasCompleted;
 
 	// std::cout << "Connection object copied" << std::endl;
 }
@@ -79,6 +83,8 @@ Connection &Connection::operator=(const Connection &other)
 		_CGIHasExited = other._CGIHasExited;
 		_CGIPid = other._CGIPid;
 		_CGIStartTime = other._CGIStartTime;
+		_CGIExitStatus = other._CGIExitStatus;
+		_CGIHasCompleted = other._CGIHasCompleted;
 	}
 	std::cout << "Connection object assigned" << std::endl;
 	return *this;
@@ -199,7 +205,18 @@ int Connection::getCGIExitStatus() const
 {
 	return _CGIExitStatus;
 }
+
+bool Connection::getCGIHasCompleted() const
+{
+	return _CGIHasCompleted;
+}
+
 // SETTERS
+
+void Connection::setCGIHasCompleted(bool value)
+{
+	_CGIHasCompleted = value;
+}
 
 void Connection::setResponseSize(size_t responseSize)
 {
@@ -478,6 +495,7 @@ void Connection::addCGI(pid_t pid)
 {
 	_hasCGI = true;
 	_CGIPid = pid;
+	std::cout << "CGI process added with pid: " << _CGIPid << std::endl;
 	_CGIStartTime = time(NULL);
 }
 

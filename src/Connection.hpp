@@ -53,6 +53,7 @@ class Connection
 	pid_t _CGIPid;
 	int _CGIExitStatus;
 	time_t _CGIStartTime;
+	bool _CGIHasCompleted;
 
   public:
 	Connection(struct pollfd &pollFd, Server &server);
@@ -94,6 +95,7 @@ class Connection
 	pid_t getCGIPid() const;
 	time_t getCGIStartTime() const;
 	int getCGIExitStatus() const;
+	bool getCGIHasCompleted() const;
 
 	/* Setters */
 	void setResponseString(std::string responseString);
@@ -115,6 +117,7 @@ class Connection
 
 	void setCGIStartTime(time_t now);
 	void setCGIExitStatus(int status);
+	void setCGIHasCompleted(bool value);
 	/* CGI */
 	void addCGI(pid_t pid);
 	void removeCGI(int status);

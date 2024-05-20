@@ -16,6 +16,11 @@ EventManager::~EventManager()
 	Debug::log("EventManager destroyed", Debug::OCF);
 }
 
+std::vector<IEventListener *> EventManager::getObservers() const
+{
+	return _observers;
+}
+
 // Subscribe an observer to this manager
 void EventManager::subscribe(IEventListener *observer)
 {
@@ -25,6 +30,7 @@ void EventManager::subscribe(IEventListener *observer)
 	{
 		std::cout << "Observer: " << *it << std::endl;
 	}
+	std::cout << "Size of observers: " << _observers.size() << std::endl;
 }
 
 // Unsubscribe an observer from this manager

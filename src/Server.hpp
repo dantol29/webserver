@@ -40,6 +40,7 @@ class Server
 	void setCGICounter(int counter);
 	bool getHasCGI() const;
 	int getCGICounter() const;
+	const EventManager &getEventManager() const;
 
 	void addCGI(const EventData &eventData);
 	void removeCGI();
@@ -53,7 +54,7 @@ class Server
 	std::vector<ServerSocket> _serverSockets;
 	std::vector<struct pollfd> _FDs;
 	std::vector<Connection> _connections;
-	EventManager _eventManager;
+	EventManager &_eventManager;
 
 	bool _hasCGI;
 
@@ -87,9 +88,9 @@ class Server
 
 	/* for buildResponse */
 	void formRequestTarget(HTTPRequest &request);
-	void findLocationBlock(HTTPRequest &request, ServerBlock& serverBlock, Directives &directive);
-	void handleServerBlockError(Connection& conn, HTTPResponse &response);
-	std::string findServerName(HTTPRequest& request, ServerBlock& serverBlock);
+	void findLocationBlock(HTTPRequest &request, ServerBlock &serverBlock, Directives &directive);
+	void handleServerBlockError(Connection &conn, HTTPResponse &response);
+	std::string findServerName(HTTPRequest &request, ServerBlock &serverBlock);
 	/* Not avaiable constructors */
 	// Copy constructor
 	Server(const Server &other);

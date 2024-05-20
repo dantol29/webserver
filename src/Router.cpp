@@ -103,6 +103,7 @@ void Router::routeRequest(HTTPRequest &request, HTTPResponse &response)
 			cgiHandler.setFDsRef(_FDsRef);
 			cgiHandler.setPollFd(_pollFd);
 			cgiHandler.handleRequest(request, response);
+			std::cout << GREEN << _connection.getCGIPid() << RESET << std::endl;
 			std::cout << "CGI request handled" << std::endl;
 		}
 		else if (request.getMethod() == "POST" || request.getUploadBoundary() != "")
