@@ -1,6 +1,8 @@
 #ifndef IEVENTLISTENER_HPP
 #define IEVENTLISTENER_HPP
 
+#include <iostream>
+
 struct EventData
 {
 	int eventType;
@@ -8,7 +10,7 @@ struct EventData
 };
 
 // Overload << operator for easy printing
-std::ostream &operator<<(std::ostream &os, const EventData &eventData)
+inline std::ostream &operator<<(std::ostream &os, const EventData &eventData)
 {
 	os << "Event type: " << eventData.eventType << ", PID: " << eventData.pid;
 	return os;
