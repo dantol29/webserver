@@ -5,7 +5,7 @@ Router::Router()
 {
 }
 
-Router::Router(Directives &directive) : _directive(directive), _FDsRef(NULL), _pollFd(NULL)
+Router::Router(Directives& directive) : _directive(directive), _FDsRef(NULL), _pollFd(NULL)
 {
 }
 
@@ -63,7 +63,7 @@ void Router::adaptPathForFirefox(HTTPRequest &request)
 void Router::routeRequest(HTTPRequest &request, HTTPResponse &response)
 {
 	Debug::log("Routing Request: host = " + request.getSingleHeader("host").second, Debug::NORMAL);
-
+	
 	if (!_directive._return.empty())
 	{
 		response.setStatusCode(301, "Redirection");
@@ -88,10 +88,10 @@ void Router::routeRequest(HTTPRequest &request, HTTPResponse &response)
 	PathValidation pathResult = pathIsValid(response, request);
 	std::cout << BLUE << "path: " << request.getPath() << RESET << std::endl;
 	std::cout << BLUE << "PathValidation: " << pathResult << RESET << std::endl;
-
+	
 	// check if method is allowed
 	if (!_directive._allowedMethods.empty())
-	{
+	{		
 		for (size_t i = 0; i < _directive._allowedMethods.size(); i++)
 		{
 			std::cout << "allowed method: " << _directive._allowedMethods[i] << std::endl;
@@ -135,7 +135,7 @@ void Router::routeRequest(HTTPRequest &request, HTTPResponse &response)
 	case PathInvalid:
 		std::cout << "Path is not valid, handling as error" << std::endl;
 		handleServerBlockError(request, response, 404);
-		return;
+		return ;
 	}
 
 	if (request.getMethod() == "SALAD")
@@ -153,27 +153,6 @@ bool Router::isDynamicRequest(const HTTPRequest &request)
 	{
 		return true;
 	}
-	return false;
-}
-
-bool Router::isEndPointCGI(const HTTPRequest &request)
-{
-	std::string path = request.getPath();
-	std::string fileExtension = getFileExtension(path);
-	std::vector<std::string> cgiExtensions = _directive._cgiExt;
-
-	if (!cgiExtensions.empty())
-	{
-		for (size_t i = 0; i < cgiExtensions.size(); i++)
-		{
-			if (cgiExtensions[i] == fileExtension)
-			{
-				Debug::log("isEndPointCGI: CGI request detected", Debug::NORMAL);
-				return true;
-			}
-		}
-	}
-	Debug::log("isEndPointCGI: Not a CGI request", Debug::NORMAL);
 	return false;
 }
 
@@ -342,14 +321,12 @@ void Router::generateDirectoryListing(HTTPResponse &Response,
 	Response.setHeader("Content-Type", "text/html");
 }
 
-bool isDirectory(std::string &path)
-{
-	struct stat buffer;
-	if (stat(path.c_str(), &buffer) == 0)
-	{
-		return S_ISDIR(buffer.st_mode);
-	}
-	return false; // Failed to get file information
+bool isDirectory(std::string& path) {
+    struct stat buffer;
+    if (stat(path.c_str(), &buffer) == 0) {
+        return S_ISDIR(buffer.st_mode);
+    }
+    return false; // Failed to get file information
 }
 
 enum PathValidation Router::pathIsValid(HTTPResponse &response, HTTPRequest &request)
