@@ -35,6 +35,7 @@ class Router
 
 	void splitTarget(const std::string &target);
 	bool isDynamicRequest(const HTTPRequest &request);
+	bool isEndPointCGI(const HTTPRequest &request);
 	enum PathValidation pathIsValid(HTTPResponse &response, HTTPRequest &request);
 	void setFDsRef(std::vector<struct pollfd> *FDsRef);
 	void setPollFd(struct pollfd *pollFd);
