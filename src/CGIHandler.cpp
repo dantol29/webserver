@@ -53,6 +53,7 @@ void CGIHandler::handleRequest(HTTPRequest &request, HTTPResponse &response)
 
 std::vector<std::string> CGIHandler::createArgvForExecve(const MetaVariables &env)
 {
+	std ::cout << "------------------createArgvForExecve-------------------" << std::endl;
 	std::vector<std::string> argv;
 	std::string scriptName = env.getVar("SCRIPT_NAME");
 	std::cout << "createArgvForExecve: scriptName: " << scriptName << std::endl;
@@ -71,6 +72,7 @@ std::vector<std::string> CGIHandler::createArgvForExecve(const MetaVariables &en
 	{
 		argv.push_back(scriptPath);
 	}
+	std::cout << "---------- Exiting createArgvForExecve ------------------" << std::endl;
 	return argv;
 }
 
@@ -143,6 +145,7 @@ void handleTimeout(int sig)
 
 std::string CGIHandler::executeCGI(const MetaVariables &env)
 {
+	std::cout << "------------------executeCGI-------------------" << std::endl;
 	std::string cgiOutput;
 	std::vector<std::string> argv = createArgvForExecve(env);
 	std::vector<std::string> envp = env.getForExecve();
@@ -177,6 +180,26 @@ std::string CGIHandler::executeCGI(const MetaVariables &env)
 		{
 			perror("access");
 			_exit(EXIT_FAILURE);
+		}
+		if (argvPointers[0] != NULL)
+			std::cerr << "argvPointers[0] " << argvPointers[0] << std::endl;
+		if (argvPointers[1] != NULL)
+			std::cerr << "argvPointers[1] " << argvPointers[1] << std::endl;
+		std::cerr << "Printing argvPointers" << std::endl;
+		for (size_t i = 0; i < argvPointers.size(); i++)
+		{
+			if (argvPointers[i] != NULL)
+				std::cout << argvPointers[i] << std::endl;
+			else
+				break;
+		}
+		std::cerr << "Printing envpPointers" << std::endl;
+		for (size_t i = 0; i < envpPointers.size(); i++)
+		{
+			if (envpPointers[i] != NULL)
+				std::cout << envpPointers[i] << std::endl;
+			else
+				break;
 		}
 
 		execve(argvPointers[0], argvPointers.data(), envpPointers.data());
