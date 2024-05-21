@@ -1,27 +1,15 @@
 #include "Router.hpp"
 #include <string>
 
-Router::Router()
+Router::Router(Directives &directive, EventManager &eventManager, Connection &connection)
+	: _connection(connection)
+	, _directive(directive)
+	, _cgiHandler(eventManager, connection)
+	, _eventManager(eventManager)
+	, _FDsRef(NULL)
+	, _pollFd(NULL)
 {
-}
-
-Router::Router(Directives& directive) : _directive(directive), _FDsRef(NULL), _pollFd(NULL)
-{
-}
-
-Router::Router(const Router &obj) : _directive(obj._directive), _path(obj._path), _FDsRef(NULL), _pollFd(NULL)
-{
-}
-
-Router &Router::operator=(const Router &obj)
-{
-	if (this == &obj)
-		return *this;
-	_directive = obj._directive;
-	_path = obj._path;
-	_FDsRef = obj._FDsRef;
-	_pollFd = obj._pollFd;
-	return *this;
+	// Constructor body, if needed
 }
 
 Router::~Router()
@@ -63,7 +51,7 @@ void Router::adaptPathForFirefox(HTTPRequest &request)
 void Router::routeRequest(HTTPRequest &request, HTTPResponse &response)
 {
 	Debug::log("Routing Request: host = " + request.getSingleHeader("host").second, Debug::NORMAL);
-	
+
 	if (!_directive._return.empty())
 	{
 		response.setStatusCode(301, "Redirection");
@@ -88,10 +76,10 @@ void Router::routeRequest(HTTPRequest &request, HTTPResponse &response)
 	PathValidation pathResult = pathIsValid(response, request);
 	std::cout << BLUE << "path: " << request.getPath() << RESET << std::endl;
 	std::cout << BLUE << "PathValidation: " << pathResult << RESET << std::endl;
-	
+
 	// check if method is allowed
 	if (!_directive._allowedMethods.empty())
-	{		
+	{
 		for (size_t i = 0; i < _directive._allowedMethods.size(); i++)
 		{
 			std::cout << "allowed method: " << _directive._allowedMethods[i] << std::endl;
@@ -109,9 +97,9 @@ void Router::routeRequest(HTTPRequest &request, HTTPResponse &response)
 	switch (pathResult)
 	{
 	case PathValid:
-		if (isCGI(request))
+		if (requestIsCGI(request))
 		{
-			CGIHandler cgiHandler;
+			CGIHandler cgiHandler(_eventManager, _connection);
 			cgiHandler.setFDsRef(_FDsRef);
 			cgiHandler.setPollFd(_pollFd);
 			cgiHandler.handleRequest(request, response);
@@ -135,7 +123,7 @@ void Router::routeRequest(HTTPRequest &request, HTTPResponse &response)
 	case PathInvalid:
 		std::cout << "Path is not valid, handling as error" << std::endl;
 		handleServerBlockError(request, response, 404);
-		return ;
+		return;
 	}
 
 	if (request.getMethod() == "SALAD")
@@ -232,12 +220,12 @@ void Router::handleServerBlockError(HTTPRequest &request, HTTPResponse &response
 	}
 }
 
-bool Router::isCGI(const HTTPRequest &request)
+bool Router::requestIsCGI(const HTTPRequest &request)
 {
 	// TODO: check against config file, not this hardcoded version
 	std::vector<std::string> cgiExtensions = _directive._cgiExt;
 
-	std::cout << RED << "isCGI" << RESET << std::endl;
+	std::cout << RED << "requestIsCGI" << RESET << std::endl;
 	std::cout << "cgiExtensions: " << cgiExtensions.size() << std::endl;
 	std::cout << "request target: " << request.getRequestTarget() << std::endl;
 	if (!cgiExtensions.empty())
@@ -249,12 +237,12 @@ bool Router::isCGI(const HTTPRequest &request)
 			std::cout << "cgiExtensions[" << i << "]: " << cgiExtensions[i] << std::endl;
 			if (cgiExtensions[i] == fileExtension)
 			{
-				Debug::log("isCGI: CGI request detected", Debug::NORMAL);
+				Debug::log("requestIsCGI: CGI request detected", Debug::NORMAL);
 				return true;
 			}
 		}
 	}
-	Debug::log("isCGI: Not a CGI request", Debug::NORMAL);
+	Debug::log("requestIsCGI: Not a CGI request", Debug::NORMAL);
 	return false;
 }
 
@@ -321,12 +309,14 @@ void Router::generateDirectoryListing(HTTPResponse &Response,
 	Response.setHeader("Content-Type", "text/html");
 }
 
-bool isDirectory(std::string& path) {
-    struct stat buffer;
-    if (stat(path.c_str(), &buffer) == 0) {
-        return S_ISDIR(buffer.st_mode);
-    }
-    return false; // Failed to get file information
+bool isDirectory(std::string &path)
+{
+	struct stat buffer;
+	if (stat(path.c_str(), &buffer) == 0)
+	{
+		return S_ISDIR(buffer.st_mode);
+	}
+	return false; // Failed to get file information
 }
 
 enum PathValidation Router::pathIsValid(HTTPResponse &response, HTTPRequest &request)

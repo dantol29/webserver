@@ -3,14 +3,17 @@
 #include "Connection.hpp"
 #include "ServerBlock.hpp"
 #include "Debug.hpp"
+#include "EventManager.hpp"
+#include "signal.h"
 
-Server::Server(const Config &config)
+Server::Server(const Config &config, EventManager &eventManager) : _config(config), _eventManager(eventManager)
 {
-	_config = config;
 	_maxClients = 10;
 	_clientMaxHeadersSize = CLIENT_MAX_HEADERS_SIZE;
 	_serverBlocks = _config.getServerBlocks();
 	_serverSockets = std::vector<ServerSocket>();
+	_hasCGI = false;
+	_CGICounter = 0;
 	Debug::log("Server created with config constructor", Debug::OCF);
 }
 
@@ -18,6 +21,30 @@ Server::~Server()
 {
 	Debug::log("Server destroyed", Debug::OCF);
 }
+
+// GETTERS AND SETTERS
+
+void Server::setHasCGI(bool hasCGI)
+{
+	_hasCGI = hasCGI;
+}
+
+void Server::setCGICounter(int counter)
+{
+	_CGICounter = counter;
+}
+
+bool Server::getHasCGI() const
+{
+	return _hasCGI;
+}
+
+int Server::getCGICounter() const
+{
+	return _CGICounter;
+}
+
+// METHODS
 
 void Server::startListening()
 {
@@ -33,12 +60,17 @@ void Server::startPollEventLoop()
 {
 	addServerSocketsPollFdToVectors();
 	int pollCounter = 0;
+	int timeout = -1;
 	while (1)
 	{
+		if (_hasCGI)
+			timeout = 500;
+		else
+			timeout = -1;
 		// printConnections("BEFORE POLL", _FDs, _connections, true);
 		std::cout << CYAN << "++++++++++++++ #" << pollCounter
 				  << " Waiting for new connection or Polling +++++++++++++++" << RESET << std::endl;
-		int ret = poll(_FDs.data(), _FDs.size(), -1);
+		int ret = poll(_FDs.data(), _FDs.size(), timeout);
 		pollCounter++;
 		// printFrame("POLL EVENT DETECTED", true);
 		// printConnections("AFTER POLL", _FDs, _connections, true);
@@ -84,9 +116,53 @@ void Server::startPollEventLoop()
 			handleSocketTimeoutIfAny();
 		else
 			handlePollError();
+		if (_hasCGI)
+		{
+			size_t originalSize = _FDs.size();
+			int status;
+			pid_t pid = waitpid(-1, &status, WNOHANG);
+			if (pid > 0)
+			{
+				// TODo: has at this point the CGI been executed?
+				for (size_t i = 0; i < originalSize && i < _FDs.size(); i++)
+				{
+					if (_connections[i].getHasCGI() && _connections[i].getCGIPid() == pid)
+					{
+						_connections[i].setCGIExitStatus(status);
+						_connections[i].removeCGI(status);
+						// We still need to read the buffer before we can send the response
+						// We assume that the CGI has been executed and we can set the FD to POLLOUT and has data to
+						// Mind theat the buffer needs to be read before we can send the response
+						// send kill(_connections[i].getCGIPid(), SIGKILL);
+						_FDs[i].events = POLLOUT;
+						break;
+					}
+				}
+				// We deccrement the CGI counter by 1 on the server and if it 0 we set _hasCGI to false
+				removeCGI();
+			}
+			else if (pid == 0)
+			{
+				// Check if the CGI has timed out
+				for (size_t i = 0; i < originalSize && i < _FDs.size(); i++)
+				{
+					_connections[i].setCGIExitStatus(1);
+					if (_connections[i].getHasCGI() && _connections[i].getCGIStartTime() + CGI_TIMEOUT_MS > time(NULL))
+					{
+						// kill CGI process
+						std::cout << "CGI timeout" << std::endl;
+						// probably we need here also removeCGI and go back to hanldeRequest and stuff
+						_FDs[i].events = POLLOUT;
+						kill(_connections[i].getCGIPid(), SIGKILL);
+						// give a response back that the CGI timeout
+					}
+				}
+			}
+			else
+				perror("waitpid");
+		}
 	}
 }
-
 void Server::readFromClient(Connection &conn, size_t &i, Parser &parser, HTTPRequest &request, HTTPResponse &response)
 {
 	(void)i;
@@ -115,20 +191,20 @@ void Server::readFromClient(Connection &conn, size_t &i, Parser &parser, HTTPReq
 			return;
 		}
 	}
-	
+
 	if (!parser.getHeadersComplete())
 	{
 		Debug::log("Headers incomplete yet, exiting readFromClient.", Debug::NORMAL);
 		return;
 	}
-	
+
 	if (parser.getHeadersComplete() && !parser.getHeadersAreParsed())
 	{
 		parser.parseRequestLineAndHeaders(parser.getHeadersBuffer().c_str(), request, response);
 		if (parser.getHeadersAreParsed() && !conn.findServerBlock(_config.getServerBlocks()))
 			Debug::log("Error finding server block", Debug::NORMAL);
 	}
-	
+
 	if (response.getStatusCode() != 0)
 	{
 		conn.setCanBeClosed(false);
@@ -143,9 +219,8 @@ void Server::readFromClient(Connection &conn, size_t &i, Parser &parser, HTTPReq
 
 	if (response.getStatusCode() != 0)
 		Debug::log(toString(response.getStatusCode()), Debug::NORMAL);
-	
-	if (request.getMethod() == "GET" || request.getMethod() == "DELETE" \
-		|| request.getMethod() == "SALAD")
+
+	if (request.getMethod() == "GET" || request.getMethod() == "DELETE" || request.getMethod() == "SALAD")
 		Debug::log("GET request, no body to read", Debug::NORMAL);
 	else
 		handlePostRequest(conn, parser, request, response);
@@ -212,7 +287,7 @@ void Server::handlePostRequest(Connection &conn, Parser &parser, HTTPRequest &re
 
 	if (!request.getUploadBoundary().empty())
 		parser.parseFileUpload(parser.getBuffer(), request, response);
-	
+
 	request.setBody(parser.getBuffer());
 	conn.setHasFinishedReading(true);
 }
@@ -223,46 +298,101 @@ void Server::buildResponse(Connection &conn, size_t &i, HTTPRequest &request, HT
 	Debug::log("Entering buildResponse", Debug::NORMAL);
 	Debug::log("Request method: " + request.getMethod(), Debug::NORMAL);
 
-	ServerBlock serverBlock;
-	Directives directive;
-
-	std::cout << GREEN << "Number of server blocks: " << _config.getServerBlocks().size() << RESET << std::endl;
-	std::cout << "Request host: " << request.getSingleHeader("host").second << std::endl;
-
-	formRequestTarget(request);
-
-	if (conn.getHasServerBlock() != NOT_FOUND)
-		findLocationBlock(request, conn.getServerBlock(), directive);
-
-	std::cout << RED << "Root: " << directive._root << RESET << std::endl;
-
-	Router router(directive);
-
-	if (response.getStatusCode() != 0)
+	if (!response.getIsCGI())
 	{
-		Debug::log("Error response " + toString(response.getStatusCode()), Debug::NORMAL);
-		
-		if (conn.getHasServerBlock() == DEFAULT)
-			request.replaceHeader("host", directive._serverName[0]);
+		ServerBlock serverBlock;
+		Directives directive;
 
-		router.handleServerBlockError(request, response, response.getStatusCode());
-		conn.setHasDataToSend(true);
-		return;
+		std::cout << GREEN << "Number of server blocks: " << _config.getServerBlocks().size() << RESET << std::endl;
+		std::cout << "Request host: " << request.getSingleHeader("host").second << std::endl;
+
+		formRequestTarget(request);
+
+		if (conn.getHasServerBlock() != NOT_FOUND)
+			findLocationBlock(request, conn.getServerBlock(), directive);
+
+		std::cout << RED << "Root: " << directive._root << RESET << std::endl;
+
+		Router router(directive, _eventManager, conn);
+
+		if (response.getStatusCode() != 0)
+		{
+			Debug::log("Error response " + toString(response.getStatusCode()), Debug::NORMAL);
+
+			if (conn.getHasServerBlock() == DEFAULT)
+				request.replaceHeader("host", directive._serverName[0]);
+
+			router.handleServerBlockError(request, response, response.getStatusCode());
+			conn.setHasDataToSend(true);
+			return;
+		}
+		else
+		{
+			router.setFDsRef(&_FDs);
+			router.setPollFd(&conn.getPollFd());
+			router.routeRequest(request, response);
+		}
+		if (!response.getIsCGI())
+		{
+			conn.setHasDataToSend(true);
+			return;
+		}
 	}
 	else
+		buildCGIResponse(conn, response);
+}
+
+void Server::buildCGIResponse(Connection &conn, HTTPResponse &response)
+{
+	std::cout << RED << "Entering buildCGIResponse" << RESET << std::endl;
+	std::string cgiOutput;
+	int *pipeFD;
+	pipeFD = response.getCGIpipeFD();
+	char readBuffer[256];
+	ssize_t bytesRead;
+	// TODO: this is blokcing - we need to make it non-blocking
+	// I.e. read 1 buffer and then go back to poll
+	while ((bytesRead = read(pipeFD[0], readBuffer, sizeof(readBuffer) - 1)) > 0)
 	{
-		router.setFDsRef(&_FDs);
-		router.setPollFd(&conn.getPollFd());
-		router.routeRequest(request, response);
+		readBuffer[bytesRead] = '\0';
+		cgiOutput += readBuffer;
 	}
+	close(pipeFD[0]);
+
+	int status = conn.getCGIExitStatus();
+	//
+	// if (waitedPid == -1)
+	// {
+	// 	perror("waitpid");
+	// 	return "HTTP/1.1 500 Internal Server Error\r\nContent-Length: 0\r\n\r\n";
+	// }
+
+	if (WIFEXITED(status) && WEXITSTATUS(status) != 0)
+	{
+		response.setStatusCode(500, "Internal Server Error");
+		conn.setHasDataToSend(true);
+		response.setIsCGI(false);
+		// TODO: should we set other flags here?
+		return;
+	}
+
+	if (cgiOutput.empty())
+	{
+		response.setStatusCode(500, "Internal Server Error");
+		conn.setHasDataToSend(true);
+		response.setIsCGI(false);
+		return;
+	}
+	response.CGIStringToResponse(cgiOutput);
+	response.setIsCGI(false);
 	conn.setHasDataToSend(true);
+
+	// return cgiOutput;
 }
 
 void Server::writeToClient(Connection &conn, size_t &i, HTTPResponse &response)
 {
-	std::cout << "\033[1;36m"
-			  << "Entering writeToClient"
-			  << "\033[0m" << std::endl;
+	std::cout << "\033[1;36m" << "Entering writeToClient" << "\033[0m" << std::endl;
 	std::cout << response << std::endl;
 	static int sendResponseCounter = 0;
 	bool isLastSend = false;
@@ -304,9 +434,7 @@ void Server::writeToClient(Connection &conn, size_t &i, HTTPResponse &response)
 
 void Server::closeClientConnection(Connection &conn, size_t &i)
 {
-	std::cout << "\033[1;36m"
-			  << "Entering closeClientConnection"
-			  << "\033[0m" << std::endl;
+	std::cout << "\033[1;36m" << "Entering closeClientConnection" << "\033[0m" << std::endl;
 	// TODO: should we close it with the Destructor of the Connection class?
 	close(conn.getPollFd().fd);
 	_FDs.erase(_FDs.begin() + i);
@@ -316,9 +444,7 @@ void Server::closeClientConnection(Connection &conn, size_t &i)
 
 void Server::handleConnection(Connection &conn, size_t &i, Parser &parser, HTTPRequest &request, HTTPResponse &response)
 {
-	std::cout << "\033[1;36m"
-			  << "Entering handleConnection"
-			  << "\033[0m" << std::endl;
+	std::cout << "\033[1;36m" << "Entering handleConnection" << "\033[0m" << std::endl;
 
 	conn.setHasReadSocket(false);
 	std::cout << "Has finished reading: " << conn.getHasFinishedReading() << std::endl;
@@ -333,7 +459,8 @@ void Server::handleConnection(Connection &conn, size_t &i, Parser &parser, HTTPR
 	std::cout << request << std::endl;
 	if (!conn.getCanBeClosed() && !conn.getHasDataToSend())
 		buildResponse(conn, i, request, response);
-
+	// MInd that after the last read from the pipe of the CGI getHasReadSocket will be false but we will have a read
+	// operation on the pipe, if we want to write just after going through poll we need an extra flag or something.
 	if (conn.getHasDataToSend() && !conn.getHasReadSocket())
 		writeToClient(conn, i, response);
 
@@ -728,6 +855,22 @@ void Server::printServerSockets() const
 	}
 }
 
+/* for CGI */
+// void Server::addCGI(int eventID)
+void Server::addCGI(const EventData &eventData)
+{
+	(void)eventData;
+	setHasCGI(true);
+	setCGICounter(getCGICounter() + 1);
+	std::cout << "CGI added: _hasCGI set to " << _hasCGI << ", _CGICounter is now " << _CGICounter << std::endl;
+}
+
+void Server::removeCGI()
+{
+	setCGICounter(getCGICounter() - 1);
+	if (getCGICounter() == 0)
+		setHasCGI(false);
+}
 void Server::formRequestTarget(HTTPRequest &request)
 {
 	std::string requestTarget = request.getRequestTarget();
@@ -735,7 +878,7 @@ void Server::formRequestTarget(HTTPRequest &request)
 	// if there is "?" in the request target, we need to remove it
 	if (std::find(requestTarget.begin(), requestTarget.end(), '?') != requestTarget.end())
 		requestTarget = (requestTarget.substr(0, requestTarget.find("?")));
-	
+
 	// if there is "http://" in the request target, we need to remove it
 	size_t http = requestTarget.find("http://");
 	if (http != std::string::npos)
@@ -743,7 +886,7 @@ void Server::formRequestTarget(HTTPRequest &request)
 		std::string remove = "http://";
 		requestTarget.erase(http, remove.length());
 	}
-	
+
 	// delete host from request target
 	if (requestTarget.find(request.getHost()) != std::string::npos)
 	{
@@ -758,14 +901,14 @@ void Server::formRequestTarget(HTTPRequest &request)
 	std::cout << "Request target: " << request.getRequestTarget() << std::endl;
 }
 
-void Server::findLocationBlock(HTTPRequest &request, ServerBlock& serverBlock, Directives &directive)
+void Server::findLocationBlock(HTTPRequest &request, ServerBlock &serverBlock, Directives &directive)
 {
 	directive = serverBlock.getDirectives();
 
 	for (size_t i = 0; i < serverBlock.getLocations().size(); i++)
 	{
 		std::cout << "Location: " << serverBlock.getLocations()[i]._path << " == " << request.getRequestTarget()
-					<< std::endl;
+				  << std::endl;
 		if (request.getRequestTarget() == serverBlock.getLocations()[i]._path)
 		{
 			std::cout << "Location found" << std::endl;
