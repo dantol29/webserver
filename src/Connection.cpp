@@ -469,6 +469,7 @@ bool Connection::readBody(Parser &parser, HTTPRequest &req, HTTPResponse &res)
 	}
 	else
 		parser.setBodyComplete(true);
+	std::cout << YELLOW << "Body content: " << parser.getBuffer() << RESET << std::endl;
 	std::cout << "Exiting readBody" << std::endl;
 	return true;
 }

@@ -52,7 +52,7 @@ def main():
     # Print the environment variables for debugging
     for key, value in os.environ.items():
         print(f"DEBUG: {key}={value}<br>")
-    print("<br>")
+    print("<br><br>")
 
     # Get the directory where the script is located
     script_directory = get_script_directory()

@@ -189,11 +189,15 @@ void cgi(sockaddr_in serverAdress)
 			<< "Content-Type: application/x-www-form-urlencoded\r\n"
 			<< "Content-Length: " << postData.size() << "\r\n"
 			<< "\r\n"
-			<< postData;
+			<< postData << "\r\n\r\n";
 
 	std::vector<HTTPTest> tests = {HTTPTest(request.str(), "200")};
 	sendData(tests, serverAdress);
 }
+
+// HTTPTest("POST / HTTP/1.1\r\nHost: www.example.com\r\nContent-Length: 17\r\nContent-Type: "
+// 		 "text/plain\r\n\r\nThis\r\nis body\r\n\r\n",
+// 		 "200"),
 
 int main(void)
 {

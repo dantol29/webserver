@@ -163,6 +163,114 @@ void Server::startPollEventLoop()
 		}
 	}
 }
+
+std::string getFileExtension(const std::string &fileName)
+{
+	size_t dotIndex = fileName.find_last_of(".");
+	if (dotIndex == std::string::npos)
+	{
+		return "";
+	}
+
+	size_t queryStart = fileName.find("?", dotIndex);
+	if (queryStart == std::string::npos)
+	{
+		return fileName.substr(dotIndex);
+	}
+	else
+	{
+		return fileName.substr(dotIndex, queryStart - dotIndex - 1);
+	}
+}
+
+bool requestIsCGI(const HTTPRequest &request)
+{
+	// TODO: do not rely on this function which is a copy from Router.cpp
+	std::vector<std::string> cgiExtensions;
+	cgiExtensions.push_back(".php");
+	cgiExtensions.push_back(".py");
+	cgiExtensions.push_back(".pl");
+	std::cout << "cgiExtensions: " << cgiExtensions.size() << std::endl;
+	std::cout << "request target: " << request.getRequestTarget() << std::endl;
+	if (!cgiExtensions.empty())
+	{
+		std::string fileExtension = getFileExtension(request.getRequestTarget());
+		std::cout << "fileExtension: " << fileExtension << std::endl;
+		for (size_t i = 0; i < cgiExtensions.size(); i++)
+		{
+			std::cout << "cgiExtensions[" << i << "]: " << cgiExtensions[i] << std::endl;
+			if (cgiExtensions[i] == fileExtension)
+			{
+				Debug::log("requestIsCGI: CGI request detected", Debug::NORMAL);
+				return true;
+			}
+		}
+	}
+	Debug::log("requestIsCGI: Not a CGI request", Debug::NORMAL);
+	return false;
+}
+
+void handlePostCGIRequest(Connection &conn, Parser &parser, HTTPRequest &request, HTTPResponse &response)
+{
+	std::cout << BLUE << "handlePostCGIRequest" << RESET << std::endl;
+	if (parser.getIsChunked() && !conn.getHasReadSocket())
+	{
+		Debug::log("Chunked body in handlePostCGIRequest", Debug::NORMAL);
+		if (!conn.readBody(parser, request, response))
+		{
+			Debug::log("Error reading body", Debug::OCF);
+			conn.setCanBeClosed(true);
+			conn.setHasFinishedReading(true);
+			return;
+		}
+		conn.setHasReadSocket(true);
+	}
+	else if (!conn.getHasReadSocket())
+	{
+		if (!parser.getBodyComplete() && parser.getBuffer().size() == request.getContentLength())
+		{
+			parser.setBodyComplete(true);
+			conn.setHasFinishedReading(true);
+			conn.setHasDataToSend(true);
+		}
+
+		else if (!conn.readBody(parser, request, response))
+		{
+			Debug::log("Error reading body", Debug::OCF);
+			conn.setCanBeClosed(false);
+			conn.setHasFinishedReading(true);
+			conn.setHasDataToSend(false);
+			return;
+		}
+	}
+	// TODO: double check this condition, logic
+	if (!parser.getBodyComplete() && request.getContentLength() != 0 &&
+		parser.getBuffer().size() == request.getContentLength())
+	{
+		// TODO: in the new design we will return here and go to the function where the response is
+		parser.setBodyComplete(true);
+		conn.setHasFinishedReading(true);
+		conn.setCanBeClosed(false);
+		conn.setHasDataToSend(false);
+		return;
+	}
+	//-----------------------------//
+
+	if (!parser.getBodyComplete())
+	{
+		Debug::log("Body still incomplete, exiting readFromClient.", Debug::NORMAL);
+		conn.setHasFinishedReading(false);
+		conn.setHasReadSocket(true);
+		return;
+	}
+
+	if (!request.getUploadBoundary().empty())
+		parser.parseFileUpload(parser.getBuffer(), request, response);
+
+	request.setBody(parser.getBuffer());
+	conn.setHasFinishedReading(true);
+}
+
 void Server::readFromClient(Connection &conn, size_t &i, Parser &parser, HTTPRequest &request, HTTPResponse &response)
 {
 	(void)i;
@@ -222,6 +330,10 @@ void Server::readFromClient(Connection &conn, size_t &i, Parser &parser, HTTPReq
 
 	if (request.getMethod() == "GET" || request.getMethod() == "DELETE" || request.getMethod() == "SALAD")
 		Debug::log("GET request, no body to read", Debug::NORMAL);
+	if (requestIsCGI(request) == true && request.getMethod() == "POST")
+	{
+		handlePostCGIRequest(conn, parser, request, response);
+	}
 	else
 		handlePostRequest(conn, parser, request, response);
 }

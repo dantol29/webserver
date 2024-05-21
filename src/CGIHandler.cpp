@@ -37,7 +37,16 @@ void CGIHandler::handleRequest(HTTPRequest &request, HTTPResponse &response)
 {
 	MetaVariables env;
 	env.HTTPRequestToMetaVars(request, env);
-	if (!executeCGI(env, response))
+
+	std::cout << std::endl;
+	std::cout << std::endl;
+	std::cout << std::endl;
+	std::cout << request << std::endl;
+	std::cout << request.getBody() << std::endl;
+	std::cout << std::endl;
+	std::cout << std::endl;
+
+	if (!executeCGI(env, request.getBody(), response))
 	{
 		response.setStatusCode(500, "");
 		response.setBody("500 Internal Server Error");
@@ -101,16 +110,27 @@ void handleTimeout(int sig)
 	std::cout << "CGIHandler: Timeout" << std::endl;
 }
 
-bool CGIHandler::executeCGI(const MetaVariables &env, HTTPResponse &response)
+bool CGIHandler::executeCGI(const MetaVariables &env, std::string body, HTTPResponse &response)
 {
 	std::string cgiOutput;
 	std::vector<std::string> argv = createArgvForExecve(env);
 	std::vector<std::string> envp = env.getForExecve();
 
+	Debug::log("CGIHandler: executeCGI: body: " + body, Debug::NORMAL);
+
 	int pipeFD[2];
+	int bodyPipeFD[2];
 	if (pipe(pipeFD) == -1)
 	{
 		perror("pipe failed");
+		return false;
+	}
+
+	if (pipe(bodyPipeFD) == -1)
+	{
+		perror("body pipe failed");
+		close(pipeFD[0]);
+		close(pipeFD[1]);
 		return false;
 	}
 
@@ -120,6 +140,8 @@ bool CGIHandler::executeCGI(const MetaVariables &env, HTTPResponse &response)
 		perror("fork failed");
 		close(pipeFD[0]);
 		close(pipeFD[1]);
+		close(bodyPipeFD[0]);
+		close(bodyPipeFD[1]);
 		return false;
 	}
 	else if (pid == 0)
@@ -127,6 +149,10 @@ bool CGIHandler::executeCGI(const MetaVariables &env, HTTPResponse &response)
 		close(pipeFD[0]);
 		dup2(pipeFD[1], STDOUT_FILENO);
 		close(pipeFD[1]);
+
+		close(bodyPipeFD[1]);
+		dup2(bodyPipeFD[0], STDIN_FILENO);
+		close(bodyPipeFD[0]);
 
 		closeAllSocketFDs();
 
@@ -136,35 +162,40 @@ bool CGIHandler::executeCGI(const MetaVariables &env, HTTPResponse &response)
 		if (access(argvPointers[0], X_OK) == -1)
 		{
 			perror("access");
-			return false;
 			_exit(EXIT_FAILURE);
 			// TODO: @leo I don't think we should exit here. We don't want to kill the whole server cause of a CGI
 			// error. No?
 		}
 
-		// execve(argvPointers[0], argvPointers.data(), envpPointers.data());
 		if (execve(argvPointers[0], argvPointers.data(), envpPointers.data()) == -1)
 		{
 			perror("execve");
-			return false;
 			// TODO: @leo We should check if execve failed and return an error response and not exti
+
 			_exit(EXIT_FAILURE);
 		}
 	}
-	// This is executed if the CGI is started successfully
-	response.setIsCGI(true);
-	response.setCGIpipeFD(pipeFD);
+	else
+	{
+		close(pipeFD[1]);
+		close(bodyPipeFD[0]);
 
-	close(pipeFD[1]);
-	EventData data = {1, pid}; // Assuming 1 is the event type for CGI started
-	_eventManager.emit(data);  // Emit event indicating a CGI process has started
-	// conn.addCGI(pid);
-	_connection.addCGI(pid);
-	// TODO: is this used? To which process to you want to send this signal/ @Leo
-	// signal(SIGALRM, handleTimeout);
-	// alarm(4);
+		write(bodyPipeFD[1], body.c_str(), body.size());
+		close(bodyPipeFD[1]);
 
-	return true;
+		response.setIsCGI(true);
+		response.setCGIpipeFD(pipeFD);
+
+		EventData data = {1, pid}; // Assuming 1 is the event type for CGI started
+		_eventManager.emit(data);  // Emit event indicating a CGI process has started
+		_connection.addCGI(pid);
+		// TODO: is this used? To which process to you want to send this signal/ @Leo
+		// signal(SIGALRM, handleTimeout);
+		// alarm(4);
+
+		return true;
+	}
+	return false;
 }
 
 void CGIHandler::setFDsRef(std::vector<struct pollfd> *FDsRef)
