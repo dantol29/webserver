@@ -1,15 +1,18 @@
 #ifndef ROUTER_HPP
 #define ROUTER_HPP
 
+#include "CGIHandler.hpp"
+#include "EventManager.hpp"
 #include "HTTPRequest.hpp"
 #include "HTTPResponse.hpp"
 #include "StaticContentHandler.hpp"
-#include "CGIHandler.hpp"
 #include "UploadHandler.hpp"
 #include "ServerBlock.hpp"
 #include "Debug.hpp"
 #include "sys/stat.h"
 #include <dirent.h> // POSIX lib for DIR
+
+class Connection;
 
 struct resourcePath
 {
@@ -27,10 +30,8 @@ enum PathValidation
 class Router
 {
   public:
-	Router();
-	Router(Directives &directive);
+	Router(Directives &directive, EventManager &eventManager, Connection &connection);
 	~Router();
-	Router &operator=(const Router &other);
 	void routeRequest(HTTPRequest &request, HTTPResponse &response);
 
 	void splitTarget(const std::string &target);
@@ -41,9 +42,13 @@ class Router
 	void handleServerBlockError(HTTPRequest &request, HTTPResponse &response, int errorCode);
 
   private:
+	Connection &_connection;
 	Directives _directive;
 	Router(const Router &other);
+	Router &operator=(const Router &other);
 	StaticContentHandler _staticContentHandler;
+	CGIHandler _cgiHandler;
+	EventManager &_eventManager;
 	resourcePath _path;
 	std::vector<pollfd> *_FDsRef;
 	struct pollfd *_pollFd;
@@ -51,8 +56,8 @@ class Router
 	void generateDirectoryListing(HTTPResponse &Response,
 								  const std::string &directoryPath,
 								  const std::string &requestedPath);
-	bool isCGI(const HTTPRequest &request);
-	CGIHandler _cgiHandler;
+	bool requestIsCGI(const HTTPRequest &request);
+	// We want a reference, cause there is only one instance of the EventManager, which is created in the main function
 	void adaptPathForFirefox(HTTPRequest &request);
 };
 

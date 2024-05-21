@@ -18,6 +18,10 @@ Connection::Connection(struct pollfd &pollFd, Server &server)
 	_responseSize = 0;
 	_responseSizeSent = 0;
 	_responseString = "";
+	_hasCGI = false;
+	_CGIHasExited = false;
+	_CGIPid = 0;
+	_CGIStartTime = 0;
 	_hasServerBlock = NOT_FOUND;
 }
 
@@ -40,6 +44,10 @@ Connection::Connection(const Connection &other)
 	_responseSize = other._responseSize;
 	_responseSizeSent = other._responseSizeSent;
 	_responseString = other._responseString;
+	_hasCGI = other._hasCGI;
+	_CGIHasExited = other._CGIHasExited;
+	_CGIPid = other._CGIPid;
+	_CGIStartTime = other._CGIStartTime;
 	_serverBlock = other._serverBlock;
 	_hasServerBlock = other._hasServerBlock;
 
@@ -65,6 +73,10 @@ Connection &Connection::operator=(const Connection &other)
 		_responseSize = other._responseSize;
 		_responseSizeSent = other._responseSizeSent;
 		_responseString = other._responseString;
+		_hasCGI = other._hasCGI;
+		_CGIHasExited = other._CGIHasExited;
+		_CGIPid = other._CGIPid;
+		_CGIStartTime = other._CGIStartTime;
 		_serverBlock = other._serverBlock;
 		_hasServerBlock = other._hasServerBlock;
 	}
@@ -163,6 +175,26 @@ bool Connection::getCanBeClosed() const
 	return _canBeClosed;
 }
 
+bool Connection::getHasCGI() const
+{
+	return _hasCGI;
+}
+
+pid_t Connection::getCGIPid() const
+{
+	return _CGIPid;
+}
+
+time_t Connection::getCGIStartTime() const
+{
+	return _CGIStartTime;
+}
+
+int Connection::getCGIExitStatus() const
+{
+	return _CGIExitStatus;
+}
+
 int Connection::getHasServerBlock() const
 {
 	return _hasServerBlock;
@@ -228,12 +260,35 @@ void Connection::setCanBeClosed(bool value)
 	_canBeClosed = value;
 }
 
+void Connection::setHasCGI(bool value)
+{
+	_hasCGI = value;
+}
+
+void Connection::setCGIPid(pid_t pid)
+{
+	_CGIPid = pid;
+}
+
+void Connection::setCGIStartTime(time_t time)
+{
+	_CGIStartTime = time;
+}
+
+void Connection::setCGIExitStatus(int status)
+{
+	_CGIExitStatus = status;
+}
+
+// METHODS
+
 bool Connection::readHeaders(Parser &parser)
 {
 	// std::cout << "\nEntering readHeaders" << std::endl;
-	char buffer[BUFFER_SIZE] = {0};
+	const int bufferSize = BUFFER_SIZE;
+	char buffer[bufferSize] = {0};
 	std::cout << "buffers size: " << sizeof(buffer) << std::endl;
-	ssize_t bytesRead = recv(_pollFd.fd, buffer, BUFFER_SIZE, 0);
+	ssize_t bytesRead = recv(_pollFd.fd, buffer, bufferSize, 0);
 	std::cout << "bytesRead: " << bytesRead << std::endl;
 	if (bytesRead > 0)
 	{
@@ -418,6 +473,24 @@ bool Connection::readBody(Parser &parser, HTTPRequest &req, HTTPResponse &res)
 	return true;
 }
 
+/* CGI */
+void Connection::addCGI(pid_t pid)
+{
+	_hasCGI = true;
+	_CGIPid = pid;
+	_CGIStartTime = time(NULL);
+}
+
+void Connection::removeCGI(int status)
+{
+	// _hasCGI = false;
+	// maybe better to set it to false after we have finished sending the response
+	_CGIHasExited = true;
+	_CGIPid = 0;
+	_CGIStartTime = 0;
+	_CGIExitStatus = status;
+}
+
 /* Debugging */
 
 void Connection::printConnection() const
@@ -443,7 +516,7 @@ void Connection::printConnection() const
 	std::cout << std::setw(5) << ' ' << std::left << std::setw(22) << "canBeClosed:" << _canBeClosed << std::endl;
 }
 
-bool Connection::findServerBlock(const std::vector<ServerBlock>& serverBlocks)
+bool Connection::findServerBlock(const std::vector<ServerBlock> &serverBlocks)
 {
 	std::string serverName;
 
@@ -462,18 +535,18 @@ bool Connection::findServerBlock(const std::vector<ServerBlock>& serverBlocks)
 			// loop through the listen entries
 			for (size_t k = 0; k < serverBlocks[i].getListen().size(); k++)
 			{
-				if (serverBlocks[i].getListen()[k].getPort() == _serverPort && \
+				if (serverBlocks[i].getListen()[k].getPort() == _serverPort &&
 					serverBlocks[i].getListen()[k].getIp() == _serverIp)
-					{
-						_serverBlock = serverBlocks[i];
+				{
+					_serverBlock = serverBlocks[i];
 
-						if (_request.getMethod() == "POST" &&_serverBlock.getClientMaxBodySize() != 0 && \
+					if (_request.getMethod() == "POST" && _serverBlock.getClientMaxBodySize() != 0 &&
 						_request.getContentLength() > _serverBlock.getClientMaxBodySize())
-							_response.setStatusCode(413, "Payload Too Large");
-						
-						_hasServerBlock = FOUND;
-						return (true);
-					}
+						_response.setStatusCode(413, "Payload Too Large");
+
+					_hasServerBlock = FOUND;
+					return (true);
+				}
 			}
 		}
 	}
@@ -484,20 +557,20 @@ bool Connection::findServerBlock(const std::vector<ServerBlock>& serverBlocks)
 		// loop through the listen entries
 		for (size_t k = 0; k < serverBlocks[i].getListen().size(); k++)
 		{
-			if (serverBlocks[i].getListen()[k].getPort() == _serverPort && \
+			if (serverBlocks[i].getListen()[k].getPort() == _serverPort &&
 				serverBlocks[i].getListen()[k].getIp() == _serverIp)
-				{
-					if (_request.getMethod() == "POST" &&_serverBlock.getClientMaxBodySize() != 0 && \
+			{
+				if (_request.getMethod() == "POST" && _serverBlock.getClientMaxBodySize() != 0 &&
 					_request.getContentLength() > _serverBlock.getClientMaxBodySize())
-					{
-						_response.setStatusCode(413, "Payload Too Large");
-						return false;
-					}
-					Debug::log("Default server block found", Debug::NORMAL);
-					_hasServerBlock = DEFAULT;
-					_response.setStatusCode(404, "Not Found");
-					return (_serverBlock = serverBlocks[i], true);
+				{
+					_response.setStatusCode(413, "Payload Too Large");
+					return false;
 				}
+				Debug::log("Default server block found", Debug::NORMAL);
+				_hasServerBlock = DEFAULT;
+				_response.setStatusCode(404, "Not Found");
+				return (_serverBlock = serverBlocks[i], true);
+			}
 		}
 	}
 

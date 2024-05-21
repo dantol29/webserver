@@ -1,6 +1,6 @@
 # Compiler and Flags
 CXX = c++
-CXXFLAGS = -Wall -Wextra -Werror -std=c++98 -I. -Iinclude -Isrc -g
+CXXFLAGS = -Wall -Wextra -Werror -std=c++98 -I. -Iinclude -Isrc -Isrc/events -g
 DEPFLAGS = -MMD -MP
 
 UNAME_S := $(shell uname -s)
@@ -29,7 +29,9 @@ SRCS = src/main.cpp \
 	src/utils.cpp \
 	src/ServerBlock.cpp \
 	src/ServerSocket.cpp \
-	src/Listen.cpp 
+	src/Listen.cpp \
+	src/events/EventManager.cpp \
+	src/events/ServerEventListener.cpp  
 OBJDIR = obj
 OBJS = $(SRCS:%.cpp=$(OBJDIR)/%.o)
 
