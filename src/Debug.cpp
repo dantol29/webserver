@@ -1,5 +1,6 @@
 #include "Debug.hpp"
 
+// In C++98 the initialization of static members must be done outside the class definition.
 bool Debug::debugEnabled = true;
 Debug::Level Debug::debugLevel = Debug::NORMAL;
 
@@ -27,13 +28,23 @@ void Debug::setLevel(Debug::Level level)
 	debugLevel = level;
 }
 
+void Debug::addLevel(Debug::Level level)
+{
+	debugLevel = static_cast<Debug::Level>(debugLevel | level);
+}
+
+void Debug::removeLevel(Debug::Level level)
+{
+	debugLevel = static_cast<Debug::Level>(debugLevel & ~level);
+}
+
 void Debug::log(const std::string &message, Debug::Level paramLevel)
 {
 	if (!debugEnabled)
 	{
 		return;
 	}
-	if (debugEnabled && (debugLevel >= paramLevel))
+	if (debugLevel & paramLevel)
 	{
 		std::cout << message << std::endl;
 	}

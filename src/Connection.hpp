@@ -4,7 +4,7 @@
 #include <string>	// for std::string and memset
 #include <poll.h>	// For struct pollfd
 #include <unistd.h> // For close
-#include "Server.hpp"
+// #include "Server.hpp"
 #include "webserv.hpp"
 #include "HTTPResponse.hpp" // Assuming existence of HTTPResponse class
 #include "Parser.hpp"		// Assuming existence of Parser class
@@ -48,6 +48,13 @@ class Connection
 	size_t _responseSize;
 	size_t _responseSizeSent;
 	std::string _responseString;
+	bool _hasCGI;
+	bool _CGIHasExited;
+	pid_t _CGIPid;
+	int _CGIExitStatus;
+	time_t _CGIStartTime;
+	bool _CGIHasCompleted;
+	bool _CGIHasTimedOut;
 
   public:
 	Connection(struct pollfd &pollFd, Server &server);
@@ -59,6 +66,7 @@ class Connection
 	bool readChunkedBody(Parser &parser);
 	bool readChunkSize(std::string &line);
 	bool readChunk(size_t chunkSize, std::string &chunkedData, HTTPResponse &response);
+	bool readBody(Parser &parser, HTTPRequest &req, HTTPResponse &res, Config &config);
 	bool readBody(Parser &parser, HTTPRequest &req, HTTPResponse &res);
 
 	/* Getters */
@@ -66,7 +74,9 @@ class Connection
 	HTTPRequest &getRequest();
 	HTTPResponse &getResponse();
 
+	// TODO: @leo do we need them both?
 	struct pollfd getPollFd() const;
+	struct pollfd &getPollFd();
 
 	std::string getResponseString() const;
 	enum ConnectionType getType() const;
@@ -82,8 +92,12 @@ class Connection
 	bool getCanBeClosed() const;
 	int getHasServerBlock() const;
 	ServerBlock &getServerBlock();
-
-	struct pollfd &getPollFd();
+	bool getHasCGI() const;
+	pid_t getCGIPid() const;
+	time_t getCGIStartTime() const;
+	int getCGIExitStatus() const;
+	bool getCGIHasCompleted() const;
+	bool getCGIHasTimedOut() const;
 
 	/* Setters */
 	void setResponseString(std::string responseString);
@@ -92,17 +106,28 @@ class Connection
 	void setServerPort(unsigned short serverPort);
 	void setResponseSize(size_t responseSize);
 	void setResponseSizeSent(size_t responseSizeSent);
-	void setServerBlock(ServerBlock& serverBlock);
-	
+	void setServerBlock(ServerBlock &serverBlock);
+
 	void setHasReadSocket(bool value);
 	void setHasFinishedReading(bool value);
 	void setCanBeClosed(bool value);
 	void setHasDataToSend(bool value);
 	void setHasFinishedSending(bool value);
+
+	void setHasCGI(bool value);
+	void setCGIPid(pid_t pid);
+
+	void setCGIStartTime(time_t now);
+	void setCGIExitStatus(int status);
+	void setCGIHasCompleted(bool value);
+	void setCGIHasTimedOut(bool value);
+	/* CGI */
+	void addCGI(pid_t pid);
+	void removeCGI(int status);
 	/* Debugging */
 	void printConnection() const;
-	
-	bool findServerBlock(const std::vector<ServerBlock>& _serverBlocks);
+
+	bool findServerBlock(const std::vector<ServerBlock> &_serverBlocks);
 };
 
 #endif
