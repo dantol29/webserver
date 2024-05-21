@@ -3,6 +3,8 @@
 import cgi
 import os
 import json
+import sys
+from urllib.parse import parse_qs
 
 def get_script_directory():
     """Return the directory in which the script is located."""
@@ -40,11 +42,6 @@ def main():
         print(f"DEBUG: {key}={value}<br>")
     print("<br>")
 
-
-    # Print the QUERY_STRING environment variable for debugging
-    query_string = os.getenv('QUERY_STRING', '')
-    print(f"DEBUG: QUERY_STRING: {query_string}<br>")
-
     # Get the directory where the script is located
     script_directory = get_script_directory()
     filename = os.path.join(script_directory, "database.json")
@@ -53,30 +50,44 @@ def main():
     data = load_database(filename)
     print(f"DEBUG: Loaded data: {data}<br>")
 
-    # Simulating CGI environment for demonstration
-    form = cgi.FieldStorage(fp=None, headers=None, environ={'REQUEST_METHOD':'GET', 'CONTENT_TYPE':'application/x-www-form-urlencoded', 'QUERY_STRING': query_string})
+    # Determine the request method
+    method = os.getenv('REQUEST_METHOD', '').upper()
 
-    #take action from env variable method
-    action = os.getenv('REQUEST_METHOD', '') 
-    name = form.getvalue('name')
-    salad = form.getvalue('salad')
-    print(f"DEBUG: action={action}, name={name}, salad={salad}<br>")
+    if method in ['POST', 'DELETE']:
+        if method == 'POST':
+            # Read the input data from stdin
+            content_length = int(os.getenv('CONTENT_LENGTH', 0))
+            post_data = sys.stdin.read(content_length)
+            form_data = parse_qs(post_data)
+        else:  # DELETE method
+            form_data = cgi.FieldStorage()
+        
+        # Debugging: Print the form keys and values
+        for key in form_data.keys():
+            print(f"DEBUG: form[{key}]={form_data[key]}<br>")
 
-    if action == 'POST' and name and salad:
-        # Add or update an entry
-        data[name] = salad
-        save_database(data, filename)
-        print(f"Entry added or updated successfully: {name} likes {salad}.")
-    elif action == 'delete' and name:
-        # Attempt to delete an entry
-        if name in data:
-            del data[name]
+        name = form_data.get('name', [None])[0]
+        salad = form_data.get('salad', [None])[0] if method == 'POST' else None
+
+        print(f"DEBUG: method={method}, name={name}, salad={salad}<br>")
+
+        if method == 'POST' and name and salad:
+            # Add or update an entry
+            data[name] = salad
             save_database(data, filename)
-            print(f"Entry deleted successfully: {name}.")
+            print(f"Entry added or updated successfully: {name} likes {salad}.")
+        elif method == 'DELETE' and name:
+            # Attempt to delete an entry
+            if name in data:
+                del data[name]
+                save_database(data, filename)
+                print(f"Entry deleted successfully: {name}.")
+            else:
+                print(f"Entry not found: {name}.")
         else:
-            print(f"Entry not found: {name}.")
+            print("Invalid request. Make sure you provide name and salad parameters for adding, or name for deleting.")
     else:
-        print("Invalid request. Make sure you provide action, name, and salad parameters for adding, or action and name for deleting.")
+        print("Unsupported request method. Please use POST or DELETE.")
 
 if __name__ == "__main__":
     main()
