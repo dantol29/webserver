@@ -282,6 +282,7 @@ std::ostream &operator<<(std::ostream &out, const Config &file)
 		std::cout << std::endl;
 		std::cout << "alias: " << var._alias << std::endl;
 
+
 		// for (unsigned int i = 0; i < loc.size(); ++i)
 		// {
 		// 	std::cout << "------------------Location-Block------------------------" << std::endl;
@@ -308,6 +309,7 @@ std::ostream &operator<<(std::ostream &out, const Config &file)
 		// 	std::cout << std::endl;
 		// 	std::cout << "alias: " << loc[i]._alias << std::endl;
 		// }
+
 		std::cout << "------------------END---------------------------------" << std::endl;
 	}
 
