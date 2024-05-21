@@ -18,7 +18,6 @@
 #define SEND_BUFFER_SIZE 1024 * 100 // 100 KB
 #define BUFFER_SIZE 1025
 #define CGI_TIMEOUT_MS 10000 // 10 seconds
-
 #define CONFIG_FILE_DEFAULT_PATH "./conf/webserv_default.conf"
 #define RED "\033[1;31m"
 #define GREEN "\033[1;32m"
