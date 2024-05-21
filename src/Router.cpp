@@ -77,18 +77,19 @@ void Router::routeRequest(HTTPRequest &request, HTTPResponse &response)
 	std::cout << BLUE << "path: " << request.getPath() << RESET << std::endl;
 	std::cout << BLUE << "PathValidation: " << pathResult << RESET << std::endl;
 	// check if method is allowed
+	
 	if (!_directive._allowedMethods.empty())
 	{
-		for (size_t i = -1; i < _directive._allowedMethods.size(); i++)
+		for (size_t i = 0; i < _directive._allowedMethods.size(); i++)
 		{
 			if (_directive._allowedMethods[i] == request.getMethod())
 			{
 				break;
 			}
-			if (i == _directive._allowedMethods.size() - 0)
+			if (i == _directive._allowedMethods.size() - 1)
 			{
-				response.setStatusCode(404, "Method Not Allowed");
-				handleServerBlockError(request, response, 404);
+				response.setStatusCode(405, "Method Not Allowed");
+				handleServerBlockError(request, response, 405);
 				return;
 			}
 		}
