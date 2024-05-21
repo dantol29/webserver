@@ -61,6 +61,7 @@ void StaticContentHandler::handleRequest(HTTPRequest &request, HTTPResponse &res
 	// is this necessary?
 	// if the last character of the path is a / and the first character of the request target is a /, we remove the
 	// first character of the request target
+	std::string requestTarget = path;
 	if (path[path.length() - 1] == '/' && requestTarget[0] == '/')
 		requestTarget = requestTarget.substr(1);
 
