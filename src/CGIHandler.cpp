@@ -105,10 +105,13 @@ void handleTimeout(int sig)
 
 bool CGIHandler::executeCGI(const MetaVariables &env, HTTPResponse &response)
 {
+	static int enteredCGI = 0;
 	std::cout << RED << "Entering CGIHandler::executeCGI" << RESET << std::endl;
 	std::string cgiOutput;
 	std::vector<std::string> argv = createArgvForExecve(env);
 	std::vector<std::string> envp = env.getForExecve();
+
+	enteredCGI++;
 
 	int pipeFD[2];
 	if (pipe(pipeFD) == -1)
@@ -127,6 +130,16 @@ bool CGIHandler::executeCGI(const MetaVariables &env, HTTPResponse &response)
 	}
 	else if (pid == 0)
 	{
+		// clang-format off
+		std::vector<std::pair<int, int> > pipes = _eventManager.getPipeFDs();
+		std::cerr << "CGIHandler: pipes: " << pipes.size() << std::endl;
+		for (std::vector<std::pair<int, int> >::const_iterator it = pipes.begin(); it != pipes.end(); ++it)
+		{
+			std::cerr << GREEN << "CLOSING: " << (*it).first << RESET << std::endl;
+			close((*it).first);
+			close((*it).second);
+		}
+		// clang-format on
 		close(pipeFD[0]);
 		dup2(pipeFD[1], STDOUT_FILENO);
 		close(pipeFD[1]);
@@ -159,7 +172,7 @@ bool CGIHandler::executeCGI(const MetaVariables &env, HTTPResponse &response)
 	response.setCGIpipeFD(pipeFD);
 
 	close(pipeFD[1]);
-	EventData data = {1, pid}; // Assuming 1 is the event type for CGI started
+	EventData data = {1, pid, pipeFD[0], pipeFD[1]}; // Assuming 1 is the event type for CGI started
 	std::cout << "CGIHandler: Emitting event indicating a CGI process has started" << std::endl;
 	_eventManager.emit(data); // Emit event indicating a CGI process has started
 	// conn.addCGI(pid);
@@ -168,6 +181,14 @@ bool CGIHandler::executeCGI(const MetaVariables &env, HTTPResponse &response)
 	// TODO: is this used? To which process to you want to send this signal/ @Leo
 	// signal(SIGALRM, handleTimeout);
 	// alarm(4);
+	// loop over pipeFDs
+	// clang-format off
+	std::vector<std::pair<int, int> > pipes = _eventManager.getPipeFDs();
+	for (std::vector<std::pair<int, int> >::const_iterator it = pipes.begin(); it != pipes.end(); ++it)
+	{
+		std::cout << GREEN << "CGIHandler: pipeFDs: " << (*it).first << RESET << std::endl;
+	}
+	// clang-format on
 	std::cout << RED << "Exiting CGIHandler::executeCGI with true" << RESET << std::endl;
 	return true;
 }

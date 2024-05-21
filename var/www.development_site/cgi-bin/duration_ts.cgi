@@ -4,7 +4,7 @@ import time
 from datetime import datetime
 
 # Define the duration of the counter in seconds
-duration = 6
+duration = 10
 
 # Print the HTTP header
 print("Content-Type: text/html")

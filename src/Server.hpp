@@ -40,9 +40,13 @@ class Server
 	void setCGICounter(int counter);
 	bool getHasCGI() const;
 	int getCGICounter() const;
+	// clang-format off
+	std::vector<std::pair<int, int> > getPipeFDs() const;
+	// clang-format on
 	const EventManager &getEventManager() const;
 
 	void addCGI(const EventData &eventData);
+	void addPipeFDs(int pipe0, int pipe1);
 	void removeCGI();
 
   private:
@@ -54,6 +58,9 @@ class Server
 	std::vector<ServerSocket> _serverSockets;
 	std::vector<struct pollfd> _FDs;
 	std::vector<Connection> _connections;
+	// clang-format off
+	std::vector<std::pair<int, int> > _pipeFDs;
+	// clang-format on
 	EventManager &_eventManager;
 
 	bool _hasCGI;

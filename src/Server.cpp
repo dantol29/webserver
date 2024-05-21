@@ -69,7 +69,7 @@ void Server::startPollEventLoop()
 	while (1)
 	{
 		if (_hasCGI)
-			timeout = 1000; // 1 seconds
+			timeout = 500; // 1 seconds
 		else
 			timeout = -1;
 		printConnections("BEFORE POLL", _FDs, _connections, true);
@@ -150,7 +150,7 @@ void Server::waitCGI()
 		{
 			double elapsed = difftime(time(NULL), _connections[i].getCGIStartTime());
 			std::cout << RED << "Elapsed time: " << elapsed << " seconds" << RESET << std::endl;
-			if (_connections[i].getHasCGI() && elapsed > 1)
+			if (_connections[i].getHasCGI() && elapsed > 500)
 			{
 				Debug::log("CGI timed out", Debug::NORMAL);
 
@@ -950,3 +950,20 @@ void Server::findLocationBlock(HTTPRequest &request, ServerBlock &serverBlock, D
 		}
 	}
 }
+
+void Server::addPipeFDs(int pipe0, int pipe1)
+{
+	_pipeFDs.push_back(std::make_pair(pipe0, pipe1));
+	// print the pipe fds
+	for (size_t i = 0; i < _pipeFDs.size(); i++)
+	{
+		std::cout << PURPLE << "Pipe FDs: " << _pipeFDs[i].first << RESET << std::endl;
+	}
+}
+
+// clang-format off
+std::vector<std::pair<int, int> > Server::getPipeFDs() const
+{
+	return _pipeFDs;
+}
+// clang-format on
