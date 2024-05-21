@@ -38,7 +38,8 @@ bool ServerBlock::addDirective(std::string key, std::string &value, bool isLocat
 						 "path",
 						 "cgi_path",
 						 "cgi_ext",
-						 "return"};
+						 "return",
+						 "upload_path"};
 	std::list<std::string> validVar(var, var + sizeof(var) / sizeof(var[0]));
 
 	if (std::find(validVar.begin(), validVar.end(), key) == validVar.end())
@@ -71,6 +72,8 @@ bool ServerBlock::addDirective(std::string key, std::string &value, bool isLocat
 		setCgiExt(transformCgiExt(value), isLocation);
 	else if (key == "return")
 		setReturn(value, isLocation);
+	else if (key == "upload_path")
+		setUploadPath(value, isLocation);
 	else if (key == "path" && isLocation)
 		setLocationPath(value);
 
@@ -167,6 +170,11 @@ std::string ServerBlock::getReturn() const
 	return (_directives._return);
 }
 
+std::string ServerBlock::getUploadPath() const
+{
+	return (_directives._uploadPath);
+}
+
 void ServerBlock::setListen(Listen str, bool isLocation)
 {
 	if (!isLocation)
@@ -242,7 +250,7 @@ void ServerBlock::setRoot(std::string &str, bool isLocation)
 	if (str.size() > 1 && str[str.size() - 1] != '/')
 		str = str + "/";
 	// remove slash at the beginning
-	if (str.size() < 1 && str[0] == '/')
+	if (str.size() > 1 && str[0] == '/')
 		str = str.substr(1);
 
 	if (!isLocation)
@@ -265,7 +273,6 @@ void ServerBlock::setClientMaxBodySize(std::string &str, bool isLocation)
 		throw("Invalid client_max_body_size");
 
 	size_t n = strToInt(str);
-
 	if (!isLocation)
 	{
 		if (_directives._clientMaxBodySize > 0)
@@ -273,11 +280,7 @@ void ServerBlock::setClientMaxBodySize(std::string &str, bool isLocation)
 		_directives._clientMaxBodySize = n;
 	}
 	else
-	{
-		if (_locations.back()._clientMaxBodySize > 0)
-			throw("client_max_body_size already set");
-		_locations.back()._clientMaxBodySize = n;
-	}
+		throw("client_max_body_size not allowed in location block");
 }
 
 void ServerBlock::setAutoIndex(std::string &str, bool isLocation)
@@ -384,6 +387,29 @@ void ServerBlock::setReturn(std::string str, bool isLocation)
 		if (_locations.back()._return.size() > 0)
 			throw("return already set");
 		_locations.back()._return = str;
+	}
+}
+
+void ServerBlock::setUploadPath(std::string str, bool isLocation)
+{
+	// add a slash at the end if there is none
+	if (str.size() > 1 && str[str.size() - 1] != '/')
+		str = str + "/";
+	// remove slash at the beginning
+	if (str.size() > 1 && str[0] == '/')
+		str = str.substr(1);
+
+	if (!isLocation)
+	{
+		if (_directives._uploadPath.size() > 0)
+			throw("upload_path already set");
+		_directives._uploadPath = str;
+	}
+	else
+	{
+		if (_locations.back()._uploadPath.size() > 0)
+			throw("upload_path already set");
+		_locations.back()._uploadPath = str;
 	}
 }
 

@@ -3,23 +3,13 @@ FROM ubuntu:20.04
 
 # Install necessary packages
 RUN apt-get update && \
-    apt-get install -y build-essential curl vim
+    apt-get install -y build-essential curl vim iproute2 net-tools
 
 # Set the working directory
 WORKDIR /app
 
-# Copy the entire project into the container
+# Copy the entire project into the containerenet-tools
 COPY . .  
-
-
-# List the contents of the /app directory to verify the presence of the Makefile
-RUN echo "Contents of /app:" && ls -al /app
-
-# List the contents of the tests directory to verify the structure
-RUN echo "Contents of /app/tests:" && ls -al /app/tests
-
-# List the contents of the multi_sockets directory to verify the structure
-RUN echo "Contents of /app/tests/multi_sockets:" && ls -al /app/tests/multi_sockets
 
 # Compile the project in the root directory where the Makefile is located
 RUN make re -C /app
@@ -30,7 +20,15 @@ RUN make
 WORKDIR /app/tests/multi_sockets
 
 # Make the test script executable
-RUN chmod +x test.sh
+RUN chmod +x testIPv4.sh
+RUN chmod +x testIPv6.sh
+RUN chmod +x testIPv4+IPv6.sh 
+RUN chmod +x test_mixed.sh
 
-# Command to start the server and run tests
-CMD ["./test.sh"]
+# Enable IPv6 in the container
+RUN sysctl -w net.ipv6.conf.all.disable_ipv6=0 && \
+    sysctl -w net.ipv6.conf.default.disable_ipv6=0 && \
+    sysctl -w net.ipv6.conf.lo.disable_ipv6=0
+
+# Just start the shell
+CMD ["/bin/bash"]

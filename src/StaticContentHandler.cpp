@@ -46,27 +46,28 @@ std::string getMimeType(const std::string &filePath)
 // 	return S_ISDIR(statbuf.st_mode);
 // }
 
-void StaticContentHandler::handleRequest(const HTTPRequest &request, HTTPResponse &response)
+void StaticContentHandler::handleRequest(HTTPRequest &request, HTTPResponse &response)
 {
 	std::string webRoot = "var/www";
 	std::string host = request.getHost();
 
 	std::string path = request.getPath();
 	std::cout << "path: " << path << std::endl;
-	
+
 	// this is totally wrong
 	// if (requestTarget == "/" || requestTarget == "")
 	// 	requestTarget = "/index.html";
-	
+
 	// is this necessary?
 	// if the last character of the path is a / and the first character of the request target is a /, we remove the
 	// first character of the request target
-	// std::cout << "requestTarget: " << request.getRequestTarget() << std::endl;
-	// if (path[path.length() - 1] == '/' && request.getRequestTarget()[0] == '/')
-	// 	request.setRequestTarget(request.getRequestTarget().substr(1));
-	
+	if (path[path.length() - 1] == '/' && requestTarget[0] == '/')
+		requestTarget = requestTarget.substr(1);
+
+	request.setRequestTarget(requestTarget);
+	std::cout << "requestTarget: " << request.getRequestTarget() << std::endl;
 	// TODO: consider streaming the file instead of loading it all in memory for large files
-	
+
 	// this is totally wrong
 	// if (isDirectory(path))
 	// {

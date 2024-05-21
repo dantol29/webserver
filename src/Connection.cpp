@@ -18,6 +18,7 @@ Connection::Connection(struct pollfd &pollFd, Server &server)
 	_responseSize = 0;
 	_responseSizeSent = 0;
 	_responseString = "";
+	_hasServerBlock = NOT_FOUND;
 }
 
 Connection::Connection(const Connection &other)
@@ -39,6 +40,8 @@ Connection::Connection(const Connection &other)
 	_responseSize = other._responseSize;
 	_responseSizeSent = other._responseSizeSent;
 	_responseString = other._responseString;
+	_serverBlock = other._serverBlock;
+	_hasServerBlock = other._hasServerBlock;
 
 	// std::cout << "Connection object copied" << std::endl;
 }
@@ -62,6 +65,8 @@ Connection &Connection::operator=(const Connection &other)
 		_responseSize = other._responseSize;
 		_responseSizeSent = other._responseSizeSent;
 		_responseString = other._responseString;
+		_serverBlock = other._serverBlock;
+		_hasServerBlock = other._hasServerBlock;
 	}
 	std::cout << "Connection object assigned" << std::endl;
 	return *this;
@@ -109,6 +114,11 @@ struct pollfd &Connection::getPollFd()
 	return _pollFd;
 }
 
+ServerBlock &Connection::getServerBlock()
+{
+	return _serverBlock;
+}
+
 enum ConnectionType Connection::getType() const
 {
 	return _type;
@@ -151,6 +161,11 @@ bool Connection::getHasFinishedSending() const
 bool Connection::getCanBeClosed() const
 {
 	return _canBeClosed;
+}
+
+int Connection::getHasServerBlock() const
+{
+	return _hasServerBlock;
 }
 // SETTERS
 
@@ -212,6 +227,7 @@ void Connection::setCanBeClosed(bool value)
 {
 	_canBeClosed = value;
 }
+
 bool Connection::readHeaders(Parser &parser)
 {
 	// std::cout << "\nEntering readHeaders" << std::endl;
@@ -356,55 +372,10 @@ bool Connection::readChunk(size_t chunkSize, std::string &chunkData, HTTPRespons
 	return true;
 }
 
-bool Connection::readBody(Parser &parser, HTTPRequest &req, HTTPResponse &res, Config &_config)
+bool Connection::readBody(Parser &parser, HTTPRequest &req, HTTPResponse &res)
 {
 	std::cout << "\nEntering readBody" << std::endl;
 	size_t contentLength = req.getContentLength();
-	ServerBlock serverBlock;
-	std::string serverName;
-	bool locationFound = false;
-
-	for (size_t i = 0; i < _config.getServerBlocks().size(); i++)
-	{
-		// loop through the server names
-		for (size_t j = 0; j < _config.getServerBlocks()[i].getServerName().size(); j++)
-		{
-			serverName = _config.getServerBlocks()[i].getServerName()[j];
-			if (serverName == req.getSingleHeader("host").second)
-				break;
-		}
-
-		if (serverName == req.getSingleHeader("host").second)
-		{
-			serverBlock = _config.getServerBlocks()[i];
-			for (size_t i = 0; i < serverBlock.getLocations().size(); i++)
-			{
-				std::cout << "Location: " << serverBlock.getLocations()[i]._path << " == " << req.getRequestTarget()
-						  << std::endl;
-				if (req.getRequestTarget() == serverBlock.getLocations()[i]._path)
-				{
-					std::cout << "Location found" << std::endl;
-					locationFound = true;
-					if (serverBlock.getLocations()[i]._clientMaxBodySize == 0)
-						break;
-					if (contentLength > serverBlock.getLocations()[i]._clientMaxBodySize)
-					{
-						res.setStatusCode(413, "Payload Too Large");
-						return false;
-					}
-				}
-			}
-			// uninitialized value
-			if (locationFound || _config.getServerBlocks()[i].getClientMaxBodySize() == 0)
-				break;
-			if (contentLength > _config.getServerBlocks()[i].getClientMaxBodySize())
-			{
-				res.setStatusCode(413, "Payload Too Large");
-				return false;
-			}
-			break;
-		}
-	}
 
 	char buffer[BUFFER_SIZE];
 	// We could also use _bodyTotalBytesRead from the parser
@@ -470,4 +441,67 @@ void Connection::printConnection() const
 	std::cout << std::setw(5) << ' ' << std::left << std::setw(22) << "hasFinishedSending:" << _hasFinishedSending
 			  << std::endl;
 	std::cout << std::setw(5) << ' ' << std::left << std::setw(22) << "canBeClosed:" << _canBeClosed << std::endl;
+}
+
+bool Connection::findServerBlock(const std::vector<ServerBlock>& serverBlocks)
+{
+	std::string serverName;
+
+	for (size_t i = 0; i < serverBlocks.size(); i++)
+	{
+		// loop through the server names
+		for (size_t j = 0; j < serverBlocks[i].getServerName().size(); j++)
+		{
+			serverName = serverBlocks[i].getServerName()[j];
+			if (serverName == _request.getSingleHeader("host").second)
+				break;
+		}
+
+		if (serverName == _request.getSingleHeader("host").second)
+		{
+			// loop through the listen entries
+			for (size_t k = 0; k < serverBlocks[i].getListen().size(); k++)
+			{
+				if (serverBlocks[i].getListen()[k].getPort() == _serverPort && \
+					serverBlocks[i].getListen()[k].getIp() == _serverIp)
+					{
+						_serverBlock = serverBlocks[i];
+
+						if (_request.getMethod() == "POST" &&_serverBlock.getClientMaxBodySize() != 0 && \
+						_request.getContentLength() > _serverBlock.getClientMaxBodySize())
+							_response.setStatusCode(413, "Payload Too Large");
+						
+						_hasServerBlock = FOUND;
+						return (true);
+					}
+			}
+		}
+	}
+
+	// check if default server block exists for error_pages
+	for (size_t i = 0; i < serverBlocks.size(); i++)
+	{
+		// loop through the listen entries
+		for (size_t k = 0; k < serverBlocks[i].getListen().size(); k++)
+		{
+			if (serverBlocks[i].getListen()[k].getPort() == _serverPort && \
+				serverBlocks[i].getListen()[k].getIp() == _serverIp)
+				{
+					if (_request.getMethod() == "POST" &&_serverBlock.getClientMaxBodySize() != 0 && \
+					_request.getContentLength() > _serverBlock.getClientMaxBodySize())
+					{
+						_response.setStatusCode(413, "Payload Too Large");
+						return false;
+					}
+					Debug::log("Default server block found", Debug::NORMAL);
+					_hasServerBlock = DEFAULT;
+					_response.setStatusCode(404, "Not Found");
+					return (_serverBlock = serverBlocks[i], true);
+				}
+		}
+	}
+
+	Debug::log("Server block not found", Debug::NORMAL);
+	_response.setStatusCode(404, "Not Found");
+	return (false);
 }
