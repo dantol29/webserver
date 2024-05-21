@@ -69,10 +69,7 @@ void Server::startPollEventLoop()
 	while (1)
 	{
 		if (_hasCGI)
-		{
-			std::cout << "We have CGI" << std::endl;
 			timeout = 1000; // 1 seconds
-		}
 		else
 			timeout = -1;
 		printConnections("BEFORE POLL", _FDs, _connections, true);
@@ -85,29 +82,16 @@ void Server::startPollEventLoop()
 		if (ret > 0)
 		{
 			size_t originalSize = _FDs.size();
-			// if _FDs becomes bigger than originalSize we don't want to loop over the new elements before we finish the
-			// old ones if _FDs becomes smaller than originalSize we don't want to loop over the old elements that are
-			// not in _FDs anymore
+
 			for (size_t i = 0; i < originalSize && i < _FDs.size(); i++)
 			{
 				if (_FDs[i].revents & (POLLIN | POLLOUT))
 				{
-					Debug::log("Enters revents", Debug::OCF);
-					// if (i == 0)
 					if (_connections[i].getType() == SERVER)
-					{
-						// printFrame("SERVER SOCKET EVENT", true);
 						acceptNewConnection(_connections[i]);
-					}
 					else
 					{
-						// printFrame("CLIENT SOCKET EVENT", true);
-						handleConnection(_connections[i],
-										 i,
-										 _connections[i].getParser(),
-										 _connections[i].getRequest(),
-										 _connections[i].getResponse());
-
+						handleConnection(_connections[i], i);
 						if ((_connections[i].getHasFinishedReading() && _connections[i].getHasDataToSend()))
 							_FDs[i].events = POLLOUT;
 					}
@@ -202,30 +186,23 @@ void Server::readFromClient(Connection &conn, size_t &i, Parser &parser, HTTPReq
 		Debug::log("\033[1;33mReading headers\033[0m", Debug::NORMAL);
 		if (!conn.readHeaders(parser))
 		{
+			// only in case of system error == do not send response
 			Debug::log("Error reading headers", Debug::OCF);
 			conn.setHasFinishedReading(true);
-			conn.setHasDataToSend(false);
 			conn.setCanBeClosed(true);
 			return;
 		}
 		conn.setHasReadSocket(true);
 		if (!parser.preParseHeaders(response))
 		{
-			// logic was incorrect here
-			conn.setCanBeClosed(false);
 			conn.setHasFinishedReading(true);
-			conn.setHasDataToSend(false);
-			// ---------------------
 			std::cout << "Error pre-parsing headers" << std::endl;
 			return;
 		}
 	}
 
 	if (!parser.getHeadersComplete())
-	{
-		Debug::log("Headers incomplete yet, exiting readFromClient.", Debug::NORMAL);
-		return;
-	}
+		return (Debug::log("Headers incomplete yet, exiting readFromClient.", Debug::NORMAL));
 
 	if (parser.getHeadersComplete() && !parser.getHeadersAreParsed())
 	{
@@ -236,18 +213,13 @@ void Server::readFromClient(Connection &conn, size_t &i, Parser &parser, HTTPReq
 
 	if (response.getStatusCode() != 0)
 	{
-		conn.setCanBeClosed(false);
 		conn.setHasFinishedReading(true);
-		conn.setHasDataToSend(false);
 		Debug::log("Error parsing headers or request line", Debug::NORMAL);
 		return;
 	}
 
 	if (parser.getHeadersComplete() && request.getMethod() == "GET")
 		conn.setHasFinishedReading(true);
-
-	if (response.getStatusCode() != 0)
-		Debug::log(toString(response.getStatusCode()), Debug::NORMAL);
 
 	if (request.getMethod() == "GET" || request.getMethod() == "DELETE" || request.getMethod() == "SALAD")
 		Debug::log("GET request, no body to read", Debug::NORMAL);
@@ -260,56 +232,48 @@ void Server::handlePostRequest(Connection &conn, Parser &parser, HTTPRequest &re
 	if (parser.getIsChunked() && !conn.getHasReadSocket())
 	{
 		Debug::log("Chunked body", Debug::NORMAL);
-		// TODO: double check this condition, logic
 		if (!conn.readChunkedBody(parser))
 		{
+			// only in case of system error == do not send response
 			Debug::log("Error reading chunked body", Debug::OCF);
 			conn.setCanBeClosed(true);
 			conn.setHasFinishedReading(true);
-			// It could be that we had data that could be sent even if we have an error cause previous data was read
 			return;
 		}
-		//-----------------------------//
 		conn.setHasReadSocket(true);
 	}
 	else if (!conn.getHasReadSocket())
 	{
 		Debug::log("\033[1;33mReading body\033[0m", Debug::NORMAL);
-		// TODO: double check this condition, logic
 		if (!parser.getBodyComplete() && parser.getBuffer().size() == request.getContentLength())
 		{
+			// if body was read during reading headers
 			parser.setBodyComplete(true);
 			conn.setHasFinishedReading(true);
-			conn.setHasDataToSend(true);
 		}
-		//-----------------------------//
 
 		else if (!conn.readBody(parser, request, response))
 		{
+			// only in case of system error == do not send response
 			Debug::log("Error reading body", Debug::OCF);
-			conn.setCanBeClosed(false);
+			conn.setCanBeClosed(true);
 			conn.setHasFinishedReading(true);
-			conn.setHasDataToSend(false);
+			conn.setHasDataToSend(true);
 			return;
 		}
 	}
-	// TODO: double check this condition, logic
+
 	if (!parser.getBodyComplete() && request.getContentLength() != 0 &&
 		parser.getBuffer().size() == request.getContentLength())
 	{
-		// TODO: in the new design we will return here and go to the function where the response is
 		parser.setBodyComplete(true);
 		conn.setHasFinishedReading(true);
-		conn.setCanBeClosed(false);
-		conn.setHasDataToSend(false);
 		return;
 	}
-	//-----------------------------//
 
 	if (!parser.getBodyComplete())
 	{
 		Debug::log("Body still incomplete, exiting readFromClient.", Debug::NORMAL);
-		conn.setHasFinishedReading(false);
 		conn.setHasReadSocket(true);
 		return;
 	}
@@ -502,8 +466,13 @@ void Server::closeClientConnection(Connection &conn, size_t &i)
 	--i;
 }
 
-void Server::handleConnection(Connection &conn, size_t &i, Parser &parser, HTTPRequest &request, HTTPResponse &response)
+void Server::handleConnection(Connection &conn, size_t &i)
 {
+	Parser &parser = _connections[i].getParser();
+	HTTPRequest &request = _connections[i].getRequest();
+	HTTPResponse &response = _connections[i].getResponse();
+
+	// printFrame("CLIENT SOCKET EVENT", true);
 	std::cout << "\033[1;36m" << "Entering handleConnection" << "\033[0m" << std::endl;
 
 	conn.setHasReadSocket(false);
@@ -755,6 +724,7 @@ void Server::acceptNewConnection(Connection &conn)
 
 	// struct sockaddr_in clientAddress;
 	// We choose sockaddr_storage to be able to handle both IPv4 and IPv6
+	// printFrame("SERVER SOCKET EVENT", true);
 	struct sockaddr_storage clientAddress;
 	socklen_t ClientAddrLen = sizeof(clientAddress);
 	Debug::log("New connection detected", Debug::SERVER);
@@ -980,39 +950,3 @@ void Server::findLocationBlock(HTTPRequest &request, ServerBlock &serverBlock, D
 		}
 	}
 }
-
-// void Server::handleServerBlockError(Connection& conn, HTTPResponse &response)
-// {
-// 	// if error already occurred, we don't want to overwrite it
-// 	if (response.getStatusCode() != 0)
-// 	{
-// 		Debug::log("Error response" + toString(response.getStatusCode()), Debug::NORMAL);
-// 		response.setErrorResponse(response.getStatusCode());
-// 		conn.setHasDataToSend(true);
-// 		return;
-// 	}
-
-// 	static StaticContentHandler staticContentInstance;
-
-// 	staticContentInstance.handleNotFound(response);
-// 	response.setStatusCode(404, "No server block is matching the request host");
-// 	conn.setHasDataToSend(true);
-// 	return;
-// }
-
-// std::string Server::findServerName(HTTPRequest& request, ServerBlock& serverBlock)
-// {
-// 	std::string serverName;
-
-// 	for (size_t j = 0; j < serverBlock.getServerName().size(); j++)
-// 	{
-// 		serverName = serverBlock.getServerName()[j];
-// 		std::cout << RED << "Checking server name: " << serverName << RESET << std::endl;
-// 		if (serverName == request.getSingleHeader("host").second)
-// 		{
-// 			std::cout << GREEN << "Server name found" << RESET << std::endl;
-// 			break;
-// 		}
-// 	}
-// 	return serverName;
-// }

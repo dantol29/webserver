@@ -71,7 +71,7 @@ class Server
 	// void addServerSocketPollFdToVectors();
 	void addServerSocketsPollFdToVectors();
 	void acceptNewConnection(Connection &conn);
-	void handleConnection(Connection &conn, size_t &i, Parser &parser, HTTPRequest &request, HTTPResponse &response);
+	void handleConnection(Connection &conn, size_t &i);
 	void handleServerSocketError();
 	void handleClientSocketError(int clientFD, size_t &i);
 	void handleSocketTimeoutIfAny();
