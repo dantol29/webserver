@@ -182,12 +182,12 @@ void sendData(const std::vector<HTTPTest> &tests, sockaddr_in serverAddress)
 
 void cgi(sockaddr_in serverAdress)
 {
-	std::string postData = "name=Jasasane&salad=Caesar";
+	std::string postData = "name=Jane&salad=Caesar";
 	std::stringstream request;
 	request << "POST /database/salad_db.py HTTP/1.1\r\n"
 			<< "Host: www.saladbook.xyz\r\n"
 			<< "Content-Type: application/x-www-form-urlencoded\r\n"
-			<< "Content-Length: " << postData.size() << "\r\n"
+			<< "content-Length: " << postData.size() << "\r\n"
 			<< "\r\n"
 			<< postData << "\r\n\r\n";
 

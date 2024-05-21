@@ -213,9 +213,9 @@ bool requestIsCGI(const HTTPRequest &request)
 void handlePostCGIRequest(Connection &conn, Parser &parser, HTTPRequest &request, HTTPResponse &response)
 {
 	std::cout << BLUE << "handlePostCGIRequest" << RESET << std::endl;
-	if (parser.getIsChunked() && !conn.getHasReadSocket())
+	if (!parser.getIsChunked() && !conn.getHasReadSocket())
 	{
-		Debug::log("Chunked body in handlePostCGIRequest", Debug::NORMAL);
+		Debug::log("Not a chunked body in handlePostCGIRequest", Debug::NORMAL);
 		if (!conn.readBody(parser, request, response))
 		{
 			Debug::log("Error reading body", Debug::OCF);
@@ -227,21 +227,21 @@ void handlePostCGIRequest(Connection &conn, Parser &parser, HTTPRequest &request
 	}
 	else if (!conn.getHasReadSocket())
 	{
-		if (!parser.getBodyComplete() && parser.getBuffer().size() == request.getContentLength())
-		{
-			parser.setBodyComplete(true);
-			conn.setHasFinishedReading(true);
-			conn.setHasDataToSend(true);
-		}
+		// if (!parser.getBodyComplete() && parser.getBuffer().size() == request.getContentLength())
+		// {
+		// 	parser.setBodyComplete(true);
+		// 	conn.setHasFinishedReading(true);
+		// 	conn.setHasDataToSend(true);
+		// }
 
-		else if (!conn.readBody(parser, request, response))
-		{
-			Debug::log("Error reading body", Debug::OCF);
-			conn.setCanBeClosed(false);
-			conn.setHasFinishedReading(true);
-			conn.setHasDataToSend(false);
-			return;
-		}
+		// else if (!conn.readBody(parser, request, response))
+		// {
+		// 	Debug::log("Error reading body", Debug::OCF);
+		// 	conn.setCanBeClosed(false);
+		// 	conn.setHasFinishedReading(true);
+		// 	conn.setHasDataToSend(false);
+		// 	return;
+		// }
 	}
 	// TODO: double check this condition, logic
 	if (!parser.getBodyComplete() && request.getContentLength() != 0 &&
@@ -252,6 +252,7 @@ void handlePostCGIRequest(Connection &conn, Parser &parser, HTTPRequest &request
 		conn.setHasFinishedReading(true);
 		conn.setCanBeClosed(false);
 		conn.setHasDataToSend(false);
+		std::cout << "Body complete in handlePostCGIRequest" << std::endl;
 		return;
 	}
 	//-----------------------------//
@@ -267,8 +268,11 @@ void handlePostCGIRequest(Connection &conn, Parser &parser, HTTPRequest &request
 	if (!request.getUploadBoundary().empty())
 		parser.parseFileUpload(parser.getBuffer(), request, response);
 
-	request.setBody(parser.getBuffer());
 	conn.setHasFinishedReading(true);
+	// TODO: check if this is correct
+	request.setBody(parser.getBuffer());
+	std::cout << YELLOW << "Request body: " << request.getBody() << RESET << std::endl;
+	Debug::log("Finished reading in handlePostCGIRequest", Debug::NORMAL);
 }
 
 void Server::readFromClient(Connection &conn, size_t &i, Parser &parser, HTTPRequest &request, HTTPResponse &response)
@@ -409,7 +413,7 @@ void Server::buildResponse(Connection &conn, size_t &i, HTTPRequest &request, HT
 	(void)i;
 	Debug::log("Entering buildResponse", Debug::NORMAL);
 	Debug::log("Request method: " + request.getMethod(), Debug::NORMAL);
-
+	std::cout << YELLOW << "Request body in buildResponse: " << request.getBody() << RESET << std::endl;
 	if (!response.getIsCGI())
 	{
 		ServerBlock serverBlock;
@@ -569,6 +573,9 @@ void Server::handleConnection(Connection &conn, size_t &i, Parser &parser, HTTPR
 		return;
 	}
 	std::cout << request << std::endl;
+
+	std::cout << YELLOW << "Request body in handleConnection: " << request.getBody() << RESET << std::endl;
+
 	if (!conn.getCanBeClosed() && !conn.getHasDataToSend())
 		buildResponse(conn, i, request, response);
 	// MInd that after the last read from the pipe of the CGI getHasReadSocket will be false but we will have a read

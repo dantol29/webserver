@@ -188,14 +188,15 @@ void MetaVariables::HTTPRequestToMetaVars(const HTTPRequest &request, MetaVariab
 	{
 		env.setVar("CONTENT_TYPE", "");
 	}
-	std::pair<std::string, std::string> contentLengthHeader = request.getSingleHeader("Content-Length");
+	std::pair<std::string, std::string> contentLengthHeader = request.getSingleHeader("content-length");
 	if (!contentLengthHeader.first.empty())
 	{
 		env.setVar("CONTENT_LENGTH", contentLengthHeader.second);
+		Debug::log("Content-Length header found.", Debug::NORMAL);
 	}
 	else
 	{
-		env.setVar("CONTENT_LENGTH", "0");
+		Debug::log("Content-Length header not found.", Debug::NORMAL);
 	}
 }
 

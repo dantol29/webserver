@@ -38,13 +38,17 @@ void CGIHandler::handleRequest(HTTPRequest &request, HTTPResponse &response)
 	MetaVariables env;
 	env.HTTPRequestToMetaVars(request, env);
 
+	std::cout << BLUE << "CGIHandler: handleRequest" << RESET << std::endl;
+
 	std::cout << std::endl;
 	std::cout << std::endl;
 	std::cout << std::endl;
 	std::cout << request << std::endl;
-	std::cout << request.getBody() << std::endl;
+	std::cout << YELLOW << request.getBody() << RESET << std::endl;
 	std::cout << std::endl;
 	std::cout << std::endl;
+
+	std::cout << YELLOW << "Request body: " << request.getBody() << RESET << std::endl;
 
 	if (!executeCGI(env, request.getBody(), response))
 	{
