@@ -28,6 +28,7 @@
 !**/*.jpg
 !**/*.yml
 !**/*.csv
+!**/*.php
 
 # Specific files and directories to include
 !Makefile
