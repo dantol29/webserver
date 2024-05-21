@@ -35,6 +35,12 @@ def main():
     print("Content-type: text/html\n")
     print()
 
+    # Print the environment variables for debugging
+    for key, value in os.environ.items():
+        print(f"DEBUG: {key}={value}<br>")
+    print("<br>")
+
+
     # Print the QUERY_STRING environment variable for debugging
     query_string = os.getenv('QUERY_STRING', '')
     print(f"DEBUG: QUERY_STRING: {query_string}<br>")
@@ -50,12 +56,13 @@ def main():
     # Simulating CGI environment for demonstration
     form = cgi.FieldStorage(fp=None, headers=None, environ={'REQUEST_METHOD':'GET', 'CONTENT_TYPE':'application/x-www-form-urlencoded', 'QUERY_STRING': query_string})
 
-    action = form.getvalue('action')
+    #take action from env variable method
+    action = os.getenv('REQUEST_METHOD', '') 
     name = form.getvalue('name')
     salad = form.getvalue('salad')
     print(f"DEBUG: action={action}, name={name}, salad={salad}<br>")
 
-    if action == 'add' and name and salad:
+    if action == 'POST' and name and salad:
         # Add or update an entry
         data[name] = salad
         save_database(data, filename)
