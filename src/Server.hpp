@@ -77,6 +77,7 @@ class Server
 	void handleSocketTimeoutIfAny();
 	void handlePollError();
 	void AlertAdminAndTryToRecover();
+	void waitCGI();
 
 	/* for handleConnection */
 	void readFromClient(Connection &conn, size_t &i, Parser &parser, HTTPRequest &request, HTTPResponse &response);

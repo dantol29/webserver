@@ -97,7 +97,7 @@ void Router::routeRequest(HTTPRequest &request, HTTPResponse &response)
 	switch (pathResult)
 	{
 	case PathValid:
-		if (requestIsCGI(request))
+		if (requestIsCGI(request) && !_connection.getHasCGI())
 		{
 			CGIHandler cgiHandler(_eventManager, _connection);
 			cgiHandler.setFDsRef(_FDsRef);

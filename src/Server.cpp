@@ -69,10 +69,13 @@ void Server::startPollEventLoop()
 	while (1)
 	{
 		if (_hasCGI)
+		{
+			std::cout << "We have CGI" << std::endl;
 			timeout = 1000; // 1 seconds
+		}
 		else
 			timeout = -1;
-		// printConnections("BEFORE POLL", _FDs, _connections, true);
+		printConnections("BEFORE POLL", _FDs, _connections, true);
 		std::cout << CYAN << "++++++++++++++ #" << pollCounter
 				  << " Waiting for new connection or Polling +++++++++++++++" << RESET << std::endl;
 		int ret = poll(_FDs.data(), _FDs.size(), timeout);
@@ -104,20 +107,9 @@ void Server::startPollEventLoop()
 										 _connections[i].getParser(),
 										 _connections[i].getRequest(),
 										 _connections[i].getResponse());
-						std::cout << GREEN << _connections[i].getCGIPid() << RESET << std::endl;
-						std::cout << "Has finished reading: " << _connections[i].getHasFinishedReading() << std::endl;
-						std::cout << "Has data to send: " << _connections[i].getHasDataToSend() << std::endl;
-						std::cout << "Has CGI: " << _connections[i].getHasCGI() << std::endl;
-						// If a Connection has a CGI it means it has already finished reading, cuase the hasCGI is set
-						// after
-						// if ((_connections[i].getHasFinishedReading() && _connections[i].getHasDataToSend()) ||
-						// 	_connections[i].getHasCGI())
-						_FDs[i].events = POLLOUT;
+
 						if ((_connections[i].getHasFinishedReading() && _connections[i].getHasDataToSend()))
-						{
-							std::cout << "Setting POLLOUT" << std::endl;
 							_FDs[i].events = POLLOUT;
-						}
 					}
 				}
 				else if (_FDs[i].revents & (POLLERR | POLLHUP | POLLNVAL))
@@ -133,72 +125,73 @@ void Server::startPollEventLoop()
 			handleSocketTimeoutIfAny();
 		else
 			handlePollError();
-		std::cout << "Before if(_hasCGI)" << std::endl;
-		// We are checking if the server has CGI. And it should be true. Is our event handler working?
+
 		std::cout << "Has CGI: " << (_hasCGI ? "true" : "false") << std::endl;
 		if (_hasCGI)
-		{
-			std::cout << "We enter the hasCGI loop" << std::endl;
-			size_t originalSize = _FDs.size();
-			int status;
-			pid_t pid = waitpid(-1, &status, WNOHANG);
-			std::cout << "PID: " << pid << std::endl;
-
-			for (size_t i = 0; i < originalSize && i < _FDs.size(); i++)
-			{
-				std::cout << _connections[i].getCGIPid() << ", " << _connections[i].getHasCGI() << std::endl;
-			}
-
-			if (pid > 0)
-			{
-				std::cout << "PID > 0: " << pid << std::endl;
-				// TODo: has at this point the CGI been executed?
-				for (size_t i = 0; i < originalSize && i < _FDs.size(); i++)
-				{
-					std::cout << _connections[i].getCGIPid() << " == " << pid << ", " << _connections[i].getHasCGI()
-							  << std::endl;
-					if (_connections[i].getHasCGI() && _connections[i].getCGIPid() == pid)
-					{
-						std::cout << "REMOVE THIS TRASH: " << pid << std::endl;
-						_connections[i].setCGIExitStatus(status);
-						_connections[i].setCGIHasCompleted(true);
-						std::cout << "Setting POLLOUT" << std::endl;
-						_FDs[i].events = POLLOUT;
-						break;
-					}
-				}
-				// We deccrement the CGI counter by 1 on the server and if it 0 we set _hasCGI to false
-				removeCGI();
-			}
-			else if (pid == 0)
-			{
-				// Check if the CGI has timed out
-				for (size_t i = 0; i < originalSize && i < _FDs.size(); i++)
-				{
-					double elapsed = difftime(time(NULL), _connections[i].getCGIStartTime());
-					std::cout << "Elapsed time: " << elapsed << " seconds" << std::endl;
-					//_connections[i].setCGIExitStatus(1);
-					if (_connections[i].getHasCGI() && elapsed > 1)
-					{
-						std::cout << _connections[i].getCGIStartTime() << ", " << clock() << std::endl;
-						// kill CGI process
-						std::cout << "CGI timeout" << std::endl;
-						// probably we need here also removeCGI and go back to hanldeRequest and stuff
-						_FDs[i].events = POLLOUT;
-						_connections[i].setCGIExitStatus(status);
-						_connections[i].setCGIHasCompleted(true);
-						_connections[i].setCGIHasTimedOut(true);
-						kill(_connections[i].getCGIPid(), SIGKILL);
-						//_connections[i].removeCGI(status);
-						// give a response back that the CGI timeout
-					}
-				}
-			}
-			else
-				perror("waitpid");
-		}
+			waitCGI();
 	}
 }
+
+void Server::waitCGI()
+{
+	Debug::log("Enter waitCGI", Debug::CGI);
+	size_t originalSize = _FDs.size();
+	int status;
+	pid_t pid = waitpid(-1, &status, WNOHANG);
+	std::cout << "PID: " << pid << std::endl;
+
+	for (size_t i = 0; i < originalSize && i < _FDs.size(); i++)
+		std::cout << _connections[i].getCGIPid() << ", " << _connections[i].getHasCGI() << std::endl;
+
+	if (pid > 0)
+	{
+		for (size_t i = 0; i < originalSize && i < _FDs.size(); i++)
+		{
+			if (_connections[i].getHasCGI() && _connections[i].getCGIPid() == pid)
+			{
+				Debug::log("CGI has exited", Debug::CGI);
+				_connections[i].setCGIExitStatus(status);
+				_connections[i].setCGIHasCompleted(true);
+				_FDs[i].events = POLLOUT;
+				break;
+			}
+		}
+		// We deccrement the CGI counter by 1 on the server and if it 0 we set _hasCGI to false
+		removeCGI();
+	}
+	else if (pid == 0)
+	{
+		// Check if the CGI has timed out
+		for (size_t i = 0; i < originalSize && i < _FDs.size(); i++)
+		{
+			double elapsed = difftime(time(NULL), _connections[i].getCGIStartTime());
+			std::cout << RED << "Elapsed time: " << elapsed << " seconds" << RESET << std::endl;
+			if (_connections[i].getHasCGI() && elapsed > 1)
+			{
+				Debug::log("CGI timed out", Debug::NORMAL);
+
+				// POLLOUT to send the response
+				_FDs[i].events = POLLOUT;
+				// to write the correct the response
+				_connections[i].setCGIExitStatus(status);
+				// to know that the CGI has completed
+				_connections[i].setCGIHasCompleted(true);
+				// to know that the CGI has timed out
+				_connections[i].setCGIHasTimedOut(true);
+				// to kill pid of CGI
+				kill(_connections[i].getCGIPid(), SIGKILL);
+				// we have to wait for the pid to avoid zombie processes
+				// TODO: a bit blocking here
+				waitpid(_connections[i].getCGIPid(), &status, 0);
+				// We deccrement the CGI counter by 1 on the server
+				removeCGI();
+			}
+		}
+	}
+	else
+		perror("waitpid");
+}
+
 void Server::readFromClient(Connection &conn, size_t &i, Parser &parser, HTTPRequest &request, HTTPResponse &response)
 {
 	(void)i;
@@ -334,51 +327,58 @@ void Server::buildResponse(Connection &conn, size_t &i, HTTPRequest &request, HT
 	Debug::log("Entering buildResponse", Debug::NORMAL);
 	Debug::log("Request method: " + request.getMethod(), Debug::NORMAL);
 
-	if (!response.getIsCGI())
+	if (conn.getCGIHasCompleted())
 	{
-		ServerBlock serverBlock;
-		Directives directive;
-
-		std::cout << GREEN << "Number of server blocks: " << _config.getServerBlocks().size() << RESET << std::endl;
-		std::cout << "Request host: " << request.getSingleHeader("host").second << std::endl;
-
-		formRequestTarget(request);
-
-		if (conn.getHasServerBlock() != NOT_FOUND)
-			findLocationBlock(request, conn.getServerBlock(), directive);
-
-		std::cout << RED << "Root: " << directive._root << RESET << std::endl;
-
-		Router router(directive, _eventManager, conn);
-
-		if (response.getStatusCode() != 0)
+		if (conn.getCGIHasTimedOut())
 		{
-			Debug::log("Error response " + toString(response.getStatusCode()), Debug::NORMAL);
-
-			if (conn.getHasServerBlock() == DEFAULT)
-				request.replaceHeader("host", directive._serverName[0]);
-
-			router.handleServerBlockError(request, response, response.getStatusCode());
-			conn.setHasDataToSend(true);
-			return;
+			std::cout << "CGI timed out" << std::endl;
+			response.setStatusCode(500, "Internal Server Error");
+			response.setIsCGI(false);
 		}
 		else
-		{
-			router.setFDsRef(&_FDs);
-			router.setPollFd(&conn.getPollFd());
-			router.routeRequest(request, response);
-			std::cout << GREEN << conn.getCGIPid() << RESET << std::endl;
-		}
-		std::cout << "Is Response CGI? " << response.getIsCGI() << std::endl;
-		if (!response.getIsCGI())
-		{
-			std::cout << "Setting setHasDataToSend to true" << std::endl;
-			conn.setHasDataToSend(true);
-			return;
-		}
+			return (buildCGIResponse(conn, response));
 	}
-	else if (conn.getCGIHasCompleted())
-		buildCGIResponse(conn, response);
+
+	ServerBlock serverBlock;
+	Directives directive;
+
+	std::cout << GREEN << "Number of server blocks: " << _config.getServerBlocks().size() << RESET << std::endl;
+	std::cout << "Request host: " << request.getSingleHeader("host").second << std::endl;
+
+	formRequestTarget(request);
+
+	if (conn.getHasServerBlock() != NOT_FOUND)
+		findLocationBlock(request, conn.getServerBlock(), directive);
+
+	std::cout << RED << "Root: " << directive._root << RESET << std::endl;
+
+	Router router(directive, _eventManager, conn);
+
+	if (response.getStatusCode() > 299)
+	{
+		Debug::log("Error response " + toString(response.getStatusCode()), Debug::NORMAL);
+
+		if (conn.getHasServerBlock() == DEFAULT)
+			request.replaceHeader("host", directive._serverName[0]);
+
+		router.handleServerBlockError(request, response, response.getStatusCode());
+		conn.setHasDataToSend(true);
+		return;
+	}
+	else
+	{
+		router.setFDsRef(&_FDs);
+		router.setPollFd(&conn.getPollFd());
+		router.routeRequest(request, response);
+		std::cout << GREEN << conn.getCGIPid() << RESET << std::endl;
+	}
+	std::cout << "Is Response CGI? " << response.getIsCGI() << std::endl;
+	if (!response.getIsCGI())
+	{
+		std::cout << "Setting setHasDataToSend to true" << std::endl;
+		conn.setHasDataToSend(true);
+		return;
+	}
 }
 
 void Server::buildCGIResponse(Connection &conn, HTTPResponse &response)
@@ -393,13 +393,6 @@ void Server::buildCGIResponse(Connection &conn, HTTPResponse &response)
 	std::cout << "Reading from pipe" << std::endl;
 	ssize_t bytesRead;
 
-	if (conn.getCGIHasTimedOut())
-	{
-		std::cout << "CGI timed out" << std::endl;
-		response.setStatusCode(500, "Internal Server Error");
-		response.setIsCGI(false);
-		return;
-	}
 	do
 	{
 		std::cout << "Into the do while loop" << std::endl;
