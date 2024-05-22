@@ -1,14 +1,20 @@
 #include "HTTPResponse.hpp"
 #include <sstream>
 
-HTTPResponse::HTTPResponse() : _statusCode(0)
+HTTPResponse::HTTPResponse()
 {
 	// We initialize the status code to 0 to indicate that it has not been set
+	_statusCode = 0;
+	_isCGI = false;
+	_CGIpipeFD[0] = 0;
+	_CGIpipeFD[1] = 0;
 }
 
 HTTPResponse::HTTPResponse(const HTTPResponse &other)
 	: _statusCode(other._statusCode), _headers(other._headers), _body(other._body), _isCGI(other._isCGI)
 {
+	_CGIpipeFD[0] = other._CGIpipeFD[0];
+	_CGIpipeFD[1] = other._CGIpipeFD[1];
 }
 void HTTPResponse::setErrorResponse(int statusCode)
 {
@@ -56,6 +62,8 @@ HTTPResponse &HTTPResponse::operator=(const HTTPResponse &other)
 		_headers = other._headers;
 		_body = other._body;
 		_isCGI = other._isCGI;
+		_CGIpipeFD[0] = other._CGIpipeFD[0];
+		_CGIpipeFD[1] = other._CGIpipeFD[1];
 	}
 	return *this;
 }

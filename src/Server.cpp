@@ -125,7 +125,11 @@ void Server::waitCGI()
 	std::cout << "PID: " << pid << std::endl;
 
 	for (size_t i = 0; i < originalSize && i < _FDs.size(); i++)
-		std::cout << _connections[i].getCGIPid() << ", " << _connections[i].getHasCGI() << std::endl;
+	{
+		std::cout << "PID: "<< _connections[i].getCGIPid() << ", hasCGI: " << _connections[i].getHasCGI() \
+		<< ", pipeFD: " << *_connections[i].getResponse().getCGIpipeFD()<< std::endl;
+
+	}
 
 	if (pid > 0)
 	{
@@ -473,7 +477,7 @@ void Server::handleConnection(Connection &conn, size_t &i)
 	HTTPRequest &request = _connections[i].getRequest();
 	HTTPResponse &response = _connections[i].getResponse();
 
-	// printFrame("CLIENT SOCKET EVENT", true);
+	//printFrame("CLIENT SOCKET EVENT", true);
 	std::cout << "\033[1;36m" << "Entering handleConnection" << "\033[0m" << std::endl;
 	std::cout << BLUE << *response.getCGIpipeFD() << RESET << std::endl;
 

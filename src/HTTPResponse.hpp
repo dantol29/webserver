@@ -9,13 +9,9 @@
 class HTTPResponse
 {
   public:
-	// Default constructor
 	HTTPResponse();
-	// Copy constructor
 	HTTPResponse(const HTTPResponse &other);
-	// Assignment operator
 	HTTPResponse &operator=(const HTTPResponse &other);
-	// Destructor
 	~HTTPResponse();
 
 	int getStatusCode() const;
