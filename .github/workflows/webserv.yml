@@ -147,7 +147,7 @@ jobs:
       - name: Verify no lingering sockets
         run: |
           sleep 5  # Give some time for sockets to close properly
-          lingering_sockets=$(lsof -iTCP -sTCP:LISTEN -nP | grep 'webserv')
+          lingering_sockets=$(lsof -iTCP -sTCP:LISTEN -nP | grep 'webserv' || true)
           if [ -n "$lingering_sockets" ]; then
             echo "Unexpected lingering sockets found:"
             echo "$lingering_sockets"
