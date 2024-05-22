@@ -16,6 +16,7 @@ Server::Server(const Config &config, EventManager &eventManager) : _config(confi
 	_serverSockets = std::vector<ServerSocket>();
 	_hasCGI = false;
 	_CGICounter = 0;
+	_clientCounter = 0;
 	Debug::log("Server created with config constructor", Debug::OCF);
 }
 
@@ -71,16 +72,21 @@ void Server::startPollEventLoop()
 	while (1)
 	{
 		if (_hasCGI)
-			timeout = 500; // 1 seconds
+			timeout = 1000; // 1 seconds
+		else if (_clientCounter > 0)
+		{
+			std::cout << BLUE << "Client counter: " << _clientCounter << RESET << std::endl;
+			timeout = 5000; // 15 seconds
+		}
 		else
-			timeout = -1;
+			timeout = -1; // infinite
 		// printConnections("BEFORE POLL", _FDs, _connections, true);
 		std::cout << CYAN << "++++++++++++++ #" << pollCounter
 				  << " Waiting for new connection or Polling +++++++++++++++" << RESET << std::endl;
 		int ret = poll(_FDs.data(), _FDs.size(), timeout);
 		pollCounter++;
-		// printFrame("POLL EVENT DETECTED", true);
-		// printConnections("AFTER POLL", _FDs, _connections, true);
+		printFrame("POLL EVENT DETECTED", true);
+		printConnections("AFTER POLL", _FDs, _connections, true);
 		if (ret > 0)
 		{
 			size_t originalSize = _FDs.size();
@@ -93,6 +99,9 @@ void Server::startPollEventLoop()
 						acceptNewConnection(_connections[i]);
 					else
 					{
+						if (_FDs[i].revents & (POLLIN))
+							_connections[i].setStartTime(time(NULL));
+	
 						handleConnection(_connections[i], i);
 						if ((_connections[i].getHasFinishedReading() && _connections[i].getHasDataToSend()))
 							_FDs[i].events = POLLOUT;
@@ -112,7 +121,6 @@ void Server::startPollEventLoop()
 		else
 			handlePollError();
 
-		std::cout << "Has CGI: " << (_hasCGI ? "true" : "false") << std::endl;
 		if (_hasCGI)
 			waitCGI();
 	}
@@ -453,6 +461,7 @@ void Server::closeClientConnection(Connection &conn, size_t &i)
 	close(conn.getPollFd().fd);
 	_FDs.erase(_FDs.begin() + i);
 	_connections.erase(_connections.begin() + i);
+	--_clientCounter;
 	--i;
 }
 
@@ -738,6 +747,7 @@ void Server::acceptNewConnection(Connection &conn)
 		/* start together */
 		_FDs.push_back(newSocketPoll);
 		_connections.push_back(newConnection);
+		++_clientCounter;
 		std::cout << newConnection.getHasFinishedReading() << std::endl;
 		std::cout << _connections.back().getHasFinishedReading() << std::endl;
 		/* end together */
@@ -807,6 +817,25 @@ void Server::handleSocketTimeoutIfAny()
 {
 	// Is not the socket timeout, but the poll timeout
 	std::cout << "Timeout occurred!" << std::endl;
+
+	// loop through the connections and check for timeout
+	for (size_t i = 0; i < _FDs.size(); i++)
+	{
+		if (_connections[i].getType() == SERVER || _connections[i].getStartTime() == 0)
+			continue;
+	
+		double elapsed = difftime(time(NULL), _connections[i].getStartTime());
+		if (elapsed > 3)
+		{
+			std::cout << RED << "Elapsed time: " << elapsed << " seconds" << RESET << std::endl;
+			// We have to send a 408 Request Timeout
+			_connections[i].getResponse().setStatusCode(408, "Request Timeout");
+			buildResponse(_connections[i], i, _connections[i].getRequest(), _connections[i].getResponse());
+			writeToClient(_connections[i], i, _connections[i].getResponse());
+			// we have to close the connection
+			closeClientConnection(_connections[i], i);
+		}
+	}
 	// This should never happen with an infinite timeout
 }
 

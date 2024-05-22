@@ -62,9 +62,8 @@ class Server
 	std::vector<std::pair<int, int> > _pipeFDs;
 	// clang-format on
 	EventManager &_eventManager;
-
+	int _clientCounter;
 	bool _hasCGI;
-
 	int _CGICounter;
 
 	/*** Private Methods ***/

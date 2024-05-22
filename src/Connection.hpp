@@ -48,6 +48,7 @@ class Connection
 	size_t _responseSize;
 	size_t _responseSizeSent;
 	std::string _responseString;
+	time_t _startTime;
 	bool _hasCGI;
 	bool _CGIHasExited;
 	pid_t _CGIPid;
@@ -85,6 +86,7 @@ class Connection
 	unsigned short getServerPort() const;
 	size_t getResponseSize() const;
 	size_t getResponseSizeSent() const;
+	time_t getStartTime() const;
 
 	bool getHasReadSocket() const;
 	bool getHasFinishedReading() const;
@@ -116,6 +118,7 @@ class Connection
 	void setCanBeClosed(bool value);
 	void setHasDataToSend(bool value);
 	void setHasFinishedSending(bool value);
+	void setStartTime(time_t startTime);
 
 	void setHasCGI(bool value);
 	void setCGIPid(pid_t pid);
