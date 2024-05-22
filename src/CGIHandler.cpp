@@ -130,14 +130,14 @@ bool CGIHandler::executeCGI(const MetaVariables &env, HTTPResponse &response)
 	else if (pid == 0)
 	{
 		// clang-format off
-		std::vector<std::pair<int, int> > pipes = _eventManager.getPipeFDs();
-		std::cerr << "CGIHandler: pipes: " << pipes.size() << std::endl;
-		for (std::vector<std::pair<int, int> >::const_iterator it = pipes.begin(); it != pipes.end(); ++it)
-		{
-			std::cerr << GREEN << "CLOSING: " << (*it).first << ", " << (*it).second <<  RESET << std::endl;
-			close((*it).first);
-			close((*it).second);
-		}
+		// std::vector<std::pair<int, int> > pipes = _eventManager.getPipeFDs();
+		// std::cerr << "CGIHandler: pipes: " << pipes.size() << std::endl;
+		// for (std::vector<std::pair<int, int> >::const_iterator it = pipes.begin(); it != pipes.end(); ++it)
+		// {
+		// 	std::cerr << GREEN << "CLOSING: " << (*it).first << ", " << (*it).second <<  RESET << std::endl;
+		// 	close((*it).first);
+		// 	close((*it).second);
+		// }
 		// clang-format on
 		close(pipeFD[0]);
 		dup2(pipeFD[1], STDOUT_FILENO);

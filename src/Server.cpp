@@ -307,7 +307,11 @@ void Server::buildResponse(Connection &conn, size_t &i, HTTPRequest &request, HT
 			response.setIsCGI(false);
 		}
 		else
-			return (buildCGIResponse(conn, response));
+		{
+			readCGIPipe(conn, response);
+			if (response.getStatusCode() < 300)
+				return;
+		}
 	}
 
 	ServerBlock serverBlock;
@@ -350,9 +354,9 @@ void Server::buildResponse(Connection &conn, size_t &i, HTTPRequest &request, HT
 	}
 }
 
-void Server::buildCGIResponse(Connection &conn, HTTPResponse &response)
+void Server::readCGIPipe(Connection &conn, HTTPResponse &response)
 {
-	std::cout << RED << "Entering buildCGIResponse" << RESET << std::endl;
+	std::cout << RED << "Entering readCGIPipe" << RESET << std::endl;
 	std::string cgiOutput;
 	int *pipeFD;
 	pipeFD = response.getCGIpipeFD();
@@ -389,34 +393,23 @@ void Server::buildCGIResponse(Connection &conn, HTTPResponse &response)
 	close(pipeFD[0]);
 
 	int status = conn.getCGIExitStatus();
-	//
-	// if (waitedPid == -1)
-	// {
-	// 	perror("waitpid");
-	// 	return "HTTP/1.1 500 Internal Server Error\r\nContent-Length: 0\r\n\r\n";
-	// }
 
 	if (WIFEXITED(status) && WEXITSTATUS(status) != 0)
 	{
 		response.setStatusCode(500, "Internal Server Error");
-		conn.setHasDataToSend(true);
 		response.setIsCGI(false);
-		// TODO: should we set other flags here?
 		return;
 	}
 
 	if (cgiOutput.empty())
 	{
 		response.setStatusCode(500, "Internal Server Error");
-		conn.setHasDataToSend(true);
 		response.setIsCGI(false);
 		return;
 	}
 	response.CGIStringToResponse(cgiOutput);
 	response.setIsCGI(false);
 	conn.setHasDataToSend(true);
-
-	// return cgiOutput;
 }
 
 void Server::writeToClient(Connection &conn, size_t &i, HTTPResponse &response)

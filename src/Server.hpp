@@ -90,7 +90,7 @@ class Server
 	void readFromClient(Connection &conn, size_t &i, Parser &parser, HTTPRequest &request, HTTPResponse &response);
 	void handlePostRequest(Connection &conn, Parser &parser, HTTPRequest &request, HTTPResponse &response);
 	void buildResponse(Connection &conn, size_t &i, HTTPRequest &request, HTTPResponse &response);
-	void buildCGIResponse(Connection &conn, HTTPResponse &response);
+	void readCGIPipe(Connection &conn, HTTPResponse &response);
 	void writeToClient(Connection &conn, size_t &i, HTTPResponse &response);
 	void closeClientConnection(Connection &conn, size_t &i);
 
