@@ -104,10 +104,10 @@ jobs:
             echo "❌ Tests failed. Exiting with status code $exit_code."
             exit $exit_code
            fi
-      - name: Make parallel_cgi/durations_ts.sh executable
-        run: chmod +x test/parallel_cgi/durations_ts.sh
+      - name: Make parallel_cgi/duration_ts.sh executable
+        run: chmod +x test/parallel_cgi/duration_ts.sh
       - name: Run parallel CGIs Test
-        run: ./tests/parallel_cgi/durations_ts.sh
+        run: ./tests/parallel_cgi/duration_ts.sh
           exit_code=$?
           if [ $exit_code -ne 0 ]; then
           echo "❌ Parallel CGI tests failed. Exiting with status code $exit_code."
