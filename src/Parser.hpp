@@ -50,7 +50,7 @@ class Parser
 	// PARSING INTERNAL FUNC
 	void parseRequestLine(const char *request, HTTPRequest &req, HTTPResponse &res);
 	void parseHeaders(const char *request, HTTPRequest &req, HTTPResponse &res);
-	bool saveFile(const std::string& data, HTTPRequest &req);
+	bool saveFile(const std::string &data, HTTPRequest &req);
 	// UTILS
 	bool saveFileHeaders(const std::string &headers, HTTPRequest &req, unsigned int &i);
 	int fileHeaderParametrs(const std::string &headers, struct File &file, unsigned int i);
@@ -63,7 +63,7 @@ class Parser
 	bool isOrigForm(std::string &requestTarget, int &queryStart);
 	void skipRequestLine(const char *request, unsigned int &i);
 	void skipHeader(const char *request, unsigned int &i);
-	bool hasMandatoryHeaders(HTTPRequest &req, HTTPResponse& res);
+	bool hasMandatoryHeaders(HTTPRequest &req, HTTPResponse &res);
 	void saveCokies(HTTPRequest &req);
 	std::string extractValue(std::string &variables, int &i);
 	std::string extractKey(std::string &variables, int &i, int startPos);

@@ -177,7 +177,7 @@ void Parser::parseHeaders(const char *request, HTTPRequest &req, HTTPResponse &r
 	if (!hasCRLF(request, i, 0))
 		return (res.setStatusCode(400, "No CRLF after headers"));
 	if (!hasMandatoryHeaders(req, res))
-		return ;
+		return;
 	_headersAreParsed = true;
 	saveCokies(req);
 }
@@ -223,7 +223,7 @@ void Parser::parseFileUpload(const std::string &request, HTTPRequest &req, HTTPR
 
 // ----------------UTILS----------------------------
 
-bool Parser::hasMandatoryHeaders(HTTPRequest &req, HTTPResponse& res)
+bool Parser::hasMandatoryHeaders(HTTPRequest &req, HTTPResponse &res)
 {
 	_isChunked = false;
 	int isHost = 0;
@@ -255,6 +255,8 @@ bool Parser::hasMandatoryHeaders(HTTPRequest &req, HTTPResponse& res)
 		}
 		else if (it->first == "content-type")
 		{
+			// print content-type
+			std::cout << "content-type: " << it->second << std::endl;
 			if (!isValidContentType(it->second))
 				return (res.setStatusCode(415, "Not supported content-type"), false);
 			if (it->second.substr(0, 30) == "multipart/form-data; boundary=")
@@ -624,9 +626,8 @@ bool Parser::isOrigForm(std::string &requestTarget, int &queryStart)
 
 bool Parser::isValidContentType(std::string type)
 {
-if (type == "text/plain" || type == "text/html" || \
-	type.substr(0, 30) == "multipart/form-data; boundary=" \
-	|| type == "application/octet-stream")
+	if (type == "text/plain" || type == "text/html" || type.substr(0, 30) == "multipart/form-data; boundary=" ||
+		type == "application/octet-stream" || type == "application/x-www-form-urlencoded")
 		return (true);
 	return (false);
 }

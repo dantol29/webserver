@@ -287,6 +287,8 @@ void Server::handlePostRequest(Connection &conn, Parser &parser, HTTPRequest &re
 
 void Server::buildResponse(Connection &conn, size_t &i, HTTPRequest &request, HTTPResponse &response)
 {
+	std::cout << "Entering buildResponse" << std::endl;
+	std::cout << "Request: " << request << std::endl;
 	(void)i;
 	Debug::log("Entering buildResponse", Debug::NORMAL);
 	Debug::log("Request method: " + request.getMethod(), Debug::NORMAL);
