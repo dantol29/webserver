@@ -118,11 +118,11 @@ jobs:
             fi
       - name: Check for Zombie Processes
         run: |
-          zombies=$(ps aux | grep 'Z' | grep -v grep)
+          zombies=$(ps aux | awk '$8=="Z" {print $2}')
           if [ -n "$zombies" ]; then
             echo " ❌ Zombie processes found:"
             echo "$zombies"
-            ps aux | grep 'Z' | grep -v grep
+            ps aux | awk '$8=="Z"'
             for pid in $zombies; do
               parent_pid=$(ps -o ppid= -p $pid)
               echo "Sending SIGCHLD to parent process PID $parent_pid"
