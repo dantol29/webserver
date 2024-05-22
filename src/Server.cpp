@@ -432,6 +432,14 @@ void Server::writeToClient(Connection &conn, size_t &i, HTTPResponse &response)
 	{
 		tmpBufferSize = conn.getResponseString().size();
 		Debug::log("Sending last part of the response", Debug::NORMAL);
+		if (conn.getResponse().getStatusCode() < 300)
+			std::cout << GREEN << conn.getRequest().getMethod() << " " << conn.getResponse().getStatusCode() << " " << \
+			conn.getResponse().getStatusMessage() << \
+			" " << conn.getRequest().getRequestTarget() << RESET << std::endl;
+		else
+			std::cout << RED << conn.getRequest().getMethod() << " " << conn.getResponse().getStatusCode() << " " << \
+			conn.getResponse().getStatusMessage() << \
+			" " << conn.getRequest().getRequestTarget() << RESET << std::endl;
 		isLastSend = true;
 	}
 
