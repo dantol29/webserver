@@ -36,8 +36,7 @@ CGIHandler &CGIHandler::operator=(const CGIHandler &other)
 
 void CGIHandler::handleRequest(HTTPRequest &request, HTTPResponse &response)
 {
-
-	std::cout << RED << "Entering CGIHandler::handleRequest" << RESET << std::endl;
+	Debug::log("CGIHandler::handleRequest", Debug::CGI);
 	MetaVariables env;
 	env.HTTPRequestToMetaVars(request, env);
 	if (!executeCGI(env, response))
@@ -45,8 +44,7 @@ void CGIHandler::handleRequest(HTTPRequest &request, HTTPResponse &response)
 		response.setStatusCode(500, "");
 		response.setBody("500 Internal Server Error");
 	}
-	std::cout << GREEN << _connection.getCGIPid() << RESET << std::endl;
-	std::cout << RED << "Exiting CGIHandler::handleRequest" << RESET << std::endl;
+	Debug::log("Connection PID" +  toString(_connection.getCGIPid()), Debug::CGI);
 	return;
 }
 
@@ -54,11 +52,11 @@ std::vector<std::string> CGIHandler::createArgvForExecve(const MetaVariables &en
 {
 	std::vector<std::string> argv;
 	std::string scriptName = env.getVar("SCRIPT_NAME");
-	std::cout << "createArgvForExecve: scriptName: " << scriptName << std::endl;
+	Debug::log("createArgvForExecve: scriptName: " + scriptName, Debug::CGI);
 	std::string pathTranslated = env.getVar("PATH_TRANSLATED");
-	std::cout << "createArgvForExecve: pathTranslated: " << pathTranslated << std::endl;
+	Debug::log("createArgvForExecve: pathTranslated: " + pathTranslated, Debug::CGI);
 	std::string scriptPath = pathTranslated;
-	std::cout << "createArgvForExecve: scriptPath: " << scriptPath << std::endl;
+	Debug::log("createArgvForExecve: scriptPath: " + scriptPath, Debug::CGI);
 
 	if (env.getVar("X_INTERPRETER_PATH") != "")
 	{
@@ -100,12 +98,12 @@ std::vector<char *> CGIHandler::convertToCStringArray(const std::vector<std::str
 void handleTimeout(int sig)
 {
 	(void)sig;
-	std::cout << "CGIHandler: Timeout" << std::endl;
+	Debug::log("CGIHandler: Timeout", Debug::CGI);
 }
 
 bool CGIHandler::executeCGI(const MetaVariables &env, HTTPResponse &response)
 {
-	std::cout << RED << "Entering CGIHandler::executeCGI" << RESET << std::endl;
+	Debug::log("CGIHandler::executeCGI", Debug::CGI);
 	std::string cgiOutput;
 	std::vector<std::string> argv = createArgvForExecve(env);
 	std::vector<std::string> envp = env.getForExecve();
@@ -160,15 +158,10 @@ bool CGIHandler::executeCGI(const MetaVariables &env, HTTPResponse &response)
 
 	close(pipeFD[1]);
 	EventData data = {1, pid}; // Assuming 1 is the event type for CGI started
-	std::cout << "CGIHandler: Emitting event indicating a CGI process has started" << std::endl;
 	_eventManager.emit(data); // Emit event indicating a CGI process has started
 	// conn.addCGI(pid);
 	_connection.addCGI(pid);
-	std::cout << GREEN << _connection.getCGIPid() << RESET << std::endl;
-	// TODO: is this used? To which process to you want to send this signal/ @Leo
-	// signal(SIGALRM, handleTimeout);
-	// alarm(4);
-	std::cout << RED << "Exiting CGIHandler::executeCGI with true" << RESET << std::endl;
+	Debug::log("CGIHandler: CGI PID: " + toString(_connection.getCGIPid()), Debug::CGI);
 	return true;
 }
 
