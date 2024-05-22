@@ -1,20 +1,5 @@
 #!/bin/bash
 
-# Working
-# URL="http://127.0.0.1:8080/cgi-bin/duration_ts.cgi"
-
-# for i in {1..3}
-# do
-#     echo "Sending request $i..."
-#     response=$(curl -s -H "Host: www.development_site" $URL)
-#     start_time=$(echo "$response" | grep -o 'Start time: [0-9.]*' | grep -o '[0-9.]*')
-#     end_time=$(echo "$response" | grep -o 'End time: [0-9.]*' | grep -o '[0-9.]*')
-#     echo "Request $i: Start time = $start_time, End time = $end_time"
-# done
-
-
-#!/bin/bash
-
 is_error=false
 
 URL="http://127.0.0.1:8080/cgi-bin/duration_ts.cgi"
