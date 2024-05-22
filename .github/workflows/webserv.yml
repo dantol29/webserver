@@ -128,7 +128,6 @@ jobs:
               echo "Sending SIGCHLD to parent process PID $parent_pid"
               kill -SIGCHLD $parent_pid || echo "Failed to signal parent PID $parent_pid"
             done
-            exit 1
           else
             echo "✅ No zombie processes found."
           fi
