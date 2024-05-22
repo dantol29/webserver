@@ -392,9 +392,9 @@ void ServerBlock::setReturn(std::string str, bool isLocation)
 
 void ServerBlock::setUploadPath(std::string str, bool isLocation)
 {
-	// add a slash at the end if there is none
-	if (str.size() > 1 && str[str.size() - 1] != '/')
-		str = str + "/";
+	// remove slash at the end
+	if (str.size() > 1 && str[str.size() - 1] == '/')
+		str = str.substr(0, str.size() - 1);
 	// remove slash at the beginning
 	if (str.size() > 1 && str[0] == '/')
 		str = str.substr(1);
