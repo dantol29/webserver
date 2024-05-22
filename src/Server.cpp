@@ -72,7 +72,7 @@ void Server::startPollEventLoop()
 			timeout = 500; // 1 seconds
 		else
 			timeout = -1;
-		printConnections("BEFORE POLL", _FDs, _connections, true);
+		// printConnections("BEFORE POLL", _FDs, _connections, true);
 		std::cout << CYAN << "++++++++++++++ #" << pollCounter
 				  << " Waiting for new connection or Polling +++++++++++++++" << RESET << std::endl;
 		int ret = poll(_FDs.data(), _FDs.size(), timeout);
@@ -354,7 +354,7 @@ void Server::buildCGIResponse(Connection &conn, HTTPResponse &response)
 	char readBuffer[256];
 	// TODO: this is blokcing - we need to make it non-blocking
 	// I.e. read 1 buffer and then go back to poll
-	std::cout << "Reading from pipe" << std::endl;
+	std::cout << "Reading from pipe " << *pipeFD <<std::endl;
 	ssize_t bytesRead;
 
 	do

@@ -126,6 +126,8 @@ void HTTPResponse::setIsCGI(bool value)
 
 int (&HTTPResponse::getCGIpipeFD())[2]
 {
+	// print pipefd
+	std::cout << "getCGIpipeFD: " << _CGIpipeFD[0] << ", " << _CGIpipeFD[1] << std::endl;
 	return _CGIpipeFD;
 }
 
