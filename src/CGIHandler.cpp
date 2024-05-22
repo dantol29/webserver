@@ -209,13 +209,14 @@ bool CGIHandler::executeCGI(const MetaVariables &env, std::string body, HTTPResp
 		std::cout << RED << "Exiting CGIHandler::executeCGI with true" << RESET << std::endl;
 		return true;
 	}
+	return false;
+}
+void CGIHandler::setFDsRef(std::vector<struct pollfd> *FDsRef)
+{
+	_FDsRef = FDsRef;
+}
 
-	void CGIHandler::setFDsRef(std::vector<struct pollfd> * FDsRef)
-	{
-		_FDsRef = FDsRef;
-	}
-
-	void CGIHandler::setPollFd(struct pollfd * pollFd)
-	{
-		_pollFd = pollFd;
-	}
+void CGIHandler::setPollFd(struct pollfd *pollFd)
+{
+	_pollFd = pollFd;
+}

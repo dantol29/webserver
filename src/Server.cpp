@@ -223,10 +223,6 @@ void Server::readFromClient(Connection &conn, size_t &i, Parser &parser, HTTPReq
 
 	if (request.getMethod() == "GET" || request.getMethod() == "DELETE" || request.getMethod() == "SALAD")
 		Debug::log("GET request, no body to read", Debug::NORMAL);
-	if (requestIsCGI(request) == true && request.getMethod() == "POST")
-	{
-		handlePostCGIRequest(conn, parser, request, response);
-	}
 	else
 		handlePostRequest(conn, parser, request, response);
 }
@@ -236,10 +232,10 @@ void Server::handlePostRequest(Connection &conn, Parser &parser, HTTPRequest &re
 	if (parser.getIsChunked() && !conn.getHasReadSocket())
 	{
 		Debug::log("Chunked body", Debug::NORMAL);
-		if (!conn.readChunkedBody(parser))
+		if (!conn.readChunkedBody(parser) && (!conn.readBody(parser, request, response)))
 		{
 			// only in case of system error == do not send response
-			Debug::log("Error reading chunked body", Debug::OCF);
+			Debug::log("Error reading body", Debug::OCF);
 			conn.setCanBeClosed(true);
 			conn.setHasFinishedReading(true);
 			return;
@@ -950,7 +946,6 @@ void Server::findLocationBlock(HTTPRequest &request, ServerBlock &serverBlock, D
 	{
 		std::cout << "Location: " << serverBlock.getLocations()[i]._path << " == " << request.getRequestTarget()
 				  << std::endl;
-		<< std::endl;
 		if (request.getRequestTarget() == serverBlock.getLocations()[i]._path)
 		{
 			std::cout << "Location found" << std::endl;
