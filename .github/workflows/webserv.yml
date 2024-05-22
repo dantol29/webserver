@@ -1,4 +1,4 @@
-name: GitHub Actions Demo
+name: Webserv Testing Workflow
 run-name: ${{ github.actor }} is testing ${{ github.repository }}
 on:
   push: # Trigger on push events
@@ -42,6 +42,8 @@ jobs:
           python3 -m pip install aiohttp asyncio aiofiles
       - name: Start webserv in background
         run: ./webserv &
+      - name: Install lsof
+        run: sudo apt-get update && sudo apt-get install -y lsof
       - name: Run Config file tests
         if: always()
         working-directory: tests/config
@@ -102,4 +104,38 @@ jobs:
             echo "❌ Tests failed. Exiting with status code $exit_code."
             exit $exit_code
            fi
+      - name: Check for Zombie Processes
+        run: |
+          zombies=$(ps aux | grep 'Z' | grep -v grep)
+          if [ -n "$zombies" ]; then
+            echo "Zombie processes found:"
+            echo "$zombies"
+            exit 1
+          else
+            echo "No zombie processes found."
+     - name: Check for open listening sockets
+        run: |
+          listening_sockets=$(lsof -iTCP -sTCP:LISTEN -nP | grep 'webserv')
+          if [ -z "$listening_sockets" ]; then
+            echo "Expected listening sockets are not open."
+            exit 1
+          else
+            echo "Listening sockets are correctly open:"
+            echo "$listening_sockets"
+          fi
+
+    - name: Stop webserv
+      run: pkill -f webserv
+
+    - name: Verify no lingering sockets
+      run: |
+        sleep 5  # Give some time for sockets to close properly
+        lingering_sockets=$(lsof -iTCP -sTCP:LISTEN -nP | grep 'webserv')
+        if [ -n "$lingering_sockets" ]; then
+          echo "Unexpected lingering sockets found:"
+          echo "$lingering_sockets"
+          exit 1
+        else
+          echo "No lingering sockets found."
+
       - run: echo "🍏 This job's status is ${{ job.status }}."
