@@ -120,11 +120,12 @@ jobs:
         run: |
           zombies=$(ps aux | grep 'Z' | grep -v grep)
           if [ -n "$zombies" ]; then
-            echo "Zombie processes found:"
+            echo " ❌ Zombie processes found:"
             echo "$zombies"
             exit 1
           else
-            echo "No zombie processes found."
+            echo "✅ No zombie processes found."
+          fi
       - name: Check for open listening sockets
         run: |
           listening_sockets=$(lsof -iTCP -sTCP:LISTEN -nP | grep 'webserv')
