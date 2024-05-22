@@ -56,7 +56,7 @@ Connection::Connection(const Connection &other)
 	_CGIExitStatus = other._CGIExitStatus;
 	_CGIHasCompleted = other._CGIHasCompleted;
 	_CGIHasTimedOut = other._CGIHasTimedOut;
-	// std::cout << "Connection object copied" << std::endl;
+	Debug::log("Connection object copied", Debug::OCF);
 }
 
 Connection &Connection::operator=(const Connection &other)
@@ -88,13 +88,13 @@ Connection &Connection::operator=(const Connection &other)
 		_CGIHasCompleted = other._CGIHasCompleted;
 		_CGIHasTimedOut = other._CGIHasTimedOut;
 	}
-	std::cout << "Connection object assigned" << std::endl;
+	Debug::log("Connection object assigned", Debug::OCF);
 	return *this;
 }
 
 Connection::~Connection()
 {
-	// std::cout << "Connection object destroyed" << std::endl;
+	Debug::log("Connection object destroyed", Debug::OCF);
 }
 
 // GETTERS AND SETTERS
@@ -314,18 +314,14 @@ void Connection::setCGIExitStatus(int status)
 
 bool Connection::readHeaders(Parser &parser)
 {
-	// std::cout << "\nEntering readHeaders" << std::endl;
 	const int bufferSize = BUFFER_SIZE;
 	char buffer[bufferSize] = {0};
-	std::cout << "buffers size: " << sizeof(buffer) << std::endl;
+	Debug::log("buffer size: " + toString(sizeof(buffer)), Debug::SERVER);
 	ssize_t bytesRead = recv(_pollFd.fd, buffer, bufferSize, 0);
-	std::cout << "bytesRead: " << bytesRead << std::endl;
+	Debug::log("bytesRead: " + toString(bytesRead), Debug::SERVER);
 	if (bytesRead > 0)
 	{
 		parser.setBuffer(parser.getBuffer() + std::string(buffer, bytesRead));
-		// std::cout << "The buffer is: " << parser.getBuffer() << std::endl;
-
-		// std::cout << "Exiting readHeaders" << std::endl;
 		return true;
 	}
 	else if (bytesRead < 0)
@@ -335,12 +331,12 @@ bool Connection::readHeaders(Parser &parser)
 	}
 	else if (bytesRead == 0)
 	{
-		std::cout << "Connection closed before headers being completely sent" << std::endl;
+		Debug::log("Connection closed before headers being completely sent", Debug::SERVER);
 		return false;
 	}
 	else
 	{
-		std::cout << "Exiting readHeaders. This will never happen here!" << std::endl;
+		Debug::log("Exiting readHeaders. This will never happen here!", Debug::SERVER);
 		return true;
 	}
 }
@@ -412,7 +408,7 @@ bool Connection::readChunkSize(std::string &line)
 		}
 		else
 		{
-			std::cout << "Connection closed" << std::endl;
+			Debug::log("Connection closed while reading chunk size", Debug::SERVER);
 			return false;
 		}
 	}
@@ -459,24 +455,20 @@ bool Connection::readChunk(size_t chunkSize, std::string &chunkData, HTTPRespons
 
 bool Connection::readBody(Parser &parser, HTTPRequest &req, HTTPResponse &res)
 {
-	std::cout << "\nEntering readBody" << std::endl;
 	size_t contentLength = req.getContentLength();
 
 	char buffer[BUFFER_SIZE];
 	// We could also use _bodyTotalBytesRead from the parser
 	size_t bytesRead = parser.getBuffer().size();
-	std::cout << "contentLength: " << contentLength << std::endl;
-	std::cout << "bytesRead: " << bytesRead << std::endl;
+	Debug::log("contentLength: " + toString(contentLength), Debug::SERVER);
+	Debug::log("bytesRead: " + toString(bytesRead), Debug::SERVER);
 	if (bytesRead < contentLength)
 	{
 		ssize_t read = recv(_pollFd.fd, buffer, BUFFER_SIZE, 0);
 		if (read > 0)
 		{
-			std::cout << "read > 0" << std::endl;
-			// _body.append(buffer, read);j
 			parser.setBuffer(parser.getBuffer() + std::string(buffer, read));
-			std::cout << "bytesRead: " << parser.getBuffer().size() << std::endl;
-			// std::cout << "The 'body; is: " << parser.getBuffer() << std::endl;
+			Debug::log("bytesRead: " + toString(parser.getBuffer().size()), Debug::SERVER);
 			bytesRead += read;
 			if (bytesRead == contentLength)
 			{
@@ -492,14 +484,13 @@ bool Connection::readBody(Parser &parser, HTTPRequest &req, HTTPResponse &res)
 		}
 		else
 		{
-			std::cout << "read == 0" << std::endl;
+			Debug::log("read == 0", Debug::SERVER);
 			res.setStatusCode(499, "Connection closed by the client"); // Client Closed Request
 			return false;
 		}
 	}
 	else
 		parser.setBodyComplete(true);
-	std::cout << "Exiting readBody" << std::endl;
 	return true;
 }
 
@@ -508,7 +499,7 @@ void Connection::addCGI(pid_t pid)
 {
 	_hasCGI = true;
 	_CGIPid = pid;
-	std::cout << "CGI process added with pid: " << _CGIPid << std::endl;
+	Debug::log("CGI process added with pid: " + toString(_CGIPid), Debug::CGI);
 	_CGIStartTime = time(NULL);
 }
 
