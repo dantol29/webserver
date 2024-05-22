@@ -19,18 +19,13 @@ int main(int argc, char **argv)
 	if (!config.getErrorMessage().empty())
 		return 1;
 
-	std::cout << config << std::endl; // should be in the DEBUG?
+	//std::cout << config << std::endl; // should be in the DEBUG?
 	EventManager eventManager;
 	Server webserv(config, eventManager);
 
 	ServerEventListener serverEventListener(webserv);
-	std::cout << "Subscribing serverEventListener" << std::endl;
-	std::cout << "Pointer to serverEventListener: " << &serverEventListener << std::endl;
 	eventManager.subscribe(&serverEventListener);
 
-	std::cout << &webserv.getEventManager() << std::endl;
-	std::cout << &eventManager << std::endl;
-	std::cout << "SIZE: " << webserv.getEventManager().getObservers().size() << std::endl;
 	webserv.startListening();
 	webserv.startPollEventLoop();
 

@@ -24,13 +24,7 @@ std::vector<IEventListener *> EventManager::getObservers() const
 // Subscribe an observer to this manager
 void EventManager::subscribe(IEventListener *observer)
 {
-	std::cout << YELLOW << "Subscribing observer" << RESET << std::endl;
 	_observers.push_back(observer);
-	for (std::vector<IEventListener *>::iterator it = _observers.begin(); it != _observers.end(); ++it)
-	{
-		std::cout << "Observer: " << *it << std::endl;
-	}
-	std::cout << "Size of observers: " << _observers.size() << std::endl;
 }
 
 // Unsubscribe an observer from this manager

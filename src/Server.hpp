@@ -21,7 +21,7 @@
 #include "ServerSocket.hpp"
 #include "EventManager.hpp"
 
-#define VERBOSE 1
+#define VERBOSE 0
 
 class Connection; // Forward declaration for circular dependencyA
 

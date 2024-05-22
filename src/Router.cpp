@@ -100,7 +100,6 @@ void Router::routeRequest(HTTPRequest &request, HTTPResponse &response)
 			cgiHandler.setFDsRef(_FDsRef);
 			cgiHandler.setPollFd(_pollFd);
 			cgiHandler.handleRequest(request, response);
-			std::cout << "FD: "<< *response.getCGIpipeFD() << std::endl;
 		}
 		else if (request.getMethod() == "POST" || request.getUploadBoundary() != "")
 		{

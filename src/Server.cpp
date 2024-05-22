@@ -148,6 +148,9 @@ void Server::waitCGI()
 		// Check if the CGI has timed out
 		for (size_t i = 0; i < originalSize && i < _FDs.size(); i++)
 		{
+			if (!_connections[i].getHasCGI())
+				continue;
+	
 			double elapsed = difftime(time(NULL), _connections[i].getCGIStartTime());
 			std::cout << RED << "Elapsed time: " << elapsed << " seconds" << RESET << std::endl;
 			if (_connections[i].getHasCGI() && elapsed > 500)
@@ -334,12 +337,10 @@ void Server::buildResponse(Connection &conn, size_t &i, HTTPRequest &request, HT
 		router.setFDsRef(&_FDs);
 		router.setPollFd(&conn.getPollFd());
 		router.routeRequest(request, response);
-		std::cout << GREEN << conn.getCGIPid() << RESET << std::endl;
 	}
 	std::cout << "Is Response CGI? " << response.getIsCGI() << std::endl;
 	if (!response.getIsCGI())
 	{
-		std::cout << "Setting setHasDataToSend to true" << std::endl;
 		conn.setHasDataToSend(true);
 		return;
 	}
@@ -474,30 +475,26 @@ void Server::handleConnection(Connection &conn, size_t &i)
 
 	// printFrame("CLIENT SOCKET EVENT", true);
 	std::cout << "\033[1;36m" << "Entering handleConnection" << "\033[0m" << std::endl;
+	std::cout << BLUE << *response.getCGIpipeFD() << RESET << std::endl;
 
 	conn.setHasReadSocket(false);
-	std::cout << "Has finished reading: " << conn.getHasFinishedReading() << std::endl;
 	if (!conn.getHasFinishedReading())
 		readFromClient(conn, i, parser, request, response);
 
 	if (conn.getHasReadSocket() && !conn.getHasFinishedReading())
-	{
-		std::cout << "Has read socket: " << conn.getHasReadSocket() << std::endl;
 		return;
-	}
-	std::cout << request << std::endl;
+
 	if (!conn.getCanBeClosed() && !conn.getHasDataToSend())
 		buildResponse(conn, i, request, response);
 	// MInd that after the last read from the pipe of the CGI getHasReadSocket will be false but we will have a read
 	// operation on the pipe, if we want to write just after going through poll we need an extra flag or something.
-	std::cout << "Has read socket: " << conn.getHasReadSocket() << std::endl;
-	std::cout << "Has data to send: " << conn.getHasDataToSend() << std::endl;
 	if (conn.getHasDataToSend() && !conn.getHasReadSocket())
 		writeToClient(conn, i, response);
-	std::cout << "Can be closed: " << conn.getCanBeClosed() << std::endl;
+
 	if (conn.getCanBeClosed())
 		closeClientConnection(conn, i);
 	std::cout << RED << "Exiting handleConnection" << RESET << std::endl;
+	std::cout << BLUE << *response.getCGIpipeFD() << RESET << std::endl;
 }
 
 /*** Private Methods ***/
