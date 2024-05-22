@@ -105,7 +105,7 @@ jobs:
             exit $exit_code
            fi
       - name: Make parallel_cgi/duration_ts.sh executable
-        run: chmod +x test/parallel_cgi/duration_ts.sh
+        run: chmod +x tests/parallel_cgi/duration_ts.sh
       - name: Run parallel CGIs Test
         run: ./tests/parallel_cgi/duration_ts.sh
           exit_code=$?
