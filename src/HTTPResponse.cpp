@@ -33,7 +33,7 @@ std::string HTTPResponse::objToString() const
 	std::stringstream responseStream;
 	if (_statusCode == 0)
 	{
-		std::cerr << "\033[31mWarning: Sending a response with status code 0\033[0m" << std::endl;
+		Debug::log("Sending a response with status code 0", Debug::NORMAL);
 	}
 	responseStream << "HTTP/1.1 " << _statusCode << " " << getStatusMessage(_statusCode) << "\r\n";
 	for (size_t i = 0; i < _headers.size(); ++i)
@@ -70,12 +70,13 @@ int HTTPResponse::getStatusCode() const
 void HTTPResponse::setStatusCode(int statusCode, const std::string &message)
 {
 	if (!message.empty())
-		std::cerr << message << std::endl;
+		Debug::log(message, Debug::NORMAL);
 	if (_statusCode != 0)
 	{
-		std::cerr << "\033[31mWarning: Overwriting existing status code (" << _statusCode << ") and message ("
-				  << _statusMessage << ") with new code (" << statusCode << ") and message ("
-				  << getStatusMessage(statusCode) << ").\033[0m" << std::endl;
+		Debug::log("Warning: Overwriting existing status code (" + toString(_statusCode) + ") and message (" +
+					   _statusMessage + ") with new code (" + toString(statusCode) + ") and message (" +
+					   getStatusMessage(statusCode) + ").",
+				   Debug::NORMAL);
 	}
 
 	_statusCode = statusCode;

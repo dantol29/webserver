@@ -122,8 +122,9 @@ void ServerSocket::prepareServerSocketAddr()
 
 std::ostream &operator<<(std::ostream &out, const ServerSocket &socket)
 {
-	out << "Fd: " << socket.getServerFD() << std::endl;
-	out << "Listen: " << socket.getListen() << std::endl;
+	(void)socket;
+	//out << "Fd: " << socket.getServerFD() << std::endl;
+	//out << "Listen: " << socket.getListen() << std::endl;
 	// out << "ServerSocketAddr: " << socket.getServerSocketAddr() << std::endl;
 	return out;
 }

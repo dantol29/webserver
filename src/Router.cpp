@@ -69,7 +69,7 @@ void Router::routeRequest(HTTPRequest &request, HTTPResponse &response)
 	Debug::log("Routing Request: path = " + request.getPath(), Debug::NORMAL);
 
 	PathValidation pathResult = pathIsValid(response, request);
-	Debug::log("Routing Request: pathResult = " + std::to_string(pathResult), Debug::NORMAL);
+	Debug::log("Routing Request: pathResult = " + toString(pathResult), Debug::NORMAL);
 	Debug::log("Path requested: " + request.getPath(), Debug::NORMAL);
 	// check if method is allowed
 	

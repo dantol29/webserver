@@ -54,7 +54,7 @@ const EventManager &Server::getEventManager() const
 void Server::startListening()
 {
 	createServerSockets(_serverBlocks);
-	printServerSockets();
+	//printServerSockets();
 	setReuseAddrAndPort();
 	checkSocketOptions();
 	bindToPort();
@@ -124,8 +124,8 @@ void Server::waitCGI()
 	Debug::log("PID: " + toString(pid), Debug::CGI);
 
 	for (size_t i = 0; i < originalSize && i < _FDs.size(); i++)
-		Debug::log("PID: " + toString(_connections[i].getCGIPid() + ", hasCGI: " + \
-		toString(_connections[i].getHasCGI())), Debug::CGI);
+		Debug::log("PID: " + toString(_connections[i].getCGIPid()) + ", hasCGI: " + \
+		toString(_connections[i].getHasCGI()), Debug::CGI);
 
 	if (pid > 0)
 	{
@@ -561,7 +561,7 @@ void Server::createServerSockets(std::vector<ServerBlock> &serverBlocks)
 		}
 		else
 		{
-			std::cout << "IPV6_V6ONLY: " << ipv6only << std::endl;
+			Debug::log("IPV6_V6ONLY: " + toString(ipv6only), Debug::SERVER);
 		}
 		ServerSocket serverSocket(serverFD, *it);
 		_serverSockets.push_back(serverSocket);
