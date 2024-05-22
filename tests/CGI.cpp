@@ -180,8 +180,9 @@ void sendData(const std::vector<HTTPTest> &tests, sockaddr_in serverAddress)
 // 	sendData(tests, serverAdress);
 // }
 
-void post(sockaddr_in serverAdress)
+void add_entry(sockaddr_in serverAdress)
 {
+	std::cout << "Executing POST request..." << std::endl;
 	std::string postData = "name=Jane&salad=Caesar";
 	std::stringstream request;
 	request << "POST /database/salad_db.py HTTP/1.1\r\n"
@@ -197,6 +198,7 @@ void post(sockaddr_in serverAdress)
 
 void delete_entry(sockaddr_in serverAdress)
 {
+	std::cout << "Executing DELETE request..." << std::endl;
 	std::string deleteData = "name=Jane";
 	std::stringstream request;
 	request << "DELETE /database/salad_db.py HTTP/1.1\r\n"
@@ -219,8 +221,11 @@ int main(void)
 
 	// NOTE: when you run a test, configfile and dir structure should fit
 	// salad(serverAddress); // standard routing tests
-	// post(serverAddress);
-	delete_entry(serverAddress);
+	delete_entry(serverAddress); // DELETE request
+	std::cout << "Waiting for the server to delete the entry..." << std::endl;
+	sleep(2);
+	std::cout << "\033[34m" << std::endl << "Continuing with the tests..." << "\033[0m" << std::endl;
+	add_entry(serverAddress); // POST request
 
 	if (is_error)
 		exit(1);

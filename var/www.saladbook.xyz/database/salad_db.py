@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-
 import cgi
 import os
 import json
@@ -46,17 +45,23 @@ def initialize_database(filename):
         return load_database(filename)
 
 def log(message):
-    """Print message as a JavaScript console log."""
-    print(f"<script>console.log({json.dumps(message)});</script>")
+    """Add message to log list."""
+    logs.append(f"<script>console.log({json.dumps(message)});</script>")
+
+def print_response(status_code, status_message, body):
+    """Print the HTTP response with status code, status message, and body."""
+    print(f"Status: {status_code} {status_message}\r\n")
+    print("Content-Type: text/html\r\n")
+    print("\r\n")
+    response_body = f"<html><body>{json.dumps(body)}{''.join(logs)}</body></html>"
+    print(response_body)
 
 def main():
+    global logs
+    logs = []
+
     print("Content-type: text/html\n")
-    print("<html><body>")
-
-    # Print the environment variables for debugging
-    for key, value in os.environ.items():
-        log(f"{key}={value}")
-
+    
     # Get the directory where the script is located
     script_directory = get_script_directory()
     filename = os.path.join(script_directory, "database.json")
@@ -100,20 +105,23 @@ def main():
             data[name] = salad
             save_database(data, filename)
             log(f"Entry added or updated successfully: {name} likes {salad}.")
+            print_response(200, "OK", {"message": f"Entry added or updated successfully: {name} likes {salad}."})
         elif method == 'DELETE' and name:
             # Attempt to delete an entry
             if name in data:
                 del data[name]
                 save_database(data, filename)
                 log(f"Entry deleted successfully: {name}.")
+                print_response(200, "OK", {"message": f"Entry deleted successfully: {name}."})
             else:
                 log(f"Entry not found: {name}.")
+                print_response(404, "Not Found", {"error": f"Entry not found: {name}."})
         else:
             log("Invalid request. Make sure you provide name and salad parameters for adding, or name for deleting.")
+            print_response(400, "Bad Request", {"error": "Invalid request. Make sure you provide name and salad parameters for adding, or name for deleting."})
     else:
         log("Unsupported request method. Please use POST or DELETE.")
-    
-    print("</body></html>")
+        print_response(405, "Method Not Allowed", {"error": "Unsupported request method. Please use POST or DELETE."})
 
 if __name__ == "__main__":
     main()
