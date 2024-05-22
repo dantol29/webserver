@@ -30,6 +30,7 @@
 !**/*.csv
 !**/*.cfg
 !**/*.js
+!**/*.php
 
 # Specific files and directories to include
 !Makefile

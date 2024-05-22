@@ -52,6 +52,7 @@ void CGIHandler::handleRequest(HTTPRequest &request, HTTPResponse &response)
 
 std::vector<std::string> CGIHandler::createArgvForExecve(const MetaVariables &env)
 {
+	std ::cout << "------------------createArgvForExecve-------------------" << std::endl;
 	std::vector<std::string> argv;
 	std::string scriptName = env.getVar("SCRIPT_NAME");
 	std::cout << "createArgvForExecve: scriptName: " << scriptName << std::endl;
@@ -70,6 +71,7 @@ std::vector<std::string> CGIHandler::createArgvForExecve(const MetaVariables &en
 	{
 		argv.push_back(scriptPath);
 	}
+	std::cout << "---------- Exiting createArgvForExecve ------------------" << std::endl;
 	return argv;
 }
 

@@ -42,12 +42,14 @@ std::string MetaVariables::getVar(const std::string &key) const
 
 std::vector<std::string> MetaVariables::getForExecve() const
 {
+	std::cout << "MetaVariables::getForExecve: " << std::endl;
 	std::vector<std::string> result;
 	for (std::map<std::string, std::string>::const_iterator it = metaVars.begin(); it != metaVars.end(); ++it)
 	{
 		std::string env = it->first + "=" + it->second;
 		result.push_back(env);
 	}
+	std::cout << "Exiting MetaVariables::getForExecve: " << std::endl;
 	return result;
 }
 

@@ -287,6 +287,8 @@ void Server::handlePostRequest(Connection &conn, Parser &parser, HTTPRequest &re
 
 void Server::buildResponse(Connection &conn, size_t &i, HTTPRequest &request, HTTPResponse &response)
 {
+	std::cout << "Entering buildResponse" << std::endl;
+	std::cout << "Request: " << request << std::endl;
 	(void)i;
 	Debug::log("Entering buildResponse", Debug::NORMAL);
 	Debug::log("Request method: " + request.getMethod(), Debug::NORMAL);
@@ -419,7 +421,6 @@ void Server::writeToClient(Connection &conn, size_t &i, HTTPResponse &response)
 	std::cout << "\033[1;36m" << "Entering writeToClient" << "\033[0m" << std::endl;
 	std::cout << response << std::endl;
 	static int sendResponseCounter = 0;
-	bool isLastSend = false;
 	size_t tmpBufferSize = SEND_BUFFER_SIZE;
 	(void)i;
 
@@ -434,24 +435,17 @@ void Server::writeToClient(Connection &conn, size_t &i, HTTPResponse &response)
 	{
 		tmpBufferSize = conn.getResponseString().size();
 		std::cout << GREEN << "Sending last part of the response" << RESET << std::endl;
-		isLastSend = true;
-	}
-
-	std::cout << GREEN << "sendResponseCounter: " << sendResponseCounter << RESET << std::endl;
-	int read = send(conn.getPollFd().fd, conn.getResponseString().c_str(), tmpBufferSize, 0);
-	if (read == -1)
-	{
-		perror("send");
-	}
-
-	sendResponseCounter++;
-	conn.setResponseSizeSent(conn.getResponseSizeSent() + tmpBufferSize);
-	if (isLastSend)
-	{
+		std::cout << GREEN << "sendResponseCounter: " << sendResponseCounter << RESET << std::endl;
 		conn.setHasFinishedSending(true);
 		conn.setCanBeClosed(true);
 	}
 
+	int read = send(conn.getPollFd().fd, conn.getResponseString().c_str(), tmpBufferSize, 0);
+	if (read == -1)
+		perror("send");
+
+	++sendResponseCounter;
+	conn.setResponseSizeSent(conn.getResponseSizeSent() + tmpBufferSize);
 	conn.setResponseString(conn.getResponseString().substr(tmpBufferSize));
 	response.getBody().erase(0, SEND_BUFFER_SIZE);
 }
