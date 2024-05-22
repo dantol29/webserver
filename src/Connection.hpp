@@ -53,6 +53,8 @@ class Connection
 	pid_t _CGIPid;
 	int _CGIExitStatus;
 	time_t _CGIStartTime;
+	bool _CGIHasCompleted;
+	bool _CGIHasTimedOut;
 
   public:
 	Connection(struct pollfd &pollFd, Server &server);
@@ -64,6 +66,7 @@ class Connection
 	bool readChunkedBody(Parser &parser);
 	bool readChunkSize(std::string &line);
 	bool readChunk(size_t chunkSize, std::string &chunkedData, HTTPResponse &response);
+	bool readBody(Parser &parser, HTTPRequest &req, HTTPResponse &res, Config &config);
 	bool readBody(Parser &parser, HTTPRequest &req, HTTPResponse &res);
 
 	/* Getters */
@@ -93,6 +96,8 @@ class Connection
 	pid_t getCGIPid() const;
 	time_t getCGIStartTime() const;
 	int getCGIExitStatus() const;
+	bool getCGIHasCompleted() const;
+	bool getCGIHasTimedOut() const;
 
 	/* Setters */
 	void setResponseString(std::string responseString);
@@ -114,6 +119,8 @@ class Connection
 
 	void setCGIStartTime(time_t now);
 	void setCGIExitStatus(int status);
+	void setCGIHasCompleted(bool value);
+	void setCGIHasTimedOut(bool value);
 	/* CGI */
 	void addCGI(pid_t pid);
 	void removeCGI(int status);

@@ -18,11 +18,14 @@ Connection::Connection(struct pollfd &pollFd, Server &server)
 	_responseSize = 0;
 	_responseSizeSent = 0;
 	_responseString = "";
+	_hasServerBlock = NOT_FOUND;
 	_hasCGI = false;
 	_CGIHasExited = false;
 	_CGIPid = 0;
 	_CGIStartTime = 0;
-	_hasServerBlock = NOT_FOUND;
+	_CGIExitStatus = 0;
+	_CGIHasCompleted = false;
+	_CGIHasTimedOut = false;
 }
 
 Connection::Connection(const Connection &other)
@@ -44,13 +47,15 @@ Connection::Connection(const Connection &other)
 	_responseSize = other._responseSize;
 	_responseSizeSent = other._responseSizeSent;
 	_responseString = other._responseString;
+	_serverBlock = other._serverBlock;
+	_hasServerBlock = other._hasServerBlock;
 	_hasCGI = other._hasCGI;
 	_CGIHasExited = other._CGIHasExited;
 	_CGIPid = other._CGIPid;
 	_CGIStartTime = other._CGIStartTime;
-	_serverBlock = other._serverBlock;
-	_hasServerBlock = other._hasServerBlock;
-
+	_CGIExitStatus = other._CGIExitStatus;
+	_CGIHasCompleted = other._CGIHasCompleted;
+	_CGIHasTimedOut = other._CGIHasTimedOut;
 	// std::cout << "Connection object copied" << std::endl;
 }
 
@@ -73,12 +78,15 @@ Connection &Connection::operator=(const Connection &other)
 		_responseSize = other._responseSize;
 		_responseSizeSent = other._responseSizeSent;
 		_responseString = other._responseString;
+		_serverBlock = other._serverBlock;
+		_hasServerBlock = other._hasServerBlock;
 		_hasCGI = other._hasCGI;
 		_CGIHasExited = other._CGIHasExited;
 		_CGIPid = other._CGIPid;
 		_CGIStartTime = other._CGIStartTime;
-		_serverBlock = other._serverBlock;
-		_hasServerBlock = other._hasServerBlock;
+		_CGIExitStatus = other._CGIExitStatus;
+		_CGIHasCompleted = other._CGIHasCompleted;
+		_CGIHasTimedOut = other._CGIHasTimedOut;
 	}
 	std::cout << "Connection object assigned" << std::endl;
 	return *this;
@@ -92,6 +100,12 @@ Connection::~Connection()
 // GETTERS AND SETTERS
 
 // GETTERS
+
+bool Connection::getCGIHasTimedOut() const
+{
+	return _CGIHasTimedOut;
+}
+
 size_t Connection::getResponseSize() const
 {
 	return _responseSize;
@@ -175,6 +189,11 @@ bool Connection::getCanBeClosed() const
 	return _canBeClosed;
 }
 
+int Connection::getHasServerBlock() const
+{
+	return _hasServerBlock;
+}
+
 bool Connection::getHasCGI() const
 {
 	return _hasCGI;
@@ -195,11 +214,17 @@ int Connection::getCGIExitStatus() const
 	return _CGIExitStatus;
 }
 
-int Connection::getHasServerBlock() const
+bool Connection::getCGIHasCompleted() const
 {
-	return _hasServerBlock;
+	return _CGIHasCompleted;
 }
+
 // SETTERS
+
+void Connection::setCGIHasCompleted(bool value)
+{
+	_CGIHasCompleted = value;
+}
 
 void Connection::setResponseSize(size_t responseSize)
 {
@@ -224,6 +249,11 @@ void Connection::setServerIp(std::string serverIp)
 void Connection::setServerPort(unsigned short serverPort)
 {
 	_serverPort = serverPort;
+}
+
+void Connection::setCGIHasTimedOut(bool value)
+{
+	_CGIHasTimedOut = value;
 }
 
 void Connection::setHasReadSocket(bool value)
@@ -479,6 +509,7 @@ void Connection::addCGI(pid_t pid)
 {
 	_hasCGI = true;
 	_CGIPid = pid;
+	std::cout << "CGI process added with pid: " << _CGIPid << std::endl;
 	_CGIStartTime = time(NULL);
 }
 

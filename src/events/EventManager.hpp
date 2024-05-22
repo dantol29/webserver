@@ -3,15 +3,19 @@
 #define EVENT_MANAGER_HPP
 
 #include <vector>
+#include "webserv.hpp"
 #include "IEventListener.hpp"
 
 // EventManager class declaration
 class EventManager
 {
-	std::vector<IEventListener *> observers; // List of observers
+  private:
+	std::vector<IEventListener *> _observers; // List of observers
   public:
 	EventManager();
 	~EventManager();
+
+	std::vector<IEventListener *> getObservers() const;
 
 	void subscribe(IEventListener *observer);
 	void unsubscribe(IEventListener *observer);

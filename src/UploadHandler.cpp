@@ -98,7 +98,6 @@ bool UploadHandler::createFile(HTTPRequest &request)
 	else
 		_uploadDir = request.getRoot() + request.getHost() + "/" + _uploadDir;
 
-	
 	std::cout << "Creating file at " << _uploadDir << std::endl;
 	std::vector<File> files = request.getFiles();
 	std::vector<File>::iterator it;
@@ -160,7 +159,7 @@ void UploadHandler::handleRequest(HTTPRequest &request, HTTPResponse &response)
 	{
 		std::cout << PURPLE << "calling upload boundary" << RESET << std::endl;
 		if (!createFile(const_cast<HTTPRequest &>(request)))
-			response.setStatusCode(422, "Unprocessable Entity");
+			return (response.setStatusCode(422, "Unprocessable Entity"));
 		handleResponse(response, SUCCESS);
 	}
 	else
@@ -169,7 +168,7 @@ void UploadHandler::handleRequest(HTTPRequest &request, HTTPResponse &response)
 		// temporary solution
 		std::cout << PURPLE << "calling create file chunked" << RESET << std::endl;
 		if (!createFileChunked(const_cast<HTTPRequest &>(request)))
-			response.setStatusCode(422, "Unprocessable Entity");
+			return (response.setStatusCode(422, "Unprocessable Entity"));
 		handleResponse(response, SUCCESS);
 		// std::cout << "415 Unsupported Media Type" << std::endl;
 		// handleResponse(response, BAD_REQUEST);

@@ -76,15 +76,16 @@ void Router::routeRequest(HTTPRequest &request, HTTPResponse &response)
 	PathValidation pathResult = pathIsValid(response, request);
 	std::cout << BLUE << "path: " << request.getPath() << RESET << std::endl;
 	std::cout << BLUE << "PathValidation: " << pathResult << RESET << std::endl;
-
 	// check if method is allowed
+
 	if (!_directive._allowedMethods.empty())
 	{
 		for (size_t i = 0; i < _directive._allowedMethods.size(); i++)
 		{
-			std::cout << "allowed method: " << _directive._allowedMethods[i] << std::endl;
 			if (_directive._allowedMethods[i] == request.getMethod())
+			{
 				break;
+			}
 			if (i == _directive._allowedMethods.size() - 1)
 			{
 				response.setStatusCode(405, "Method Not Allowed");
@@ -97,12 +98,14 @@ void Router::routeRequest(HTTPRequest &request, HTTPResponse &response)
 	switch (pathResult)
 	{
 	case PathValid:
-		if (requestIsCGI(request))
+		if (requestIsCGI(request) && !_connection.getHasCGI())
 		{
 			CGIHandler cgiHandler(_eventManager, _connection);
 			cgiHandler.setFDsRef(_FDsRef);
 			cgiHandler.setPollFd(_pollFd);
 			cgiHandler.handleRequest(request, response);
+			std::cout << GREEN << _connection.getCGIPid() << RESET << std::endl;
+			std::cout << "CGI request handled" << std::endl;
 		}
 		else if (request.getMethod() == "POST" || request.getUploadBoundary() != "")
 		{
@@ -125,7 +128,7 @@ void Router::routeRequest(HTTPRequest &request, HTTPResponse &response)
 		handleServerBlockError(request, response, 404);
 		return;
 	}
-
+	std::cout << "Before SALAD method check" << std::endl;
 	if (request.getMethod() == "SALAD")
 	{
 		std::cout << "🥬 + 🍅 + 🐟 = 🥗" << std::endl;
