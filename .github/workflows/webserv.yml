@@ -42,8 +42,8 @@ jobs:
           python3 -m pip install aiohttp asyncio aiofiles
       - name: Start webserv in background
         run: ./webserv &
-      - name: Install lsof
-        run: sudo apt-get update && sudo apt-get install -y lsof
+      - name: Install needed dependencies
+        run: sudo apt-get update && sudo apt-get install -y lsof curl
       - name: Run Config file tests
         if: always()
         working-directory: tests/config
@@ -104,6 +104,17 @@ jobs:
             echo "❌ Tests failed. Exiting with status code $exit_code."
             exit $exit_code
            fi
+      - name: Make parallel_cgi/durations_ts.sh executable
+        run: chmod +x test/parallel_cgi/durations_ts.sh
+      - name: Run parallel CGIs Test
+        run: ./tests/parallel_cgi/durations_ts.sh
+          exit_code=$?
+          if [ $exit_code -ne 0 ]; then
+             echo "❌ Parallel CGI tests failed. Exiting with status code $exit_code."
+             exit $exit_code
+          else
+            echo "✅ Parallel CGI tests passed."
+          fi
       - name: Check for Zombie Processes
         run: |
           zombies=$(ps aux | grep 'Z' | grep -v grep)
