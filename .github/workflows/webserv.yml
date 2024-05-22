@@ -122,6 +122,12 @@ jobs:
           if [ -n "$zombies" ]; then
             echo " ❌ Zombie processes found:"
             echo "$zombies"
+            ps aux | grep 'Z' | grep -v grep
+            for pid in $zombies; do
+              parent_pid=$(ps -o ppid= -p $pid)
+              echo "Sending SIGCHLD to parent process PID $parent_pid"
+              kill -SIGCHLD $parent_pid || echo "Failed to signal parent PID $parent_pid"
+            done
             exit 1
           else
             echo "✅ No zombie processes found."
