@@ -180,7 +180,7 @@ void sendData(const std::vector<HTTPTest> &tests, sockaddr_in serverAddress)
 // 	sendData(tests, serverAdress);
 // }
 
-void cgi(sockaddr_in serverAdress)
+void post(sockaddr_in serverAdress)
 {
 	std::string postData = "name=Jane&salad=Caesar";
 	std::stringstream request;
@@ -195,9 +195,20 @@ void cgi(sockaddr_in serverAdress)
 	sendData(tests, serverAdress);
 }
 
-// HTTPTest("POST / HTTP/1.1\r\nHost: www.example.com\r\nContent-Length: 17\r\nContent-Type: "
-// 		 "text/plain\r\n\r\nThis\r\nis body\r\n\r\n",
-// 		 "200"),
+void delete_entry(sockaddr_in serverAdress)
+{
+	std::string deleteData = "name=Jane";
+	std::stringstream request;
+	request << "DELETE /database/salad_db.py HTTP/1.1\r\n"
+			<< "Host: www.saladbook.xyz\r\n"
+			<< "Content-Type: application/x-www-form-urlencoded\r\n"
+			<< "Content-Length: " << deleteData.size() << "\r\n"
+			<< "\r\n"
+			<< deleteData << "\r\n\r\n";
+
+	std::vector<HTTPTest> tests = {HTTPTest(request.str(), "200")};
+	sendData(tests, serverAdress);
+}
 
 int main(void)
 {
@@ -208,7 +219,8 @@ int main(void)
 
 	// NOTE: when you run a test, configfile and dir structure should fit
 	// salad(serverAddress); // standard routing tests
-	cgi(serverAddress);
+	// post(serverAddress);
+	delete_entry(serverAddress);
 
 	if (is_error)
 		exit(1);

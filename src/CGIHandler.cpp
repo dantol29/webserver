@@ -37,21 +37,12 @@ CGIHandler &CGIHandler::operator=(const CGIHandler &other)
 void CGIHandler::handleRequest(HTTPRequest &request, HTTPResponse &response)
 {
 
-	std::cout << RED << "Entering CGIHandler::handleRequest" << RESET << std::endl;
+	std::cout << YELLOW << "Entering CGIHandler::handleRequest" << RESET << std::endl;
+	std::cout << request << std::endl;
+	std::cout << YELLOW << "Request body: " << request.getBody() << RESET << std::endl;
+
 	MetaVariables env;
 	env.HTTPRequestToMetaVars(request, env);
-
-	std::cout << BLUE << "CGIHandler: handleRequest" << RESET << std::endl;
-
-	std::cout << std::endl;
-	std::cout << std::endl;
-	std::cout << std::endl;
-	std::cout << request << std::endl;
-	std::cout << YELLOW << request.getBody() << RESET << std::endl;
-	std::cout << std::endl;
-	std::cout << std::endl;
-
-	std::cout << YELLOW << "Request body: " << request.getBody() << RESET << std::endl;
 
 	if (!executeCGI(env, request.getBody(), response))
 	{

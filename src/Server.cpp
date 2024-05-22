@@ -221,13 +221,13 @@ void Server::readFromClient(Connection &conn, size_t &i, Parser &parser, HTTPReq
 	if (parser.getHeadersComplete() && request.getMethod() == "GET")
 		conn.setHasFinishedReading(true);
 
-	if (request.getMethod() == "GET" || request.getMethod() == "DELETE" || request.getMethod() == "SALAD")
+	if (request.getMethod() == "GET" || request.getMethod() == "SALAD")
 		Debug::log("GET request, no body to read", Debug::NORMAL);
 	else
-		handlePostRequest(conn, parser, request, response);
+		handlePostAndDelete(conn, parser, request, response);
 }
 
-void Server::handlePostRequest(Connection &conn, Parser &parser, HTTPRequest &request, HTTPResponse &response)
+void Server::handlePostAndDelete(Connection &conn, Parser &parser, HTTPRequest &request, HTTPResponse &response)
 {
 	if (parser.getIsChunked() && !conn.getHasReadSocket())
 	{
