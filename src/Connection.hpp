@@ -55,6 +55,8 @@ class Connection
 	time_t _CGIStartTime;
 	bool _CGIHasCompleted;
 	bool _CGIHasTimedOut;
+	bool _CGIHasReadPipe;
+	std::string _cgiOutputBuffer;
 
   public:
 	Connection(struct pollfd &pollFd, Server &server);
@@ -97,6 +99,8 @@ class Connection
 	int getCGIExitStatus() const;
 	bool getCGIHasCompleted() const;
 	bool getCGIHasTimedOut() const;
+	bool getCGIHasReadPipe() const;
+	std::string getCGIOutputBuffer() const;
 
 	/* Setters */
 	void setResponseString(std::string responseString);
@@ -120,6 +124,8 @@ class Connection
 	void setCGIExitStatus(int status);
 	void setCGIHasCompleted(bool value);
 	void setCGIHasTimedOut(bool value);
+	void setCGIHasReadPipe(bool value);
+	void setCGIOutputBuffer(std::string output);
 	/* CGI */
 	void addCGI(pid_t pid);
 	void removeCGI(int status);

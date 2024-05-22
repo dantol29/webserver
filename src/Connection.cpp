@@ -26,6 +26,7 @@ Connection::Connection(struct pollfd &pollFd, Server &server)
 	_CGIExitStatus = 0;
 	_CGIHasCompleted = false;
 	_CGIHasTimedOut = false;
+	_CGIHasReadPipe = false;
 }
 
 Connection::Connection(const Connection &other)
@@ -56,6 +57,7 @@ Connection::Connection(const Connection &other)
 	_CGIExitStatus = other._CGIExitStatus;
 	_CGIHasCompleted = other._CGIHasCompleted;
 	_CGIHasTimedOut = other._CGIHasTimedOut;
+	_CGIHasReadPipe = other._CGIHasReadPipe;
 	// std::cout << "Connection object copied" << std::endl;
 }
 
@@ -87,6 +89,7 @@ Connection &Connection::operator=(const Connection &other)
 		_CGIExitStatus = other._CGIExitStatus;
 		_CGIHasCompleted = other._CGIHasCompleted;
 		_CGIHasTimedOut = other._CGIHasTimedOut;
+		_CGIHasReadPipe = other._CGIHasReadPipe;
 	}
 	std::cout << "Connection object assigned" << std::endl;
 	return *this;
@@ -219,7 +222,27 @@ bool Connection::getCGIHasCompleted() const
 	return _CGIHasCompleted;
 }
 
+bool Connection::getCGIHasReadPipe() const
+{
+	return _CGIHasReadPipe;
+}
+
+std::string Connection::getCGIOutputBuffer() const
+{
+	return _cgiOutputBuffer;
+}
+
 // SETTERS
+
+void Connection::setCGIOutputBuffer(std::string buffer)
+{
+	_cgiOutputBuffer = buffer;
+}
+
+void Connection::setCGIHasReadPipe(bool value)
+{
+	_CGIHasReadPipe = value;
+}
 
 void Connection::setCGIHasCompleted(bool value)
 {

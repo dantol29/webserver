@@ -6,6 +6,8 @@
 #include "EventManager.hpp"
 #include "signal.h"
 
+# define CGI_BUFFER_SIZE 100 // 4 KB
+
 Server::Server(const Config &config, EventManager &eventManager) : _config(config), _eventManager(eventManager)
 {
 	_maxClients = 10;
@@ -360,56 +362,46 @@ void Server::readCGIPipe(Connection &conn, HTTPResponse &response)
 	std::string cgiOutput;
 	int *pipeFD;
 	pipeFD = response.getCGIpipeFD();
-	char readBuffer[256];
-	// TODO: this is blokcing - we need to make it non-blocking
-	// I.e. read 1 buffer and then go back to poll
-	std::cout << "Reading from pipe " << *pipeFD <<std::endl;
+	char readBuffer[4096];
 	ssize_t bytesRead;
 
-	do
-	{
-		std::cout << "Into the do while loop" << std::endl;
-		bytesRead = read(pipeFD[0], readBuffer, sizeof(readBuffer) - 1);
-		std::cout << "Bytes read: " << bytesRead << std::endl;
-		if (bytesRead > 0)
-		{
-			std::cout << "Bytes read: " << bytesRead << std::endl;
-			readBuffer[bytesRead] = '\0';
-			cgiOutput += readBuffer;
-		}
-		else if (bytesRead == 0)
-		{
-			std::cout << "End of data stream reached." << std::endl;
-			break; // Optional: Explicitly break if you need to perform additional cleanup.
-		}
-		else
-		{
-			std::cerr << "Error reading data: " << strerror(errno) << std::endl;
-			break; // Break or handle the error as needed.
-		}
-	} while (bytesRead > 0);
 
-	std::cout << "CGI output: " << cgiOutput << std::endl;
-	close(pipeFD[0]);
+	bytesRead = read(pipeFD[0], readBuffer, CGI_BUFFER_SIZE - 1);
+	std::cout << "Bytes read: " << bytesRead << std::endl;
+	if (bytesRead > 0)
+	{
+		readBuffer[bytesRead] = '\0';
+		cgiOutput += readBuffer;
+	}
+	else if (bytesRead < 0)
+		std::cerr << "Error reading data: " << strerror(errno) << std::endl;
 
 	int status = conn.getCGIExitStatus();
 
-	if (WIFEXITED(status) && WEXITSTATUS(status) != 0)
+	// if the CGI has exited with an error or the output is empty, we wanna go to buildResponse
+	if ((WIFEXITED(status) && WEXITSTATUS(status) != 0) || cgiOutput.empty())
 	{
 		response.setStatusCode(500, "Internal Server Error");
 		response.setIsCGI(false);
+		close(pipeFD[0]);
 		return;
 	}
+	
+	// if we have read all the data from the pipe
+	if (bytesRead == 0 || cgiOutput.size() < CGI_BUFFER_SIZE - 1)
+		conn.setCGIHasReadPipe(true);
 
-	if (cgiOutput.empty())
+	// add cgiOutput to buffer
+	conn.setCGIOutputBuffer(conn.getCGIOutputBuffer() + cgiOutput);
+
+	// if finished reading from pipe, we wanna go to writeToClient
+	if (conn.getCGIHasReadPipe())
 	{
-		response.setStatusCode(500, "Internal Server Error");
 		response.setIsCGI(false);
-		return;
+		conn.setHasDataToSend(true);
+		response.CGIStringToResponse(conn.getCGIOutputBuffer());
+		close(pipeFD[0]);
 	}
-	response.CGIStringToResponse(cgiOutput);
-	response.setIsCGI(false);
-	conn.setHasDataToSend(true);
 }
 
 void Server::writeToClient(Connection &conn, size_t &i, HTTPResponse &response)

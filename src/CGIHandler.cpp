@@ -104,13 +104,10 @@ void handleTimeout(int sig)
 
 bool CGIHandler::executeCGI(const MetaVariables &env, HTTPResponse &response)
 {
-	static int enteredCGI = 0;
 	std::cout << RED << "Entering CGIHandler::executeCGI" << RESET << std::endl;
 	std::string cgiOutput;
 	std::vector<std::string> argv = createArgvForExecve(env);
 	std::vector<std::string> envp = env.getForExecve();
-
-	enteredCGI++;
 
 	int pipeFD[2];
 	if (pipe(pipeFD) == -1)
