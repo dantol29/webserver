@@ -28,7 +28,7 @@ _not supported_
 
 ## 408 Request Timeout
 ### How to trigger?
-(TODO: @Stefano)
+Send a request with incomplete headers
 
 ## 409 Conflict
 _not supported_
