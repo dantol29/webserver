@@ -19,22 +19,31 @@
 #include "Parser.hpp"
 #include "Config.hpp"
 #include "ServerSocket.hpp"
+#include "EventManager.hpp"
 
 #define VERBOSE 1
-#define SEND_BUFFER_SIZE 1024 * 100 // 100 KB
 
-class Connection; // Forward declaration for circular dependency
+class Connection; // Forward declaration for circular dependencyA
 
 class Server
 {
   public:
-	Server(const Config &config);
+	Server(const Config &config, EventManager &eventManager);
 	~Server();
 
 	void startListening();
 	void startPollEventLoop();
 
 	void printServerSockets() const;
+	/* for CGI */
+	void setHasCGI(bool hasCGI);
+	void setCGICounter(int counter);
+	bool getHasCGI() const;
+	int getCGICounter() const;
+	const EventManager &getEventManager() const;
+
+	void addCGI(const EventData &eventData);
+	void removeCGI();
 
   private:
 	/* Private Attributes */
@@ -45,6 +54,11 @@ class Server
 	std::vector<ServerSocket> _serverSockets;
 	std::vector<struct pollfd> _FDs;
 	std::vector<Connection> _connections;
+	EventManager &_eventManager;
+
+	bool _hasCGI;
+
+	int _CGICounter;
 
 	/*** Private Methods ***/
 	Server();
@@ -57,25 +71,27 @@ class Server
 	// void addServerSocketPollFdToVectors();
 	void addServerSocketsPollFdToVectors();
 	void acceptNewConnection(Connection &conn);
-	void handleConnection(Connection &conn, size_t &i, Parser &parser, HTTPRequest &request, HTTPResponse &response);
+	void handleConnection(Connection &conn, size_t &i);
 	void handleServerSocketError();
 	void handleClientSocketError(int clientFD, size_t &i);
 	void handleSocketTimeoutIfAny();
 	void handlePollError();
 	void AlertAdminAndTryToRecover();
+	void waitCGI();
 
 	/* for handleConnection */
 	void readFromClient(Connection &conn, size_t &i, Parser &parser, HTTPRequest &request, HTTPResponse &response);
 	void handlePostRequest(Connection &conn, Parser &parser, HTTPRequest &request, HTTPResponse &response);
 	void buildResponse(Connection &conn, size_t &i, HTTPRequest &request, HTTPResponse &response);
+	void buildCGIResponse(Connection &conn, HTTPResponse &response);
 	void writeToClient(Connection &conn, size_t &i, HTTPResponse &response);
 	void closeClientConnection(Connection &conn, size_t &i);
 
 	/* for buildResponse */
 	void formRequestTarget(HTTPRequest &request);
-	void findLocationBlock(HTTPRequest &request, ServerBlock& serverBlock, Directives &directive);
-	void handleServerBlockError(Connection& conn, HTTPResponse &response);
-	std::string findServerName(HTTPRequest& request, ServerBlock& serverBlock);
+	void findLocationBlock(HTTPRequest &request, ServerBlock &serverBlock, Directives &directive);
+	void handleServerBlockError(Connection &conn, HTTPResponse &response);
+	std::string findServerName(HTTPRequest &request, ServerBlock &serverBlock);
 	/* Not avaiable constructors */
 	// Copy constructor
 	Server(const Server &other);

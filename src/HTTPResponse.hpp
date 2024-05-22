@@ -25,12 +25,28 @@ class HTTPResponse
 	void setErrorResponse(int statusCode);
 	std::string objToString() const;
 
-	void setStatusCode(int statusCode, const std::string& message);
+	void setStatusCode(int statusCode, const std::string &message);
 	void setHeader(const std::string &name, const std::string &value);
 	void setBody(const std::string &body);
 
-	bool isCGI() const;
-	void setIsCGI(bool isCGI);
+	bool getIsCGI() const;
+	void setIsCGI(bool value);
+
+	// Easy version
+	// int *getCGIpipeFD();
+	// void setCGIpipeFD(int *CGIpipeFD);
+	// Fancy version
+	// int (*getCGIpipeFD())[2];
+	// void setCGIpipeFD(int (*CGIpipeFD)[2]);
+	// Fancy version with reference
+	int (&getCGIpipeFD())[2];
+	void setCGIpipeFD(int (&pipe)[2]);
+	// arrays are passed by reference by default, but returning array in C++ is not alowed
+	// int(getCGIpipeFD())[2];
+	// void setCGIpipeFD(int CGIpipeFD[2]);
+
+	// Member functions
+	void CGIStringToResponse(const std::string &cgiOutput);
 
 	friend std::ostream &operator<<(std::ostream &out, const HTTPResponse &response);
 
@@ -41,9 +57,10 @@ class HTTPResponse
 	std::vector<std::pair<std::string, std::string> > _headers;
 	// clang-format on
 	std::string _body;
+	bool _isCGI;
+	int _CGIpipeFD[2];
 	// private cause it's used only to set the status message based on the status code
 	std::string getStatusMessage(int statusCode) const;
-	bool _isCGI;
 };
 
 #endif // HTTPRESPONSE_HPP

@@ -1,53 +1,52 @@
 #include "CGIHandler.hpp"
 
-CGIHandler::CGIHandler()
+CGIHandler::CGIHandler(EventManager &eventManager, Connection &connection)
+	: AResponseHandler(), _connection(connection), _eventManager(eventManager)
 {
 }
 
+// Copy Constructor
+CGIHandler::CGIHandler(const CGIHandler &other)
+	: AResponseHandler(other)
+	, _FDsRef(other._FDsRef)
+	, _pollFd(other._pollFd)
+	, _connection(other._connection)
+	, _eventManager(other._eventManager)
+{
+	// TODO: do we need deep copy here?
+}
+
+// Destructor
 CGIHandler::~CGIHandler()
 {
 }
 
-// CGIHandler::CGIHandler(Connection *conn)
-// {
-// 	_conn = conn;
-// }
-
-// CGIHandler &CGIHandler::operator=(const CGIHandler &other)
-// {
-// 	if (this != &other)
-// 	{
-// 		_conn = other._conn;
-// 		_FDsRef = other._FDsRef;
-// 		_pollFd = other._pollFd;
-// 	}
-// 	return *this;
-// }
+CGIHandler &CGIHandler::operator=(const CGIHandler &other)
+{
+	if (this != &other)
+	{
+		AResponseHandler::operator=(other);
+		_connection = other._connection;
+		_eventManager = other._eventManager;
+		_FDsRef = other._FDsRef;
+		_pollFd = other._pollFd;
+	}
+	return *this;
+}
 
 void CGIHandler::handleRequest(HTTPRequest &request, HTTPResponse &response)
 {
-	CGIHandler cgiInstance;
-	// cgiInstance.setFDsRef(_FDsRef); // here we set the FDs to close later unused ones
+
+	std::cout << RED << "Entering CGIHandler::handleRequest" << RESET << std::endl;
 	MetaVariables env;
 	env.HTTPRequestToMetaVars(request, env);
-	// std::cout << env;
-	std::string cgiOutput = executeCGI(env);
-	// if cgioutput == "HTTP/1.1 500 Internal Server Error\r\nContent-Length: 0\r\n\r\n";
-	// then we should return 500 error
-	if (cgiOutput == "HTTP/1.1 500 Internal Server Error\r\nContent-Length: 0\r\n\r\n")
+	if (!executeCGI(env, response))
 	{
 		response.setStatusCode(500, "");
 		response.setBody("500 Internal Server Error");
-		return;
 	}
-	CGIStringToResponse(cgiOutput, response);
-	// std::cout << response;
-
-	std::cout << "------------------CGIHandler::handleRequest-------------------" << std::endl;
-	std::cout << "CGIHandler: path: " << request.getPath() << std::endl;
-
-	std::cout << "CGIHandler: request target: " << request.getRequestTarget() << std::endl;
-
+	std::cout << GREEN << _connection.getCGIPid() << RESET << std::endl;
+	std::cout << RED << "Exiting CGIHandler::handleRequest" << RESET << std::endl;
 	return;
 }
 
@@ -74,43 +73,6 @@ std::vector<std::string> CGIHandler::createArgvForExecve(const MetaVariables &en
 	}
 	std::cout << "---------- Exiting createArgvForExecve ------------------" << std::endl;
 	return argv;
-}
-
-void CGIHandler::CGIStringToResponse(const std::string &cgiOutput, HTTPResponse &response)
-{
-	std::size_t headerEndPos = cgiOutput.find("\r\n\r\n");
-	if (headerEndPos == std::string::npos)
-	{
-		headerEndPos = cgiOutput.find("\n\n");
-	}
-
-	std::string headersPart = cgiOutput.substr(0, headerEndPos);
-	std::string bodyPart = cgiOutput.substr(headerEndPos);
-
-	std::cout << "------------------CGIStringToResponse-------------------" << std::endl;
-
-	std::istringstream headerStream(headersPart);
-	std::string headerLine;
-	while (std::getline(headerStream, headerLine))
-	{
-		if (!headerLine.empty() && headerLine[headerLine.size() - 1] == '\r')
-		{
-			headerLine.erase(headerLine.size() - 1); // carriage return
-		}
-
-		std::size_t separatorPos = headerLine.find(": ");
-		if (separatorPos != std::string::npos)
-		{
-			std::string headerName = headerLine.substr(0, separatorPos);
-			std::string headerValue = headerLine.substr(separatorPos + 2);
-			response.setHeader(headerName, headerValue);
-		}
-	}
-
-	response.setBody(bodyPart);
-	response.setIsCGI(true);
-	response.setStatusCode(200, "");
-	return;
 }
 
 void CGIHandler::closeAllSocketFDs()
@@ -143,9 +105,9 @@ void handleTimeout(int sig)
 	std::cout << "CGIHandler: Timeout" << std::endl;
 }
 
-std::string CGIHandler::executeCGI(const MetaVariables &env)
+bool CGIHandler::executeCGI(const MetaVariables &env, HTTPResponse &response)
 {
-	std::cout << "------------------executeCGI-------------------" << std::endl;
+	std::cout << RED << "Entering CGIHandler::executeCGI" << RESET << std::endl;
 	std::string cgiOutput;
 	std::vector<std::string> argv = createArgvForExecve(env);
 	std::vector<std::string> envp = env.getForExecve();
@@ -154,7 +116,7 @@ std::string CGIHandler::executeCGI(const MetaVariables &env)
 	if (pipe(pipeFD) == -1)
 	{
 		perror("pipe failed");
-		return "HTTP/1.1 500 Internal Server Error\r\nContent-Length: 0\r\n\r\n";
+		return false;
 	}
 
 	pid_t pid = fork();
@@ -163,7 +125,7 @@ std::string CGIHandler::executeCGI(const MetaVariables &env)
 		perror("fork failed");
 		close(pipeFD[0]);
 		close(pipeFD[1]);
-		return "HTTP/1.1 500 Internal Server Error\r\nContent-Length: 0\r\n\r\n";
+		return false;
 	}
 	else if (pid == 0)
 	{
@@ -179,69 +141,37 @@ std::string CGIHandler::executeCGI(const MetaVariables &env)
 		if (access(argvPointers[0], X_OK) == -1)
 		{
 			perror("access");
+			return false;
+			_exit(EXIT_FAILURE);
+			// TODO: @leo I don't think we should exit here. We don't want to kill the whole server cause of a CGI
+			// error. No?
+		}
+
+		// execve(argvPointers[0], argvPointers.data(), envpPointers.data());
+		if (execve(argvPointers[0], argvPointers.data(), envpPointers.data()) == -1)
+		{
+			perror("execve");
+			return false;
+			// TODO: @leo We should check if execve failed and return an error response and not exti
 			_exit(EXIT_FAILURE);
 		}
-		if (argvPointers[0] != NULL)
-			std::cerr << "argvPointers[0] " << argvPointers[0] << std::endl;
-		if (argvPointers[1] != NULL)
-			std::cerr << "argvPointers[1] " << argvPointers[1] << std::endl;
-		std::cerr << "Printing argvPointers" << std::endl;
-		for (size_t i = 0; i < argvPointers.size(); i++)
-		{
-			if (argvPointers[i] != NULL)
-				std::cout << argvPointers[i] << std::endl;
-			else
-				break;
-		}
-		std::cerr << "Printing envpPointers" << std::endl;
-		for (size_t i = 0; i < envpPointers.size(); i++)
-		{
-			if (envpPointers[i] != NULL)
-				std::cout << envpPointers[i] << std::endl;
-			else
-				break;
-		}
-
-		execve(argvPointers[0], argvPointers.data(), envpPointers.data());
-		perror("execve");
-		_exit(EXIT_FAILURE);
 	}
+	// This is executed if the CGI is started successfully
+	response.setIsCGI(true);
+	response.setCGIpipeFD(pipeFD);
 
 	close(pipeFD[1]);
-
-	signal(SIGALRM, handleTimeout);
-	alarm(4);
-
-	char readBuffer[256];
-	ssize_t bytesRead;
-	while ((bytesRead = read(pipeFD[0], readBuffer, sizeof(readBuffer) - 1)) > 0)
-	{
-		readBuffer[bytesRead] = '\0';
-		cgiOutput += readBuffer;
-	}
-	close(pipeFD[0]);
-
-	int status;
-	pid_t waitedPid = waitpid(pid, &status, 0);
-	alarm(0);
-
-	if (waitedPid == -1)
-	{
-		perror("waitpid");
-		return "HTTP/1.1 500 Internal Server Error\r\nContent-Length: 0\r\n\r\n";
-	}
-
-	if (WIFEXITED(status) && WEXITSTATUS(status) != 0)
-	{
-		return "HTTP/1.1 500 Internal Server Error\r\nContent-Length: 0\r\n\r\n";
-	}
-
-	if (cgiOutput.empty())
-	{
-		return "HTTP/1.1 500 Internal Server Error\r\nContent-Length: 0\r\n\r\n";
-	}
-
-	return cgiOutput;
+	EventData data = {1, pid}; // Assuming 1 is the event type for CGI started
+	std::cout << "CGIHandler: Emitting event indicating a CGI process has started" << std::endl;
+	_eventManager.emit(data); // Emit event indicating a CGI process has started
+	// conn.addCGI(pid);
+	_connection.addCGI(pid);
+	std::cout << GREEN << _connection.getCGIPid() << RESET << std::endl;
+	// TODO: is this used? To which process to you want to send this signal/ @Leo
+	// signal(SIGALRM, handleTimeout);
+	// alarm(4);
+	std::cout << RED << "Exiting CGIHandler::executeCGI with true" << RESET << std::endl;
+	return true;
 }
 
 void CGIHandler::setFDsRef(std::vector<struct pollfd> *FDsRef)

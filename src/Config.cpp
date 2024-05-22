@@ -282,32 +282,34 @@ std::ostream &operator<<(std::ostream &out, const Config &file)
 		std::cout << std::endl;
 		std::cout << "alias: " << var._alias << std::endl;
 
-		for (unsigned int j = 0; j < loc.size(); ++j)
-		{
-			std::cout << "------------------Location-Block------------------------" << std::endl;
-			std::cout << "path: " << loc[j]._path << std::endl;
-			for (unsigned int k = 0; k < loc[j]._listen.size(); ++k)
-			{
-				std::cout << "ip: " << loc[j]._listen[k].getIp() << std::endl;
-				std::cout << "port: " << loc[j]._listen[k].getPort() << std::endl;
-				std::cout << "isIpv6: " << loc[j]._listen[k].getIsIpv6() << std::endl;
-			}
-			std::cout << "server_name: ";
-			for (unsigned int l = 0; l < loc[j]._serverName.size(); ++l)
-				std::cout << loc[j]._serverName[l] << " ";
-			for (unsigned int m = 0; m < loc[j]._errorPage.size(); ++m)
-				std::cout << loc[j]._errorPage[m].first << " " << loc[j]._errorPage[m].second << std::endl;
-			for (unsigned int n = 0; n < loc[j]._index.size(); ++n)
-				std::cout << loc[j]._index[n] << " ";
-			std::cout << "root: " << loc[j]._root << std::endl;
-			std::cout << "client_max_body_size: " << loc[j]._clientMaxBodySize << std::endl;
-			std::cout << "autoindex: " << loc[j]._autoindex << std::endl;
-			std::cout << "allowed_methods: ";
-			for (unsigned int o = 0; o < loc[j]._allowedMethods.size(); ++o)
-				std::cout << loc[j]._allowedMethods[o] << " ";
-			std::cout << std::endl;
-			std::cout << "alias: " << loc[j]._alias << std::endl;
-		}
+
+		// for (unsigned int i = 0; i < loc.size(); ++i)
+		// {
+		// 	std::cout << "------------------Location-Block------------------------" << std::endl;
+		// 	std::cout << "path: " << loc[i]._path << std::endl;
+		// 	for (unsigned int i = 0; i < loc[i]._listen.size(); ++i)
+		// 	{
+		// 		std::cout << "ip: " << loc[i]._listen[i].getIp() << std::endl;
+		// 		std::cout << "port: " << loc[i]._listen[i].getPort() << std::endl;
+		// 		std::cout << "isIpv6: " << loc[i]._listen[i].getIsIpv6() << std::endl;
+		// 	}
+		// 	std::cout << "server_name: ";
+		// 	for (unsigned int i = 0; i < loc[i]._serverName.size(); ++i)
+		// 		std::cout << loc[i]._serverName[i] << " ";
+		// 	for (unsigned int i = 0; i < loc[i]._errorPage.size(); ++i)
+		// 		std::cout << loc[i]._errorPage[i].first << " " << loc[i]._errorPage[i].second << std::endl;
+		// 	for (unsigned int i = 0; i < loc[i]._index.size(); ++i)
+		// 		std::cout << loc[i]._index[i] << " ";
+		// 	std::cout << "root: " << loc[i]._root << std::endl;
+		// 	std::cout << "client_max_body_size: " << loc[i]._clientMaxBodySize << std::endl;
+		// 	std::cout << "autoindex: " << loc[i]._autoindex << std::endl;
+		// 	std::cout << "allowed_methods: ";
+		// 	for (unsigned int i = 0; i < loc[i]._allowedMethods.size(); ++i)
+		// 		std::cout << loc[i]._allowedMethods[i] << " ";
+		// 	std::cout << std::endl;
+		// 	std::cout << "alias: " << loc[i]._alias << std::endl;
+		// }
+
 		std::cout << "------------------END---------------------------------" << std::endl;
 	}
 

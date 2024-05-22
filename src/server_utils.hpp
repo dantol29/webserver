@@ -19,7 +19,6 @@
 
 class Connection; // Forward declaration for circular dependency
 
-const int BUFFER_SIZE = 1025;
 const size_t CLIENT_MAX_HEADERS_SIZE = 8192; // 8KB - This is the limit of the header size also in NGINX
 const size_t CLIENT_MAX_BODY_SIZE = 1048576; // 1MB - This is the limit of the body size also in NGINX
 
