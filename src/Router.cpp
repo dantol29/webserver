@@ -63,19 +63,14 @@ void Router::routeRequest(HTTPRequest &request, HTTPResponse &response)
 	if (root.empty())
 		root = "var/";
 	request.setRoot(root);
-	std::string path = root + request.getSingleHeader("host").second;
-	std::string requestTarget = request.getRequestTarget();
-	std::cout << YELLOW << "requestTarget: " << requestTarget << RESET << std::endl;
 
 	adaptPathForFirefox(request);
-
-	std::cout << GREEN << "Routing request to path: " << request.getPath() << RESET << std::endl;
-
-	// std::cout << request << std::endl;
+	
+	Debug::log("Routing Request: path = " + request.getPath(), Debug::NORMAL);
 
 	PathValidation pathResult = pathIsValid(response, request);
-	std::cout << BLUE << "path: " << request.getPath() << RESET << std::endl;
-	std::cout << BLUE << "PathValidation: " << pathResult << RESET << std::endl;
+	Debug::log("Routing Request: pathResult = " + std::to_string(pathResult), Debug::NORMAL);
+	Debug::log("Path requested: " + request.getPath(), Debug::NORMAL);
 	// check if method is allowed
 	
 	if (!_directive._allowedMethods.empty())
@@ -104,8 +99,7 @@ void Router::routeRequest(HTTPRequest &request, HTTPResponse &response)
 			cgiHandler.setFDsRef(_FDsRef);
 			cgiHandler.setPollFd(_pollFd);
 			cgiHandler.handleRequest(request, response);
-			std::cout << GREEN << _connection.getCGIPid() << RESET << std::endl;
-			std::cout << "CGI request handled" << std::endl;
+			Debug::log("CGI request handled", Debug::CGI);
 		}
 		else if (request.getMethod() == "POST" || request.getUploadBoundary() != "")
 		{
@@ -120,15 +114,13 @@ void Router::routeRequest(HTTPRequest &request, HTTPResponse &response)
 		}
 		break;
 	case IsDirectoryListing:
-		std::cout << "Path is a directory listing, generating directory listing" << std::endl;
 		generateDirectoryListing(response, request.getPath(), request.getRequestTarget());
 		break;
 	case PathInvalid:
-		std::cout << "Path is not valid, handling as error" << std::endl;
 		handleServerBlockError(request, response, 404);
 		return;
 	}
-	std::cout << "Before SALAD method check" << std::endl;
+
 	if (request.getMethod() == "SALAD")
 	{
 		std::cout << "🥬 + 🍅 + 🐟 = 🥗" << std::endl;
@@ -178,7 +170,6 @@ void Router::handleServerBlockError(HTTPRequest &request, HTTPResponse &response
 	{
 		if (errorPage[i].first == errorCode)
 		{
-			std::cout << "handleServerBlockError: Error code: " << errorCode << std::endl;
 			Debug::log("Path requested: " + request.getPath(), Debug::NORMAL);
 			Debug::log("Path to error: " + errorPage[i].second, Debug::NORMAL);
 			// setting the path to the custom error page
@@ -228,24 +219,22 @@ bool Router::requestIsCGI(const HTTPRequest &request)
 	// TODO: check against config file, not this hardcoded version
 	std::vector<std::string> cgiExtensions = _directive._cgiExt;
 
-	std::cout << RED << "requestIsCGI" << RESET << std::endl;
-	std::cout << "cgiExtensions: " << cgiExtensions.size() << std::endl;
-	std::cout << "request target: " << request.getRequestTarget() << std::endl;
+	Debug::log("cgiExtensions: " + toString(cgiExtensions.size()), Debug::CGI);
 	if (!cgiExtensions.empty())
 	{
 		std::string fileExtension = getFileExtension(request.getRequestTarget());
-		std::cout << "fileExtension: " << fileExtension << std::endl;
+		Debug::log("fileExtension: " + fileExtension, Debug::CGI);
 		for (size_t i = 0; i < cgiExtensions.size(); i++)
 		{
-			std::cout << "cgiExtensions[" << i << "]: " << cgiExtensions[i] << std::endl;
+			Debug::log("cgiExtensions[" + toString(i) + "]: " + cgiExtensions[i], Debug::CGI);
 			if (cgiExtensions[i] == fileExtension)
 			{
-				Debug::log("requestIsCGI: CGI request detected", Debug::NORMAL);
+				Debug::log("requestIsCGI: CGI request detected", Debug::CGI);
 				return true;
 			}
 		}
 	}
-	Debug::log("requestIsCGI: Not a CGI request", Debug::NORMAL);
+	Debug::log("requestIsCGI: Not a CGI request", Debug::CGI);
 	return false;
 }
 
@@ -334,13 +323,12 @@ enum PathValidation Router::pathIsValid(HTTPResponse &response, HTTPRequest &req
 	if (!isDirectory(path) && stat(path.c_str(), &buffer) == 0)
 	{
 		Debug::log("pathIsValid: stat success", Debug::NORMAL);
-		std::cout << " path :" << path << std::endl;
+		Debug::log("pathIsValid: " + path, Debug::NORMAL);
 		return PathValid;
 	}
 	else if (!isDirectory(path) && stat(path.c_str(), &buffer) != 0)
 	{
-		std::cout << "Failed to stat the file at path: " << path << std::endl;
-		Debug::log("pathIsValid: stat failed, path does not exist", Debug::NORMAL);
+		Debug::log("pathIsValid: stat failed: " + path, Debug::NORMAL);
 		return PathInvalid;
 	}
 
@@ -355,13 +343,13 @@ enum PathValidation Router::pathIsValid(HTTPResponse &response, HTTPRequest &req
 				std::string index = _directive._index[i];
 				std::string tmpPath = request.getPath();
 				tmpPath = tmpPath + "/" + index;
-				std::cout << "tmpPath: " << tmpPath << std::endl;
+				Debug::log("user error path: " + tmpPath, Debug::NORMAL);
 				if (stat(tmpPath.c_str(), &buffer) == 0)
 				{
 					if (tmpPath.find("//") != std::string::npos)
 						tmpPath.replace(tmpPath.find("//"), 2, "/");
 
-					std::cout << "tmpPath: " << tmpPath << std::endl;
+					Debug::log("user error path: " + tmpPath, Debug::NORMAL);
 					Debug::log("pathIsValid: using index from user: " + index, Debug::NORMAL);
 					request.setPath(tmpPath);
 					return PathValid;
@@ -372,7 +360,7 @@ enum PathValidation Router::pathIsValid(HTTPResponse &response, HTTPRequest &req
 		if (!path.empty())
 		{
 			path += "/index.html"; // append /index.html
-			std::cout << "path: " << path << std::endl;
+			Debug::log("pathIsValid: " + path, Debug::NORMAL);
 			if (stat(path.c_str(), &buffer) == 0)
 			{
 				Debug::log("pathIsValid: using default index.html", Debug::NORMAL);
@@ -385,7 +373,7 @@ enum PathValidation Router::pathIsValid(HTTPResponse &response, HTTPRequest &req
 		{
 			Debug::log("pathIsValid: Autoindex is on", Debug::NORMAL);
 			generateDirectoryListing(response, path, request.getRequestTarget());
-			std::cout << "Directory listing generated for " << path << std::endl;
+			Debug::log("pathIsValid: generated directory listing for " + path, Debug::NORMAL);
 			return IsDirectoryListing;
 		}
 		Debug::log("pathIsValid: invalid path", Debug::NORMAL);
