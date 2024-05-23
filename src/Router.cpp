@@ -52,6 +52,7 @@ void Router::routeRequest(HTTPRequest &request, HTTPResponse &response)
 {
 	Debug::log("Routing Request: host = " + request.getSingleHeader("host").second, Debug::NORMAL);
 
+	// in case of redirection
 	if (!_directive._return.empty())
 	{
 		response.setStatusCode(301, "Redirection");

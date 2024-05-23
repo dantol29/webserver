@@ -3,7 +3,7 @@
 #include "webserv.hpp"
 #include <algorithm> // For std::remove
 #include <iostream>	 // For std::cout
-
+#include "ServerEventListener.hpp"
 // Constructor
 EventManager::EventManager()
 {
@@ -46,6 +46,15 @@ void EventManager::emit(const EventData &eventData)
 	Debug::log("Size of observers: " + toString(_observers.size()), Debug::EVENTS);
 	for (std::vector<IEventListener *>::iterator it = _observers.begin(); it != _observers.end(); ++it)
 	{
+		ServerEventListener *serverEventListener = dynamic_cast<ServerEventListener *>(*it);
 		(*it)->handleEvent(eventData);
+		std::cout << RED << serverEventListener->getServer().getCGICounter() << RESET << std::endl;
+		_pipeFDs = serverEventListener->getServer().getPipeFDs();
 	}
 }
+// clang-format off
+std::vector<std::pair<int, int> > EventManager::getPipeFDs() const
+{
+	return _pipeFDs;
+}
+//clang-format on

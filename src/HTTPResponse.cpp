@@ -1,14 +1,22 @@
 #include "HTTPResponse.hpp"
 #include <sstream>
 
-HTTPResponse::HTTPResponse() : _statusCode(0)
+HTTPResponse::HTTPResponse()
 {
 	// We initialize the status code to 0 to indicate that it has not been set
+	_statusCode = 0;
+	_isCGI = false;
+	// We should initialize the pipe file descriptors to -1 to indicate that they are not set
+	// 0 is a valid file descriptor, so we can't use it to indicate that the pipe is not set
+	_CGIpipeFD[0] = -1;
+	_CGIpipeFD[1] = -1;
 }
 
 HTTPResponse::HTTPResponse(const HTTPResponse &other)
 	: _statusCode(other._statusCode), _headers(other._headers), _body(other._body), _isCGI(other._isCGI)
 {
+	_CGIpipeFD[0] = other._CGIpipeFD[0];
+	_CGIpipeFD[1] = other._CGIpipeFD[1];
 }
 void HTTPResponse::setErrorResponse(int statusCode)
 {
@@ -54,6 +62,8 @@ HTTPResponse &HTTPResponse::operator=(const HTTPResponse &other)
 		_headers = other._headers;
 		_body = other._body;
 		_isCGI = other._isCGI;
+		_CGIpipeFD[0] = other._CGIpipeFD[0];
+		_CGIpipeFD[1] = other._CGIpipeFD[1];
 	}
 	return *this;
 }

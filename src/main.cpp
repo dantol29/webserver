@@ -24,7 +24,6 @@ int main(int argc, char **argv)
 	Server webserv(config, eventManager);
 
 	ServerEventListener serverEventListener(webserv);
-
 	eventManager.subscribe(&serverEventListener);
 
 	webserv.startListening();

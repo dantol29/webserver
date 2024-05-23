@@ -102,8 +102,8 @@ bool UploadHandler::createFile(HTTPRequest &request)
 
 	for (it = files.begin(); it != files.end(); ++it)
 	{
-		std::string filePath = _uploadDir + (it->headers.find("filename"))->second;
-		Debug::log("Creating file at " + filePath, Debug::NORMAL);
+		std::string filePath = _uploadDir + "/" + (it->headers.find("filename"))->second;
+		std::cout << "Creating file at " << filePath << std::endl;
 		std::ofstream outfile(filePath.c_str());
 		if (outfile.is_open())
 		{
@@ -127,7 +127,7 @@ bool UploadHandler::createFileChunked(HTTPRequest &request)
 	else
 		_uploadDir = request.getRoot() + request.getHost() + "/" + _uploadDir;
 	std::string filepath = "chunked_upload.jpg";
-	_uploadDir += filepath;
+	_uploadDir = _uploadDir + "/" + filepath;
 
 	std::ofstream outfile(_uploadDir.c_str());
 	if (outfile.is_open())
@@ -159,12 +159,10 @@ void UploadHandler::handleRequest(HTTPRequest &request, HTTPResponse &response)
 	}
 	else
 	{
-		// logic is incorrect here in case of chunked request
-		// temporary solution
+		std::cout << PURPLE << "calling create file chunked" << RESET << std::endl;
 		if (!createFileChunked(const_cast<HTTPRequest &>(request)))
 			return (response.setStatusCode(422, "Unprocessable Entity"));
 		handleResponse(response, SUCCESS);
-
 	}
 }
 

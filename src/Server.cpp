@@ -6,6 +6,8 @@
 #include "EventManager.hpp"
 #include "signal.h"
 
+#define CGI_BUFFER_SIZE 100 // 4 KB
+
 Server::Server(const Config &config, EventManager &eventManager) : _config(config), _eventManager(eventManager)
 {
 	_maxClients = 10;
@@ -14,6 +16,7 @@ Server::Server(const Config &config, EventManager &eventManager) : _config(confi
 	_serverSockets = std::vector<ServerSocket>();
 	_hasCGI = false;
 	_CGICounter = 0;
+	_clientCounter = 0;
 	Debug::log("Server created with config constructor", Debug::OCF);
 }
 
@@ -70,6 +73,11 @@ void Server::startPollEventLoop()
 	{
 		if (_hasCGI)
 			timeout = 1000; // 1 seconds
+		else if (_clientCounter > 0)
+		{
+			std::cout << BLUE << "Client counter: " << _clientCounter << RESET << std::endl;
+			timeout = 5000; // 15 seconds
+		}
 		else
 			timeout = -1;
 		//printConnections("BEFORE POLL", _FDs, _connections, true);
@@ -77,8 +85,8 @@ void Server::startPollEventLoop()
 		" Waiting for new connection or Polling +++++++++++++++" + toString(RESET), Debug::SERVER);
 		int ret = poll(_FDs.data(), _FDs.size(), timeout);
 		pollCounter++;
-		// printFrame("POLL EVENT DETECTED", true);
-		// printConnections("AFTER POLL", _FDs, _connections, true);
+		printFrame("POLL EVENT DETECTED", true);
+		printConnections("AFTER POLL", _FDs, _connections, true);
 		if (ret > 0)
 		{
 			size_t originalSize = _FDs.size();
@@ -91,6 +99,9 @@ void Server::startPollEventLoop()
 						acceptNewConnection(_connections[i]);
 					else
 					{
+						if (_FDs[i].revents & (POLLIN))
+							_connections[i].setStartTime(time(NULL));
+
 						handleConnection(_connections[i], i);
 						if ((_connections[i].getHasFinishedReading() && _connections[i].getHasDataToSend()))
 							_FDs[i].events = POLLOUT;
@@ -148,6 +159,9 @@ void Server::waitCGI()
 		// Check if the CGI has timed out
 		for (size_t i = 0; i < originalSize && i < _FDs.size(); i++)
 		{
+			if (!_connections[i].getHasCGI())
+				continue;
+
 			double elapsed = difftime(time(NULL), _connections[i].getCGIStartTime());
 			Debug::log("Elapsed time: " + toString(elapsed) + " seconds", Debug::CGI);
 			if (_connections[i].getHasCGI() && elapsed > 1)
@@ -300,7 +314,11 @@ void Server::buildResponse(Connection &conn, size_t &i, HTTPRequest &request, HT
 			response.setIsCGI(false);
 		}
 		else
-			return (buildCGIResponse(conn, response));
+		{
+			readCGIPipe(conn, response);
+			if (response.getStatusCode() < 300)
+				return;
+		}
 	}
 
 	ServerBlock serverBlock;
@@ -343,72 +361,51 @@ void Server::buildResponse(Connection &conn, size_t &i, HTTPRequest &request, HT
 	}
 }
 
-void Server::buildCGIResponse(Connection &conn, HTTPResponse &response)
+void Server::readCGIPipe(Connection &conn, HTTPResponse &response)
 {
 	Debug::log("Entering buildCGIResponse", Debug::CGI);
 	std::string cgiOutput;
 	int *pipeFD;
 	pipeFD = response.getCGIpipeFD();
-	char readBuffer[256];
-	// TODO: this is blokcing - we need to make it non-blocking
-	// I.e. read 1 buffer and then go back to poll
-	Debug::log("Reading from pipe", Debug::CGI);
+	char readBuffer[4096];
 	ssize_t bytesRead;
 
-	do
+	bytesRead = read(pipeFD[0], readBuffer, CGI_BUFFER_SIZE - 1);
+	std::cout << "Bytes read: " << bytesRead << std::endl;
+	if (bytesRead > 0)
 	{
-		bytesRead = read(pipeFD[0], readBuffer, sizeof(readBuffer) - 1);
-		Debug::log("Bytes read: " + toString(bytesRead), Debug::CGI);
-		if (bytesRead > 0)
-		{
-			Debug::log("Bytes read: " + toString(bytesRead), Debug::CGI);
-			readBuffer[bytesRead] = '\0';
-			cgiOutput += readBuffer;
-		}
-		else if (bytesRead == 0)
-		{
-			Debug::log("End of data stream reached", Debug::CGI);
-			break; // Optional: Explicitly break if you need to perform additional cleanup.
-		}
-		else
-		{
-			Debug::log("Error reading data", Debug::CGI);
-			break; // Break or handle the error as needed.
-		}
-	} while (bytesRead > 0);
-
-	Debug::log("CGI output: " + cgiOutput, Debug::CGI);
-	close(pipeFD[0]);
+		readBuffer[bytesRead] = '\0';
+		cgiOutput += readBuffer;
+	}
+	else if (bytesRead < 0)
+		std::cerr << "Error reading data: " << strerror(errno) << std::endl;
 
 	int status = conn.getCGIExitStatus();
-	//
-	// if (waitedPid == -1)
-	// {
-	// 	perror("waitpid");
-	// 	return "HTTP/1.1 500 Internal Server Error\r\nContent-Length: 0\r\n\r\n";
-	// }
 
-	if (WIFEXITED(status) && WEXITSTATUS(status) != 0)
+	// if the CGI has exited with an error or the output is empty, we wanna go to buildResponse
+	if ((WIFEXITED(status) && WEXITSTATUS(status) != 0) || cgiOutput.empty())
 	{
 		response.setStatusCode(500, "Internal Server Error");
-		conn.setHasDataToSend(true);
 		response.setIsCGI(false);
-		// TODO: should we set other flags here?
+		close(pipeFD[0]);
 		return;
 	}
 
-	if (cgiOutput.empty())
-	{
-		response.setStatusCode(500, "Internal Server Error");
-		conn.setHasDataToSend(true);
-		response.setIsCGI(false);
-		return;
-	}
-	response.CGIStringToResponse(cgiOutput);
-	response.setIsCGI(false);
-	conn.setHasDataToSend(true);
+	// if we have read all the data from the pipe
+	if (bytesRead == 0 || cgiOutput.size() < CGI_BUFFER_SIZE - 1)
+		conn.setCGIHasReadPipe(true);
 
-	// return cgiOutput;
+	// add cgiOutput to buffer
+	conn.setCGIOutputBuffer(conn.getCGIOutputBuffer() + cgiOutput);
+
+	// if finished reading from pipe, we wanna go to writeToClient
+	if (conn.getCGIHasReadPipe())
+	{
+		response.setIsCGI(false);
+		conn.setHasDataToSend(true);
+		response.CGIStringToResponse(conn.getCGIOutputBuffer());
+		close(pipeFD[0]);
+	}
 }
 
 void Server::writeToClient(Connection &conn, size_t &i, HTTPResponse &response)
@@ -469,6 +466,7 @@ void Server::closeClientConnection(Connection &conn, size_t &i)
 	close(conn.getPollFd().fd);
 	_FDs.erase(_FDs.begin() + i);
 	_connections.erase(_connections.begin() + i);
+	--_clientCounter;
 	--i;
 }
 
@@ -487,6 +485,8 @@ void Server::handleConnection(Connection &conn, size_t &i)
 
 	if (conn.getHasReadSocket() && !conn.getHasFinishedReading())
 		return;
+	}
+	std::cout << request << std::endl;
 	if (!conn.getCanBeClosed() && !conn.getHasDataToSend())
 		buildResponse(conn, i, request, response);
 	// MInd that after the last read from the pipe of the CGI getHasReadSocket will be false but we will have a read
@@ -496,6 +496,11 @@ void Server::handleConnection(Connection &conn, size_t &i)
 
 	if (conn.getCanBeClosed())
 		closeClientConnection(conn, i);
+
+	// Validate the CGI pipe file descriptors before accessingjj
+	// TODO: following line get an overflow on mac
+	// std::cout << BLUE << *response.getCGIpipeFD() << RESET << std::endl;
+	std::cout << RED << "Exiting handleConnection" << RESET << std::endl;
 }
 
 /*** Private Methods ***/
@@ -747,7 +752,10 @@ void Server::acceptNewConnection(Connection &conn)
 		}
 		/* start together */
 		_FDs.push_back(newSocketPoll);
-		_connections.push_back(newConnection);;
+		_connections.push_back(newConnection);
+		++_clientCounter;
+		std::cout << newConnection.getHasFinishedReading() << std::endl;
+		std::cout << _connections.back().getHasFinishedReading() << std::endl;
 		/* end together */
 		if (VERBOSE)
 		{
@@ -814,7 +822,26 @@ void Server::handleClientSocketError(int clientFD, size_t &i)
 void Server::handleSocketTimeoutIfAny()
 {
 	// Is not the socket timeout, but the poll timeout
-	Debug::log("Timeout occurred", Debug::SERVER);
+	std::cout << "Timeout occurred!" << std::endl;
+
+	// loop through the connections and check for timeout
+	for (size_t i = 0; i < _FDs.size(); i++)
+	{
+		if (_connections[i].getType() == SERVER || _connections[i].getStartTime() == 0)
+			continue;
+
+		double elapsed = difftime(time(NULL), _connections[i].getStartTime());
+		if (elapsed > 3)
+		{
+			std::cout << RED << "Elapsed time: " << elapsed << " seconds" << RESET << std::endl;
+			// We have to send a 408 Request Timeout
+			_connections[i].getResponse().setStatusCode(408, "Request Timeout");
+			buildResponse(_connections[i], i, _connections[i].getRequest(), _connections[i].getResponse());
+			writeToClient(_connections[i], i, _connections[i].getResponse());
+			// we have to close the connection
+			closeClientConnection(_connections[i], i);
+		}
+	}
 	// This should never happen with an infinite timeout
 }
 
@@ -942,3 +969,20 @@ void Server::findLocationBlock(HTTPRequest &request, ServerBlock &serverBlock, D
 		}
 	}
 }
+
+void Server::addPipeFDs(int pipe0, int pipe1)
+{
+	_pipeFDs.push_back(std::make_pair(pipe0, pipe1));
+	// print the pipe fds
+	for (size_t i = 0; i < _pipeFDs.size(); i++)
+	{
+		std::cout << PURPLE << "Pipe FDs: " << _pipeFDs[i].first << RESET << std::endl;
+	}
+}
+
+// clang-format off
+std::vector<std::pair<int, int> > Server::getPipeFDs() const
+{
+	return _pipeFDs;
+}
+// clang-format on

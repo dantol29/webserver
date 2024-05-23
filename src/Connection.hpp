@@ -48,6 +48,7 @@ class Connection
 	size_t _responseSize;
 	size_t _responseSizeSent;
 	std::string _responseString;
+	time_t _startTime;
 	bool _hasCGI;
 	bool _CGIHasExited;
 	pid_t _CGIPid;
@@ -55,6 +56,8 @@ class Connection
 	time_t _CGIStartTime;
 	bool _CGIHasCompleted;
 	bool _CGIHasTimedOut;
+	bool _CGIHasReadPipe;
+	std::string _cgiOutputBuffer;
 
   public:
 	Connection(struct pollfd &pollFd, Server &server);
@@ -66,7 +69,6 @@ class Connection
 	bool readChunkedBody(Parser &parser);
 	bool readChunkSize(std::string &line);
 	bool readChunk(size_t chunkSize, std::string &chunkedData, HTTPResponse &response);
-	bool readBody(Parser &parser, HTTPRequest &req, HTTPResponse &res, Config &config);
 	bool readBody(Parser &parser, HTTPRequest &req, HTTPResponse &res);
 
 	/* Getters */
@@ -84,6 +86,7 @@ class Connection
 	unsigned short getServerPort() const;
 	size_t getResponseSize() const;
 	size_t getResponseSizeSent() const;
+	time_t getStartTime() const;
 
 	bool getHasReadSocket() const;
 	bool getHasFinishedReading() const;
@@ -98,6 +101,8 @@ class Connection
 	int getCGIExitStatus() const;
 	bool getCGIHasCompleted() const;
 	bool getCGIHasTimedOut() const;
+	bool getCGIHasReadPipe() const;
+	std::string getCGIOutputBuffer() const;
 
 	/* Setters */
 	void setResponseString(std::string responseString);
@@ -113,6 +118,7 @@ class Connection
 	void setCanBeClosed(bool value);
 	void setHasDataToSend(bool value);
 	void setHasFinishedSending(bool value);
+	void setStartTime(time_t startTime);
 
 	void setHasCGI(bool value);
 	void setCGIPid(pid_t pid);
@@ -121,6 +127,8 @@ class Connection
 	void setCGIExitStatus(int status);
 	void setCGIHasCompleted(bool value);
 	void setCGIHasTimedOut(bool value);
+	void setCGIHasReadPipe(bool value);
+	void setCGIOutputBuffer(std::string output);
 	/* CGI */
 	void addCGI(pid_t pid);
 	void removeCGI(int status);
