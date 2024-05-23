@@ -167,7 +167,7 @@ bool CGIHandler::executeCGI(const MetaVariables &env, HTTPResponse &response)
 	response.setIsCGI(true);
 	response.setCGIpipeFD(pipeFD);
 
-	std::cout << "PIPE SAVED: "<< *response.getCGIpipeFD() << std::endl;
+	Debug::log("PIPE SAVED: " + toString(*response.getCGIpipeFD()), Debug::CGI);
 
 	close(pipeFD[1]);
 	EventData data = {1, pid, pipeFD[0], pipeFD[1]}; // Assuming 1 is the event type for CGI started
@@ -175,16 +175,16 @@ bool CGIHandler::executeCGI(const MetaVariables &env, HTTPResponse &response)
 	_eventManager.emit(data); // Emit event indicating a CGI process has started
 
 	_connection.addCGI(pid);
-	std::cout << GREEN << _connection.getCGIPid() << RESET << std::endl;
+	Debug::log("CGIHandler: CGI PID: " + toString(pid), Debug::CGI);
 
 	// clang-format off
-	std::vector<std::pair<int, int> > pipes = _eventManager.getPipeFDs();
-	for (std::vector<std::pair<int, int> >::const_iterator it = pipes.begin(); it != pipes.end(); ++it)
-	{
-		std::cout << GREEN << "CGIHandler: pipeFDs: " << (*it).first << RESET << std::endl;
-	}
+	// std::vector<std::pair<int, int> > pipes = _eventManager.getPipeFDs();
+	// for (std::vector<std::pair<int, int> >::const_iterator it = pipes.begin(); it != pipes.end(); ++it)
+	// {
+	// 	std::cout << GREEN << "CGIHandler: pipeFDs: " << (*it).first << RESET << std::endl;
+	// }
 	// clang-format on
-	std::cout << RED << "Exiting CGIHandler::executeCGI with true" << RESET << std::endl;
+	Debug::log("CGIHandler: Waiting for CGI to finish", Debug::CGI);
 	return true;
 }
 

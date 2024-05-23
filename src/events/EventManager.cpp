@@ -48,7 +48,7 @@ void EventManager::emit(const EventData &eventData)
 	{
 		ServerEventListener *serverEventListener = dynamic_cast<ServerEventListener *>(*it);
 		(*it)->handleEvent(eventData);
-		std::cout << RED << serverEventListener->getServer().getCGICounter() << RESET << std::endl;
+		//std::cout << RED << serverEventListener->getServer().getCGICounter() << RESET << std::endl;
 		_pipeFDs = serverEventListener->getServer().getPipeFDs();
 	}
 }

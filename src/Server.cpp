@@ -72,11 +72,11 @@ void Server::startPollEventLoop()
 	while (1)
 	{
 		if (_hasCGI)
-			timeout = 1000; // 1 seconds
+			timeout = 500; // 0.5 seconds
 		else if (_clientCounter > 0)
 		{
-			std::cout << BLUE << "Client counter: " << _clientCounter << RESET << std::endl;
-			timeout = 5000; // 15 seconds
+			Debug::log("Client counter: " + toString(_clientCounter), Debug::SERVER);
+			timeout = 15000; // 15 seconds
 		}
 		else
 			timeout = -1;
@@ -85,8 +85,8 @@ void Server::startPollEventLoop()
 		" Waiting for new connection or Polling +++++++++++++++" + toString(RESET), Debug::SERVER);
 		int ret = poll(_FDs.data(), _FDs.size(), timeout);
 		pollCounter++;
-		printFrame("POLL EVENT DETECTED", true);
-		printConnections("AFTER POLL", _FDs, _connections, true);
+		//printFrame("POLL EVENT DETECTED", true);
+		//printConnections("AFTER POLL", _FDs, _connections, true);
 		if (ret > 0)
 		{
 			size_t originalSize = _FDs.size();
@@ -164,7 +164,7 @@ void Server::waitCGI()
 
 			double elapsed = difftime(time(NULL), _connections[i].getCGIStartTime());
 			Debug::log("Elapsed time: " + toString(elapsed) + " seconds", Debug::CGI);
-			if (_connections[i].getHasCGI() && elapsed > 1)
+			if (_connections[i].getHasCGI() && elapsed > 10) // 10 seconds
 			{
 				Debug::log("CGI timed out", Debug::NORMAL);
 
@@ -371,7 +371,7 @@ void Server::readCGIPipe(Connection &conn, HTTPResponse &response)
 	ssize_t bytesRead;
 
 	bytesRead = read(pipeFD[0], readBuffer, CGI_BUFFER_SIZE - 1);
-	std::cout << "Bytes read: " << bytesRead << std::endl;
+	Debug::log("Bytes read: " + toString(bytesRead), Debug::CGI);
 	if (bytesRead > 0)
 	{
 		readBuffer[bytesRead] = '\0';
@@ -485,8 +485,7 @@ void Server::handleConnection(Connection &conn, size_t &i)
 
 	if (conn.getHasReadSocket() && !conn.getHasFinishedReading())
 		return;
-	}
-	std::cout << request << std::endl;
+
 	if (!conn.getCanBeClosed() && !conn.getHasDataToSend())
 		buildResponse(conn, i, request, response);
 	// MInd that after the last read from the pipe of the CGI getHasReadSocket will be false but we will have a read
@@ -496,11 +495,6 @@ void Server::handleConnection(Connection &conn, size_t &i)
 
 	if (conn.getCanBeClosed())
 		closeClientConnection(conn, i);
-
-	// Validate the CGI pipe file descriptors before accessingjj
-	// TODO: following line get an overflow on mac
-	// std::cout << BLUE << *response.getCGIpipeFD() << RESET << std::endl;
-	std::cout << RED << "Exiting handleConnection" << RESET << std::endl;
 }
 
 /*** Private Methods ***/
@@ -754,8 +748,6 @@ void Server::acceptNewConnection(Connection &conn)
 		_FDs.push_back(newSocketPoll);
 		_connections.push_back(newConnection);
 		++_clientCounter;
-		std::cout << newConnection.getHasFinishedReading() << std::endl;
-		std::cout << _connections.back().getHasFinishedReading() << std::endl;
 		/* end together */
 		if (VERBOSE)
 		{
@@ -819,11 +811,9 @@ void Server::handleClientSocketError(int clientFD, size_t &i)
 	perror("poll client socket error");
 }
 
+// Is not the socket timeout, but the poll timeout
 void Server::handleSocketTimeoutIfAny()
 {
-	// Is not the socket timeout, but the poll timeout
-	std::cout << "Timeout occurred!" << std::endl;
-
 	// loop through the connections and check for timeout
 	for (size_t i = 0; i < _FDs.size(); i++)
 	{
@@ -831,9 +821,9 @@ void Server::handleSocketTimeoutIfAny()
 			continue;
 
 		double elapsed = difftime(time(NULL), _connections[i].getStartTime());
-		if (elapsed > 3)
+		if (elapsed > 10000) // 10 seconds
 		{
-			std::cout << RED << "Elapsed time: " << elapsed << " seconds" << RESET << std::endl;
+			Debug::log("Elapsed time: " + toString(elapsed) + " seconds", Debug::SERVER);
 			// We have to send a 408 Request Timeout
 			_connections[i].getResponse().setStatusCode(408, "Request Timeout");
 			buildResponse(_connections[i], i, _connections[i].getRequest(), _connections[i].getResponse());
@@ -973,11 +963,6 @@ void Server::findLocationBlock(HTTPRequest &request, ServerBlock &serverBlock, D
 void Server::addPipeFDs(int pipe0, int pipe1)
 {
 	_pipeFDs.push_back(std::make_pair(pipe0, pipe1));
-	// print the pipe fds
-	for (size_t i = 0; i < _pipeFDs.size(); i++)
-	{
-		std::cout << PURPLE << "Pipe FDs: " << _pipeFDs[i].first << RESET << std::endl;
-	}
 }
 
 // clang-format off
