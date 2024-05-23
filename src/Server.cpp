@@ -728,7 +728,7 @@ void Server::addServerSocketsPollFdToVectors()
 void Server::acceptNewConnection(Connection &conn)
 {
 
-	// printFrame("SERVER SOCKET EVENT", true);
+	printFrame("SERVER SOCKET EVENT", true);
 	struct sockaddr_storage clientAddress;
 	socklen_t ClientAddrLen = sizeof(clientAddress);
 	Debug::log("New connection detected", Debug::SERVER);

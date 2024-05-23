@@ -34,6 +34,7 @@ class Debug
 	static void addLevel(Level level);
 	static void removeLevel(Level leve);
 	static void log(const std::string &message, Debug::Level paramLevel);
+	static void log(const std::string &message, Debug::Level paramLevel, const std::string &color);
 };
 
 #endif
