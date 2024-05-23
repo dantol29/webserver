@@ -6,8 +6,10 @@ HTTPResponse::HTTPResponse()
 	// We initialize the status code to 0 to indicate that it has not been set
 	_statusCode = 0;
 	_isCGI = false;
-	_CGIpipeFD[0] = 0;
-	_CGIpipeFD[1] = 0;
+	// We should initialize the pipe file descriptors to -1 to indicate that they are not set
+	// 0 is a valid file descriptor, so we can't use it to indicate that the pipe is not set
+	_CGIpipeFD[0] = -1;
+	_CGIpipeFD[1] = -1;
 }
 
 HTTPResponse::HTTPResponse(const HTTPResponse &other)

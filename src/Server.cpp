@@ -6,7 +6,7 @@
 #include "EventManager.hpp"
 #include "signal.h"
 
-# define CGI_BUFFER_SIZE 100 // 4 KB
+#define CGI_BUFFER_SIZE 100 // 4 KB
 
 Server::Server(const Config &config, EventManager &eventManager) : _config(config), _eventManager(eventManager)
 {
@@ -101,7 +101,7 @@ void Server::startPollEventLoop()
 					{
 						if (_FDs[i].revents & (POLLIN))
 							_connections[i].setStartTime(time(NULL));
-	
+
 						handleConnection(_connections[i], i);
 						if ((_connections[i].getHasFinishedReading() && _connections[i].getHasDataToSend()))
 							_FDs[i].events = POLLOUT;
@@ -136,9 +136,8 @@ void Server::waitCGI()
 
 	for (size_t i = 0; i < originalSize && i < _FDs.size(); i++)
 	{
-		std::cout << "PID: "<< _connections[i].getCGIPid() << ", hasCGI: " << _connections[i].getHasCGI() \
-		<< ", pipeFD: " << *_connections[i].getResponse().getCGIpipeFD()<< std::endl;
-
+		std::cout << "PID: " << _connections[i].getCGIPid() << ", hasCGI: " << _connections[i].getHasCGI()
+				  << ", pipeFD: " << *_connections[i].getResponse().getCGIpipeFD() << std::endl;
 	}
 
 	if (pid > 0)
@@ -164,7 +163,7 @@ void Server::waitCGI()
 		{
 			if (!_connections[i].getHasCGI())
 				continue;
-	
+
 			double elapsed = difftime(time(NULL), _connections[i].getCGIStartTime());
 			std::cout << RED << "Elapsed time: " << elapsed << " seconds" << RESET << std::endl;
 			if (_connections[i].getHasCGI() && elapsed > 500)
@@ -373,7 +372,6 @@ void Server::readCGIPipe(Connection &conn, HTTPResponse &response)
 	char readBuffer[4096];
 	ssize_t bytesRead;
 
-
 	bytesRead = read(pipeFD[0], readBuffer, CGI_BUFFER_SIZE - 1);
 	std::cout << "Bytes read: " << bytesRead << std::endl;
 	if (bytesRead > 0)
@@ -394,7 +392,7 @@ void Server::readCGIPipe(Connection &conn, HTTPResponse &response)
 		close(pipeFD[0]);
 		return;
 	}
-	
+
 	// if we have read all the data from the pipe
 	if (bytesRead == 0 || cgiOutput.size() < CGI_BUFFER_SIZE - 1)
 		conn.setCGIHasReadPipe(true);
@@ -414,7 +412,9 @@ void Server::readCGIPipe(Connection &conn, HTTPResponse &response)
 
 void Server::writeToClient(Connection &conn, size_t &i, HTTPResponse &response)
 {
-	std::cout << "\033[1;36m" << "Entering writeToClient" << "\033[0m" << std::endl;
+	std::cout << "\033[1;36m"
+			  << "Entering writeToClient"
+			  << "\033[0m" << std::endl;
 	std::cout << response << std::endl;
 	static int sendResponseCounter = 0;
 	bool isLastSend = false;
@@ -456,7 +456,9 @@ void Server::writeToClient(Connection &conn, size_t &i, HTTPResponse &response)
 
 void Server::closeClientConnection(Connection &conn, size_t &i)
 {
-	std::cout << "\033[1;36m" << "Entering closeClientConnection" << "\033[0m" << std::endl;
+	std::cout << "\033[1;36m"
+			  << "Entering closeClientConnection"
+			  << "\033[0m" << std::endl;
 	// TODO: should we close it with the Destructor of the Connection class?
 	close(conn.getPollFd().fd);
 	_FDs.erase(_FDs.begin() + i);
@@ -471,8 +473,10 @@ void Server::handleConnection(Connection &conn, size_t &i)
 	HTTPRequest &request = _connections[i].getRequest();
 	HTTPResponse &response = _connections[i].getResponse();
 
-	//printFrame("CLIENT SOCKET EVENT", true);
-	std::cout << "\033[1;36m" << "Entering handleConnection" << "\033[0m" << std::endl;
+	// printFrame("CLIENT SOCKET EVENT", true);
+	std::cout << "\033[1;36m"
+			  << "Entering handleConnection"
+			  << "\033[0m" << std::endl;
 	std::cout << BLUE << *response.getCGIpipeFD() << RESET << std::endl;
 
 	conn.setHasReadSocket(false);
@@ -491,8 +495,11 @@ void Server::handleConnection(Connection &conn, size_t &i)
 
 	if (conn.getCanBeClosed())
 		closeClientConnection(conn, i);
+
+	// Validate the CGI pipe file descriptors before accessingjj
+	// TODO: following line get an overflow on mac
+	// std::cout << BLUE << *response.getCGIpipeFD() << RESET << std::endl;
 	std::cout << RED << "Exiting handleConnection" << RESET << std::endl;
-	std::cout << BLUE << *response.getCGIpipeFD() << RESET << std::endl;
 }
 
 /*** Private Methods ***/
@@ -823,7 +830,7 @@ void Server::handleSocketTimeoutIfAny()
 	{
 		if (_connections[i].getType() == SERVER || _connections[i].getStartTime() == 0)
 			continue;
-	
+
 		double elapsed = difftime(time(NULL), _connections[i].getStartTime());
 		if (elapsed > 3)
 		{
