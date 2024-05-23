@@ -2,6 +2,7 @@
 #define DEBUG_HPP
 
 #include <iostream>
+#include <iomanip>
 #include <string>
 
 class Debug
@@ -33,8 +34,12 @@ class Debug
 	static void setLevel(Level level);
 	static void addLevel(Level level);
 	static void removeLevel(Level leve);
-	static void log(const std::string &message, Debug::Level paramLevel);
-	static void log(const std::string &message, Debug::Level paramLevel, const std::string &color);
+	// static void log(const std::string &message, Debug::Level paramLevel);
+	static void log(const std::string &message,
+					Debug::Level paramLevel,
+					const std::string &color = "\033[0m",
+					bool bliking = false,
+					bool frame = false);
 };
 
 #endif

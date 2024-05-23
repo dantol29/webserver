@@ -77,7 +77,7 @@ void Server::startPollEventLoop()
 				  << " Waiting for new connection or Polling +++++++++++++++" << RESET << std::endl;
 		int ret = poll(_FDs.data(), _FDs.size(), timeout);
 		pollCounter++;
-		// printFrame("POLL EVENT DETECTED", true);
+		Debug::log("Poll event detected", Debug::SERVER, YELLOW, false, true);
 		// printConnections("AFTER POLL", _FDs, _connections, true);
 		if (ret > 0)
 		{
@@ -476,10 +476,8 @@ void Server::handleConnection(Connection &conn, size_t &i)
 	HTTPRequest &request = _connections[i].getRequest();
 	HTTPResponse &response = _connections[i].getResponse();
 
-	// printFrame("CLIENT SOCKET EVENT", true);
-	std::cout << "\033[1;36m"
-			  << "Entering handleConnection"
-			  << "\033[0m" << std::endl;
+	Debug::log("Client socket event", Debug::SERVER, CYAN, false, true);
+	Debug::log("Entering handleConnection", Debug::SERVER);
 
 	conn.setHasReadSocket(false);
 	std::cout << "Has finished reading: " << conn.getHasFinishedReading() << std::endl;
@@ -728,7 +726,7 @@ void Server::addServerSocketsPollFdToVectors()
 void Server::acceptNewConnection(Connection &conn)
 {
 
-	printFrame("SERVER SOCKET EVENT", true);
+	Debug::log("SERVER SOCKET EVENT", Debug::SERVER, CYAN, false, true);
 	struct sockaddr_storage clientAddress;
 	socklen_t ClientAddrLen = sizeof(clientAddress);
 	Debug::log("New connection detected", Debug::SERVER);
