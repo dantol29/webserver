@@ -416,7 +416,9 @@ void Server::buildCGIResponse(Connection &conn, HTTPResponse &response)
 
 void Server::writeToClient(Connection &conn, size_t &i, HTTPResponse &response)
 {
-	std::cout << "\033[1;36m" << "Entering writeToClient" << "\033[0m" << std::endl;
+	std::cout << "\033[1;36m"
+			  << "Entering writeToClient"
+			  << "\033[0m" << std::endl;
 	std::cout << response << std::endl;
 	static int sendResponseCounter = 0;
 	bool isLastSend = false;
@@ -458,7 +460,9 @@ void Server::writeToClient(Connection &conn, size_t &i, HTTPResponse &response)
 
 void Server::closeClientConnection(Connection &conn, size_t &i)
 {
-	std::cout << "\033[1;36m" << "Entering closeClientConnection" << "\033[0m" << std::endl;
+	std::cout << "\033[1;36m"
+			  << "Entering closeClientConnection"
+			  << "\033[0m" << std::endl;
 	// TODO: should we close it with the Destructor of the Connection class?
 	close(conn.getPollFd().fd);
 	_FDs.erase(_FDs.begin() + i);
@@ -473,7 +477,9 @@ void Server::handleConnection(Connection &conn, size_t &i)
 	HTTPResponse &response = _connections[i].getResponse();
 
 	// printFrame("CLIENT SOCKET EVENT", true);
-	std::cout << "\033[1;36m" << "Entering handleConnection" << "\033[0m" << std::endl;
+	std::cout << "\033[1;36m"
+			  << "Entering handleConnection"
+			  << "\033[0m" << std::endl;
 
 	conn.setHasReadSocket(false);
 	std::cout << "Has finished reading: " << conn.getHasFinishedReading() << std::endl;
@@ -722,8 +728,6 @@ void Server::addServerSocketsPollFdToVectors()
 void Server::acceptNewConnection(Connection &conn)
 {
 
-	// struct sockaddr_in clientAddress;
-	// We choose sockaddr_storage to be able to handle both IPv4 and IPv6
 	// printFrame("SERVER SOCKET EVENT", true);
 	struct sockaddr_storage clientAddress;
 	socklen_t ClientAddrLen = sizeof(clientAddress);
