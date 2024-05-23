@@ -3,6 +3,8 @@
 #include "webserv.hpp"
 #include "EventManager.hpp"
 #include "ServerEventListener.hpp"
+#include "SSLManager.hpp"
+#include "SSLContext.hpp"
 
 int main(int argc, char **argv)
 {
@@ -28,6 +30,12 @@ int main(int argc, char **argv)
 	eventManager.subscribe(&serverEventListener);
 
 	std::cout << &webserv.getEventManager() << std::endl;
+
+	// Initialize SSLManager and SSLContext
+	SSLManager *sslManager = SSLManager::getInstance();
+	(void)sslManager;
+	SSLContext sslContext;
+	(void)sslContext;
 
 	webserv.startListening();
 	webserv.startPollEventLoop();

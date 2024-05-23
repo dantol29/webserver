@@ -1,7 +1,8 @@
 # Compiler and Flags
 CXX = c++
-CXXFLAGS = -Wall -Wextra -Werror -std=c++98 -I. -Iinclude -Isrc -Isrc/events -g
+CXXFLAGS = -Wall -Wextra -Werror -std=c++98 -I. -Iinclude -Isrc -Isrc/events -Isrc/ssl -g
 DEPFLAGS = -MMD -MP
+LDFLAGS =
 
 UNAME_S := $(shell uname -s)
 # Additional Flags for macOS
@@ -27,6 +28,11 @@ else
     USE_LOCAL_OPENSSL := 1
 endif
 
+# Paths for local OpenSSL installation
+LOCAL_OPENSSL_DIR := $(CURDIR)/local/openssl
+LOCAL_INCLUDE := $(LOCAL_OPENSSL_DIR)/include
+LOCAL_LIB := $(LOCAL_OPENSSL_DIR)/lib
+
 # Source and Object Files
 SRCS = src/main.cpp \
 	src/Parser.cpp \
@@ -48,7 +54,9 @@ SRCS = src/main.cpp \
 	src/ServerSocket.cpp \
 	src/Listen.cpp \
 	src/events/EventManager.cpp \
-	src/events/ServerEventListener.cpp  
+	src/events/ServerEventListener.cpp \
+	src/ssl/SSLManager.cpp \
+	src/ssl/SSLContext.cpp 
 OBJDIR = obj
 OBJS = $(SRCS:%.cpp=$(OBJDIR)/%.o)
 
@@ -87,7 +95,7 @@ $(OBJDIR)/%.o: %.cpp
 
 # Linking the main target
 $(TARGET): $(OBJS)
-	$(CXX) $(CXXFLAGS) -o $(TARGET) $(OBJS)
+	$(CXX) $(CXXFLAGS) -o $(TARGET) $(OBJS)  $(LDFLAGS)
 
 # Cleaning up the build
 clean:
