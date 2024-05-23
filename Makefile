@@ -10,6 +10,23 @@ ifeq ($(UNAME_S), Darwin)
     LDFLAGS += -fsanitize=address
 endif
 
+# Check if pkg-config is available and OpenSSL is installed
+PKGCONFIG := $(shell which pkg-config)
+USE_LOCAL_OPENSSL := 0
+ifneq ($(PKGCONFIG),)
+    PKGCONFIG_OPENSSL := $(shell pkg-config --exists openssl && echo 1 || echo 0)
+    ifeq ($(PKGCONFIG_OPENSSL), 0)
+        USE_LOCAL_OPENSSL := 1
+    else
+        OPENSSL_INCLUDE := $(shell pkg-config --cflags-only-I openssl | sed 's/-I//')
+        OPENSSL_LIB := $(shell pkg-config --libs-only-L openssl | sed 's/-L//')
+        CXXFLAGS += -I$(OPENSSL_INCLUDE)
+        LDFLAGS += -L$(OPENSSL_LIB) -lssl -lcrypto
+    endif
+else
+    USE_LOCAL_OPENSSL := 1
+endif
+
 # Source and Object Files
 SRCS = src/main.cpp \
 	src/Parser.cpp \
@@ -39,7 +56,29 @@ OBJS = $(SRCS:%.cpp=$(OBJDIR)/%.o)
 TARGET = webserv
 
 # Build Rules
-all: $(TARGET)
+all: check_openssl $(TARGET)
+
+# Rule to check and install OpenSSL if needed
+check_openssl:
+ifeq ($(INSTALL_OPENSSL), 1)
+	@echo "OpenSSL not found. Installing locally..."
+	@$(MAKE) install_openssl
+else
+	@echo "Using system OpenSSL."
+endif
+
+# Rule to download, build, and install OpenSSL locally
+install_openssl:
+	@mkdir -p openssl
+	@cd openssl && \
+	wget https://www.openssl.org/source/openssl-1.1.1.tar.gz && \
+	tar -xzf openssl-1.1.1.tar.gz && \
+	cd openssl-1.1.1 && \
+	./config --prefix=$(LOCAL_OPENSSL_DIR) --openssldir=$(LOCAL_OPENSSL_DIR) no-shared && \
+	make && \
+	make install && \
+	cd ../.. && \
+	rm -rf openssl
 
 # Ensure the necessary directories exist before compiling anything
 $(OBJDIR)/%.o: %.cpp
@@ -60,4 +99,4 @@ fclean: clean
 
 re: fclean all
 
-.PHONY: all clean fclean re
+.PHONY: all clean fclean re check_openssl install_openssl
