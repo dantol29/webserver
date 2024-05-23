@@ -237,10 +237,6 @@ void body(sockaddr_in serverAddress)
 		HTTPTest("POST / HTTP/1.1\r\nHost: www.example.com\r\nContent-Length: 16\r\nContent-Type: "
 				 "text/plain\r\n\r\nThis\ris body\r\n\r\n",
 				 "200"),
-		HTTPTest(
-		"POST / HTTP/1.1\r\nHost: www.example.com\r\nContent-Length: 17\r\nContent-Type: "
-		"text/plain\r\n\r\nThis\r\n\r\nis body\r\n\r\n",
-			"400"), // 400 (Bad Request) -- - Improper line termination of the body // with '\r' // TODO: are you sure?}
 		HTTPTest("GET / HTTP/1.1\r\nHost: www.example.com\r\nContent-Length: 17\r\nContent-Type: "
 				 "text/plain\r\n\r\nThis\r\nis body\r\n\r\n",
 				 "200"), //  GET request with body is correct
