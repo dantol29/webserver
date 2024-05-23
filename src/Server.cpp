@@ -72,12 +72,9 @@ void Server::startPollEventLoop()
 	while (1)
 	{
 		if (_hasCGI)
-			timeout = 500; // 0.5 seconds
+			timeout = CGI_POLL_TIMEOUT_MS; // 0.5 seconds
 		else if (_clientCounter > 0)
-		{
-			Debug::log("Client counter: " + toString(_clientCounter), Debug::SERVER);
-			timeout = 15000; // 15 seconds
-		}
+			timeout = CLIENT_POLL_TIMEOUT_MS; // 15 seconds
 		else
 			timeout = -1;
 		//printConnections("BEFORE POLL", _FDs, _connections, true);
@@ -164,7 +161,7 @@ void Server::waitCGI()
 
 			double elapsed = difftime(time(NULL), _connections[i].getCGIStartTime());
 			Debug::log("Elapsed time: " + toString(elapsed) + " seconds", Debug::CGI);
-			if (_connections[i].getHasCGI() && elapsed > 10) // 10 seconds
+			if (_connections[i].getHasCGI() && elapsed > CGI_TIMEOUT_MS) // 10 seconds
 			{
 				Debug::log("CGI timed out", Debug::NORMAL);
 
@@ -821,7 +818,7 @@ void Server::handleSocketTimeoutIfAny()
 			continue;
 
 		double elapsed = difftime(time(NULL), _connections[i].getStartTime());
-		if (elapsed > 10000) // 10 seconds
+		if (elapsed > CLIENT_TIMEOUT_MS) // 10 seconds
 		{
 			Debug::log("Elapsed time: " + toString(elapsed) + " seconds", Debug::SERVER);
 			// We have to send a 408 Request Timeout

@@ -147,7 +147,7 @@ bool CGIHandler::executeCGI(const MetaVariables &env, HTTPResponse &response)
 
 		if (access(argvPointers[0], X_OK) == -1)
 		{
-			perror("access");
+			Debug::log("CGIHandler: access failed", Debug::CGI);
 			return false;
 			_exit(EXIT_FAILURE);
 			// TODO: @leo I don't think we should exit here. We don't want to kill the whole server cause of a CGI
@@ -157,7 +157,7 @@ bool CGIHandler::executeCGI(const MetaVariables &env, HTTPResponse &response)
 		// execve(argvPointers[0], argvPointers.data(), envpPointers.data());
 		if (execve(argvPointers[0], argvPointers.data(), envpPointers.data()) == -1)
 		{
-			perror("execve");
+			Debug::log("CGIHandler: execve failed", Debug::CGI);
 			return false;
 			// TODO: @leo We should check if execve failed and return an error response and not exti
 			_exit(EXIT_FAILURE);
