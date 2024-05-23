@@ -1,4 +1,4 @@
-name: GitHub Actions Demo
+name: Webserv Testing Workflow
 run-name: ${{ github.actor }} is testing ${{ github.repository }}
 on:
   push: # Trigger on push events
@@ -42,6 +42,8 @@ jobs:
           python3 -m pip install aiohttp asyncio aiofiles
       - name: Start webserv in background
         run: ./webserv &
+      - name: Install needed dependencies
+        run: sudo apt-get update && sudo apt-get install -y lsof curl
       - name: Run Config file tests
         if: always()
         working-directory: tests/config
@@ -102,4 +104,55 @@ jobs:
             echo "❌ Tests failed. Exiting with status code $exit_code."
             exit $exit_code
            fi
+      - name: Make parallel_cgi/duration_ts.sh executable
+        run: chmod +x tests/parallel_cgi/duration_ts.sh
+      - name: Run parallel CGIs Test
+        run: |
+          ./tests/parallel_cgi/duration_ts.sh
+            exit_code=$?
+            if [ $exit_code -ne 0 ]; then
+              echo "❌ Parallel CGI tests failed. Exiting with status code $exit_code."
+              exit $exit_code
+            else
+              echo "✅ Parallel CGI tests passed."
+            fi
+      - name: Check for Zombie Processes
+        run: |
+          zombies=$(ps aux | awk '$8=="Z" {print $2}')
+          if [ -n "$zombies" ]; then
+            echo " ❌ Zombie processes found:"
+            echo "$zombies"
+            ps aux | awk '$8=="Z"'
+            for pid in $zombies; do
+              parent_pid=$(ps -o ppid= -p $pid)
+              echo "Sending SIGCHLD to parent process PID $parent_pid"
+              kill -SIGCHLD $parent_pid || echo "Failed to signal parent PID $parent_pid"
+            done
+          else
+            echo "✅ No zombie processes found."
+          fi
+      - name: Check for open listening sockets
+        run: |
+          listening_sockets=$(lsof -iTCP -sTCP:LISTEN -nP | grep 'webserv')
+          if [ -z "$listening_sockets" ]; then
+            echo "Expected listening sockets are not open."
+          else
+            echo "Listening sockets are correctly open:"
+            echo "$listening_sockets"
+          fi
+
+      - name: Stop webserv
+        run: pkill -f webserv
+
+      - name: Verify no lingering sockets
+        run: |
+          sleep 5  # Give some time for sockets to close properly
+          lingering_sockets=$(lsof -iTCP -sTCP:LISTEN -nP | grep 'webserv' || true)
+          if [ -n "$lingering_sockets" ]; then
+            echo "Unexpected lingering sockets found:"
+            echo "$lingering_sockets"
+          else
+            echo "No lingering sockets found."
+          fi
+
       - run: echo "🍏 This job's status is ${{ job.status }}."

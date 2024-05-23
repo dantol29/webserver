@@ -26,6 +26,8 @@ Connection::Connection(struct pollfd &pollFd, Server &server)
 	_CGIExitStatus = 0;
 	_CGIHasCompleted = false;
 	_CGIHasTimedOut = false;
+	_CGIHasReadPipe = false;
+	_startTime = 0;
 }
 
 Connection::Connection(const Connection &other)
@@ -56,6 +58,9 @@ Connection::Connection(const Connection &other)
 	_CGIExitStatus = other._CGIExitStatus;
 	_CGIHasCompleted = other._CGIHasCompleted;
 	_CGIHasTimedOut = other._CGIHasTimedOut;
+	_CGIHasReadPipe = other._CGIHasReadPipe;
+	_cgiOutputBuffer = other._cgiOutputBuffer;
+	_startTime = other._startTime;
 	// std::cout << "Connection object copied" << std::endl;
 }
 
@@ -87,6 +92,9 @@ Connection &Connection::operator=(const Connection &other)
 		_CGIExitStatus = other._CGIExitStatus;
 		_CGIHasCompleted = other._CGIHasCompleted;
 		_CGIHasTimedOut = other._CGIHasTimedOut;
+		_CGIHasReadPipe = other._CGIHasReadPipe;
+		_cgiOutputBuffer = other._cgiOutputBuffer;
+		_startTime = other._startTime;
 	}
 	std::cout << "Connection object assigned" << std::endl;
 	return *this;
@@ -219,7 +227,37 @@ bool Connection::getCGIHasCompleted() const
 	return _CGIHasCompleted;
 }
 
+bool Connection::getCGIHasReadPipe() const
+{
+	return _CGIHasReadPipe;
+}
+
+std::string Connection::getCGIOutputBuffer() const
+{
+	return _cgiOutputBuffer;
+}
+
+time_t Connection::getStartTime() const
+{
+	return _startTime;
+}
+
 // SETTERS
+
+void Connection::setStartTime(time_t time)
+{
+	_startTime = time;
+}
+
+void Connection::setCGIOutputBuffer(std::string buffer)
+{
+	_cgiOutputBuffer = buffer;
+}
+
+void Connection::setCGIHasReadPipe(bool value)
+{
+	_CGIHasReadPipe = value;
+}
 
 void Connection::setCGIHasCompleted(bool value)
 {
@@ -335,8 +373,11 @@ bool Connection::readHeaders(Parser &parser)
 	}
 	else if (bytesRead == 0)
 	{
+		// TODO: think about it
 		std::cout << "Connection closed before headers being completely sent" << std::endl;
 		return false;
+		// std::cout << "bytes_read == 0" << std::endl;
+		// return true;
 	}
 	else
 	{

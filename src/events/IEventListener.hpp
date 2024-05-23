@@ -7,6 +7,8 @@ struct EventData
 {
 	int eventType;
 	int pid;
+	int pipe0;
+	int pipe1;
 };
 
 // Overload << operator for easy printing

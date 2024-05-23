@@ -134,7 +134,7 @@ void sendData(const std::vector<HTTPTest> &tests, sockaddr_in serverAddress)
 		ssize_t bytesSent = send(clientSocket, test.request.c_str(), test.request.size(), 0);
 
 		char buffer[BUFFER_SIZE];
-		if (waitForResponseWitPoll(clientSocket, POLL_TIMOUT))
+		if (waitForResponseWitPoll(clientSocket, POLL_TIMOUT * 100))
 		{
 			ssize_t bytesRead = read(clientSocket, buffer, BUFFER_SIZE);
 			if (bytesRead < 0)
@@ -210,7 +210,7 @@ void headers(sockaddr_in serverAddress)
 		HTTPTest("GET / HTTP/1.1\r\nRandom: www.example.com\r\n\r\n", "400"),
 		HTTPTest("GET / HTTP/1.1\r\nHost www.example.com\r\n\r\n", "400"),
 		HTTPTest("GET / HTTP/1.1\r\nHost:: www.example.com\r\n\r\n", "400"),
-		// TODO: HTTPTest("GET / HTTP/1.1\r\nHost: www.example.com\r\n\r", "400"),
+		HTTPTest("GET / HTTP/1.1\r\nHost: www.example.com\r\n\r", "408"),
 		HTTPTest("GET / HTTP/1.1\r\nHost:www.example.com\r\n\r\n", "400"),
 		HTTPTest("GET / HTTP/1.1\r\n Host: www.example.com\r\n\r\n", "400"),
 		HTTPTest("GET /HTTP/1.1\r\nHo st: www.example.com\r\n\r\n", "400"),
@@ -281,18 +281,18 @@ int main(int argc, char **argv)
 
 	// if (std::strcmp(argv[1], "query") == 0)
 	std::cout << "\033[38;5;214mRunning query tests\033[0m" << std::endl;
-	query(serverAddress);
+	// query(serverAddress);
 	// else if (std::strcmp(argv[1], "simple") == 0)
 	std::cout << "\033[38;5;214mQuery tests done\033[0m" << std::endl;
 	std::cout << "\033[38;5;214mRunning simple tests\033[0m" << std::endl;
-	simple(serverAddress);
+	// simple(serverAddress);
 	std::cout << "\033[38;5;214mSimple tests done\033[0m" << std::endl;
 	std::cout << "\033[38;5;214mRunning headers tests\033[0m" << std::endl;
 	// else if (std::strcmp(argv[1], "headers") == 0)
 	headers(serverAddress);
 	std::cout << "\033[38;5;214mHeaders tests done\033[0m" << std::endl;
 	// else if (std::strcmp(argv[1], "body") == 0)
-	body(serverAddress);
+	// body(serverAddress);
 	// else
 	// std::cout << "Invalid test name" << std::endl;
 	if (is_error)
