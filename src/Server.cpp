@@ -161,7 +161,7 @@ void Server::waitCGI()
 
 			double elapsed = difftime(time(NULL), _connections[i].getCGIStartTime());
 			Debug::log("Elapsed time: " + toString(elapsed) + " seconds", Debug::CGI);
-			if (_connections[i].getHasCGI() && elapsed > CGI_TIMEOUT_MS) // 10 seconds
+			if (_connections[i].getHasCGI() && elapsed > CGI_TIMEOUT_S) // 10 seconds
 			{
 				Debug::log("CGI timed out", Debug::NORMAL);
 
@@ -818,7 +818,8 @@ void Server::handleSocketTimeoutIfAny()
 			continue;
 
 		double elapsed = difftime(time(NULL), _connections[i].getStartTime());
-		if (elapsed > CLIENT_TIMEOUT_MS) // 10 seconds
+		Debug::log("Elapsed time: " + toString(elapsed) + " seconds", Debug::SERVER);
+		if (elapsed > CLIENT_TIMEOUT_S) // 10 seconds
 		{
 			Debug::log("Elapsed time: " + toString(elapsed) + " seconds", Debug::SERVER);
 			// We have to send a 408 Request Timeout

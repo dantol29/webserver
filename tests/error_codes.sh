@@ -67,6 +67,42 @@ else
 	echo -e "$RED www.python_site.com:8080: $response $RESET"
 fi
 
+response=$(curl -s -o /dev/null -w "%{http_code}" -H "Host: www.development_site" http://127.0.0.1:8080/cgi-bin/error.cgi)
+
+if [ "$response" -eq 500 ]; then
+	echo -e "$GREEN www.development_site.com:8080: 500(Internal Server Error) $RESET"
+else
+	echo -e "$RED www.development_site.com:8080: $response $RESET"
+	is_error=true
+fi
+
+response=$(curl -s -o /dev/null -w "%{http_code}" -H "Host: www.development_site" http://127.0.0.1:8080/cgi-bin/permission.cgi)
+
+if [ "$response" -eq 500 ]; then
+	echo -e "$GREEN www.development_site.com:8080: 500(Internal Server Error) $RESET"
+else
+	echo -e "$RED www.development_site.com:8080: $response $RESET"
+	is_error=true
+fi
+
+response=$(curl -s -o /dev/null -w "%{http_code}" -H "Host: www.development_site" http://127.0.0.1:8080/cgi-bin/hello_var.cgi)
+
+if [ "$response" -eq 200 ]; then
+	echo -e "$GREEN www.development_site.com:8080: 200 $RESET"
+else
+	echo -e "$RED www.development_site.com:8080: $response $RESET"
+	is_error=true
+fi
+
+response=$(curl -s -o /dev/null -w "%{http_code}" -H "Host: www.development_site" http://127.0.0.1:8080/cgi-bin/duration_ts.cgi)
+
+if [ "$response" -eq 200 ]; then
+	echo -e "$GREEN www.development_site.com:8080: 200 $RESET"
+else
+	echo -e "$RED www.development_site.com:8080: $response $RESET"
+	is_error=true
+fi
+
 if [ "$is_error" = true ]; then
     exit 1
 fi
