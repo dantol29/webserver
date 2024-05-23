@@ -4,6 +4,7 @@ is_error=false
 
 URL="http://127.0.0.1:8080/cgi-bin/duration_ts.cgi"
 temp_file=$(mktemp)
+error_file=$(mktemp)
 
 # Send requests and collect the times
 for i in {1..3}; do
@@ -18,7 +19,8 @@ for i in {1..3}; do
 			echo "$end_time Request $i: End time = $end_time" >> "$temp_file"
 		else
 			echo "Failed to parse timestamps from request $i response"
-			is_error=true
+			echo "error" >> "$error_file"
+
 		fi
 	} &
 done
@@ -34,8 +36,11 @@ done
 # Clean up temporary file
 rm "$temp_file"
 
-if [ "$is_error" = true ]; then
+# Check if there were any errors
+if [ -s "$error_file" ]; then
+    rm "$error_file"
     exit 1
 fi
 
+rm "$error_file"
 exit 0
