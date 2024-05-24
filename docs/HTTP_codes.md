@@ -93,3 +93,7 @@ Send request with headers > 8KB
 
 ## 451 Unavailable For Legal Reasons
 _not supported_
+
+## 503 Service Unavailable
+### How to trigger?
+Set `limit_connn` directive and send more requests than written there

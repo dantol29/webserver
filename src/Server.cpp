@@ -6,8 +6,6 @@
 #include "EventManager.hpp"
 #include "signal.h"
 
-#define CGI_BUFFER_SIZE 100 // 4 KB
-
 Server::Server(const Config &config, EventManager &eventManager) : _config(config), _eventManager(eventManager)
 {
 	_maxClients = 10;

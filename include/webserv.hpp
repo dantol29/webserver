@@ -17,6 +17,7 @@
 
 #define SEND_BUFFER_SIZE 1024 * 100 // 100 KB
 #define BUFFER_SIZE 1025
+#define CGI_BUFFER_SIZE 100 // 100 B
 #define CGI_TIMEOUT_S 10 // 10 seconds
 #define CGI_POLL_TIMEOUT_MS 500 // 0.5 seconds
 #define CLIENT_POLL_TIMEOUT_MS 10000 // 10 seconds
