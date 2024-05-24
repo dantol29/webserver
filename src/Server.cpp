@@ -220,6 +220,14 @@ void Server::readFromClient(Connection &conn, size_t &i, Parser &parser, HTTPReq
 		parser.parseRequestLineAndHeaders(parser.getHeadersBuffer().c_str(), request, response);
 		if (parser.getHeadersAreParsed() && !conn.findServerBlock(_config.getServerBlocks()))
 			Debug::log("Error finding server block", Debug::NORMAL);
+		
+		// check if connection limit is reached
+		if (isLimitConnReached(conn))
+		{
+			response.setStatusCode(503, "Service Unavailable");
+			conn.setHasFinishedReading(true);
+		}
+
 	}
 
 	if (response.getStatusCode() != 0)
@@ -463,6 +471,7 @@ void Server::closeClientConnection(Connection &conn, size_t &i)
 	close(conn.getPollFd().fd);
 	_FDs.erase(_FDs.begin() + i);
 	_connections.erase(_connections.begin() + i);
+	_connectionsPerIP[conn.getServerIp()] -= 1;
 	--_clientCounter;
 	--i;
 }
@@ -730,6 +739,13 @@ void Server::acceptNewConnection(Connection &conn)
 		Connection newConnection(newSocketPoll, *this);
 		newConnection.setType(CLIENT);
 		newConnection.setServerIp(conn.getServerIp());
+		
+		if (_connectionsPerIP.find(conn.getServerIp()) == _connectionsPerIP.end())
+			_connectionsPerIP.insert(std::pair<std::string, int>(conn.getServerIp(), 1));
+		else
+			_connectionsPerIP[conn.getServerIp()] += 1;
+		
+		std::cout << "Server IP: " << conn.getServerIp() << std::endl;
 		newConnection.setServerPort(conn.getServerPort());
 		if (VERBOSE)
 		{
@@ -969,3 +985,27 @@ std::vector<std::pair<int, int> > Server::getPipeFDs() const
 	return _pipeFDs;
 }
 // clang-format on
+
+bool Server::isLimitConnReached(Connection &conn)
+{
+	if (conn.getHasServerBlock() == NOT_FOUND)
+		return (false);
+	
+	Directives directive = conn.getServerBlock().getDirectives();
+
+	if (directive._limit_conn != 0)
+	{
+		// loop through all the listen directives of the server block
+		for (size_t i = 0; i < directive._listen.size(); i++)
+		{
+			if (_connectionsPerIP[directive._listen[i].getIp()] > (int)directive._limit_conn)
+			{
+				std::cout << "number of connections: " << _connectionsPerIP[directive._listen[0].getIp()] << std::endl;
+				std::cout << "limit: " << directive._limit_conn << std::endl;
+				Debug::log("Connection limit reached", Debug::SERVER);
+				return (true);
+			}
+		}
+	}
+	return (false);
+}

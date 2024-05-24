@@ -28,6 +28,7 @@ struct Directives
 		_cgiExt.clear();
 		_return = "";
 		_uploadPath = "";
+		_limit_conn = 0;
 		_path = "";
 	
 	}
@@ -47,6 +48,7 @@ struct Directives
 	std::string _cgiPath;
 	std::string _return;
 	std::string _uploadPath;
+	size_t _limit_conn;
 	std::string _path; // only for location blocks
 };
 
@@ -76,6 +78,7 @@ class ServerBlock
 		std::string getCgiPath() const;
 		std::string getReturn() const;
 		std::string getUploadPath() const;
+		size_t getLimitConn() const;
 
 		// SETTERS
 		void setListen(Listen str, bool isLocation);
@@ -91,6 +94,7 @@ class ServerBlock
 		void setCgiPath(std::string str, bool isLocation);
 		void setReturn(std::string str, bool isLocation);
 		void setUploadPath(std::string str, bool isLocation);
+		void setLimitConn(std::string str, bool isLocation);
 		void setLocationPath(std::string str);
 		
 		// clear ServerBlock
