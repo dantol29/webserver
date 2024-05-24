@@ -370,7 +370,7 @@ void Server::buildResponse(Connection &conn, size_t &i, HTTPRequest &request, HT
 
 void Server::readCGIPipe(Connection &conn, HTTPResponse &response)
 {
-	Debug::log("Entering buildCGIResponse", Debug::CGI);
+	Debug::log("Entering readCGIResponse", Debug::CGI);
 	std::string cgiOutput;
 	int *pipeFD;
 	pipeFD = response.getCGIpipeFD();
@@ -411,6 +411,7 @@ void Server::readCGIPipe(Connection &conn, HTTPResponse &response)
 		response.setIsCGI(false);
 		conn.setHasDataToSend(true);
 		response.CGIStringToResponse(conn.getCGIOutputBuffer());
+		std::cout << response << std::endl;
 		close(pipeFD[0]);
 	}
 }

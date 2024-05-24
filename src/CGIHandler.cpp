@@ -199,7 +199,7 @@ bool CGIHandler::executeCGI(const MetaVariables &env, std::string body, HTTPResp
 		_eventManager.emit(data); // Emit event indicating a CGI process has started
 
 		_connection.addCGI(pid);
-		std::cout << GREEN << _connection.getCGIPid() << RESET << std::endl;
+		// std::cout << GREEN << _connection.getCGIPid() << RESET << std::endl;
 
 		// clang-format off
 		// std::vector<std::pair<int, int> > pipes = _eventManager.getPipeFDs();
