@@ -221,11 +221,11 @@ int main(void)
 
 	// NOTE: when you run a test, configfile and dir structure should fit
 	// salad(serverAddress); // standard routing tests
-	delete_entry(serverAddress); // DELETE request
+	// delete_entry(serverAddress); // DELETE request
 	std::cout << "Waiting for the server to delete the entry..." << std::endl;
 	sleep(2);
 	std::cout << "\033[34m" << std::endl << "Continuing with the tests..." << "\033[0m" << std::endl;
-	//add_entry(serverAddress); // POST request
+	add_entry(serverAddress); // POST request
 
 	if (is_error)
 		exit(1);

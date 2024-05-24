@@ -44,9 +44,9 @@ void Debug::log(const std::string &message, Debug::Level paramLevel)
 	{
 		return;
 	}
-	// if (debugLevel & paramLevel)
-	// {
+	if (debugLevel & paramLevel)
+	{
 		(void)paramLevel;
 		std::cout << message << std::endl;
-	// }
+	}
 }

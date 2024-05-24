@@ -6,8 +6,8 @@
 
 int main(int argc, char **argv)
 {
-	Debug::enable(true);
-	Debug::setLevel(Debug::ALL);
+	Debug::enable(false);
+	Debug::setLevel(Debug::CGI);
 
 	if (argc > 2)
 	{

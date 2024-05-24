@@ -66,7 +66,6 @@ void Router::routeRequest(HTTPRequest &request, HTTPResponse &response)
 	request.setRoot(root);
 
 	adaptPathForFirefox(request);
-	
 	Debug::log("Routing Request: path = " + request.getPath(), Debug::NORMAL);
 
 	PathValidation pathResult = pathIsValid(response, request);

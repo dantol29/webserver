@@ -169,16 +169,12 @@ bool CGIHandler::executeCGI(const MetaVariables &env, std::string body, HTTPResp
 			Debug::log("CGIHandler: access failed", Debug::CGI);
 			return false;
 			_exit(EXIT_FAILURE);
-			// TODO: @leo I don't think we should exit here. We don't want to kill the whole server cause of a CGI
-			// error. No?
 		}
 
 		if (execve(argvPointers[0], argvPointers.data(), envpPointers.data()) == -1)
 		{
 			Debug::log("CGIHandler: execve failed", Debug::CGI);
 			return false;
-			// TODO: @leo We should check if execve failed and return an error response and not exti
-
 			_exit(EXIT_FAILURE);
 		}
 	}

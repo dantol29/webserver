@@ -56,7 +56,7 @@ Listen::Listen(const Listen &obj)
 	_options = obj._options;
 	_hasIpOrPort = obj._hasIpOrPort;
 
-	Debug::log("Listen copy constructor called", Debug::OCF);
+	// Debug::log("Listen copy constructor called", Debug::OCF);
 }
 
 Listen &Listen::operator=(const Listen &obj)
