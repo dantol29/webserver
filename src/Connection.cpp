@@ -446,6 +446,13 @@ bool Connection::readChunkSize(std::string &line)
 			perror("recv failed");
 			return false;
 		}
+		else if (bytesRead == 0)
+		{
+			Debug::log("Connection closed before headers being completely sent", Debug::SERVER);
+			return false;
+			// std::cout << "bytes_read == 0" << std::endl;
+			// return true;
+		}
 		else
 		{
 			Debug::log("Connection closed while reading chunk size", Debug::SERVER);
@@ -475,6 +482,13 @@ bool Connection::readChunk(size_t chunkSize, std::string &chunkData, HTTPRespons
 			// Internal Server Error
 			response.setStatusCode(500, "");
 			return false;
+		}
+		else if (bytesRead == 0)
+		{
+			Debug::log("Connection closed before headers being completely sent", Debug::SERVER);
+			return false;
+			// std::cout << "bytes_read == 0" << std::endl;
+			// return true;
 		}
 		else
 		{
@@ -521,6 +535,13 @@ bool Connection::readBody(Parser &parser, HTTPRequest &req, HTTPResponse &res)
 			perror("recv failed");
 			res.setStatusCode(500, ""); // Internal Server Error
 			return false;
+		}
+		else if (bytesRead == 0)
+		{
+			Debug::log("Connection closed before body being completely sent", Debug::SERVER);
+			return false;
+			// std::cout << "bytes_read == 0" << std::endl;
+			// return true;
 		}
 		else
 		{
