@@ -248,12 +248,14 @@ void Server::handlePostAndDelete(Connection &conn, Parser &parser, HTTPRequest &
 	if (parser.getIsChunked() && !conn.getHasReadSocket())
 	{
 		Debug::log("Chunked body", Debug::NORMAL);
-		if (!conn.readChunkedBody(parser) && (!conn.readBody(parser, request, response)))
+		// TODO: (!conn.readBody(parser, request, response)) - does not make sense here
+		if (!conn.readChunkedBody(parser)) // && (!conn.readBody(parser, request, response))
 		{
 			// only in case of system error == do not send response
-			Debug::log("Error reading body", Debug::OCF);
+			Debug::log("Error reading chunked body", Debug::OCF);
 			conn.setCanBeClosed(true);
 			conn.setHasFinishedReading(true);
+			conn.setHasDataToSend(true);
 			return;
 		}
 		conn.setHasReadSocket(true);

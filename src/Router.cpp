@@ -222,7 +222,6 @@ bool Router::requestIsCGI(const HTTPRequest &request)
 	// TODO: check against config file, not this hardcoded version
 	std::vector<std::string> cgiExtensions = _directive._cgiExt;
 
-	std::cout << RED << "requestIsCGI" << RESET << std::endl;
 	std::cout << "cgiExtensions: " << cgiExtensions.size() << std::endl;
 	std::cout << "request target: " << request.getRequestTarget() << std::endl;
 	if (!cgiExtensions.empty())
