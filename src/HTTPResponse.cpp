@@ -146,6 +146,7 @@ void HTTPResponse::setCGIpipeFD(int (&pipe)[2])
 
 void HTTPResponse::CGIStringToResponse(const std::string &cgiOutput)
 {
+	// std::cout << YELLOW << cgiOutput << RESET << std::endl;
 	std::size_t headerEndPos = cgiOutput.find("\r\n\r\n");
 	if (headerEndPos == std::string::npos)
 	{
@@ -153,6 +154,7 @@ void HTTPResponse::CGIStringToResponse(const std::string &cgiOutput)
 	}
 
 	std::string headersPart = cgiOutput.substr(0, headerEndPos);
+	// std::cout << "Headers: " << headersPart << std::endl;
 	std::string bodyPart = cgiOutput.substr(headerEndPos);
 
 	Debug::log("------------------CGIStringToResponse-------------------", Debug::CGI);
@@ -172,13 +174,25 @@ void HTTPResponse::CGIStringToResponse(const std::string &cgiOutput)
 			std::string headerName = headerLine.substr(0, separatorPos);
 			std::string headerValue = headerLine.substr(separatorPos + 2);
 			setHeader(headerName, headerValue);
+			// std::cout << "Header: " << headerName << ": " << headerValue << std::endl;
+			if (headerName == "Status")
+			{
+				std::size_t spacePos = headerValue.find(" ");
+				if (spacePos != std::string::npos)
+				{
+					std::string statusCodeStr = headerValue.substr(0, spacePos);
+					int statusCode = std::atoi(statusCodeStr.c_str());
+					setStatusCode(statusCode, "");
+				}
+			}
 		}
 	}
 
 	setBody(bodyPart);
 	// At his point we are done with the CGI so setIsCGI(false)
 	// setIsCGI(true);
-	setStatusCode(200, "");
+	if (_statusCode == 0)
+		setStatusCode(200, "OK");
 	return;
 }
 

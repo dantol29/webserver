@@ -75,13 +75,13 @@ void Server::startPollEventLoop()
 			timeout = CLIENT_POLL_TIMEOUT_MS; // 15 seconds
 		else
 			timeout = -1;
-		//printConnections("BEFORE POLL", _FDs, _connections, true);
+		// printConnections("BEFORE POLL", _FDs, _connections, true);
 		Debug::log(toString(CYAN) + "++++++++++++++ #" + toString(pollCounter) + \
 		" Waiting for new connection or Polling +++++++++++++++" + toString(RESET), Debug::SERVER);
 		int ret = poll(_FDs.data(), _FDs.size(), timeout);
 		pollCounter++;
 		//printFrame("POLL EVENT DETECTED", true);
-		//printConnections("AFTER POLL", _FDs, _connections, true);
+		// printConnections("AFTER POLL", _FDs, _connections, true);
 		if (ret > 0)
 		{
 			size_t originalSize = _FDs.size();
@@ -104,7 +104,7 @@ void Server::startPollEventLoop()
 				}
 				else if (_FDs[i].revents & (POLLERR | POLLHUP | POLLNVAL))
 				{
-					if (i == 0)
+					if (_connections[i].getType() == SERVER)
 						handleServerSocketError();
 					else
 						handleClientSocketError(_FDs[i].fd, i);
@@ -139,6 +139,7 @@ void Server::waitCGI()
 		{
 			if (_connections[i].getHasCGI() && _connections[i].getCGIPid() == pid)
 			{
+				// std::cout << "CGI has exited" << std::endl;
 				Debug::log("CGI has exited", Debug::CGI);
 				_connections[i].setCGIExitStatus(status);
 				_connections[i].setCGIHasCompleted(true);
@@ -238,23 +239,27 @@ void Server::readFromClient(Connection &conn, size_t &i, Parser &parser, HTTPReq
 	if (parser.getHeadersComplete() && request.getMethod() == "GET")
 		conn.setHasFinishedReading(true);
 
-	if (request.getMethod() == "GET" || request.getMethod() == "DELETE" || request.getMethod() == "SALAD")
+	if (request.getMethod() == "GET" || request.getMethod() == "SALAD")
 		Debug::log("GET request, no body to read", Debug::NORMAL);
 	else
-		handlePostRequest(conn, parser, request, response);
+		handlePostAndDelete(conn, parser, request, response);
 }
 
-void Server::handlePostRequest(Connection &conn, Parser &parser, HTTPRequest &request, HTTPResponse &response)
+void Server::handlePostAndDelete(Connection &conn, Parser &parser, HTTPRequest &request, HTTPResponse &response)
 {
+	Debug::log("Entering handlePostAndDelete", Debug::NORMAL);
+
 	if (parser.getIsChunked() && !conn.getHasReadSocket())
 	{
 		Debug::log("Chunked body", Debug::NORMAL);
-		if (!conn.readChunkedBody(parser))
+		// TODO: (!conn.readBody(parser, request, response)) - does not make sense here
+		if (!conn.readChunkedBody(parser)) // && (!conn.readBody(parser, request, response))
 		{
 			// only in case of system error == do not send response
 			Debug::log("Error reading chunked body", Debug::OCF);
 			conn.setCanBeClosed(true);
 			conn.setHasFinishedReading(true);
+			conn.setHasDataToSend(true);
 			return;
 		}
 		conn.setHasReadSocket(true);
@@ -281,8 +286,11 @@ void Server::handlePostRequest(Connection &conn, Parser &parser, HTTPRequest &re
 	}
 
 	if (!parser.getBodyComplete() && request.getContentLength() != 0 &&
-		parser.getBuffer().size() == request.getContentLength())
+		parser.getBuffer().size() >= request.getContentLength())
 	{
+		// std::cout << "Body complete" << std::endl;
+		// std::cout << YELLOW << parser.getBuffer() << RESET << std::endl;
+		request.setBody(parser.getBuffer());
 		parser.setBodyComplete(true);
 		conn.setHasFinishedReading(true);
 		return;
@@ -366,7 +374,7 @@ void Server::buildResponse(Connection &conn, size_t &i, HTTPRequest &request, HT
 
 void Server::readCGIPipe(Connection &conn, HTTPResponse &response)
 {
-	Debug::log("Entering buildCGIResponse", Debug::CGI);
+	Debug::log("Entering readCGIResponse", Debug::CGI);
 	std::string cgiOutput;
 	int *pipeFD;
 	pipeFD = response.getCGIpipeFD();
@@ -406,7 +414,9 @@ void Server::readCGIPipe(Connection &conn, HTTPResponse &response)
 	{
 		response.setIsCGI(false);
 		conn.setHasDataToSend(true);
+		response.setBody(conn.getCGIOutputBuffer());
 		response.CGIStringToResponse(conn.getCGIOutputBuffer());
+		// std::cout << response << std::endl;
 		close(pipeFD[0]);
 	}
 }
@@ -425,6 +435,7 @@ void Server::writeToClient(Connection &conn, size_t &i, HTTPResponse &response)
 	{
 		conn.setResponseString(response.objToString());
 		conn.setResponseSize(response.objToString().size());
+		// std::cout << response.objToString() << std::endl;
 		sendResponseCounter = 0;
 	}
 
@@ -800,7 +811,7 @@ void Server::acceptNewConnection(Connection &conn)
 void Server::handleServerSocketError()
 {
 	static int errorCounter = 0;
-	perror("poll server socket error");
+	// perror("poll server socket error");
 	if (errorCounter > 5)
 	{
 		Debug::log("Too many errors on server socket. Exiting.", Debug::SERVER);
@@ -812,13 +823,15 @@ void Server::handleServerSocketError()
 void Server::handleClientSocketError(int clientFD, size_t &i)
 {
 	Debug::log("Entering handleClientSocketError", Debug::SERVER);
-	close(clientFD);
+	// close(clientFD);
+	(void)clientFD;
+	closeClientConnection(_connections[i], i);
 	/* start together */
-	_FDs.erase(_FDs.begin() + i);
-	_connections.erase(_connections.begin() + i);
+	// _FDs.erase(_FDs.begin() + i);
+	// _connections.erase(_connections.begin() + i);
 	/* end together */
-	--i;
-	perror("poll client socket error");
+	// --i;
+	// perror("poll client socket error");
 }
 
 // Is not the socket timeout, but the poll timeout

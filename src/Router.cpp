@@ -66,14 +66,13 @@ void Router::routeRequest(HTTPRequest &request, HTTPResponse &response)
 	request.setRoot(root);
 
 	adaptPathForFirefox(request);
-	
 	Debug::log("Routing Request: path = " + request.getPath(), Debug::NORMAL);
 
 	PathValidation pathResult = pathIsValid(response, request);
 	Debug::log("Routing Request: pathResult = " + toString(pathResult), Debug::NORMAL);
 	Debug::log("Path requested: " + request.getPath(), Debug::NORMAL);
 	// check if method is allowed
-	
+
 	if (!_directive._allowedMethods.empty())
 	{
 		for (size_t i = 0; i < _directive._allowedMethods.size(); i++)
@@ -110,6 +109,7 @@ void Router::routeRequest(HTTPRequest &request, HTTPResponse &response)
 		}
 		else
 		{
+			// std::cout << "Path is a static content, handling as static content" << std::endl;
 			StaticContentHandler staticContentHandler;
 			staticContentHandler.handleRequest(request, response);
 		}

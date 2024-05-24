@@ -39,7 +39,8 @@ void CGIHandler::handleRequest(HTTPRequest &request, HTTPResponse &response)
 	Debug::log("CGIHandler::handleRequest", Debug::CGI);
 	MetaVariables env;
 	env.HTTPRequestToMetaVars(request, env);
-	if (!executeCGI(env, response))
+
+	if (!executeCGI(env, request.getBody(), response))
 	{
 		response.setStatusCode(500, "Internal Server Error");
 		// TODO: it should be hardcoded
@@ -69,6 +70,7 @@ std::vector<std::string> CGIHandler::createArgvForExecve(const MetaVariables &en
 	{
 		argv.push_back(scriptPath);
 	}
+
 	return argv;
 }
 
@@ -102,17 +104,28 @@ void handleTimeout(int sig)
 	Debug::log("CGIHandler: Timeout", Debug::CGI);
 }
 
-bool CGIHandler::executeCGI(const MetaVariables &env, HTTPResponse &response)
+bool CGIHandler::executeCGI(const MetaVariables &env, std::string body, HTTPResponse &response)
 {
 	Debug::log("CGIHandler::executeCGI", Debug::CGI);
 	std::string cgiOutput;
 	std::vector<std::string> argv = createArgvForExecve(env);
 	std::vector<std::string> envp = env.getForExecve();
 
+	Debug::log("CGIHandler: executeCGI: body: " + body, Debug::NORMAL);
+
 	int pipeFD[2];
+	int bodyPipeFD[2];
 	if (pipe(pipeFD) == -1)
 	{
 		perror("pipe failed");
+		return false;
+	}
+
+	if (pipe(bodyPipeFD) == -1)
+	{
+		perror("body pipe failed");
+		close(pipeFD[0]);
+		close(pipeFD[1]);
 		return false;
 	}
 
@@ -122,6 +135,8 @@ bool CGIHandler::executeCGI(const MetaVariables &env, HTTPResponse &response)
 		perror("fork failed");
 		close(pipeFD[0]);
 		close(pipeFD[1]);
+		close(bodyPipeFD[0]);
+		close(bodyPipeFD[1]);
 		return false;
 	}
 	else if (pid == 0)
@@ -140,6 +155,10 @@ bool CGIHandler::executeCGI(const MetaVariables &env, HTTPResponse &response)
 		dup2(pipeFD[1], STDOUT_FILENO);
 		close(pipeFD[1]);
 
+		close(bodyPipeFD[1]);
+		dup2(bodyPipeFD[0], STDIN_FILENO);
+		close(bodyPipeFD[0]);
+
 		closeAllSocketFDs();
 
 		std::vector<char *> argvPointers = convertToCStringArray(argv);
@@ -150,42 +169,45 @@ bool CGIHandler::executeCGI(const MetaVariables &env, HTTPResponse &response)
 			Debug::log("CGIHandler: access failed", Debug::CGI);
 			return false;
 			_exit(EXIT_FAILURE);
-			// TODO: @leo I don't think we should exit here. We don't want to kill the whole server cause of a CGI
-			// error. No?
 		}
 
-		// execve(argvPointers[0], argvPointers.data(), envpPointers.data());
 		if (execve(argvPointers[0], argvPointers.data(), envpPointers.data()) == -1)
 		{
 			Debug::log("CGIHandler: execve failed", Debug::CGI);
 			return false;
-			// TODO: @leo We should check if execve failed and return an error response and not exti
 			_exit(EXIT_FAILURE);
 		}
 	}
-	// This is executed if the CGI is started successfully
-	response.setIsCGI(true);
-	response.setCGIpipeFD(pipeFD);
+	else
+	{
+		close(pipeFD[1]);
+		close(bodyPipeFD[0]);
 
-	Debug::log("PIPE SAVED: " + toString(*response.getCGIpipeFD()), Debug::CGI);
+		write(bodyPipeFD[1], body.c_str(), body.size());
+		close(bodyPipeFD[1]);
 
-	close(pipeFD[1]);
-	EventData data = {1, pid, pipeFD[0], pipeFD[1]}; // Assuming 1 is the event type for CGI started
+		response.setIsCGI(true);
+		response.setCGIpipeFD(pipeFD);
 
-	_eventManager.emit(data); // Emit event indicating a CGI process has started
+		close(pipeFD[1]);
+		EventData data = {1, pid, pipeFD[0], pipeFD[1]}; // Assuming 1 is the event type for CGI started
 
-	_connection.addCGI(pid);
-	Debug::log("CGIHandler: CGI PID: " + toString(pid), Debug::CGI);
+		_eventManager.emit(data); // Emit event indicating a CGI process has started
 
-	// clang-format off
-	// std::vector<std::pair<int, int> > pipes = _eventManager.getPipeFDs();
-	// for (std::vector<std::pair<int, int> >::const_iterator it = pipes.begin(); it != pipes.end(); ++it)
-	// {
-	// 	std::cout << GREEN << "CGIHandler: pipeFDs: " << (*it).first << RESET << std::endl;
-	// }
-	// clang-format on
-	Debug::log("CGIHandler: Waiting for CGI to finish", Debug::CGI);
-	return true;
+		_connection.addCGI(pid);
+		// std::cout << GREEN << _connection.getCGIPid() << RESET << std::endl;
+
+		// clang-format off
+		// std::vector<std::pair<int, int> > pipes = _eventManager.getPipeFDs();
+		// for (std::vector<std::pair<int, int> >::const_iterator it = pipes.begin(); it != pipes.end(); ++it)
+		// {
+		// 	std::cout << GREEN << "CGIHandler: pipeFDs: " << (*it).first << RESET << std::endl;
+		// }
+		// clang-format on
+		// std::cout << RED << "Exiting CGIHandler::executeCGI with true" << RESET << std::endl;
+		return true;
+	}
+	return false;
 }
 
 void CGIHandler::setFDsRef(std::vector<struct pollfd> *FDsRef)
