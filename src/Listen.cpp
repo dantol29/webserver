@@ -42,7 +42,7 @@ Listen::Listen(std::string str)
 		std::cerr << "Throwing exception" << std::endl;
 		throw("Invalid ip or port");
 	}
-	std::cout << "Listen object created. IP: " << _ip << ", Port: " << _port << std::endl;
+	Debug::log("Listen object created. IP: " + _ip + ", Port: " + toString(_port), Debug::OCF);
 }
 
 Listen::Listen(const Listen &obj)

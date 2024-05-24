@@ -22,16 +22,14 @@ void HTTPResponse::setErrorResponse(int statusCode)
 {
 	std::string statusMessage = getStatusMessage(statusCode);
 	std::string code = toString(statusCode);
-	std::cout << "\033[31m"
-			  << "Error " << statusCode << " in request"
-			  << "\033[0m" << std::endl;
+	Debug::log("statusCode: " + code + " statusMessage: " + statusMessage, Debug::NORMAL);
 	std::string body = "<html><head><title>Error</title></head>"
 					   "<body><h1>Error: " +
 					   code + " " + "</h1><p>" + statusMessage + "</p></body></html>";
 
-	// print purple to identify a 0 status code
-	std::cout << PURPLE << "setErrorResponse: statusCode: " << statusCode << " statusMessage: " << statusMessage
-			  << " body: " << body << RESET << std::endl;
+	Debug::log("setErrorResponse: statusCode: " + code + " statusMessage: " + statusMessage +
+				   " body: " + body,
+			   Debug::NORMAL);
 	setStatusCode(statusCode, "");
 	setHeader("Content-Length", toString(body.length()));
 	setHeader("Content-Type", "text/html");
@@ -43,7 +41,7 @@ std::string HTTPResponse::objToString() const
 	std::stringstream responseStream;
 	if (_statusCode == 0)
 	{
-		std::cerr << "\033[31mWarning: Sending a response with status code 0\033[0m" << std::endl;
+		Debug::log("Sending a response with status code 0", Debug::NORMAL);
 	}
 	responseStream << "HTTP/1.1 " << _statusCode << " " << getStatusMessage(_statusCode) << "\r\n";
 	for (size_t i = 0; i < _headers.size(); ++i)
@@ -82,12 +80,13 @@ int HTTPResponse::getStatusCode() const
 void HTTPResponse::setStatusCode(int statusCode, const std::string &message)
 {
 	if (!message.empty())
-		std::cerr << message << std::endl;
+		Debug::log(message, Debug::NORMAL);
 	if (_statusCode != 0)
 	{
-		std::cerr << "\033[31mWarning: Overwriting existing status code (" << _statusCode << ") and message ("
-				  << _statusMessage << ") with new code (" << statusCode << ") and message ("
-				  << getStatusMessage(statusCode) << ").\033[0m" << std::endl;
+		Debug::log("Warning: Overwriting existing status code (" + toString(_statusCode) + ") and message (" +
+					   _statusMessage + ") with new code (" + toString(statusCode) + ") and message (" +
+					   getStatusMessage(statusCode) + ").",
+				   Debug::NORMAL);
 	}
 
 	_statusCode = statusCode;
@@ -156,7 +155,7 @@ void HTTPResponse::CGIStringToResponse(const std::string &cgiOutput)
 	std::string headersPart = cgiOutput.substr(0, headerEndPos);
 	std::string bodyPart = cgiOutput.substr(headerEndPos);
 
-	std::cout << "------------------CGIStringToResponse-------------------" << std::endl;
+	Debug::log("------------------CGIStringToResponse-------------------", Debug::CGI);
 
 	std::istringstream headerStream(headersPart);
 	std::string headerLine;
@@ -328,7 +327,6 @@ const std::string &HTTPResponse::getStatusMessage() const
 
 std::ostream &operator<<(std::ostream &out, const HTTPResponse &response)
 {
-	std::cout << "HTTPResponse operator<< called" << std::endl;
 	// Output the status
 	out << "\033[35m";
 	out << "Status Code: " << response.getStatusCode() << "\n";

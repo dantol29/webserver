@@ -134,7 +134,7 @@ void sendData(const std::vector<HTTPTest> &tests, sockaddr_in serverAddress)
 		ssize_t bytesSent = send(clientSocket, test.request.c_str(), test.request.size(), 0);
 
 		char buffer[BUFFER_SIZE];
-		if (waitForResponseWitPoll(clientSocket, POLL_TIMOUT * 100))
+		if (waitForResponseWitPoll(clientSocket, POLL_TIMOUT * 15))
 		{
 			ssize_t bytesRead = read(clientSocket, buffer, BUFFER_SIZE);
 			if (bytesRead < 0)
@@ -225,10 +225,9 @@ void body(sockaddr_in serverAddress)
 		HTTPTest("POST / HTTP/1.1\r\nHost: www.example.com\r\nContent-Length: 17\r\nContent-Type: "
 				 "text/plain\r\n\r\nThis\r\nis body\r\n\r\n",
 				 "200"),
-		// TODO: // HTTPTest("POST / HTTP/1.1\r\nHost: www.example.com\r\nContent-Length: 17\r\nContent-Type: "
-		// 		 "text/plain\r\n\r\nThis\r\nis body\r\n",
-		// 		 "400"),// 400 (Bad Request) -- - Wrong content length // This case is complicated: we have an extra
-		// linera issue for it!}
+		HTTPTest("POST / HTTP/1.1\r\nHost: www.example.com\r\nContent-Length: 100\r\nContent-Type: "
+				 "text/plain\r\n\r\nThis\r\nis body\r\n\r\n",
+				 "408"),// 408 (Timeout) -- - Wrong content length
 		HTTPTest("POST / HTTP/1.1\r\nHost: www.example.com\r\nContent-Length: 16\r\nContent-Type: "
 				 "text/plain\r\n\r\nThis\r\nis body\r\n\n",
 				 "200"), // 200 body shouldn't end with CRLF
@@ -238,10 +237,6 @@ void body(sockaddr_in serverAddress)
 		HTTPTest("POST / HTTP/1.1\r\nHost: www.example.com\r\nContent-Length: 16\r\nContent-Type: "
 				 "text/plain\r\n\r\nThis\ris body\r\n\r\n",
 				 "200"),
-		// HTTPTest(
-		// "POST / HTTP/1.1\r\nHost: www.example.com\r\nContent-Length: 17\r\nContent-Type: "
-		// "text/plain\r\n\r\nThis\r\n\r\nis body\r\n\r\n",
-		// 	"400"), // 400 (Bad Request) -- - Improper line termination of the body // with '\r' // TODO: are you sure?}
 		HTTPTest("GET / HTTP/1.1\r\nHost: www.example.com\r\nContent-Length: 17\r\nContent-Type: "
 				 "text/plain\r\n\r\nThis\r\nis body\r\n\r\n",
 				 "200"), //  GET request with body is correct
@@ -281,18 +276,18 @@ int main(int argc, char **argv)
 
 	// if (std::strcmp(argv[1], "query") == 0)
 	std::cout << "\033[38;5;214mRunning query tests\033[0m" << std::endl;
-	// query(serverAddress);
+	query(serverAddress);
 	// else if (std::strcmp(argv[1], "simple") == 0)
 	std::cout << "\033[38;5;214mQuery tests done\033[0m" << std::endl;
 	std::cout << "\033[38;5;214mRunning simple tests\033[0m" << std::endl;
-	// simple(serverAddress);
+	simple(serverAddress);
 	std::cout << "\033[38;5;214mSimple tests done\033[0m" << std::endl;
 	std::cout << "\033[38;5;214mRunning headers tests\033[0m" << std::endl;
 	// else if (std::strcmp(argv[1], "headers") == 0)
 	headers(serverAddress);
 	std::cout << "\033[38;5;214mHeaders tests done\033[0m" << std::endl;
 	// else if (std::strcmp(argv[1], "body") == 0)
-	// body(serverAddress);
+	body(serverAddress);
 	// else
 	// std::cout << "Invalid test name" << std::endl;
 	if (is_error)

@@ -6,7 +6,7 @@ ServerSocket::ServerSocket()
 	_serverFD = -1;
 	_listen = Listen();
 	memset(&_serverSocketAddr, 0, sizeof(_serverSocketAddr));
-	std::cout << "ServerSocket default constructor" << std::endl;
+	Debug::log("ServerSocket default constructor", Debug::OCF);
 }
 
 ServerSocket::ServerSocket(int serverFD, Listen listen)
@@ -81,33 +81,27 @@ std::string mapIPv4ToIPv6(const std::string &ipv4Address)
 
 void ServerSocket::prepareServerSocketAddr()
 {
-	std::cout << "Entering prepareServerSocketAddr" << std::endl;
 	struct addrinfo hints, *res;
 	memset(&hints, 0, sizeof(hints));
 	// hints.ai_family = _listen.getIsIpv6() ? AF_INET6 : AF_INET;
 	hints.ai_family = AF_INET6;
-	std::cout << "hints.ai_family: " << hints.ai_family << std::endl;
 	hints.ai_socktype = SOCK_STREAM;
 	hints.ai_flags = AI_PASSIVE;
 
 	std::string port = toString(_listen.getPort());
-	std::cout << "port: " << port << std::endl;
-	std::cout << "ip: " << _listen.getIp() << std::endl;
 	std::string ip;
 	if (!_listen.getIp().empty() && !_listen.getIsIpv6())
 	{
-		std::cout << "IPv4 address detected" << std::endl;
 		std::string ipv6Address = mapIPv4ToIPv6(_listen.getIp());
-		std::cout << "ipv6Address: " << ipv6Address << std::endl;
 		ip = ipv6Address;
 	}
 	else
 		ip = _listen.getIp();
-	std::cout << "ip: " << ip << std::endl;
+	Debug::log("ip: " + ip, Debug::OCF);
 	// Map IPv4 to IPv6
 
 	int status = getaddrinfo(ip.c_str(), port.c_str(), &hints, &res);
-	std::cout << "getaddrinfo status: " << status << std::endl;
+	Debug::log("getaddrinfo status: " + toString(status), Debug::OCF);
 	if (status != 0)
 	{
 		std::cerr << "getaddrinfo: " << gai_strerror(status) << std::endl;
@@ -118,18 +112,19 @@ void ServerSocket::prepareServerSocketAddr()
 		std::cerr << "getaddrinfo: res is NULL" << std::endl;
 		return;
 	}
-	std::cout << "Before memcpy, port: " << ntohs(((struct sockaddr_in *)res->ai_addr)->sin_port) << std::endl;
-	std::cout << "Before memcpy, ip: " << inet_ntoa(((struct sockaddr_in *)res->ai_addr)->sin_addr) << std::endl;
+	// std::cout << "Before memcpy, port: " << ntohs(((struct sockaddr_in *)res->ai_addr)->sin_port) << std::endl;
+	// std::cout << "Before memcpy, ip: " << inet_ntoa(((struct sockaddr_in *)res->ai_addr)->sin_addr) << std::endl;
 	memcpy(&_serverSocketAddr, res->ai_addr, res->ai_addrlen);
-	std::cout << "After memcpy, port: " << ntohs(((struct sockaddr_in *)&_serverSocketAddr)->sin_port) << std::endl;
-	std::cout << "After memcpy, ip: " << inet_ntoa(((struct sockaddr_in *)&_serverSocketAddr)->sin_addr) << std::endl;
+	// std::cout << "After memcpy, port: " << ntohs(((struct sockaddr_in *)&_serverSocketAddr)->sin_port) << std::endl;
+	// std::cout << "After memcpy, ip: " << inet_ntoa(((struct sockaddr_in *)&_serverSocketAddr)->sin_addr) << std::endl;
 	freeaddrinfo(res);
 }
 
 std::ostream &operator<<(std::ostream &out, const ServerSocket &socket)
 {
-	out << "Fd: " << socket.getServerFD() << std::endl;
-	out << "Listen: " << socket.getListen() << std::endl;
+	(void)socket;
+	//out << "Fd: " << socket.getServerFD() << std::endl;
+	//out << "Listen: " << socket.getListen() << std::endl;
 	// out << "ServerSocketAddr: " << socket.getServerSocketAddr() << std::endl;
 	return out;
 }

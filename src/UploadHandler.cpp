@@ -59,7 +59,7 @@ bool UploadHandler::checkFiles(const HTTPRequest &request)
 	{
 		if (it->headers.find("filename") == it->headers.end())
 		{
-			std::cout << "422 Unprocessable Entity (Error: file does not have a name)" << std::endl;
+			Debug::log("422 Unprocessable Entity (Error: file does not have a name)", Debug::NORMAL);
 			return false;
 		}
 	}
@@ -67,7 +67,7 @@ bool UploadHandler::checkFiles(const HTTPRequest &request)
 	{
 		if (it->fileContent.empty())
 		{
-			std::cout << "422 Unprocessable Entity (Error: file is empty)" << std::endl;
+			Debug::log("422 Unprocessable Entity (Error: file does not have a name)", Debug::NORMAL);
 			return false;
 		}
 	}
@@ -78,13 +78,12 @@ bool UploadHandler::checkFiles(const HTTPRequest &request)
 		std::string extension = filename.substr(filename.find_last_of(".") + 1);
 		if (extension.empty())
 		{
-			// TODO: have an html ?
-			std::cout << "415 Unsupported Media Type (Error: file has no extension)" << std::endl;
+			Debug::log("415 Unsupported Media Type (Error: file has no extension)", Debug::NORMAL);
 			return false;
 		}
 		if (isHarmfulExtension(extension))
 		{
-			std::cout << "415 Unsupported Media Type (Error: file has a harmful extension)" << std::endl;
+			Debug::log("415 Unsupported Media Type (Error: file has no extension)", Debug::NORMAL);
 			return false;
 		}
 	}
@@ -98,7 +97,6 @@ bool UploadHandler::createFile(HTTPRequest &request)
 	else
 		_uploadDir = request.getRoot() + request.getHost() + "/" + _uploadDir;
 
-	std::cout << "Creating file at " << _uploadDir << std::endl;
 	std::vector<File> files = request.getFiles();
 	std::vector<File>::iterator it;
 
@@ -111,11 +109,11 @@ bool UploadHandler::createFile(HTTPRequest &request)
 		{
 			outfile << it->fileContent;
 			outfile.close();
-			std::cout << "File created successfully at " << filePath << std::endl;
+			Debug::log("File created successfully at " + filePath, Debug::NORMAL);
 		}
 		else
 		{
-			std::cout << "422 Unprocessable Entity (Error creating a file at " << filePath << ")" << std::endl;
+			Debug::log("422 Unprocessable Entity (Error creating a file at " + filePath + ")", Debug::NORMAL);
 			return (false);
 		}
 	}
@@ -136,12 +134,11 @@ bool UploadHandler::createFileChunked(HTTPRequest &request)
 	{
 		outfile << request.getBody();
 		outfile.close();
-		std::cout << "File created successfully at " << _uploadDir << std::endl;
+		Debug::log("File created successfully at " + _uploadDir, Debug::NORMAL);
 	}
 	else
 	{
-
-		std::cout << "422 Unprocessable Entity (Error creating a file at " << _uploadDir << ")" << std::endl;
+		Debug::log("422 Unprocessable Entity (Error creating a file at " + _uploadDir + ")", Debug::NORMAL);
 		return (false);
 	}
 	return (true);
@@ -151,13 +148,11 @@ void UploadHandler::handleRequest(HTTPRequest &request, HTTPResponse &response)
 {
 	if (!checkFiles(request))
 	{
-		std::cout << PURPLE << "calling handle response" << RESET << std::endl;
 		handleResponse(response, BAD_REQUEST);
 		return;
 	}
 	if (!request.getUploadBoundary().empty())
 	{
-		std::cout << PURPLE << "calling upload boundary" << RESET << std::endl;
 		if (!createFile(const_cast<HTTPRequest &>(request)))
 			return (response.setStatusCode(422, "Unprocessable Entity"));
 		handleResponse(response, SUCCESS);
@@ -191,21 +186,21 @@ void UploadHandler::handleResponse(HTTPResponse &response, enum UploadStatus sta
 
 	if (status == SUCCESS)
 	{
-		std::cout << "Upload: File created successfully" << std::endl;
+		Debug::log("Upload: File created successfully", Debug::NORMAL);
 		fileContents = readFileContents("html/success/200_upload_success.html");
 		statusCode = 200;
 		response.setStatusCode(statusCode, "OK");
 	}
 	else if (status == BAD_REQUEST)
 	{
-		std::cout << "Upload: Bad request" << std::endl;
+		Debug::log("Upload: Bad request", Debug::NORMAL);
 		fileContents = readFileContents("html/errors/400.html");
 		statusCode = 400;
 		response.setStatusCode(statusCode, "Bad Request");
 	}
 	else
 	{
-		std::cout << "Upload: Internal server error" << std::endl;
+		Debug::log("Upload: Internal server error", Debug::NORMAL);
 		fileContents = "<html><body><h1>Unknown Error</h1></body></html>";
 		statusCode = 500;
 		response.setStatusCode(statusCode, "Internal Server Error");

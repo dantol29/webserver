@@ -33,7 +33,7 @@ class Server
 
 	void startListening();
 	void startPollEventLoop();
-
+	
 	void printServerSockets() const;
 	/* for CGI */
 	void setHasCGI(bool hasCGI);
@@ -65,6 +65,8 @@ class Server
 	int _clientCounter;
 	bool _hasCGI;
 	int _CGICounter;
+	// number of connections per IP
+	std::map<std::string, int> _connectionsPerIP;
 
 	/*** Private Methods ***/
 	Server();
@@ -84,6 +86,7 @@ class Server
 	void handlePollError();
 	void AlertAdminAndTryToRecover();
 	void waitCGI();
+	bool isLimitConnReached(Connection &conn);
 
 	/* for handleConnection */
 	void readFromClient(Connection &conn, size_t &i, Parser &parser, HTTPRequest &request, HTTPResponse &response);
