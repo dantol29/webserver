@@ -52,6 +52,7 @@ void Router::routeRequest(HTTPRequest &request, HTTPResponse &response)
 {
 	Debug::log("Routing Request: host = " + request.getSingleHeader("host").second, Debug::NORMAL);
 
+	// in case of redirection
 	if (!_directive._return.empty())
 	{
 		response.setStatusCode(301, "Redirection");
@@ -63,19 +64,15 @@ void Router::routeRequest(HTTPRequest &request, HTTPResponse &response)
 	if (root.empty())
 		root = "var/";
 	request.setRoot(root);
-	std::string path = root + request.getSingleHeader("host").second;
-	std::string requestTarget = request.getRequestTarget();
-	std::cout << YELLOW << "requestTarget: " << requestTarget << RESET << std::endl;
-
 	adaptPathForFirefox(request);
 
+	std::cout << YELLOW << "requestTarget: " << request.getRequestTarget() << RESET << std::endl;
 	std::cout << GREEN << "Routing request to path: " << request.getPath() << RESET << std::endl;
-
-	// std::cout << request << std::endl;
 
 	PathValidation pathResult = pathIsValid(response, request);
 	std::cout << BLUE << "path: " << request.getPath() << RESET << std::endl;
 	std::cout << BLUE << "PathValidation: " << pathResult << RESET << std::endl;
+	
 	// check if method is allowed
 
 	if (!_directive._allowedMethods.empty())
@@ -104,8 +101,6 @@ void Router::routeRequest(HTTPRequest &request, HTTPResponse &response)
 			cgiHandler.setFDsRef(_FDsRef);
 			cgiHandler.setPollFd(_pollFd);
 			cgiHandler.handleRequest(request, response);
-			std::cout << GREEN << _connection.getCGIPid() << RESET << std::endl;
-			std::cout << "CGI request handled" << std::endl;
 		}
 		else if (request.getMethod() == "POST" || request.getUploadBoundary() != "")
 		{
@@ -121,15 +116,13 @@ void Router::routeRequest(HTTPRequest &request, HTTPResponse &response)
 		}
 		break;
 	case IsDirectoryListing:
-		std::cout << "Path is a directory listing, generating directory listing" << std::endl;
 		generateDirectoryListing(response, request.getPath(), request.getRequestTarget());
 		break;
 	case PathInvalid:
-		std::cout << "Path is not valid, handling as error" << std::endl;
 		handleServerBlockError(request, response, 404);
 		return;
 	}
-	std::cout << "Before SALAD method check" << std::endl;
+
 	if (request.getMethod() == "SALAD")
 	{
 		std::cout << "🥬 + 🍅 + 🐟 = 🥗" << std::endl;

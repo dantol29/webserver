@@ -46,11 +46,10 @@ void CGIHandler::handleRequest(HTTPRequest &request, HTTPResponse &response)
 
 	if (!executeCGI(env, request.getBody(), response))
 	{
-		response.setStatusCode(500, "");
+		response.setStatusCode(500, "Internal Server Error");
+		// TODO: it should be hardcoded
 		response.setBody("500 Internal Server Error");
 	}
-	std::cout << GREEN << _connection.getCGIPid() << RESET << std::endl;
-	std::cout << RED << "Exiting CGIHandler::handleRequest" << RESET << std::endl;
 	return;
 }
 
@@ -147,6 +146,16 @@ bool CGIHandler::executeCGI(const MetaVariables &env, std::string body, HTTPResp
 	}
 	else if (pid == 0)
 	{
+		// clang-format off
+		// std::vector<std::pair<int, int> > pipes = _eventManager.getPipeFDs();
+		// std::cerr << "CGIHandler: pipes: " << pipes.size() << std::endl;
+		// for (std::vector<std::pair<int, int> >::const_iterator it = pipes.begin(); it != pipes.end(); ++it)
+		// {
+		// 	std::cerr << GREEN << "CLOSING: " << (*it).first << ", " << (*it).second <<  RESET << std::endl;
+		// 	close((*it).first);
+		// 	close((*it).second);
+		// }
+		// clang-format on
 		close(pipeFD[0]);
 		dup2(pipeFD[1], STDOUT_FILENO);
 		close(pipeFD[1]);
@@ -188,20 +197,25 @@ bool CGIHandler::executeCGI(const MetaVariables &env, std::string body, HTTPResp
 		response.setCGIpipeFD(pipeFD);
 
 		close(pipeFD[1]);
-		EventData data = {1, pid}; // Assuming 1 is the event type for CGI started
-		std::cout << "CGIHandler: Emitting event indicating a CGI process has started" << std::endl;
+		EventData data = {1, pid, pipeFD[0], pipeFD[1]}; // Assuming 1 is the event type for CGI started
+
 		_eventManager.emit(data); // Emit event indicating a CGI process has started
-		// conn.addCGI(pid);
+
 		_connection.addCGI(pid);
 		std::cout << GREEN << _connection.getCGIPid() << RESET << std::endl;
-		// TODO: is this used? To which process to you want to send this signal/ @Leo
-		// signal(SIGALRM, handleTimeout);
-		// alarm(4);
+
+		// clang-format off
+		std::vector<std::pair<int, int> > pipes = _eventManager.getPipeFDs();
+		for (std::vector<std::pair<int, int> >::const_iterator it = pipes.begin(); it != pipes.end(); ++it)
+		{
+			std::cout << GREEN << "CGIHandler: pipeFDs: " << (*it).first << RESET << std::endl;
+		}
+		// clang-format on
 		std::cout << RED << "Exiting CGIHandler::executeCGI with true" << RESET << std::endl;
 		return true;
 	}
-	return false;
 }
+
 void CGIHandler::setFDsRef(std::vector<struct pollfd> *FDsRef)
 {
 	_FDsRef = FDsRef;

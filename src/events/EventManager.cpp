@@ -3,7 +3,7 @@
 #include "webserv.hpp"
 #include <algorithm> // For std::remove
 #include <iostream>	 // For std::cout
-
+#include "ServerEventListener.hpp"
 // Constructor
 EventManager::EventManager()
 {
@@ -24,13 +24,7 @@ std::vector<IEventListener *> EventManager::getObservers() const
 // Subscribe an observer to this manager
 void EventManager::subscribe(IEventListener *observer)
 {
-	std::cout << YELLOW << "Subscribing observer" << RESET << std::endl;
 	_observers.push_back(observer);
-	for (std::vector<IEventListener *>::iterator it = _observers.begin(); it != _observers.end(); ++it)
-	{
-		std::cout << "Observer: " << *it << std::endl;
-	}
-	std::cout << "Size of observers: " << _observers.size() << std::endl;
 }
 
 // Unsubscribe an observer from this manager
@@ -50,6 +44,15 @@ void EventManager::emit(const EventData &eventData)
 	std::cout << "Size of observers: " << _observers.size() << std::endl;
 	for (std::vector<IEventListener *>::iterator it = _observers.begin(); it != _observers.end(); ++it)
 	{
+		ServerEventListener *serverEventListener = dynamic_cast<ServerEventListener *>(*it);
 		(*it)->handleEvent(eventData);
+		std::cout << RED << serverEventListener->getServer().getCGICounter() << RESET << std::endl;
+		_pipeFDs = serverEventListener->getServer().getPipeFDs();
 	}
 }
+// clang-format off
+std::vector<std::pair<int, int> > EventManager::getPipeFDs() const
+{
+	return _pipeFDs;
+}
+//clang-format on

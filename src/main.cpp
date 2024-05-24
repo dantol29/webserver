@@ -6,7 +6,7 @@
 
 int main(int argc, char **argv)
 {
-	Debug::enable(true);
+	Debug::enable(false);
 	Debug::setLevel(Debug::NORMAL);
 
 	if (argc > 2)
@@ -24,10 +24,7 @@ int main(int argc, char **argv)
 	Server webserv(config, eventManager);
 
 	ServerEventListener serverEventListener(webserv);
-
 	eventManager.subscribe(&serverEventListener);
-
-	std::cout << &webserv.getEventManager() << std::endl;
 
 	webserv.startListening();
 	webserv.startPollEventLoop();

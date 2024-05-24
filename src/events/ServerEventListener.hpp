@@ -12,6 +12,10 @@ class ServerEventListener : public IEventListener
   public:
 	ServerEventListener(Server &srv);
 	virtual void handleEvent(const EventData &eventData);
+	Server &getServer() const
+	{
+		return server;
+	}
 };
 
 #endif
