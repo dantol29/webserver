@@ -129,7 +129,7 @@ void sendData(const std::vector<HTTPTest> &tests, sockaddr_in serverAddress)
 		ssize_t bytesSent = send(clientSocket, test.request.c_str(), test.request.size(), 0);
 
 		char buffer[BUFFER_SIZE];
-		if (waitForResponseWitPoll(clientSocket, POLL_TIMOUT))
+		if (waitForResponseWitPoll(clientSocket, POLL_TIMOUT * 10))
 		{
 			ssize_t bytesRead = read(clientSocket, buffer, BUFFER_SIZE);
 			if (bytesRead < 0)

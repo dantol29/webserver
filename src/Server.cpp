@@ -245,6 +245,8 @@ void Server::readFromClient(Connection &conn, size_t &i, Parser &parser, HTTPReq
 
 void Server::handlePostAndDelete(Connection &conn, Parser &parser, HTTPRequest &request, HTTPResponse &response)
 {
+	Debug::log("Entering handlePostAndDelete", Debug::NORMAL);
+
 	if (parser.getIsChunked() && !conn.getHasReadSocket())
 	{
 		Debug::log("Chunked body", Debug::NORMAL);
@@ -282,7 +284,7 @@ void Server::handlePostAndDelete(Connection &conn, Parser &parser, HTTPRequest &
 	}
 
 	if (!parser.getBodyComplete() && request.getContentLength() != 0 &&
-		parser.getBuffer().size() == request.getContentLength())
+		parser.getBuffer().size() >= request.getContentLength())
 	{
 		parser.setBodyComplete(true);
 		conn.setHasFinishedReading(true);

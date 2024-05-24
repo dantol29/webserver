@@ -361,7 +361,7 @@ bool Connection::readHeaders(Parser &parser)
 	if (bytesRead > 0)
 	{
 		parser.setBuffer(parser.getBuffer() + std::string(buffer, bytesRead));
-		// std::cout << "The buffer is: " << parser.getBuffer() << std::endl;
+		std::cout << "The buffer is: " << parser.getBuffer() << std::endl;
 
 		// std::cout << "Exiting readHeaders" << std::endl;
 		return true;
