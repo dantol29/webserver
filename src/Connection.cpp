@@ -355,13 +355,13 @@ bool Connection::readHeaders(Parser &parser)
 	// std::cout << "\nEntering readHeaders" << std::endl;
 	const int bufferSize = BUFFER_SIZE;
 	char buffer[bufferSize] = {0};
-	std::cout << "buffers size: " << sizeof(buffer) << std::endl;
+	//std::cout << "buffers size: " << sizeof(buffer) << std::endl;
 	ssize_t bytesRead = recv(_pollFd.fd, buffer, bufferSize, 0);
-	std::cout << "bytesRead: " << bytesRead << std::endl;
+	//std::cout << "bytesRead: " << bytesRead << std::endl;
 	if (bytesRead > 0)
 	{
 		parser.setBuffer(parser.getBuffer() + std::string(buffer, bytesRead));
-		std::cout << "The buffer is: " << parser.getBuffer() << std::endl;
+		//std::cout << "The buffer is: " << parser.getBuffer() << std::endl;
 
 		// std::cout << "Exiting readHeaders" << std::endl;
 		return true;

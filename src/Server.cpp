@@ -74,10 +74,7 @@ void Server::startPollEventLoop()
 		if (_hasCGI)
 			timeout = 1000; // 1 seconds
 		else if (_clientCounter > 0)
-		{
-			std::cout << BLUE << "Client counter: " << _clientCounter << RESET << std::endl;
 			timeout = 5000; // 15 seconds
-		}
 		else
 			timeout = -1; // infinite
 		// printConnections("BEFORE POLL", _FDs, _connections, true);
@@ -85,8 +82,8 @@ void Server::startPollEventLoop()
 				  << " Waiting for new connection or Polling +++++++++++++++" << RESET << std::endl;
 		int ret = poll(_FDs.data(), _FDs.size(), timeout);
 		pollCounter++;
-		printFrame("POLL EVENT DETECTED", true);
-		printConnections("AFTER POLL", _FDs, _connections, true);
+		// printFrame("POLL EVENT DETECTED", true);
+		// printConnections("AFTER POLL", _FDs, _connections, true);
 		if (ret > 0)
 		{
 			size_t originalSize = _FDs.size();
@@ -478,11 +475,6 @@ void Server::handleConnection(Connection &conn, size_t &i)
 	HTTPResponse &response = _connections[i].getResponse();
 
 	// printFrame("CLIENT SOCKET EVENT", true);
-	std::cout << "\033[1;36m"
-			  << "Entering handleConnection"
-			  << "\033[0m" << std::endl;
-	std::cout << BLUE << *response.getCGIpipeFD() << RESET << std::endl;
-
 	conn.setHasReadSocket(false);
 	if (!conn.getHasFinishedReading())
 		readFromClient(conn, i, parser, request, response);
