@@ -7,7 +7,7 @@
 int main(int argc, char **argv)
 {
 	Debug::enable(false);
-	Debug::setLevel(Debug::NORMAL);
+	Debug::setLevel(Debug::CGI);
 
 	if (argc > 2)
 	{
@@ -19,7 +19,7 @@ int main(int argc, char **argv)
 	if (!config.getErrorMessage().empty())
 		return 1;
 
-	//std::cout << config << std::endl; // should be in the DEBUG?
+	// std::cout << config << std::endl; // should be in the DEBUG?
 	EventManager eventManager;
 	Server webserv(config, eventManager);
 

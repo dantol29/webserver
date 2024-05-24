@@ -39,7 +39,8 @@ bool ServerBlock::addDirective(std::string key, std::string &value, bool isLocat
 						 "cgi_path",
 						 "cgi_ext",
 						 "return",
-						 "upload_path"};
+						 "upload_path",
+						 "limit_conn"};
 	std::list<std::string> validVar(var, var + sizeof(var) / sizeof(var[0]));
 
 	if (std::find(validVar.begin(), validVar.end(), key) == validVar.end())
@@ -74,6 +75,8 @@ bool ServerBlock::addDirective(std::string key, std::string &value, bool isLocat
 		setReturn(value, isLocation);
 	else if (key == "upload_path")
 		setUploadPath(value, isLocation);
+	else if (key == "limit_conn")
+		setLimitConn(value, isLocation);
 	else if (key == "path" && isLocation)
 		setLocationPath(value);
 
@@ -96,6 +99,8 @@ void ServerBlock::deleteData()
 	_directives._cgiPath.clear();
 	_directives._cgiExt.clear();
 	_directives._return.clear();
+	_directives._uploadPath.clear();
+	_directives._limit_conn = 0;
 }
 
 Directives ServerBlock::getDirectives() const
@@ -173,6 +178,11 @@ std::string ServerBlock::getReturn() const
 std::string ServerBlock::getUploadPath() const
 {
 	return (_directives._uploadPath);
+}
+
+size_t ServerBlock::getLimitConn() const
+{
+	return (_directives._limit_conn);
 }
 
 void ServerBlock::setListen(Listen str, bool isLocation)
@@ -282,6 +292,23 @@ void ServerBlock::setClientMaxBodySize(std::string &str, bool isLocation)
 	else
 		throw("client_max_body_size not allowed in location block");
 }
+
+void ServerBlock::setLimitConn(std::string str, bool isLocation)
+{
+	if (strToInt(str) < 1)
+		throw("Invalid limit_conn");
+
+	size_t n = strToInt(str);
+	if (!isLocation)
+	{
+		if (_directives._limit_conn > 0)
+			throw("limit_conn already set");
+		_directives._limit_conn = n;
+	}
+	else
+		throw("limit_conn not allowed in location block");
+}
+
 
 void ServerBlock::setAutoIndex(std::string &str, bool isLocation)
 {

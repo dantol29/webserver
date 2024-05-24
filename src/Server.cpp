@@ -6,8 +6,6 @@
 #include "EventManager.hpp"
 #include "signal.h"
 
-#define CGI_BUFFER_SIZE 100 // 4 KB
-
 Server::Server(const Config &config, EventManager &eventManager) : _config(config), _eventManager(eventManager)
 {
 	_maxClients = 10;
@@ -57,7 +55,7 @@ const EventManager &Server::getEventManager() const
 void Server::startListening()
 {
 	createServerSockets(_serverBlocks);
-	printServerSockets();
+	//printServerSockets();
 	setReuseAddrAndPort();
 	checkSocketOptions();
 	bindToPort();
@@ -72,21 +70,18 @@ void Server::startPollEventLoop()
 	while (1)
 	{
 		if (_hasCGI)
-			timeout = 1000; // 1 seconds
+			timeout = CGI_POLL_TIMEOUT_MS; // 0.5 seconds
 		else if (_clientCounter > 0)
-		{
-			std::cout << BLUE << "Client counter: " << _clientCounter << RESET << std::endl;
-			timeout = 5000; // 15 seconds
-		}
+			timeout = CLIENT_POLL_TIMEOUT_MS; // 15 seconds
 		else
-			timeout = -1; // infinite
+			timeout = -1;
 		// printConnections("BEFORE POLL", _FDs, _connections, true);
-		std::cout << CYAN << "++++++++++++++ #" << pollCounter
-				  << " Waiting for new connection or Polling +++++++++++++++" << RESET << std::endl;
+		Debug::log(toString(CYAN) + "++++++++++++++ #" + toString(pollCounter) + \
+		" Waiting for new connection or Polling +++++++++++++++" + toString(RESET), Debug::SERVER);
 		int ret = poll(_FDs.data(), _FDs.size(), timeout);
 		pollCounter++;
-		printFrame("POLL EVENT DETECTED", true);
-		printConnections("AFTER POLL", _FDs, _connections, true);
+		//printFrame("POLL EVENT DETECTED", true);
+		// printConnections("AFTER POLL", _FDs, _connections, true);
 		if (ret > 0)
 		{
 			size_t originalSize = _FDs.size();
@@ -109,7 +104,7 @@ void Server::startPollEventLoop()
 				}
 				else if (_FDs[i].revents & (POLLERR | POLLHUP | POLLNVAL))
 				{
-					if (i == 0)
+					if (_connections[i].getType() == SERVER)
 						handleServerSocketError();
 					else
 						handleClientSocketError(_FDs[i].fd, i);
@@ -132,13 +127,11 @@ void Server::waitCGI()
 	size_t originalSize = _FDs.size();
 	int status;
 	pid_t pid = waitpid(-1, &status, WNOHANG);
-	std::cout << "PID: " << pid << std::endl;
+	Debug::log("PID: " + toString(pid), Debug::CGI);
 
 	for (size_t i = 0; i < originalSize && i < _FDs.size(); i++)
-	{
-		std::cout << "PID: " << _connections[i].getCGIPid() << ", hasCGI: " << _connections[i].getHasCGI()
-				  << ", pipeFD: " << *_connections[i].getResponse().getCGIpipeFD() << std::endl;
-	}
+		Debug::log("PID: " + toString(_connections[i].getCGIPid()) + ", hasCGI: " + \
+		toString(_connections[i].getHasCGI()), Debug::CGI);
 
 	if (pid > 0)
 	{
@@ -146,6 +139,7 @@ void Server::waitCGI()
 		{
 			if (_connections[i].getHasCGI() && _connections[i].getCGIPid() == pid)
 			{
+				// std::cout << "CGI has exited" << std::endl;
 				Debug::log("CGI has exited", Debug::CGI);
 				_connections[i].setCGIExitStatus(status);
 				_connections[i].setCGIHasCompleted(true);
@@ -165,8 +159,8 @@ void Server::waitCGI()
 				continue;
 
 			double elapsed = difftime(time(NULL), _connections[i].getCGIStartTime());
-			std::cout << RED << "Elapsed time: " << elapsed << " seconds" << RESET << std::endl;
-			if (_connections[i].getHasCGI() && elapsed > 500)
+			Debug::log("Elapsed time: " + toString(elapsed) + " seconds", Debug::CGI);
+			if (_connections[i].getHasCGI() && elapsed > CGI_TIMEOUT_S) // 10 seconds
 			{
 				Debug::log("CGI timed out", Debug::NORMAL);
 
@@ -212,7 +206,7 @@ void Server::readFromClient(Connection &conn, size_t &i, Parser &parser, HTTPReq
 		if (!parser.preParseHeaders(response))
 		{
 			conn.setHasFinishedReading(true);
-			std::cout << "Error pre-parsing headers" << std::endl;
+			Debug::log("Error pre-parsing headers", Debug::SERVER);
 			return;
 		}
 	}
@@ -225,6 +219,14 @@ void Server::readFromClient(Connection &conn, size_t &i, Parser &parser, HTTPReq
 		parser.parseRequestLineAndHeaders(parser.getHeadersBuffer().c_str(), request, response);
 		if (parser.getHeadersAreParsed() && !conn.findServerBlock(_config.getServerBlocks()))
 			Debug::log("Error finding server block", Debug::NORMAL);
+		
+		// check if connection limit is reached
+		if (isLimitConnReached(conn))
+		{
+			response.setStatusCode(503, "Service Unavailable");
+			conn.setHasFinishedReading(true);
+		}
+
 	}
 
 	if (response.getStatusCode() != 0)
@@ -237,23 +239,27 @@ void Server::readFromClient(Connection &conn, size_t &i, Parser &parser, HTTPReq
 	if (parser.getHeadersComplete() && request.getMethod() == "GET")
 		conn.setHasFinishedReading(true);
 
-	if (request.getMethod() == "GET" || request.getMethod() == "DELETE" || request.getMethod() == "SALAD")
+	if (request.getMethod() == "GET" || request.getMethod() == "SALAD")
 		Debug::log("GET request, no body to read", Debug::NORMAL);
 	else
-		handlePostRequest(conn, parser, request, response);
+		handlePostAndDelete(conn, parser, request, response);
 }
 
-void Server::handlePostRequest(Connection &conn, Parser &parser, HTTPRequest &request, HTTPResponse &response)
+void Server::handlePostAndDelete(Connection &conn, Parser &parser, HTTPRequest &request, HTTPResponse &response)
 {
+	Debug::log("Entering handlePostAndDelete", Debug::NORMAL);
+
 	if (parser.getIsChunked() && !conn.getHasReadSocket())
 	{
 		Debug::log("Chunked body", Debug::NORMAL);
-		if (!conn.readChunkedBody(parser))
+		// TODO: (!conn.readBody(parser, request, response)) - does not make sense here
+		if (!conn.readChunkedBody(parser)) // && (!conn.readBody(parser, request, response))
 		{
 			// only in case of system error == do not send response
 			Debug::log("Error reading chunked body", Debug::OCF);
 			conn.setCanBeClosed(true);
 			conn.setHasFinishedReading(true);
+			conn.setHasDataToSend(true);
 			return;
 		}
 		conn.setHasReadSocket(true);
@@ -280,8 +286,11 @@ void Server::handlePostRequest(Connection &conn, Parser &parser, HTTPRequest &re
 	}
 
 	if (!parser.getBodyComplete() && request.getContentLength() != 0 &&
-		parser.getBuffer().size() == request.getContentLength())
+		parser.getBuffer().size() >= request.getContentLength())
 	{
+		// std::cout << "Body complete" << std::endl;
+		// std::cout << YELLOW << parser.getBuffer() << RESET << std::endl;
+		request.setBody(parser.getBuffer());
 		parser.setBodyComplete(true);
 		conn.setHasFinishedReading(true);
 		return;
@@ -311,8 +320,8 @@ void Server::buildResponse(Connection &conn, size_t &i, HTTPRequest &request, HT
 	{
 		if (conn.getCGIHasTimedOut())
 		{
-			std::cout << "CGI timed out" << std::endl;
-			response.setStatusCode(500, "Internal Server Error");
+			Debug::log("CGI timed out", Debug::CGI);
+			response.setStatusCode(504, "Internal Server Error");
 			response.setIsCGI(false);
 		}
 		else
@@ -326,15 +335,15 @@ void Server::buildResponse(Connection &conn, size_t &i, HTTPRequest &request, HT
 	ServerBlock serverBlock;
 	Directives directive;
 
-	std::cout << GREEN << "Number of server blocks: " << _config.getServerBlocks().size() << RESET << std::endl;
-	std::cout << "Request host: " << request.getSingleHeader("host").second << std::endl;
+	Debug::log("Number of server blocks: " + toString(_config.getServerBlocks().size()), Debug::SERVER);
+	Debug::log("Request host: " + request.getSingleHeader("host").second, Debug::SERVER);
 
 	formRequestTarget(request);
 
 	if (conn.getHasServerBlock() != NOT_FOUND)
 		findLocationBlock(request, conn.getServerBlock(), directive);
 
-	std::cout << RED << "Root: " << directive._root << RESET << std::endl;
+	Debug::log("Root: " + directive._root, Debug::SERVER);
 
 	Router router(directive, _eventManager, conn);
 
@@ -355,7 +364,7 @@ void Server::buildResponse(Connection &conn, size_t &i, HTTPRequest &request, HT
 		router.setPollFd(&conn.getPollFd());
 		router.routeRequest(request, response);
 	}
-	std::cout << "Is Response CGI? " << response.getIsCGI() << std::endl;
+
 	if (!response.getIsCGI())
 	{
 		conn.setHasDataToSend(true);
@@ -365,7 +374,7 @@ void Server::buildResponse(Connection &conn, size_t &i, HTTPRequest &request, HT
 
 void Server::readCGIPipe(Connection &conn, HTTPResponse &response)
 {
-	std::cout << RED << "Entering readCGIPipe" << RESET << std::endl;
+	Debug::log("Entering readCGIResponse", Debug::CGI);
 	std::string cgiOutput;
 	int *pipeFD;
 	pipeFD = response.getCGIpipeFD();
@@ -373,7 +382,7 @@ void Server::readCGIPipe(Connection &conn, HTTPResponse &response)
 	ssize_t bytesRead;
 
 	bytesRead = read(pipeFD[0], readBuffer, CGI_BUFFER_SIZE - 1);
-	std::cout << "Bytes read: " << bytesRead << std::endl;
+	Debug::log("Bytes read: " + toString(bytesRead), Debug::CGI);
 	if (bytesRead > 0)
 	{
 		readBuffer[bytesRead] = '\0';
@@ -405,17 +414,18 @@ void Server::readCGIPipe(Connection &conn, HTTPResponse &response)
 	{
 		response.setIsCGI(false);
 		conn.setHasDataToSend(true);
+		response.setBody(conn.getCGIOutputBuffer());
 		response.CGIStringToResponse(conn.getCGIOutputBuffer());
+		// std::cout << response << std::endl;
 		close(pipeFD[0]);
 	}
 }
 
 void Server::writeToClient(Connection &conn, size_t &i, HTTPResponse &response)
 {
-	std::cout << "\033[1;36m"
-			  << "Entering writeToClient"
-			  << "\033[0m" << std::endl;
-	std::cout << response << std::endl;
+	Debug::log("Entering writeToClient", Debug::NORMAL);
+	Debug::log("response: " + response.objToString(), Debug::NORMAL);
+
 	static int sendResponseCounter = 0;
 	bool isLastSend = false;
 	size_t tmpBufferSize = SEND_BUFFER_SIZE;
@@ -425,17 +435,26 @@ void Server::writeToClient(Connection &conn, size_t &i, HTTPResponse &response)
 	{
 		conn.setResponseString(response.objToString());
 		conn.setResponseSize(response.objToString().size());
+		// std::cout << response.objToString() << std::endl;
 		sendResponseCounter = 0;
 	}
 
 	if (conn.getResponseString().size() < SEND_BUFFER_SIZE)
 	{
 		tmpBufferSize = conn.getResponseString().size();
-		std::cout << GREEN << "Sending last part of the response" << RESET << std::endl;
+		Debug::log("Sending last part of the response", Debug::NORMAL);
+		if (conn.getResponse().getStatusCode() < 300)
+			std::cout << GREEN << conn.getRequest().getMethod() << " " << conn.getResponse().getStatusCode() << " " << \
+			conn.getResponse().getStatusMessage() << \
+			" " << conn.getRequest().getRequestTarget() << RESET << std::endl;
+		else
+			std::cout << RED << conn.getRequest().getMethod() << " " << conn.getResponse().getStatusCode() << " " << \
+			conn.getResponse().getStatusMessage() << \
+			" " << conn.getRequest().getRequestTarget() << RESET << std::endl;
 		isLastSend = true;
 	}
 
-	std::cout << GREEN << "sendResponseCounter: " << sendResponseCounter << RESET << std::endl;
+	Debug::log("sendResponseCounter: " + toString(sendResponseCounter), Debug::NORMAL);
 	int read = send(conn.getPollFd().fd, conn.getResponseString().c_str(), tmpBufferSize, 0);
 	if (read == -1)
 	{
@@ -456,13 +475,12 @@ void Server::writeToClient(Connection &conn, size_t &i, HTTPResponse &response)
 
 void Server::closeClientConnection(Connection &conn, size_t &i)
 {
-	std::cout << "\033[1;36m"
-			  << "Entering closeClientConnection"
-			  << "\033[0m" << std::endl;
+	Debug::log("Entering closeClientConnection", Debug::NORMAL);
 	// TODO: should we close it with the Destructor of the Connection class?
 	close(conn.getPollFd().fd);
 	_FDs.erase(_FDs.begin() + i);
 	_connections.erase(_connections.begin() + i);
+	_connectionsPerIP[conn.getServerIp()] -= 1;
 	--_clientCounter;
 	--i;
 }
@@ -474,10 +492,7 @@ void Server::handleConnection(Connection &conn, size_t &i)
 	HTTPResponse &response = _connections[i].getResponse();
 
 	// printFrame("CLIENT SOCKET EVENT", true);
-	std::cout << "\033[1;36m"
-			  << "Entering handleConnection"
-			  << "\033[0m" << std::endl;
-	std::cout << BLUE << *response.getCGIpipeFD() << RESET << std::endl;
+	Debug::log("Entering handleConnection", Debug::NORMAL);
 
 	conn.setHasReadSocket(false);
 	if (!conn.getHasFinishedReading())
@@ -495,11 +510,6 @@ void Server::handleConnection(Connection &conn, size_t &i)
 
 	if (conn.getCanBeClosed())
 		closeClientConnection(conn, i);
-
-	// Validate the CGI pipe file descriptors before accessingjj
-	// TODO: following line get an overflow on mac
-	// std::cout << BLUE << *response.getCGIpipeFD() << RESET << std::endl;
-	std::cout << RED << "Exiting handleConnection" << RESET << std::endl;
 }
 
 /*** Private Methods ***/
@@ -522,7 +532,7 @@ std::string normalizeIPAddress(const std::string &ip, bool isIpV6)
 
 void Server::createServerSockets(std::vector<ServerBlock> &serverBlocks)
 {
-	std::cout << BLUE << "Entering createServerSockets" << RESET << std::endl;
+	Debug::log("Entering createServerSockets", Debug::SERVER);
 	std::vector<Listen> allListens;
 	for (std::vector<ServerBlock>::iterator it = serverBlocks.begin(); it != serverBlocks.end(); ++it)
 	{
@@ -573,13 +583,12 @@ void Server::createServerSockets(std::vector<ServerBlock> &serverBlocks)
 		}
 		else
 		{
-			std::cout << "IPV6_V6ONLY: " << ipv6only << std::endl;
+			Debug::log("IPV6_V6ONLY: " + toString(ipv6only), Debug::SERVER);
 		}
 		ServerSocket serverSocket(serverFD, *it);
 		_serverSockets.push_back(serverSocket);
 	}
-	std::cout << BLUE << "Server socket(s) created" << RESET << std::endl;
-	std::cout << "\n\n";
+	Debug::log("Exiting createServerSockets", Debug::SERVER);
 }
 
 void Server::setReuseAddrAndPort()
@@ -609,8 +618,8 @@ void Server::bindToPort()
 		inet_ntop(AF_INET6, &(serverSocketAddr.sin6_addr), ipv6Address, INET6_ADDRSTRLEN);
 
 		// Print original IP Address and Port
-		std::cout << "Original IP Address: " << ipv6Address << std::endl;
-		std::cout << "Original Port: " << ntohs(serverSocketAddr.sin6_port) << std::endl;
+		Debug::log("Original IP Address: " + std::string(ipv6Address), Debug::SERVER);
+		Debug::log("Original Port: " + toString(ntohs(serverSocketAddr.sin6_port)), Debug::SERVER);
 
 		// Overwrite the IP address and port with hardcoded values for test
 		// serverSocketAddr.sin6_addr = in6addr_any; // Bind to all interfaces for IPv6
@@ -621,17 +630,17 @@ void Server::bindToPort()
 		// Print the sockaddr and address family
 		// We reuse the ipv6Address buffer to store the new IP address
 		inet_ntop(AF_INET6, &(serverSocketAddr.sin6_addr), ipv6Address, INET6_ADDRSTRLEN);
-		std::cout << "First print of serverSocketAddr" << std::endl;
-		std::cout << "IP Address: " << ipv6Address << std::endl;
-		std::cout << "Port: " << ntohs(serverSocketAddr.sin6_port) << std::endl;
-		std::cout << "Address Family: " << serverSocketAddr.sin6_family << std::endl;
+		// std::cout << "First print of serverSocketAddr" << std::endl;
+		// std::cout << "IP Address: " << ipv6Address << std::endl;
+		// std::cout << "Port: " << ntohs(serverSocketAddr.sin6_port) << std::endl;
+		// std::cout << "Address Family: " << serverSocketAddr.sin6_family << std::endl;
 
 		int bindResult = bind(it->getServerFD(), serverSocketAddrPtr, sizeof(serverSocketAddr));
-		std::cout << "Bind result: " << bindResult << std::endl;
+		Debug::log("Bind result: " + toString(bindResult), Debug::SERVER);
 		if (bindResult < 0)
 		{
-			std::cout << YELLOW << "Server socket failed to bind to IP " << ipv6Address << " on port "
-					  << ntohs(serverSocketAddr.sin6_port) << RESET << std::endl;
+			Debug::log("Server socket failed to bind to IP " + std::string(ipv6Address) + " on port " + \
+			toString(ntohs(serverSocketAddr.sin6_port)), Debug::SERVER);
 			perror("In bind");
 			continue; // just to remember that we aren not exiting
 		}
@@ -641,14 +650,13 @@ void Server::bindToPort()
 			char ipv6AddressBound[INET6_ADDRSTRLEN];
 			if (inet_ntop(AF_INET6, &(serverSocketAddr.sin6_addr), ipv6AddressBound, INET6_ADDRSTRLEN))
 			{
-				std::cout << YELLOW << "Server socket bound to IP " << ipv6AddressBound << " on port "
-						  << ntohs(serverSocketAddr.sin6_port) << RESET << std::endl;
+				Debug::log("Server socket bound to IP " + std::string(ipv6AddressBound) + " on port " + \
+				toString(ntohs(serverSocketAddr.sin6_port)), Debug::SERVER);
 			}
 			else
 			{
 				std::cerr << "Error converting bound IPv6 address to text." << std::endl;
 			}
-			std::cout << "***" << std::endl;
 		}
 		// if (bind(it->getServerFD(), serverSocketAddrPtr, sizeof(serverSocketAddr)) < 0)
 	}
@@ -671,8 +679,8 @@ void Server::listen()
 		// Convert IPv6 address from binary to text
 		if (inet_ntop(AF_INET6, &addr.sin6_addr, ipv6Address, INET6_ADDRSTRLEN))
 		{
-			std::cout << "Server socket listening on IP " << ipv6Address << " and port " << ntohs(addr.sin6_port)
-					  << std::endl;
+			Debug::log("Server socket listening on IP " + std::string(ipv6Address) + \
+			" and port " + toString(ntohs(addr.sin6_port)), Debug::SERVER);
 		}
 		else
 		{
@@ -740,6 +748,12 @@ void Server::acceptNewConnection(Connection &conn)
 		Connection newConnection(newSocketPoll, *this);
 		newConnection.setType(CLIENT);
 		newConnection.setServerIp(conn.getServerIp());
+		
+		if (_connectionsPerIP.find(conn.getServerIp()) == _connectionsPerIP.end())
+			_connectionsPerIP.insert(std::pair<std::string, int>(conn.getServerIp(), 1));
+		else
+			_connectionsPerIP[conn.getServerIp()] += 1;
+		
 		newConnection.setServerPort(conn.getServerPort());
 		if (VERBOSE)
 		{
@@ -755,8 +769,6 @@ void Server::acceptNewConnection(Connection &conn)
 		_FDs.push_back(newSocketPoll);
 		_connections.push_back(newConnection);
 		++_clientCounter;
-		std::cout << newConnection.getHasFinishedReading() << std::endl;
-		std::cout << _connections.back().getHasFinishedReading() << std::endl;
 		/* end together */
 		if (VERBOSE)
 		{
@@ -776,13 +788,13 @@ void Server::acceptNewConnection(Connection &conn)
 			struct sockaddr_in *s = (struct sockaddr_in *)&clientAddress;
 			// TODO: inet_ntop is forbidden in the subject.
 			inet_ntop(AF_INET, &s->sin_addr, clientIP, sizeof clientIP);
-			std::cout << "New connection from (IPv4): " << clientIP << std::endl;
+			Debug::log("New connection from (IPv4): " + std::string(clientIP), Debug::SERVER);
 		}
 		else if (clientAddress.ss_family == AF_INET6)
 		{
 			struct sockaddr_in6 *s = (struct sockaddr_in6 *)&clientAddress;
 			inet_ntop(AF_INET6, &s->sin6_addr, clientIP, sizeof clientIP);
-			std::cout << "New connection from (IPv6): " << clientIP << std::endl;
+			Debug::log("New connection from (IPv6): " + std::string(clientIP), Debug::SERVER);
 		}
 		else
 		{
@@ -799,10 +811,10 @@ void Server::acceptNewConnection(Connection &conn)
 void Server::handleServerSocketError()
 {
 	static int errorCounter = 0;
-	perror("poll server socket error");
+	// perror("poll server socket error");
 	if (errorCounter > 5)
 	{
-		std::cerr << "Too many errors on server socket. Exiting." << std::endl;
+		Debug::log("Too many errors on server socket. Exiting.", Debug::SERVER);
 		exit(EXIT_FAILURE);
 	}
 	++errorCounter;
@@ -810,21 +822,21 @@ void Server::handleServerSocketError()
 
 void Server::handleClientSocketError(int clientFD, size_t &i)
 {
-	std::cout << "handleClientSocketError" << std::endl;
-	close(clientFD);
+	Debug::log("Entering handleClientSocketError", Debug::SERVER);
+	// close(clientFD);
+	(void)clientFD;
+	closeClientConnection(_connections[i], i);
 	/* start together */
-	_FDs.erase(_FDs.begin() + i);
-	_connections.erase(_connections.begin() + i);
+	// _FDs.erase(_FDs.begin() + i);
+	// _connections.erase(_connections.begin() + i);
 	/* end together */
-	--i;
-	perror("poll client socket error");
+	// --i;
+	// perror("poll client socket error");
 }
 
+// Is not the socket timeout, but the poll timeout
 void Server::handleSocketTimeoutIfAny()
 {
-	// Is not the socket timeout, but the poll timeout
-	std::cout << "Timeout occurred!" << std::endl;
-
 	// loop through the connections and check for timeout
 	for (size_t i = 0; i < _FDs.size(); i++)
 	{
@@ -832,9 +844,10 @@ void Server::handleSocketTimeoutIfAny()
 			continue;
 
 		double elapsed = difftime(time(NULL), _connections[i].getStartTime());
-		if (elapsed > 3)
+		Debug::log("Elapsed time: " + toString(elapsed) + " seconds", Debug::SERVER);
+		if (elapsed > CLIENT_TIMEOUT_S) // 10 seconds
 		{
-			std::cout << RED << "Elapsed time: " << elapsed << " seconds" << RESET << std::endl;
+			Debug::log("Elapsed time: " + toString(elapsed) + " seconds", Debug::SERVER);
 			// We have to send a 408 Request Timeout
 			_connections[i].getResponse().setStatusCode(408, "Request Timeout");
 			buildResponse(_connections[i], i, _connections[i].getRequest(), _connections[i].getResponse());
@@ -917,7 +930,6 @@ void Server::addCGI(const EventData &eventData)
 	(void)eventData;
 	setHasCGI(true);
 	setCGICounter(getCGICounter() + 1);
-	std::cout << "CGI added: _hasCGI set to " << _hasCGI << ", _CGICounter is now " << _CGICounter << std::endl;
 }
 
 void Server::removeCGI()
@@ -953,7 +965,7 @@ void Server::formRequestTarget(HTTPRequest &request)
 		requestTarget = "/";
 
 	request.setRequestTarget(requestTarget);
-	std::cout << "Request target: " << request.getRequestTarget() << std::endl;
+	Debug::log("Request target: " + request.getRequestTarget(), Debug::SERVER);
 }
 
 void Server::findLocationBlock(HTTPRequest &request, ServerBlock &serverBlock, Directives &directive)
@@ -962,11 +974,10 @@ void Server::findLocationBlock(HTTPRequest &request, ServerBlock &serverBlock, D
 
 	for (size_t i = 0; i < serverBlock.getLocations().size(); i++)
 	{
-		std::cout << "Location: " << serverBlock.getLocations()[i]._path << " == " << request.getRequestTarget()
-				  << std::endl;
+		Debug::log("Location: " + serverBlock.getLocations()[i]._path + " == " + request.getRequestTarget(), Debug::SERVER);
 		if (request.getRequestTarget() == serverBlock.getLocations()[i]._path)
 		{
-			std::cout << "Location found" << std::endl;
+			Debug::log("Location found", Debug::SERVER);
 			directive = serverBlock.getLocations()[i];
 			break;
 		}
@@ -976,11 +987,6 @@ void Server::findLocationBlock(HTTPRequest &request, ServerBlock &serverBlock, D
 void Server::addPipeFDs(int pipe0, int pipe1)
 {
 	_pipeFDs.push_back(std::make_pair(pipe0, pipe1));
-	// print the pipe fds
-	for (size_t i = 0; i < _pipeFDs.size(); i++)
-	{
-		std::cout << PURPLE << "Pipe FDs: " << _pipeFDs[i].first << RESET << std::endl;
-	}
 }
 
 // clang-format off
@@ -989,3 +995,27 @@ std::vector<std::pair<int, int> > Server::getPipeFDs() const
 	return _pipeFDs;
 }
 // clang-format on
+
+bool Server::isLimitConnReached(Connection &conn)
+{
+	if (conn.getHasServerBlock() == NOT_FOUND)
+		return (false);
+	
+	Directives directive = conn.getServerBlock().getDirectives();
+
+	if (directive._limit_conn != 0)
+	{
+		// loop through all the listen directives of the server block
+		for (size_t i = 0; i < directive._listen.size(); i++)
+		{
+			if (_connectionsPerIP[directive._listen[i].getIp()] > (int)directive._limit_conn)
+			{
+				std::cout << "number of connections: " << _connectionsPerIP[directive._listen[0].getIp()] << std::endl;
+				std::cout << "limit: " << directive._limit_conn << std::endl;
+				Debug::log("Connection limit reached", Debug::SERVER);
+				return (true);
+			}
+		}
+	}
+	return (false);
+}

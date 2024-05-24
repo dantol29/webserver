@@ -24,7 +24,9 @@ std::vector<IEventListener *> EventManager::getObservers() const
 // Subscribe an observer to this manager
 void EventManager::subscribe(IEventListener *observer)
 {
+	Debug::log("EventManager::subscribe", Debug::EVENTS);
 	_observers.push_back(observer);
+	Debug::log("Size of observers: " + toString(_observers.size()), Debug::EVENTS);
 }
 
 // Unsubscribe an observer from this manager
@@ -39,14 +41,14 @@ void EventManager::unsubscribe(IEventListener *observer)
 // void EventManager::emit(int eventID)
 void EventManager::emit(const EventData &eventData)
 {
-	std::cout << YELLOW << "Event emitted: " << eventData << RESET << std::endl;
+	Debug::log("EventManager::emit", Debug::EVENTS);
 	// Notify all observers about the event
-	std::cout << "Size of observers: " << _observers.size() << std::endl;
+	Debug::log("Size of observers: " + toString(_observers.size()), Debug::EVENTS);
 	for (std::vector<IEventListener *>::iterator it = _observers.begin(); it != _observers.end(); ++it)
 	{
 		ServerEventListener *serverEventListener = dynamic_cast<ServerEventListener *>(*it);
 		(*it)->handleEvent(eventData);
-		std::cout << RED << serverEventListener->getServer().getCGICounter() << RESET << std::endl;
+		//std::cout << RED << serverEventListener->getServer().getCGICounter() << RESET << std::endl;
 		_pipeFDs = serverEventListener->getServer().getPipeFDs();
 	}
 }

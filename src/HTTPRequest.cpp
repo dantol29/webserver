@@ -194,7 +194,7 @@ void HTTPRequest::replaceHeader(const std::string &key, const std::string &value
 	std::string lowerKey = key;
 	for (size_t i = 0; i < lowerKey.size(); ++i)
 		lowerKey[i] = std::tolower(static_cast<unsigned char>(lowerKey[i]));
-	std::cout << "Replacing header: " << key << " with value: " << lowerKey << std::endl;
+	Debug::log("Replacing header: " + key + " with value: " + lowerKey, Debug::PARSER);
 	std::multimap<std::string, std::string>::iterator it = _headers.find(lowerKey);
 	if (it != _headers.end())
 		_headers.erase(it);
