@@ -38,21 +38,21 @@ _not supported_
 
 ## 411 Length Required
 ### How to trigger?
-Send POST request without Content-Length header
+Send POST request without `Content-Length` header
 
 ## 412 Precondition Failed
 _not supported_
 
 ## 413 Payload Too Large
 ### How to trigger?
-Send POST request bigger than client_max_body_size
+Send POST request bigger than `client_max_body_size`
 
 ## 414 URI Too Long
 ### How to trigger?
 Send request with headers > 8KB
 
 ## 415 Unsupported Media Type
-Send request to CGI that is not in cgi_ext directive
+Send request to CGI that is not in `cgi_ext` directive
 
 ## 416 Range Not Satisfiable
 _not supported_
@@ -94,6 +94,15 @@ Send request with headers > 8KB
 ## 451 Unavailable For Legal Reasons
 _not supported_
 
+## 500 Internal Server Error
+Launch CGI with error inside
+
 ## 503 Service Unavailable
 ### How to trigger?
 Set `limit_connn` directive and send more requests than written there
+
+## 504 Gateway Timeout
+### How to trigger?
+Launch CGI that is executed longer than 5 seconds
+
+_13 supported errors_
