@@ -214,6 +214,7 @@ bool CGIHandler::executeCGI(const MetaVariables &env, std::string body, HTTPResp
 		std::cout << RED << "Exiting CGIHandler::executeCGI with true" << RESET << std::endl;
 		return true;
 	}
+	return false;
 }
 
 void CGIHandler::setFDsRef(std::vector<struct pollfd> *FDsRef)
