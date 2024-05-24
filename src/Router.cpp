@@ -110,7 +110,7 @@ void Router::routeRequest(HTTPRequest &request, HTTPResponse &response)
 		}
 		else
 		{
-			std::cout << "Path is a static content, handling as static content" << std::endl;
+			// std::cout << "Path is a static content, handling as static content" << std::endl;
 			StaticContentHandler staticContentHandler;
 			staticContentHandler.handleRequest(request, response);
 		}

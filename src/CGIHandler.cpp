@@ -202,13 +202,13 @@ bool CGIHandler::executeCGI(const MetaVariables &env, std::string body, HTTPResp
 		std::cout << GREEN << _connection.getCGIPid() << RESET << std::endl;
 
 		// clang-format off
-		std::vector<std::pair<int, int> > pipes = _eventManager.getPipeFDs();
-		for (std::vector<std::pair<int, int> >::const_iterator it = pipes.begin(); it != pipes.end(); ++it)
-		{
-			std::cout << GREEN << "CGIHandler: pipeFDs: " << (*it).first << RESET << std::endl;
-		}
+		// std::vector<std::pair<int, int> > pipes = _eventManager.getPipeFDs();
+		// for (std::vector<std::pair<int, int> >::const_iterator it = pipes.begin(); it != pipes.end(); ++it)
+		// {
+		// 	std::cout << GREEN << "CGIHandler: pipeFDs: " << (*it).first << RESET << std::endl;
+		// }
 		// clang-format on
-		std::cout << RED << "Exiting CGIHandler::executeCGI with true" << RESET << std::endl;
+		// std::cout << RED << "Exiting CGIHandler::executeCGI with true" << RESET << std::endl;
 		return true;
 	}
 	return false;
