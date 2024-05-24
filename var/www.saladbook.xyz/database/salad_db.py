@@ -50,8 +50,8 @@ def log(message):
 
 def print_response(status_code, status_message, body):
     """Print the HTTP response with status code, status message, and body."""
-    print(f"Status: {status_code} {status_message}\r\n")
-    print("Content-Type: text/html\r\n")
+    print(f"Status: {status_code} {status_message}")
+    print("Content-Type: text/html")
     print("\r\n")
     response_body = f"<html><body>{json.dumps(body)}{''.join(logs)}</body></html>"
     print(response_body)
@@ -59,8 +59,6 @@ def print_response(status_code, status_message, body):
 def main():
     global logs
     logs = []
-
-    print("Content-type: text/html\n")
     
     # Get the directory where the script is located
     script_directory = get_script_directory()

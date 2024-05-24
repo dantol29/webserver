@@ -410,6 +410,7 @@ void Server::readCGIPipe(Connection &conn, HTTPResponse &response)
 	{
 		response.setIsCGI(false);
 		conn.setHasDataToSend(true);
+		response.setBody(conn.getCGIOutputBuffer());
 		response.CGIStringToResponse(conn.getCGIOutputBuffer());
 		std::cout << response << std::endl;
 		close(pipeFD[0]);
@@ -430,6 +431,7 @@ void Server::writeToClient(Connection &conn, size_t &i, HTTPResponse &response)
 	{
 		conn.setResponseString(response.objToString());
 		conn.setResponseSize(response.objToString().size());
+		std::cout << response.objToString() << std::endl;
 		sendResponseCounter = 0;
 	}
 
