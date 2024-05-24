@@ -97,11 +97,50 @@ fi
 response=$(curl -s -o /dev/null -w "%{http_code}" -H "Host: www.development_site" http://127.0.0.1:8080/cgi-bin/duration_ts.cgi)
 
 if [ "$response" -eq 200 ]; then
-	echo -e "$GREEN www.development_site.com:8080: 200 $RESET"
+	echo -e "$GREEN www.development_site.com:8080: 200 $GREEN"
 else
 	echo -e "$RED www.development_site.com:8080: $response $RESET"
 	is_error=true
 fi
+
+response=$(curl -s -o /dev/null -w "%{http_code}" -H "Host: www.development_site" http://127.0.0.1:8080/cgi-bin/500seconds.cgi)
+
+if [ "$response" -eq 504 ]; then
+	echo -e "$GREEN www.development_site.com:8080: 504(Gateway Timeout) $GREEN"
+else
+	echo -e "$RED www.development_site.com:8080: $response $RESET"
+	is_error=true
+fi
+
+urls=(
+  "http://127.0.0.1:8080/cgi-bin/duration_ts.cgi"
+  "http://127.0.0.1:8080/cgi-bin/duration_ts.cgi"
+  "http://127.0.0.1:8080/cgi-bin/duration_ts.cgi"
+  "http://127.0.0.1:8080/cgi-bin/duration_ts.cgi"
+)
+
+# send 4 requests in parallel (limit in server block is 3, so the last request expects a 503 response)
+expected_responses=(200 200 200 503)
+
+for i in "${!urls[@]}"; do
+  (
+    response=$(curl -s -o /dev/null -w "%{http_code}" -H "Host: www.development_site" "${urls[$i]}")
+    if [ "$response" -eq "${expected_responses[$i]}" ]; then
+      echo -e "$GREEN www.development_site.com:8080: $response $GREEN"
+    else
+      echo -e "$RED www.development_site.com:8080: $response $GREEN"
+      is_error=true
+    fi
+  ) &
+  
+  # Add a delay of 1 second before the next iteration, except after the last request
+  if [ "$i" -lt $(( ${#urls[@]} - 1 )) ]; then
+    sleep 0.3
+  fi
+done
+
+# Wait for all background processes to finish
+wait
 
 if [ "$is_error" = true ]; then
     exit 1

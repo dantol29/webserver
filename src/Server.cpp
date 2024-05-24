@@ -313,7 +313,7 @@ void Server::buildResponse(Connection &conn, size_t &i, HTTPRequest &request, HT
 		if (conn.getCGIHasTimedOut())
 		{
 			Debug::log("CGI timed out", Debug::CGI);
-			response.setStatusCode(500, "Internal Server Error");
+			response.setStatusCode(504, "Internal Server Error");
 			response.setIsCGI(false);
 		}
 		else
@@ -743,7 +743,6 @@ void Server::acceptNewConnection(Connection &conn)
 		else
 			_connectionsPerIP[conn.getServerIp()] += 1;
 		
-		std::cout << "Server IP: " << conn.getServerIp() << std::endl;
 		newConnection.setServerPort(conn.getServerPort());
 		if (VERBOSE)
 		{
