@@ -188,18 +188,18 @@ size_t ServerBlock::getLimitConn() const
 void ServerBlock::setListen(Listen str, bool isLocation)
 {
 	if (!isLocation)
-		_directives._listen.push_back(str);
-	else
-		throw("listen directive not allowed in location block");
-
-	for (unsigned int i = 0; i < _directives._listen.size(); ++i)
 	{
-		for (unsigned int j = 0; j < _directives._listen.size(); ++j)
+		std::vector<Listen>::iterator it;
+
+		for (it = _directives._listen.begin(); it != _directives._listen.end(); ++it)
 		{
-			if (i != j && _directives._listen[i].getPort() == _directives._listen[j].getPort())
-				throw("Duplicate listen directive");
+			if (it->getPort() == str.getPort() && it->getIp() == str.getIp())
+				throw std::runtime_error("Duplicate listen directive with same IP and port");
 		}
+		_directives._listen.push_back(str);
 	}
+	else
+		throw std::runtime_error("listen directive not allowed in location block");
 }
 
 void ServerBlock::setServerName(std::vector<std::string> str, bool isLocation)
@@ -223,13 +223,13 @@ void ServerBlock::setErrorPage(std::pair<int, std::string> str, bool isLocation)
 	if (isLocation)
 		throw("error_page directive not allowed in location block");
 	_directives._errorPage.push_back(str);
-	
+
 	for (unsigned int i = 0; i < _directives._errorPage.size(); ++i)
 	{
 		// remove slashes at the begginning
-		if ( _directives._errorPage[i].second[0] == '/')
+		if (_directives._errorPage[i].second[0] == '/')
 			_directives._errorPage[i].second = _directives._errorPage[i].second.substr(1);
-		
+
 		for (unsigned int j = 0; j < _directives._errorPage.size(); ++j)
 		{
 			if (i != j && _directives._errorPage[i].first == _directives._errorPage[j].first)
@@ -460,100 +460,20 @@ std::vector<std::string> ServerBlock::transformServerName(std::string &str)
 	return (newStr);
 }
 
-// Listen ServerBlock::makeListenStruct(std::string &newStr)
-// {
-// 	Listen listen;
-// 	int port;
-// 	std::string ip;
-// 	std::string portStr;
-// 	bool isIpAndPort = false;
-// 	struct addrinfo hints;
-// 	struct addrinfo *res;
-
-// 	listen.isIpv6 = false;
-// 	memset(&hints, 0, sizeof(hints));
-// 	hints.ai_family = AF_UNSPEC;	 // IPv4 or IPv6
-// 	hints.ai_socktype = SOCK_STREAM; // TCP socket
-
-// 	// if IPv6 is in [ip]:port format
-// 	if (newStr[0] == '[')
-// 		newStr.erase(0, 1);
-// 	if (newStr.find(']') != std::string::npos)
-// 		newStr.replace(newStr.find(']'), 1, "");
-
-// 	// (IPv6:port) or (IPv6) or (IPv4) or (port)
-// 	if (getaddrinfo(newStr.c_str(), NULL, &hints, &res) == 0)
-// 	{
-// 		freeaddrinfo(res);
-// 		portStr = newStr;
-
-// 		// (IPv6:port)
-// 		if (newStr.find_last_of(':') != std::string::npos)
-// 		{
-// 			portStr = newStr.substr(newStr.find_last_of(':') + 1);
-// 			isIpAndPort = true;
-// 		}
-
-// 		port = strToInt(portStr);
-// 		if (port >= 1 && port <= 65535)
-// 		{
-// 			listen._port = port;
-// 			if (!isIpAndPort)
-// 			{
-// 				listen._ip = "Any";
-// 				return (listen);
-// 			}
-// 		}
-// 		// is incorrect integer
-// 		else if ((port < 1 || port > 65535) && port != -1)
-// 			throw("Invalid port");
-
-// 		ip = newStr;
-// 		// (IPv6:port)
-// 		if (isIpAndPort)
-// 			ip = newStr.substr(0, newStr.find_last_of(':'));
-// 		listen._ip = ip;
-// 		listen.isIpv6 = true;
-// 	}
-// 	// (IPv4:port)
-// 	else
-// 	{
-// 		ip = newStr.substr(0, newStr.find_last_of(':'));
-// 		portStr = newStr.substr(newStr.find_last_of(':') + 1);
-// 		port = strToInt(portStr);
-// 		if (port < 1 || port > 65535)
-// 			throw("Invalid port");
-// 		listen._ip = ip;
-
-// 		if (getaddrinfo(ip.c_str(), NULL, &hints, &res) != 0)
-// 			throw("Invalid ip");
-// 		freeaddrinfo(res);
-// 		listen._port = port;
-// 	}
-
-// 	if (listen._ip.empty())
-// 		listen._ip = "Any";
-// 	if (listen._port == 0)
-// 		listen._port = 0;
-
-// 	return (listen);
-// }
-
 void Directives::setListenEntry(Listen listenEntry, bool isLocation)
 {
 	if (!isLocation)
+	{
+		std::vector<Listen>::iterator it;
+		for (it = _listen.begin(); it != _listen.end(); ++it)
+		{
+			if (it->getPort() == listenEntry.getPort() && it->getIp() == listenEntry.getIp())
+				throw std::runtime_error("Duplicate listen directive with same IP and port");
+		}
 		_listen.push_back(listenEntry);
+	}
 	else
 		throw("listen directive not allowed in location block");
-
-	for (unsigned int i = 0; i < _listen.size(); ++i)
-	{
-		for (unsigned int j = 0; j < _listen.size(); ++j)
-		{
-			if (i != j && _listen[i].getPort() == _listen[j].getPort())
-				throw("Duplicate listen directive");
-		}
-	}
 }
 
 void ServerBlock::transformServerListen(std::string &str, bool isLocation)
