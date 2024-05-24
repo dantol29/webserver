@@ -140,10 +140,12 @@ void MetaVariables::HTTPRequestToMetaVars(const HTTPRequest &request, MetaVariab
 	env.setVar("GATEWAY_INTERFACE", "CGI/1.1");
 	std::string queryString = formatQueryString(request.getQueryString());
 	env.setVar("QUERY_STRING", queryString);
-	std::cout << "MetaVariables::HTTPRequestToMetaVars:  request.getRequestTarget(): " << request.getRequestTarget()
-			  << std::endl;
+
+	Debug::log("MetaVariables::HTTPRequestToMetaVars:  request.getRequestTarget(): " + request.getRequestTarget(),
+			   Debug::CGI);
+
 	std::pair<std::string, std::string> pathComponents = separatePathAndInfo(request.getRequestTarget());
-	std::cout << "MetaVariables::HTTPRequestToMetaVars:  pathComponents.first: " << pathComponents.first << std::endl;
+	Debug::log("MetaVariables::HTTPRequestToMetaVars:  pathComponents.second: " + pathComponents.second, Debug::CGI);
 
 	std::string root = request.getRoot();
 	std::string host = request.getSingleHeader("host").second;

@@ -36,11 +36,7 @@ CGIHandler &CGIHandler::operator=(const CGIHandler &other)
 
 void CGIHandler::handleRequest(HTTPRequest &request, HTTPResponse &response)
 {
-
-	std::cout << YELLOW << "Entering CGIHandler::handleRequest" << RESET << std::endl;
-	std::cout << request << std::endl;
-	std::cout << YELLOW << "Request body: " << request.getBody() << RESET << std::endl;
-
+	Debug::log("CGIHandler::handleRequest", Debug::CGI);
 	MetaVariables env;
 	env.HTTPRequestToMetaVars(request, env);
 
@@ -50,6 +46,7 @@ void CGIHandler::handleRequest(HTTPRequest &request, HTTPResponse &response)
 		// TODO: it should be hardcoded
 		response.setBody("500 Internal Server Error");
 	}
+	Debug::log("Connection PID" +  toString(_connection.getCGIPid()), Debug::CGI);
 	return;
 }
 
@@ -57,13 +54,11 @@ std::vector<std::string> CGIHandler::createArgvForExecve(const MetaVariables &en
 {
 	std::vector<std::string> argv;
 	std::string scriptName = env.getVar("SCRIPT_NAME");
-	std::cout << "createArgvForExecve: scriptName: " << scriptName << std::endl;
+	Debug::log("createArgvForExecve: scriptName: " + scriptName, Debug::CGI);
 	std::string pathTranslated = env.getVar("PATH_TRANSLATED");
-	std::cout << "createArgvForExecve: pathTranslated: " << pathTranslated << std::endl;
+	Debug::log("createArgvForExecve: pathTranslated: " + pathTranslated, Debug::CGI);
 	std::string scriptPath = pathTranslated;
-	std::cout << "createArgvForExecve: scriptPath: " << scriptPath << std::endl;
-	std::string queryString = env.getVar("QUERY_STRING");
-	std::cout << "createArgvForExecve: queryString: " << queryString << std::endl;
+	Debug::log("createArgvForExecve: scriptPath: " + scriptPath, Debug::CGI);
 
 	if (env.getVar("X_INTERPRETER_PATH") != "")
 	{
@@ -106,12 +101,12 @@ std::vector<char *> CGIHandler::convertToCStringArray(const std::vector<std::str
 void handleTimeout(int sig)
 {
 	(void)sig;
-	std::cout << "CGIHandler: Timeout" << std::endl;
+	Debug::log("CGIHandler: Timeout", Debug::CGI);
 }
 
 bool CGIHandler::executeCGI(const MetaVariables &env, std::string body, HTTPResponse &response)
 {
-	std::cout << RED << "Entering CGIHandler::executeCGI" << RESET << std::endl;
+	Debug::log("CGIHandler::executeCGI", Debug::CGI);
 	std::string cgiOutput;
 	std::vector<std::string> argv = createArgvForExecve(env);
 	std::vector<std::string> envp = env.getForExecve();
@@ -171,7 +166,8 @@ bool CGIHandler::executeCGI(const MetaVariables &env, std::string body, HTTPResp
 
 		if (access(argvPointers[0], X_OK) == -1)
 		{
-			perror("access");
+			Debug::log("CGIHandler: access failed", Debug::CGI);
+			return false;
 			_exit(EXIT_FAILURE);
 			// TODO: @leo I don't think we should exit here. We don't want to kill the whole server cause of a CGI
 			// error. No?
@@ -179,7 +175,8 @@ bool CGIHandler::executeCGI(const MetaVariables &env, std::string body, HTTPResp
 
 		if (execve(argvPointers[0], argvPointers.data(), envpPointers.data()) == -1)
 		{
-			perror("execve");
+			Debug::log("CGIHandler: execve failed", Debug::CGI);
+			return false;
 			// TODO: @leo We should check if execve failed and return an error response and not exti
 
 			_exit(EXIT_FAILURE);

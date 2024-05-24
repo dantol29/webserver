@@ -21,19 +21,15 @@ Parser::~Parser()
 
 bool Parser::preParseHeaders(HTTPResponse &res)
 {
-	// We read the buffer with readHeaders if headersComplete is not true and we write the buffer in the _headersBuffer
 	std::size_t headersEnd = _buffer.find("\r\n\r\n");
 	if (headersEnd != std::string::npos)
 	{
 		_headersBuffer = _buffer.substr(0, headersEnd + 4);
 		_headersComplete = true;
 		_buffer = _buffer.substr(headersEnd + 4);
-		// std::cout << _buffer << std::endl;
-		// std::cout << "\033[31m"
-		// 		  << "_buffer size " << _buffer.size() << "\033[0m" << std::endl;
 		return (true);
 	}
-	std::cout << "headers are not complete" << std::endl;
+	Debug::log("headers are not complete", Debug::PARSER);
 	if (_buffer.length() > CLIENT_MAX_HEADERS_SIZE)
 		return (res.setStatusCode(431, "Headers too large"), false);
 	return true;
@@ -309,7 +305,6 @@ void Parser::saveCokies(HTTPRequest &req)
 						i++;
 					value = cookie.substr(start, i - start);
 					req.setCookies(key, value);
-					std::cout << cookie.substr(i) << std::endl;
 					if (cookie[i] == ';')
 						start = ++i;
 				}
