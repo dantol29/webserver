@@ -456,7 +456,7 @@ void Server::writeToClient(Connection &conn, size_t &i, HTTPResponse &response)
 
 	Debug::log("sendResponseCounter: " + toString(sendResponseCounter), Debug::NORMAL);
 	int read = send(conn.getPollFd().fd, conn.getResponseString().c_str(), tmpBufferSize, 0);
-	if (read == -1)
+	if (read == -1 || read == 0)
 	{
 		perror("send");
 	}
