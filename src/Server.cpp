@@ -729,7 +729,6 @@ void Server::acceptNewConnection(Connection &conn)
 	Debug::log("SERVER SOCKET EVENT", Debug::SERVER, CYAN, false, true);
 	struct sockaddr_storage clientAddress;
 	socklen_t ClientAddrLen = sizeof(clientAddress);
-	Debug::log("New connection detected", Debug::SERVER);
 	int newSocket = accept(conn.getPollFd().fd, (struct sockaddr *)&clientAddress, (socklen_t *)&ClientAddrLen);
 	if (newSocket >= 0)
 	{
