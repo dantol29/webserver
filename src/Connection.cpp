@@ -26,6 +26,8 @@ Connection::Connection(struct pollfd &pollFd, Server &server)
 	_CGIExitStatus = 0;
 	_CGIHasCompleted = false;
 	_CGIHasTimedOut = false;
+	_CGIHasReadPipe = false;
+	_startTime = 0;
 }
 
 Connection::Connection(const Connection &other)
@@ -56,6 +58,9 @@ Connection::Connection(const Connection &other)
 	_CGIExitStatus = other._CGIExitStatus;
 	_CGIHasCompleted = other._CGIHasCompleted;
 	_CGIHasTimedOut = other._CGIHasTimedOut;
+	_CGIHasReadPipe = other._CGIHasReadPipe;
+	_cgiOutputBuffer = other._cgiOutputBuffer;
+	_startTime = other._startTime;
 	// std::cout << "Connection object copied" << std::endl;
 }
 
@@ -87,14 +92,17 @@ Connection &Connection::operator=(const Connection &other)
 		_CGIExitStatus = other._CGIExitStatus;
 		_CGIHasCompleted = other._CGIHasCompleted;
 		_CGIHasTimedOut = other._CGIHasTimedOut;
+		_CGIHasReadPipe = other._CGIHasReadPipe;
+		_cgiOutputBuffer = other._cgiOutputBuffer;
+		_startTime = other._startTime;
 	}
-	std::cout << "Connection object assigned" << std::endl;
+	Debug::log("Connection object assigned", Debug::OCF);
 	return *this;
 }
 
 Connection::~Connection()
 {
-	// std::cout << "Connection object destroyed" << std::endl;
+	Debug::log("Connection object destroyed", Debug::OCF);
 }
 
 // GETTERS AND SETTERS
@@ -219,7 +227,37 @@ bool Connection::getCGIHasCompleted() const
 	return _CGIHasCompleted;
 }
 
+bool Connection::getCGIHasReadPipe() const
+{
+	return _CGIHasReadPipe;
+}
+
+std::string Connection::getCGIOutputBuffer() const
+{
+	return _cgiOutputBuffer;
+}
+
+time_t Connection::getStartTime() const
+{
+	return _startTime;
+}
+
 // SETTERS
+
+void Connection::setStartTime(time_t time)
+{
+	_startTime = time;
+}
+
+void Connection::setCGIOutputBuffer(std::string buffer)
+{
+	_cgiOutputBuffer = buffer;
+}
+
+void Connection::setCGIHasReadPipe(bool value)
+{
+	_CGIHasReadPipe = value;
+}
 
 void Connection::setCGIHasCompleted(bool value)
 {
@@ -312,63 +350,60 @@ void Connection::setCGIExitStatus(int status)
 
 // METHODS
 
+ssize_t Connection::readSocket(char *buffer, size_t bufferSize)
+{
+	ssize_t bytesRead = recv(_pollFd.fd, buffer, bufferSize, 0);
+	if (bytesRead < 0)
+	{
+		perror("recv failed");
+		return -1;
+	}
+	return bytesRead;
+}
+
 bool Connection::readHeaders(Parser &parser)
 {
-	// std::cout << "\nEntering readHeaders" << std::endl;
 	const int bufferSize = BUFFER_SIZE;
 	char buffer[bufferSize] = {0};
-	std::cout << "buffers size: " << sizeof(buffer) << std::endl;
-	ssize_t bytesRead = recv(_pollFd.fd, buffer, bufferSize, 0);
-	std::cout << "bytesRead: " << bytesRead << std::endl;
+	Debug::log("buffer size: " + toString(sizeof(buffer)), Debug::SERVER);
+	ssize_t bytesRead = readSocket(buffer, bufferSize);
+	Debug::log("bytesRead: " + toString(bytesRead), Debug::SERVER);
 	if (bytesRead > 0)
 	{
 		parser.setBuffer(parser.getBuffer() + std::string(buffer, bytesRead));
-		// std::cout << "The buffer is: " << parser.getBuffer() << std::endl;
-
-		// std::cout << "Exiting readHeaders" << std::endl;
 		return true;
 	}
 	else if (bytesRead < 0)
 	{
+		// TODO: All these errors should be always logged
+		Debug::log("Error on recv, possibly a system error", Debug::SERVER);
 		perror("recv failed");
 		return false;
 	}
 	else if (bytesRead == 0)
 	{
-		std::cout << "Connection closed before headers being completely sent" << std::endl;
+		Debug::log("Connection gracefully closed by peer before headers being completely sent", Debug::SERVER);
+		perror("recv failed");
 		return false;
 	}
 	else
 	{
-		std::cout << "Exiting readHeaders. This will never happen here!" << std::endl;
+		Debug::log("Exiting readHeaders. This will never happen here!", Debug::SERVER);
 		return true;
 	}
 }
-// About the hexa conversion
-// Convert the hexadecimal string from `chunkSizeLine` to a size_t value.
-// Here, `std::istringstream` is used to create a stream from the string,
-// which then allows for input operations similar to cin. The `std::hex`
-// manipulator is used to interpret the input as a hexadecimal value.
-// We attempt to stream the input into the `chunkSize` variable. If this operation
-// fails (e.g., because of invalid input characters that can't be interpreted as hex),
-// the stream's failbit is set, and the conditional check fails. In this case,
-// we return false indicating an error in parsing the chunk size.
 
 bool Connection::readChunkedBody(Parser &parser)
 {
-	// TODO: check if this is blocking; I mean the two recvs in readChunkSize and readChunk
 	if (!parser.getBodyComplete())
 	{
 		std::string chunkSizeLine;
-		// readChiunkSize cuould be a method of Connection, now it's a free function.
 		if (!readChunkSize(chunkSizeLine))
 			return false;
-
 		std::istringstream iss(chunkSizeLine);
 		size_t chunkSize;
 		if (!(iss >> std::hex >> chunkSize))
 			return false;
-
 		if (chunkSize == 0)
 		{
 			parser.setBodyComplete(true);
@@ -388,14 +423,12 @@ bool Connection::readChunkedBody(Parser &parser)
 
 bool Connection::readChunkSize(std::string &line)
 {
-	// TODO: check this while loop that could be infinite
-	// TODO: check if this is blocking
-
 	line.clear();
+	// TODO: this is actually a possible infinite loop!
 	while (true)
 	{
-		char buffer;
-		ssize_t bytesRead = recv(_pollFd.fd, &buffer, 1, 0);
+		char buffer = 0;
+		ssize_t bytesRead = readSocket(&buffer, 1);
 		if (bytesRead > 0)
 		{
 			line.push_back(buffer);
@@ -407,27 +440,30 @@ bool Connection::readChunkSize(std::string &line)
 		}
 		else if (bytesRead < 0)
 		{
+			Debug::log("Error on recv, possibly a system error", Debug::SERVER);
 			perror("recv failed");
 			return false;
 		}
-		else
+		else if (bytesRead == 0)
 		{
-			std::cout << "Connection closed" << std::endl;
+			Debug::log("Connection closed gracefully by the peer while reading the chunk size of a chunk",
+					   Debug::SERVER);
 			return false;
 		}
 	}
-	return true;
+	return true; // Unreachable
 }
 
 bool Connection::readChunk(size_t chunkSize, std::string &chunkData, HTTPResponse &response)
 {
+	// TODO: think if we need to set the error here and not in handlePOstAndDelete
 	// Reserve space in the string to avoid reallocations
 	chunkData.reserve(chunkSize + chunkData.size());
 	while (chunkSize > 0)
 	{
 		char buffer[BUFFER_SIZE];
 		size_t bytesToRead = std::min(chunkSize, (size_t)BUFFER_SIZE);
-		ssize_t bytesRead = recv(_pollFd.fd, buffer, bytesToRead, 0);
+		ssize_t bytesRead = readSocket(buffer, bytesToRead);
 		if (bytesRead > 0)
 		{
 			chunkData.append(buffer, bytesRead);
@@ -435,20 +471,21 @@ bool Connection::readChunk(size_t chunkSize, std::string &chunkData, HTTPRespons
 		}
 		else if (bytesRead < 0)
 		{
+			Debug::log("Error on recv, possibly a system error", Debug::SERVER);
 			perror("recv failed in readChunk");
-			// Internal Server Error
 			response.setStatusCode(500, "");
 			return false;
 		}
-		else
+		else if (bytesRead == 0)
 		{
-			// bytes read == 0, connection closed prematurely
+			Debug::log("Connection closed before headers being completely sent", Debug::SERVER);
 			response.setStatusCode(400, "Connection closed while reading chunk"); // Bad Request
 			return false;
 		}
 	}
+	// TODO: check if we need this
 	char crlf[2];
-	ssize_t crlfRead = recv(_pollFd.fd, crlf, 2, 0);
+	ssize_t crlfRead = readSocket(crlf, 2);
 	if (crlfRead < 2)
 	{
 		response.setStatusCode(400, "Connection closed while reading CRLF"); // Bad Request
@@ -459,24 +496,20 @@ bool Connection::readChunk(size_t chunkSize, std::string &chunkData, HTTPRespons
 
 bool Connection::readBody(Parser &parser, HTTPRequest &req, HTTPResponse &res)
 {
-	std::cout << "\nEntering readBody" << std::endl;
 	size_t contentLength = req.getContentLength();
 
 	char buffer[BUFFER_SIZE];
 	// We could also use _bodyTotalBytesRead from the parser
 	size_t bytesRead = parser.getBuffer().size();
-	std::cout << "contentLength: " << contentLength << std::endl;
-	std::cout << "bytesRead: " << bytesRead << std::endl;
+	Debug::log("contentLength: " + toString(contentLength), Debug::SERVER);
+	Debug::log("bytesRead: " + toString(bytesRead), Debug::SERVER);
 	if (bytesRead < contentLength)
 	{
-		ssize_t read = recv(_pollFd.fd, buffer, BUFFER_SIZE, 0);
+		ssize_t read = readSocket(buffer, BUFFER_SIZE);
 		if (read > 0)
 		{
-			std::cout << "read > 0" << std::endl;
-			// _body.append(buffer, read);j
 			parser.setBuffer(parser.getBuffer() + std::string(buffer, read));
-			std::cout << "bytesRead: " << parser.getBuffer().size() << std::endl;
-			// std::cout << "The 'body; is: " << parser.getBuffer() << std::endl;
+			Debug::log("bytesRead: " + toString(parser.getBuffer().size()), Debug::SERVER);
 			bytesRead += read;
 			if (bytesRead == contentLength)
 			{
@@ -490,16 +523,16 @@ bool Connection::readBody(Parser &parser, HTTPRequest &req, HTTPResponse &res)
 			res.setStatusCode(500, ""); // Internal Server Error
 			return false;
 		}
-		else
+		else if (bytesRead == 0)
 		{
-			std::cout << "read == 0" << std::endl;
+			Debug::log("Connection closed before body being completely sent", Debug::SERVER);
 			res.setStatusCode(499, "Connection closed by the client"); // Client Closed Request
 			return false;
+			// return true;
 		}
 	}
 	else
 		parser.setBodyComplete(true);
-	std::cout << "Exiting readBody" << std::endl;
 	return true;
 }
 
@@ -508,7 +541,7 @@ void Connection::addCGI(pid_t pid)
 {
 	_hasCGI = true;
 	_CGIPid = pid;
-	std::cout << "CGI process added with pid: " << _CGIPid << std::endl;
+	Debug::log("CGI process added with pid: " + toString(_CGIPid), Debug::CGI);
 	_CGIStartTime = time(NULL);
 }
 

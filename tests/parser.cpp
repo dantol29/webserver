@@ -134,7 +134,7 @@ void sendData(const std::vector<HTTPTest> &tests, sockaddr_in serverAddress)
 		ssize_t bytesSent = send(clientSocket, test.request.c_str(), test.request.size(), 0);
 
 		char buffer[BUFFER_SIZE];
-		if (waitForResponseWitPoll(clientSocket, POLL_TIMOUT))
+		if (waitForResponseWitPoll(clientSocket, POLL_TIMOUT * 15))
 		{
 			ssize_t bytesRead = read(clientSocket, buffer, BUFFER_SIZE);
 			if (bytesRead < 0)
@@ -210,7 +210,7 @@ void headers(sockaddr_in serverAddress)
 		HTTPTest("GET / HTTP/1.1\r\nRandom: www.example.com\r\n\r\n", "400"),
 		HTTPTest("GET / HTTP/1.1\r\nHost www.example.com\r\n\r\n", "400"),
 		HTTPTest("GET / HTTP/1.1\r\nHost:: www.example.com\r\n\r\n", "400"),
-		// TODO: HTTPTest("GET / HTTP/1.1\r\nHost: www.example.com\r\n\r", "400"),
+		HTTPTest("GET / HTTP/1.1\r\nHost: www.example.com\r\n\r", "408"),
 		HTTPTest("GET / HTTP/1.1\r\nHost:www.example.com\r\n\r\n", "400"),
 		HTTPTest("GET / HTTP/1.1\r\n Host: www.example.com\r\n\r\n", "400"),
 		HTTPTest("GET /HTTP/1.1\r\nHo st: www.example.com\r\n\r\n", "400"),
@@ -225,10 +225,9 @@ void body(sockaddr_in serverAddress)
 		HTTPTest("POST / HTTP/1.1\r\nHost: www.example.com\r\nContent-Length: 17\r\nContent-Type: "
 				 "text/plain\r\n\r\nThis\r\nis body\r\n\r\n",
 				 "200"),
-		// TODO: // HTTPTest("POST / HTTP/1.1\r\nHost: www.example.com\r\nContent-Length: 17\r\nContent-Type: "
-		// 		 "text/plain\r\n\r\nThis\r\nis body\r\n",
-		// 		 "400"),// 400 (Bad Request) -- - Wrong content length // This case is complicated: we have an extra
-		// linera issue for it!}
+		HTTPTest("POST / HTTP/1.1\r\nHost: www.example.com\r\nContent-Length: 100\r\nContent-Type: "
+				 "text/plain\r\n\r\nThis\r\nis body\r\n\r\n",
+				 "408"),// 408 (Timeout) -- - Wrong content length
 		HTTPTest("POST / HTTP/1.1\r\nHost: www.example.com\r\nContent-Length: 16\r\nContent-Type: "
 				 "text/plain\r\n\r\nThis\r\nis body\r\n\n",
 				 "200"), // 200 body shouldn't end with CRLF
@@ -238,10 +237,6 @@ void body(sockaddr_in serverAddress)
 		HTTPTest("POST / HTTP/1.1\r\nHost: www.example.com\r\nContent-Length: 16\r\nContent-Type: "
 				 "text/plain\r\n\r\nThis\ris body\r\n\r\n",
 				 "200"),
-		// HTTPTest(
-		// "POST / HTTP/1.1\r\nHost: www.example.com\r\nContent-Length: 17\r\nContent-Type: "
-		// "text/plain\r\n\r\nThis\r\n\r\nis body\r\n\r\n",
-		// 	"400"), // 400 (Bad Request) -- - Improper line termination of the body // with '\r' // TODO: are you sure?}
 		HTTPTest("GET / HTTP/1.1\r\nHost: www.example.com\r\nContent-Length: 17\r\nContent-Type: "
 				 "text/plain\r\n\r\nThis\r\nis body\r\n\r\n",
 				 "200"), //  GET request with body is correct

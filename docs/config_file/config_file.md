@@ -22,6 +22,8 @@ server {
 - cgi_path
 - cgi_ext
 - return
+- upload_path
+- limit_conn
 
 ### 1. LISTEN
 - Can be written multiple times per _server block_
@@ -118,9 +120,25 @@ server {
 ### 11. RETURN
 - Can be written only once per _server block_
 - Redirects user to a certain URL 
-- is stored in the `std::string>`
+- is stored in the `std::string`
 - _OUR PROTECTION:_
 	1. no protection
+- _DEFAULT VALUE_
+
+### 12. UPLOAD_PATH
+- Can be written only once per _server block_
+- Says where files should be uploaded to 
+- is stored in the `std::string`
+- _OUR PROTECTION:_
+	1. no protection
+- _DEFAULT VALUE_
+
+### 13. LIMIT_CONN
+- Can be written only once per _server block_
+- Controls the number of simultaneous connections
+- is stored in the `size_t`
+- _OUR PROTECTION:_
+	1. check if number is valid
 - _DEFAULT VALUE_
 
 ## OPTIONAL?

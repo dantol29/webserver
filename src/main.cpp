@@ -8,8 +8,8 @@
 
 int main(int argc, char **argv)
 {
-	Debug::enable(true);
-	Debug::setLevel(Debug::NORMAL);
+	Debug::enable(false);
+	Debug::setLevel(Debug::CGI);
 
 	if (argc > 2)
 	{
@@ -21,15 +21,12 @@ int main(int argc, char **argv)
 	if (!config.getErrorMessage().empty())
 		return 1;
 
-	std::cout << config << std::endl; // should be in the DEBUG?
+	// std::cout << config << std::endl; // should be in the DEBUG?
 	EventManager eventManager;
 	Server webserv(config, eventManager);
 
 	ServerEventListener serverEventListener(webserv);
-
 	eventManager.subscribe(&serverEventListener);
-
-	std::cout << &webserv.getEventManager() << std::endl;
 
 	// Initialize SSLManager and SSLContext
 	SSLManager *sslManager = SSLManager::getInstance();

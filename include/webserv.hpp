@@ -19,7 +19,11 @@
 
 #define SEND_BUFFER_SIZE 1024 * 100 // 100 KB
 #define BUFFER_SIZE 1025
-#define CGI_TIMEOUT_MS 300000 // 3 seconds
+#define CGI_BUFFER_SIZE 100 // 100 B
+#define CGI_TIMEOUT_S 6 // 6 seconds
+#define CGI_POLL_TIMEOUT_MS 500 // 0.5 seconds
+#define CLIENT_POLL_TIMEOUT_MS 12000 // 12 seconds
+#define CLIENT_TIMEOUT_S 10 // 10 seconds
 #define CONFIG_FILE_DEFAULT_PATH "./conf/webserv_default.conf"
 
 #define RED "\033[1;31m"
