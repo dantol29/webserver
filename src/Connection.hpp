@@ -65,6 +65,8 @@ class Connection
 	Connection &operator=(const Connection &other);
 	~Connection();
 
+	// TODO: Do they need to be public?
+	ssize_t readSocket(char *buffer, size_t bufferSize);
 	bool readHeaders(Parser &parser);
 	bool readChunkedBody(Parser &parser);
 	bool readChunkSize(std::string &line);

@@ -55,7 +55,7 @@ const EventManager &Server::getEventManager() const
 void Server::startListening()
 {
 	createServerSockets(_serverBlocks);
-	//printServerSockets();
+	// printServerSockets();
 	setReuseAddrAndPort();
 	checkSocketOptions();
 	bindToPort();
@@ -76,12 +76,13 @@ void Server::startPollEventLoop()
 		else
 			timeout = -1;
 		// printConnections("BEFORE POLL", _FDs, _connections, true);
-		Debug::log(toString(CYAN) + "++++++++++++++ #" + toString(pollCounter) + \
-		" Waiting for new connection or Polling +++++++++++++++" + toString(RESET), Debug::SERVER);
+		Debug::log(toString(CYAN) + "++++++++++++++ #" + toString(pollCounter) +
+					   " Waiting for new connection or Polling +++++++++++++++" + toString(RESET),
+				   Debug::SERVER);
 		int ret = poll(_FDs.data(), _FDs.size(), timeout);
 		pollCounter++;
-		//printFrame("POLL EVENT DETECTED", true);
-		// printConnections("AFTER POLL", _FDs, _connections, true);
+		// printFrame("POLL EVENT DETECTED", true);
+		//  printConnections("AFTER POLL", _FDs, _connections, true);
 		if (ret > 0)
 		{
 			size_t originalSize = _FDs.size();
@@ -130,8 +131,9 @@ void Server::waitCGI()
 	Debug::log("PID: " + toString(pid), Debug::CGI);
 
 	for (size_t i = 0; i < originalSize && i < _FDs.size(); i++)
-		Debug::log("PID: " + toString(_connections[i].getCGIPid()) + ", hasCGI: " + \
-		toString(_connections[i].getHasCGI()), Debug::CGI);
+		Debug::log(
+			"PID: " + toString(_connections[i].getCGIPid()) + ", hasCGI: " + toString(_connections[i].getHasCGI()),
+			Debug::CGI);
 
 	if (pid > 0)
 	{
@@ -219,14 +221,13 @@ void Server::readFromClient(Connection &conn, size_t &i, Parser &parser, HTTPReq
 		parser.parseRequestLineAndHeaders(parser.getHeadersBuffer().c_str(), request, response);
 		if (parser.getHeadersAreParsed() && !conn.findServerBlock(_config.getServerBlocks()))
 			Debug::log("Error finding server block", Debug::NORMAL);
-		
+
 		// check if connection limit is reached
 		if (isLimitConnReached(conn))
 		{
 			response.setStatusCode(503, "Service Unavailable");
 			conn.setHasFinishedReading(true);
 		}
-
 	}
 
 	if (response.getStatusCode() != 0)
@@ -444,13 +445,13 @@ void Server::writeToClient(Connection &conn, size_t &i, HTTPResponse &response)
 		tmpBufferSize = conn.getResponseString().size();
 		Debug::log("Sending last part of the response", Debug::NORMAL);
 		if (conn.getResponse().getStatusCode() < 300)
-			std::cout << GREEN << conn.getRequest().getMethod() << " " << conn.getResponse().getStatusCode() << " " << \
-			conn.getResponse().getStatusMessage() << \
-			" " << conn.getRequest().getRequestTarget() << RESET << std::endl;
+			std::cout << GREEN << conn.getRequest().getMethod() << " " << conn.getResponse().getStatusCode() << " "
+					  << conn.getResponse().getStatusMessage() << " " << conn.getRequest().getRequestTarget() << RESET
+					  << std::endl;
 		else
-			std::cout << RED << conn.getRequest().getMethod() << " " << conn.getResponse().getStatusCode() << " " << \
-			conn.getResponse().getStatusMessage() << \
-			" " << conn.getRequest().getRequestTarget() << RESET << std::endl;
+			std::cout << RED << conn.getRequest().getMethod() << " " << conn.getResponse().getStatusCode() << " "
+					  << conn.getResponse().getStatusMessage() << " " << conn.getRequest().getRequestTarget() << RESET
+					  << std::endl;
 		isLastSend = true;
 	}
 
@@ -639,8 +640,9 @@ void Server::bindToPort()
 		Debug::log("Bind result: " + toString(bindResult), Debug::SERVER);
 		if (bindResult < 0)
 		{
-			Debug::log("Server socket failed to bind to IP " + std::string(ipv6Address) + " on port " + \
-			toString(ntohs(serverSocketAddr.sin6_port)), Debug::SERVER);
+			Debug::log("Server socket failed to bind to IP " + std::string(ipv6Address) + " on port " +
+						   toString(ntohs(serverSocketAddr.sin6_port)),
+					   Debug::SERVER);
 			perror("In bind");
 			continue; // just to remember that we aren not exiting
 		}
@@ -650,8 +652,9 @@ void Server::bindToPort()
 			char ipv6AddressBound[INET6_ADDRSTRLEN];
 			if (inet_ntop(AF_INET6, &(serverSocketAddr.sin6_addr), ipv6AddressBound, INET6_ADDRSTRLEN))
 			{
-				Debug::log("Server socket bound to IP " + std::string(ipv6AddressBound) + " on port " + \
-				toString(ntohs(serverSocketAddr.sin6_port)), Debug::SERVER);
+				Debug::log("Server socket bound to IP " + std::string(ipv6AddressBound) + " on port " +
+							   toString(ntohs(serverSocketAddr.sin6_port)),
+						   Debug::SERVER);
 			}
 			else
 			{
@@ -679,8 +682,9 @@ void Server::listen()
 		// Convert IPv6 address from binary to text
 		if (inet_ntop(AF_INET6, &addr.sin6_addr, ipv6Address, INET6_ADDRSTRLEN))
 		{
-			Debug::log("Server socket listening on IP " + std::string(ipv6Address) + \
-			" and port " + toString(ntohs(addr.sin6_port)), Debug::SERVER);
+			Debug::log("Server socket listening on IP " + std::string(ipv6Address) + " and port " +
+						   toString(ntohs(addr.sin6_port)),
+					   Debug::SERVER);
 		}
 		else
 		{
@@ -748,12 +752,12 @@ void Server::acceptNewConnection(Connection &conn)
 		Connection newConnection(newSocketPoll, *this);
 		newConnection.setType(CLIENT);
 		newConnection.setServerIp(conn.getServerIp());
-		
+
 		if (_connectionsPerIP.find(conn.getServerIp()) == _connectionsPerIP.end())
 			_connectionsPerIP.insert(std::pair<std::string, int>(conn.getServerIp(), 1));
 		else
 			_connectionsPerIP[conn.getServerIp()] += 1;
-		
+
 		newConnection.setServerPort(conn.getServerPort());
 		if (VERBOSE)
 		{
@@ -974,7 +978,8 @@ void Server::findLocationBlock(HTTPRequest &request, ServerBlock &serverBlock, D
 
 	for (size_t i = 0; i < serverBlock.getLocations().size(); i++)
 	{
-		Debug::log("Location: " + serverBlock.getLocations()[i]._path + " == " + request.getRequestTarget(), Debug::SERVER);
+		Debug::log("Location: " + serverBlock.getLocations()[i]._path + " == " + request.getRequestTarget(),
+				   Debug::SERVER);
 		if (request.getRequestTarget() == serverBlock.getLocations()[i]._path)
 		{
 			Debug::log("Location found", Debug::SERVER);
@@ -1000,7 +1005,7 @@ bool Server::isLimitConnReached(Connection &conn)
 {
 	if (conn.getHasServerBlock() == NOT_FOUND)
 		return (false);
-	
+
 	Directives directive = conn.getServerBlock().getDirectives();
 
 	if (directive._limit_conn != 0)
