@@ -380,15 +380,6 @@ bool Connection::readHeaders(Parser &parser)
 		return true;
 	}
 }
-// About the hexa conversion
-// Convert the hexadecimal string from `chunkSizeLine` to a size_t value.
-// Here, `std::istringstream` is used to create a stream from the string,
-// which then allows for input operations similar to cin. The `std::hex`
-// manipulator is used to interpret the input as a hexadecimal value.
-// We attempt to stream the input into the `chunkSize` variable. If this operation
-// fails (e.g., because of invalid input characters that can't be interpreted as hex),
-// the stream's failbit is set, and the conditional check fails. In this case,
-// we return false indicating an error in parsing the chunk size.
 
 bool Connection::readChunkedBody(Parser &parser)
 {
