@@ -371,8 +371,6 @@ bool Connection::readHeaders(Parser &parser)
 	{
 		Debug::log("Connection closed before headers being completely sent", Debug::SERVER);
 		return false;
-		// std::cout << "bytes_read == 0" << std::endl;
-		// return true;
 	}
 	else
 	{
@@ -383,13 +381,11 @@ bool Connection::readHeaders(Parser &parser)
 
 bool Connection::readChunkedBody(Parser &parser)
 {
-	// TODO: check if this is blocking; I mean the two recvs in readChunkSize and readChunk
 	if (!parser.getBodyComplete())
 	{
 		std::string chunkSizeLine;
 		if (!readChunkSize(chunkSizeLine))
 			return false;
-
 		std::istringstream iss(chunkSizeLine);
 		size_t chunkSize;
 		if (!(iss >> std::hex >> chunkSize))
