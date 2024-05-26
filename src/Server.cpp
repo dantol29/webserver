@@ -6,6 +6,8 @@
 #include "EventManager.hpp"
 #include "signal.h"
 
+#define SSL_PORT 8443
+
 Server::Server(const Config &config, EventManager &eventManager) : _config(config), _eventManager(eventManager)
 {
 	_maxClients = 10;
@@ -15,6 +17,8 @@ Server::Server(const Config &config, EventManager &eventManager) : _config(confi
 	_hasCGI = false;
 	_CGICounter = 0;
 	_clientCounter = 0;
+	_sslManager = SSLManager::getInstance();
+	_sslContext = SSLContext();
 	Debug::log("Server created with config constructor", Debug::OCF);
 }
 
@@ -481,7 +485,15 @@ void Server::closeClientConnection(Connection &conn, size_t &i)
 			  << "Entering closeClientConnection"
 			  << "\033[0m" << std::endl;
 	// TODO: should we close it with the Destructor of the Connection class?
+	if (conn.getIsSSL() && conn.getSSL() != NULL)
+	{
+		SSL_shutdown(conn.getSSL());
+		SSL_free(conn.getSSL());
+		conn.setSSL(NULL);
+		conn.setIsSSL(false);
+	}
 	close(conn.getPollFd().fd);
+
 	_FDs.erase(_FDs.begin() + i);
 	_connections.erase(_connections.begin() + i);
 	_connectionsPerIP[conn.getServerIp()] -= 1;
@@ -719,28 +731,52 @@ void Server::addServerSocketsPollFdToVectors()
 	}
 }
 
-void Server::acceptNewConnection(Connection &conn)
+void Server::acceptNewConnection(Connection &serverConn)
 {
 
 	Debug::log("SERVER SOCKET EVENT", Debug::SERVER, CYAN, false, true);
 	struct sockaddr_storage clientAddress;
 	socklen_t ClientAddrLen = sizeof(clientAddress);
-	int newSocket = accept(conn.getPollFd().fd, (struct sockaddr *)&clientAddress, (socklen_t *)&ClientAddrLen);
+	int newSocket = accept(serverConn.getPollFd().fd, (struct sockaddr *)&clientAddress, (socklen_t *)&ClientAddrLen);
 	if (newSocket >= 0)
 	{
 		struct pollfd newSocketPoll;
 		newSocketPoll.fd = newSocket;
 		newSocketPoll.events = POLLIN;
 		newSocketPoll.revents = 0;
-		Connection newConnection(newSocketPoll, *this);
+		// Before we create a new connection object, we set up the connection as SSL or not
+		SSL *ssl = NULL;
+		if (serverConn.getServerPort() == SSL_PORT)
+		{
+			// We create a new SSL object
+			ssl = SSL_new(_sslContext.getContext());
+			if (ssl == NULL)
+			{
+				Debug::log("Error creating SSL object", Debug::SERVER);
+				perror("In SSL_new");
+				close(newSocket);
+				return;
+			}
+			SSL_set_fd(ssl, newSocket);
+			if (SSL_accept(ssl) <= 0)
+			{
+				Debug::log("Error accepting SSL connection", Debug::SERVER);
+				perror("In SSL_accept");
+				SSL_free(ssl);
+				close(newSocket);
+				return;
+			}
+			// We set the SSL object to the connection
+		}
+		Connection newConnection(newSocketPoll, *this, ssl);
 		newConnection.setType(CLIENT);
-		newConnection.setServerIp(conn.getServerIp());
-		if (_connectionsPerIP.find(conn.getServerIp()) == _connectionsPerIP.end())
-			_connectionsPerIP.insert(std::pair<std::string, int>(conn.getServerIp(), 1));
+		newConnection.setServerIp(serverConn.getServerIp());
+		if (_connectionsPerIP.find(serverConn.getServerIp()) == _connectionsPerIP.end())
+			_connectionsPerIP.insert(std::pair<std::string, int>(serverConn.getServerIp(), 1));
 		else
-			_connectionsPerIP[conn.getServerIp()] += 1;
+			_connectionsPerIP[serverConn.getServerIp()] += 1;
 
-		newConnection.setServerPort(conn.getServerPort());
+		newConnection.setServerPort(serverConn.getServerPort());
 		/* start together */
 		_FDs.push_back(newSocketPoll);
 		_connections.push_back(newConnection);

@@ -29,10 +29,8 @@ int main(int argc, char **argv)
 	eventManager.subscribe(&serverEventListener);
 
 	// Initialize SSLManager and SSLContext
-	SSLManager *sslManager = SSLManager::getInstance();
-	(void)sslManager;
-	SSLContext sslContext;
-	(void)sslContext;
+	// SSLManager *sslManager = SSLManager::getInstance();
+	// SSLContext sslContext;
 
 	webserv.startListening();
 	webserv.startPollEventLoop();

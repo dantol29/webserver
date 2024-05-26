@@ -19,6 +19,8 @@
 #include "Parser.hpp"
 #include "Config.hpp"
 #include "ServerSocket.hpp"
+#include "SSLContext.hpp"
+#include "SSLManager.hpp"
 #include "EventManager.hpp"
 
 class Connection; // Forward declaration for circular dependencyA
@@ -65,6 +67,11 @@ class Server
 	int _CGICounter;
 	// number of connections per IP
 	std::map<std::string, int> _connectionsPerIP;
+	// SSL manager and context
+	// It is a pointer cause we want to use the singleton pattern
+	SSLManager *_sslManager;
+	// Normal object
+	SSLContext _sslContext;
 
 	/*** Private Methods ***/
 	Server();
