@@ -387,7 +387,6 @@ bool Connection::readChunkedBody(Parser &parser)
 	if (!parser.getBodyComplete())
 	{
 		std::string chunkSizeLine;
-		// readChiunkSize cuould be a method of Connection, now it's a free function.
 		if (!readChunkSize(chunkSizeLine))
 			return false;
 
