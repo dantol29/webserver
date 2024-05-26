@@ -32,6 +32,8 @@ jobs:
       - name: Check out repository code
         uses: actions/checkout@v4
       - run: echo "💡 The ${{ github.repository }} repository has been cloned to the runner."
+      - name: Install necessary dependencies
+        run: sudo apt-get update && sudo apt-get install -y pkg-config libssl-dev lsof curl build-sessential
       - name: List files in the repository
         run: |
           ls ${{ github.workspace }}
@@ -42,8 +44,6 @@ jobs:
           python3 -m pip install aiohttp asyncio aiofiles
       - name: Start webserv in background
         run: ./webserv &
-      - name: Install needed dependencies
-        run: sudo apt-get update && sudo apt-get install -y lsof curl
       - name: Run Config file tests
         if: always()
         working-directory: tests/config

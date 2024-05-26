@@ -2,7 +2,8 @@
 CXX = c++
 CXXFLAGS = -Wall -Wextra -Werror -std=c++98 -I. -Iinclude -Isrc -Isrc/events -Isrc/ssl -g
 DEPFLAGS = -MMD -MP
-LDFLAGS =
+# -lpthread for pthreads, -ldl for dlopen needed by openssl
+LDFLAGS = -lpthread -ldl
 
 UNAME_S := $(shell uname -s)
 # Additional Flags for macOS
@@ -14,18 +15,33 @@ endif
 # Check if pkg-config is available and OpenSSL is installed
 PKGCONFIG := $(shell which pkg-config)
 USE_LOCAL_OPENSSL := 0
+
 ifneq ($(PKGCONFIG),)
     PKGCONFIG_OPENSSL := $(shell pkg-config --exists openssl && echo 1 || echo 0)
-    ifeq ($(PKGCONFIG_OPENSSL), 0)
-        USE_LOCAL_OPENSSL := 1
-    else
-        OPENSSL_INCLUDE := $(shell pkg-config --cflags-only-I openssl | sed 's/-I//')
-        OPENSSL_LIB := $(shell pkg-config --libs-only-L openssl | sed 's/-L//')
-        CXXFLAGS += -I$(OPENSSL_INCLUDE)
-        LDFLAGS += -L$(OPENSSL_LIB) -lssl -lcrypto
-    endif
+    ifeq ($(PKGCONFIG_OPENSSL), 1)
+		OPENSSL_CFLAGS := $(shell pkg-config --cflags openssl)
+        OPENSSL_LIBS := $(shell pkg-config --libs openssl)
+		ifneq ($(OPENSSL_CFLAGS),)
+            CXXFLAGS += $(OPENSSL_CFLAGS)
+		else
+			OPENSSL_DIR := $(shell openssl version -d | cut -d'"' -f2)
+			OPENSSL_INCLUDE := $(OPENSSL_DIR)/include
+			ifneq ($(wildcard $(OPENSSL_INCLUDE)),)
+				CXXFLAGS += -I$(OPENSSL_INCLUDE)
+			endif
+		endif
+		LDFLAGS += $(OPENSSL_LIBS)
+	else
+		USE_LOCAL_OPENSSL := 1
+	endif
 else
     USE_LOCAL_OPENSSL := 1
+endif
+
+# If using local OpenSSL, update the flags
+ifeq ($(USE_LOCAL_OPENSSL), 1)
+    CXXFLAGS += -I$(LOCAL_INCLUDE)
+    LDFLAGS += -L$(LOCAL_LIB) -lssl -lcrypto
 endif
 
 # Paths for local OpenSSL installation
@@ -59,6 +75,7 @@ SRCS = src/main.cpp \
 	src/ssl/SSLContext.cpp 
 OBJDIR = obj
 OBJS = $(SRCS:%.cpp=$(OBJDIR)/%.o)
+DEPS = $(OBJS:.o=.d)
 
 # Main Target
 TARGET = webserv
@@ -68,7 +85,7 @@ all: check_openssl $(TARGET)
 
 # Rule to check and install OpenSSL if needed
 check_openssl:
-ifeq ($(INSTALL_OPENSSL), 1)
+ifeq ($(USE_LOCAL_OPENSSL), 1)
 	@echo "OpenSSL not found. Installing locally..."
 	@$(MAKE) install_openssl
 else
@@ -95,16 +112,19 @@ $(OBJDIR)/%.o: %.cpp
 
 # Linking the main target
 $(TARGET): $(OBJS)
-	$(CXX) $(CXXFLAGS) -o $(TARGET) $(OBJS)  $(LDFLAGS)
+	$(CXX) $(OBJS) $(LDFLAGS) -o $(TARGET)
 
 # Cleaning up the build
 clean:
 	rm -rf $(OBJDIR)
 	rm -f $(TARGET)
+	rm -f $(DEPS)
 
 fclean: clean
 	rm -f $(TARGET)
 
 re: fclean all
+
+-include $(DEPS)
 
 .PHONY: all clean fclean re check_openssl install_openssl
