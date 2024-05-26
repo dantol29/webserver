@@ -3,6 +3,8 @@
 #include "webserv.hpp"
 #include "EventManager.hpp"
 #include "ServerEventListener.hpp"
+#include "SSLManager.hpp"
+#include "SSLContext.hpp"
 
 int main(int argc, char **argv)
 {
@@ -25,6 +27,10 @@ int main(int argc, char **argv)
 
 	ServerEventListener serverEventListener(webserv);
 	eventManager.subscribe(&serverEventListener);
+
+	// Initialize SSLManager and SSLContext
+	// SSLManager *sslManager = SSLManager::getInstance();
+	// SSLContext sslContext;
 
 	webserv.startListening();
 	webserv.startPollEventLoop();

@@ -6,6 +6,8 @@
 #include "EventManager.hpp"
 #include "signal.h"
 
+#define SSL_PORT 8443
+
 Server::Server(const Config &config, EventManager &eventManager) : _config(config), _eventManager(eventManager)
 {
 	_maxClients = 10;
@@ -15,6 +17,8 @@ Server::Server(const Config &config, EventManager &eventManager) : _config(confi
 	_hasCGI = false;
 	_CGICounter = 0;
 	_clientCounter = 0;
+	_sslManager = SSLManager::getInstance();
+	_sslContext = SSLContext();
 	Debug::log("Server created with config constructor", Debug::OCF);
 }
 
@@ -81,8 +85,8 @@ void Server::startPollEventLoop()
 				   Debug::SERVER);
 		int ret = poll(_FDs.data(), _FDs.size(), timeout);
 		pollCounter++;
-		// printFrame("POLL EVENT DETECTED", true);
-		//  printConnections("AFTER POLL", _FDs, _connections, true);
+		Debug::log("Poll event detected", Debug::SERVER, YELLOW, false, true);
+		// printConnections("AFTER POLL", _FDs, _connections, true);
 		if (ret > 0)
 		{
 			size_t originalSize = _FDs.size();
@@ -424,9 +428,10 @@ void Server::readCGIPipe(Connection &conn, HTTPResponse &response)
 
 void Server::writeToClient(Connection &conn, size_t &i, HTTPResponse &response)
 {
-	Debug::log("Entering writeToClient", Debug::NORMAL);
-	Debug::log("response: " + response.objToString(), Debug::NORMAL);
-
+	std::cout << "\033[1;36m"
+			  << "Entering writeToClient"
+			  << "\033[0m" << std::endl;
+	std::cout << response << std::endl;
 	static int sendResponseCounter = 0;
 	bool isLastSend = false;
 	size_t tmpBufferSize = SEND_BUFFER_SIZE;
@@ -476,9 +481,19 @@ void Server::writeToClient(Connection &conn, size_t &i, HTTPResponse &response)
 
 void Server::closeClientConnection(Connection &conn, size_t &i)
 {
-	Debug::log("Entering closeClientConnection", Debug::NORMAL);
+	std::cout << "\033[1;36m"
+			  << "Entering closeClientConnection"
+			  << "\033[0m" << std::endl;
 	// TODO: should we close it with the Destructor of the Connection class?
+	if (conn.getIsSSL() && conn.getSSL() != NULL)
+	{
+		SSL_shutdown(conn.getSSL());
+		SSL_free(conn.getSSL());
+		conn.setSSL(NULL);
+		conn.setIsSSL(false);
+	}
 	close(conn.getPollFd().fd);
+
 	_FDs.erase(_FDs.begin() + i);
 	_connections.erase(_connections.begin() + i);
 	_connectionsPerIP[conn.getServerIp()] -= 1;
@@ -493,7 +508,9 @@ void Server::handleConnection(Connection &conn, size_t &i)
 	HTTPResponse &response = _connections[i].getResponse();
 
 	// printFrame("CLIENT SOCKET EVENT", true);
-	Debug::log("Entering handleConnection", Debug::NORMAL);
+	std::cout << "\033[1;36m"
+			  << "Entering handleConnection"
+			  << "\033[0m" << std::endl;
 
 	conn.setHasReadSocket(false);
 	if (!conn.getHasFinishedReading())
@@ -704,88 +721,67 @@ void Server::addServerSocketsPollFdToVectors()
 		serverPollFd.fd = it->getServerFD();
 		serverPollFd.events = POLLIN;
 		serverPollFd.revents = 0;
-		if (VERBOSE)
-		{
-			std::cout << "pollfd struct for Server socket created" << std::endl;
-			std::cout << std::endl;
-			std::cout << "Printing serverPollFd (struct pollfd) before push_back into _FDs" << std::endl;
-			std::cout << "fd: " << serverPollFd.fd << ", events: " << serverPollFd.events
-					  << ", revents: " << serverPollFd.revents << std::endl;
-		}
 		_FDs.push_back(serverPollFd);
+
 		Connection serverConnection(serverPollFd, *this);
 		serverConnection.setType(SERVER);
 		serverConnection.setServerIp(it->getListen().getIp());
 		serverConnection.setServerPort(it->getListen().getPort());
-		if (VERBOSE)
-		{
-			std::cout << "Server Connection object created" << std::endl;
-			std::cout << MAGENTA << "Printing serverConnection before push_back" << std::endl << RESET;
-			serverConnection.printConnection();
-		}
 		_connections.push_back(serverConnection);
-		if (VERBOSE)
-		{
-			std::cout << MAGENTA << "Printing serverConnection after push_back" << RESET << std::endl;
-			_connections.back().printConnection();
-			std::cout << "Server socket pollfd added to vectors" << std::endl;
-		}
 	}
 }
 
-void Server::acceptNewConnection(Connection &conn)
+void Server::acceptNewConnection(Connection &serverConn)
 {
 
-	// struct sockaddr_in clientAddress;
-	// We choose sockaddr_storage to be able to handle both IPv4 and IPv6
-	// printFrame("SERVER SOCKET EVENT", true);
+	Debug::log("SERVER SOCKET EVENT", Debug::SERVER, CYAN, false, true);
 	struct sockaddr_storage clientAddress;
 	socklen_t ClientAddrLen = sizeof(clientAddress);
-	Debug::log("New connection detected", Debug::SERVER);
-	int newSocket = accept(conn.getPollFd().fd, (struct sockaddr *)&clientAddress, (socklen_t *)&ClientAddrLen);
+	int newSocket = accept(serverConn.getPollFd().fd, (struct sockaddr *)&clientAddress, (socklen_t *)&ClientAddrLen);
 	if (newSocket >= 0)
 	{
 		struct pollfd newSocketPoll;
 		newSocketPoll.fd = newSocket;
 		newSocketPoll.events = POLLIN;
 		newSocketPoll.revents = 0;
-		Connection newConnection(newSocketPoll, *this);
-		newConnection.setType(CLIENT);
-		newConnection.setServerIp(conn.getServerIp());
-
-		if (_connectionsPerIP.find(conn.getServerIp()) == _connectionsPerIP.end())
-			_connectionsPerIP.insert(std::pair<std::string, int>(conn.getServerIp(), 1));
-		else
-			_connectionsPerIP[conn.getServerIp()] += 1;
-
-		newConnection.setServerPort(conn.getServerPort());
-		if (VERBOSE)
+		// Before we create a new connection object, we set up the connection as SSL or not
+		SSL *ssl = NULL;
+		if (serverConn.getServerPort() == SSL_PORT)
 		{
-
-			std::cout << PURPLE << "BEFORE PUSH_BACK" << RESET << std::endl;
-			std::cout << "Printing newConnection:" << std::endl;
-			newConnection.printConnection();
-			std::cout << "Printing struct pollfd newSocketPoll:" << std::endl;
-			std::cout << "fd: " << newSocketPoll.fd << ", events: " << newSocketPoll.events
-					  << ", revents: " << newSocketPoll.revents << std::endl;
+			// We create a new SSL object
+			ssl = SSL_new(_sslContext.getContext());
+			if (ssl == NULL)
+			{
+				Debug::log("Error creating SSL object", Debug::SERVER);
+				perror("In SSL_new");
+				close(newSocket);
+				return;
+			}
+			SSL_set_fd(ssl, newSocket);
+			if (SSL_accept(ssl) <= 0)
+			{
+				Debug::log("Error accepting SSL connection", Debug::SERVER);
+				perror("In SSL_accept");
+				SSL_free(ssl);
+				close(newSocket);
+				return;
+			}
+			// We set the SSL object to the connection
 		}
+		Connection newConnection(newSocketPoll, *this, ssl);
+		newConnection.setType(CLIENT);
+		newConnection.setServerIp(serverConn.getServerIp());
+		if (_connectionsPerIP.find(serverConn.getServerIp()) == _connectionsPerIP.end())
+			_connectionsPerIP.insert(std::pair<std::string, int>(serverConn.getServerIp(), 1));
+		else
+			_connectionsPerIP[serverConn.getServerIp()] += 1;
+
+		newConnection.setServerPort(serverConn.getServerPort());
 		/* start together */
 		_FDs.push_back(newSocketPoll);
 		_connections.push_back(newConnection);
 		++_clientCounter;
 		/* end together */
-		if (VERBOSE)
-		{
-			std::cout << PURPLE << "AFTER PUSH_BACK" << RESET << std::endl;
-			std::cout << "Printing last element of _FDs:" << std::endl;
-			std::cout << "fd: " << _FDs.back().fd << ", events: " << _FDs.back().events
-					  << ", revents: " << _FDs.back().revents << std::endl;
-			std::cout << "Printing last element of _connections:" << std::endl;
-			_connections.back().printConnection();
-			std::cout << "Pringing the whole _FDs and _connections vectors after adding new connection" << std::endl;
-			print_connectionsVector(_connections);
-			printFDsVector(_FDs);
-		}
 		char clientIP[INET6_ADDRSTRLEN];
 		if (clientAddress.ss_family == AF_INET)
 		{

@@ -1,4 +1,5 @@
 #include "Debug.hpp"
+#include "webserv.hpp"
 
 // In C++98 the initialization of static members must be done outside the class definition.
 bool Debug::debugEnabled = true;
@@ -38,7 +39,17 @@ void Debug::removeLevel(Debug::Level level)
 	debugLevel = static_cast<Debug::Level>(debugLevel & ~level);
 }
 
-void Debug::log(const std::string &message, Debug::Level paramLevel)
+void printFrame(const std::string &message, const std::string &color, bool blinking)
+{
+	std::string blink = blinking ? BLINKING : "";
+	std::cout << color << blink;
+	std::cout << std::setw(10) << ' ' << "***************************" << std::endl;
+	std::cout << std::setw(10) << ' ' << "*   " << message << "   *" << std::endl;
+	std::cout << std::setw(10) << ' ' << "***************************" << std::endl;
+	std::cout << RESET;
+}
+
+void Debug::log(const std::string &message, Debug::Level paramLevel, const std::string &color, bool bliking, bool frame)
 {
 	if (!debugEnabled)
 	{
@@ -46,7 +57,17 @@ void Debug::log(const std::string &message, Debug::Level paramLevel)
 	}
 	if (debugLevel & paramLevel)
 	{
-		(void)paramLevel;
-		std::cout << message << std::endl;
+		std::string blink = bliking ? BLINKING : "";
+		if (frame)
+		{
+			printFrame(message, color, bliking);
+		}
+		else
+			std::cout << color << blink << message << RESET << std::endl;
 	}
 }
+
+// void Debug::log(const std::string &message, Debug::Level paramLevel)
+// {
+// 	log(message, paramLevel, RESET);
+// }

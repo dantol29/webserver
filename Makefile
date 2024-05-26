@@ -1,7 +1,9 @@
 # Compiler and Flags
 CXX = c++
-CXXFLAGS = -Wall -Wextra -Werror -std=c++98 -I. -Iinclude -Isrc -Isrc/events -g
+CXXFLAGS = -Wall -Wextra -Werror -std=c++98 -I. -Iinclude -Isrc -Isrc/events -Isrc/ssl -g
 DEPFLAGS = -MMD -MP
+# -lpthread for pthreads, -ldl for dlopen needed by openssl
+LDFLAGS = -lpthread -ldl
 
 UNAME_S := $(shell uname -s)
 # Additional Flags for macOS
@@ -9,6 +11,43 @@ ifeq ($(UNAME_S), Darwin)
     CXXFLAGS += -fsanitize=address
     LDFLAGS += -fsanitize=address
 endif
+
+# Check if pkg-config is available and OpenSSL is installed
+PKGCONFIG := $(shell which pkg-config)
+USE_LOCAL_OPENSSL := 0
+
+ifneq ($(PKGCONFIG),)
+    PKGCONFIG_OPENSSL := $(shell pkg-config --exists openssl && echo 1 || echo 0)
+    ifeq ($(PKGCONFIG_OPENSSL), 1)
+		OPENSSL_CFLAGS := $(shell pkg-config --cflags openssl)
+        OPENSSL_LIBS := $(shell pkg-config --libs openssl)
+		ifneq ($(OPENSSL_CFLAGS),)
+            CXXFLAGS += $(OPENSSL_CFLAGS)
+		else
+			OPENSSL_DIR := $(shell openssl version -d | cut -d'"' -f2)
+			OPENSSL_INCLUDE := $(OPENSSL_DIR)/include
+			ifneq ($(wildcard $(OPENSSL_INCLUDE)),)
+				CXXFLAGS += -I$(OPENSSL_INCLUDE)
+			endif
+		endif
+		LDFLAGS += $(OPENSSL_LIBS)
+	else
+		USE_LOCAL_OPENSSL := 1
+	endif
+else
+    USE_LOCAL_OPENSSL := 1
+endif
+
+# If using local OpenSSL, update the flags
+ifeq ($(USE_LOCAL_OPENSSL), 1)
+    CXXFLAGS += -I$(LOCAL_INCLUDE)
+    LDFLAGS += -L$(LOCAL_LIB) -lssl -lcrypto
+endif
+
+# Paths for local OpenSSL installation
+LOCAL_OPENSSL_DIR := $(CURDIR)/local/openssl
+LOCAL_INCLUDE := $(LOCAL_OPENSSL_DIR)/include
+LOCAL_LIB := $(LOCAL_OPENSSL_DIR)/lib
 
 # Source and Object Files
 SRCS = src/main.cpp \
@@ -31,15 +70,40 @@ SRCS = src/main.cpp \
 	src/ServerSocket.cpp \
 	src/Listen.cpp \
 	src/events/EventManager.cpp \
-	src/events/ServerEventListener.cpp  
+	src/events/ServerEventListener.cpp \
+	src/ssl/SSLManager.cpp \
+	src/ssl/SSLContext.cpp 
 OBJDIR = obj
 OBJS = $(SRCS:%.cpp=$(OBJDIR)/%.o)
+DEPS = $(OBJS:.o=.d)
 
 # Main Target
 TARGET = webserv
 
 # Build Rules
-all: $(TARGET)
+all: check_openssl $(TARGET)
+
+# Rule to check and install OpenSSL if needed
+check_openssl:
+ifeq ($(USE_LOCAL_OPENSSL), 1)
+	@echo "OpenSSL not found. Installing locally..."
+	@$(MAKE) install_openssl
+else
+	@echo "Using system OpenSSL."
+endif
+
+# Rule to download, build, and install OpenSSL locally
+install_openssl:
+	@mkdir -p openssl
+	@cd openssl && \
+	wget https://www.openssl.org/source/openssl-1.1.1.tar.gz && \
+	tar -xzf openssl-1.1.1.tar.gz && \
+	cd openssl-1.1.1 && \
+	./config --prefix=$(LOCAL_OPENSSL_DIR) --openssldir=$(LOCAL_OPENSSL_DIR) no-shared && \
+	make && \
+	make install && \
+	cd ../.. && \
+	rm -rf openssl
 
 # Ensure the necessary directories exist before compiling anything
 $(OBJDIR)/%.o: %.cpp
@@ -48,16 +112,19 @@ $(OBJDIR)/%.o: %.cpp
 
 # Linking the main target
 $(TARGET): $(OBJS)
-	$(CXX) $(CXXFLAGS) -o $(TARGET) $(OBJS)
+	$(CXX) $(OBJS) $(LDFLAGS) -o $(TARGET)
 
 # Cleaning up the build
 clean:
 	rm -rf $(OBJDIR)
 	rm -f $(TARGET)
+	rm -f $(DEPS)
 
 fclean: clean
 	rm -f $(TARGET)
 
 re: fclean all
 
-.PHONY: all clean fclean re
+-include $(DEPS)
+
+.PHONY: all clean fclean re check_openssl install_openssl

@@ -1,0 +1,23 @@
+# Dockerfile.with-openssl
+FROM ubuntu:latest
+
+# Set environment variables to avoid user prompts during package installation
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Install dependencies including OpenSSL
+RUN apt-get update && \
+	apt-get install -y build-essential pkg-config wget libpthread-stubs0-dev libdl-dev vim && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
+# Copy project files into the container
+COPY . /app
+
+# Set the working directory
+WORKDIR /app
+
+# Build the project
+# RUN make re
+
+# Set the entrypoint
+# ENTRYPOINT ["./webserv"]
