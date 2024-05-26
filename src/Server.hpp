@@ -21,8 +21,6 @@
 #include "ServerSocket.hpp"
 #include "EventManager.hpp"
 
-#define VERBOSE 0
-
 class Connection; // Forward declaration for circular dependencyA
 
 class Server
@@ -33,7 +31,7 @@ class Server
 
 	void startListening();
 	void startPollEventLoop();
-	
+
 	void printServerSockets() const;
 	/* for CGI */
 	void setHasCGI(bool hasCGI);

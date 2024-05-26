@@ -709,32 +709,13 @@ void Server::addServerSocketsPollFdToVectors()
 		serverPollFd.fd = it->getServerFD();
 		serverPollFd.events = POLLIN;
 		serverPollFd.revents = 0;
-		if (VERBOSE)
-		{
-			std::cout << "pollfd struct for Server socket created" << std::endl;
-			std::cout << std::endl;
-			std::cout << "Printing serverPollFd (struct pollfd) before push_back into _FDs" << std::endl;
-			std::cout << "fd: " << serverPollFd.fd << ", events: " << serverPollFd.events
-					  << ", revents: " << serverPollFd.revents << std::endl;
-		}
 		_FDs.push_back(serverPollFd);
+
 		Connection serverConnection(serverPollFd, *this);
 		serverConnection.setType(SERVER);
 		serverConnection.setServerIp(it->getListen().getIp());
 		serverConnection.setServerPort(it->getListen().getPort());
-		if (VERBOSE)
-		{
-			std::cout << "Server Connection object created" << std::endl;
-			std::cout << MAGENTA << "Printing serverConnection before push_back" << std::endl << RESET;
-			serverConnection.printConnection();
-		}
 		_connections.push_back(serverConnection);
-		if (VERBOSE)
-		{
-			std::cout << MAGENTA << "Printing serverConnection after push_back" << RESET << std::endl;
-			_connections.back().printConnection();
-			std::cout << "Server socket pollfd added to vectors" << std::endl;
-		}
 	}
 }
 
@@ -754,40 +735,17 @@ void Server::acceptNewConnection(Connection &conn)
 		Connection newConnection(newSocketPoll, *this);
 		newConnection.setType(CLIENT);
 		newConnection.setServerIp(conn.getServerIp());
-
 		if (_connectionsPerIP.find(conn.getServerIp()) == _connectionsPerIP.end())
 			_connectionsPerIP.insert(std::pair<std::string, int>(conn.getServerIp(), 1));
 		else
 			_connectionsPerIP[conn.getServerIp()] += 1;
 
 		newConnection.setServerPort(conn.getServerPort());
-		if (VERBOSE)
-		{
-
-			std::cout << PURPLE << "BEFORE PUSH_BACK" << RESET << std::endl;
-			std::cout << "Printing newConnection:" << std::endl;
-			newConnection.printConnection();
-			std::cout << "Printing struct pollfd newSocketPoll:" << std::endl;
-			std::cout << "fd: " << newSocketPoll.fd << ", events: " << newSocketPoll.events
-					  << ", revents: " << newSocketPoll.revents << std::endl;
-		}
 		/* start together */
 		_FDs.push_back(newSocketPoll);
 		_connections.push_back(newConnection);
 		++_clientCounter;
 		/* end together */
-		if (VERBOSE)
-		{
-			std::cout << PURPLE << "AFTER PUSH_BACK" << RESET << std::endl;
-			std::cout << "Printing last element of _FDs:" << std::endl;
-			std::cout << "fd: " << _FDs.back().fd << ", events: " << _FDs.back().events
-					  << ", revents: " << _FDs.back().revents << std::endl;
-			std::cout << "Printing last element of _connections:" << std::endl;
-			_connections.back().printConnection();
-			std::cout << "Pringing the whole _FDs and _connections vectors after adding new connection" << std::endl;
-			print_connectionsVector(_connections);
-			printFDsVector(_FDs);
-		}
 		char clientIP[INET6_ADDRSTRLEN];
 		if (clientAddress.ss_family == AF_INET)
 		{
