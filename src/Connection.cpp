@@ -1,6 +1,6 @@
 #include "Connection.hpp"
 
-Connection::Connection(struct pollfd &pollFd, Server &server)
+Connection::Connection(struct pollfd &pollFd, Server &server, SSL *ssl)
 
 {
 	(void)server;
@@ -28,6 +28,8 @@ Connection::Connection(struct pollfd &pollFd, Server &server)
 	_CGIHasTimedOut = false;
 	_CGIHasReadPipe = false;
 	_startTime = 0;
+	_ssl = ssl;
+	_isSSL = ssl != NULL;
 }
 
 Connection::Connection(const Connection &other)
@@ -61,6 +63,8 @@ Connection::Connection(const Connection &other)
 	_CGIHasReadPipe = other._CGIHasReadPipe;
 	_cgiOutputBuffer = other._cgiOutputBuffer;
 	_startTime = other._startTime;
+	_ssl = other._ssl;
+	_isSSL = other._isSSL;
 	// std::cout << "Connection object copied" << std::endl;
 }
 
@@ -95,6 +99,8 @@ Connection &Connection::operator=(const Connection &other)
 		_CGIHasReadPipe = other._CGIHasReadPipe;
 		_cgiOutputBuffer = other._cgiOutputBuffer;
 		_startTime = other._startTime;
+		_ssl = other._ssl;
+		_isSSL = other._isSSL;
 	}
 	Debug::log("Connection object assigned", Debug::OCF);
 	return *this;
@@ -242,6 +248,16 @@ time_t Connection::getStartTime() const
 	return _startTime;
 }
 
+bool Connection::getIsSSL() const
+{
+	return _isSSL;
+}
+
+SSL *Connection::getSSL() const
+{
+	return _ssl;
+}
+
 // SETTERS
 
 void Connection::setStartTime(time_t time)
@@ -348,6 +364,15 @@ void Connection::setCGIExitStatus(int status)
 	_CGIExitStatus = status;
 }
 
+void Connection::setIsSSL(bool value)
+{
+	_isSSL = value;
+}
+
+void Connection::setSSL(SSL *ssl)
+{
+	_ssl = ssl;
+}
 // METHODS
 
 ssize_t Connection::readSocket(char *buffer, size_t bufferSize)

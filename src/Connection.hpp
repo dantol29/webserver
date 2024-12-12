@@ -59,8 +59,12 @@ class Connection
 	bool _CGIHasReadPipe;
 	std::string _cgiOutputBuffer;
 
+	/* SSL */
+	SSL *_ssl;
+	bool _isSSL;
+
   public:
-	Connection(struct pollfd &pollFd, Server &server);
+	Connection(struct pollfd &pollFd, Server &server, SSL *ssl = NULL);
 	Connection(const Connection &other);
 	Connection &operator=(const Connection &other);
 	~Connection();
@@ -105,6 +109,8 @@ class Connection
 	bool getCGIHasTimedOut() const;
 	bool getCGIHasReadPipe() const;
 	std::string getCGIOutputBuffer() const;
+	SSL *getSSL() const;
+	bool getIsSSL() const;
 
 	/* Setters */
 	void setResponseString(std::string responseString);
@@ -131,6 +137,8 @@ class Connection
 	void setCGIHasTimedOut(bool value);
 	void setCGIHasReadPipe(bool value);
 	void setCGIOutputBuffer(std::string output);
+	void setSSL(SSL *ssl);
+	void setIsSSL(bool isSSL);
 	/* CGI */
 	void addCGI(pid_t pid);
 	void removeCGI(int status);

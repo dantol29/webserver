@@ -1,6 +1,8 @@
 #ifndef WEBSERV_H
 #define WEBSERV_H
 
+#include <openssl/ssl.h>
+#include <openssl/err.h>
 #include <string>
 #include <sstream>
 #include <cstdlib>

@@ -37,6 +37,5 @@ void printConnections(const std::string &location,
 					  const std::vector<pollfd> &_FDs,
 					  const std::vector<Connection> &_connections,
 					  bool value);
-void printFrame(std::string frame, bool value = false);
 
 #endif // SERVER_UTILS_HPP

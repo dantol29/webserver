@@ -67,16 +67,6 @@ void printVariablesHeadersBody(const HTTPRequest &obj)
 	std::cout << c << std::endl;
 }
 
-void printFrame(std::string frame, bool value)
-{
-	if (!value)
-		return;
-	std::cout << ORANGE << BLINKING;
-	std::cout << std::setw(10) << ' ' << "***************************" << std::endl;
-	std::cout << std::setw(10) << ' ' << "*   " << frame << "   *" << std::endl;
-	std::cout << std::setw(10) << ' ' << "***************************" << std::endl;
-	std::cout << RESET;
-}
 
 void printConnections(const std::string &location,
 					  const std::vector<pollfd> &_FDs,
